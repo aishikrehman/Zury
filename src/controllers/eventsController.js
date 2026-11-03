@@ -92,7 +92,7 @@ async function create(req, res, next) {
       actorId: req.user.id,
       type,
       parsed,
-      autoSlug: !req.body.slug?.trim(),
+      autoSlug: parsed.autoSlug,
       isDemo: req.user.isDemo,
     });
     const problems = await addStartingTeam(req, contest, { ...contestForm.defaultSettings(type), ...parsed.settings });

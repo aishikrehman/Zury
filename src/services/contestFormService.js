@@ -106,18 +106,32 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const title = str(body.title);
   if (title.length < 3 || title.length > 200) errors.title = 'Enter a title of 3 to 200 characters.';
 
-  const slug = str(body.slug).toLowerCase() || slugify(title);
-  if (!SLUG.test(slug) || slug.length > 80) errors.slug = 'Use lowercase letters, numbers and single hyphens (max 80).';
-  else if (require('../middleware/permissions').RESERVED.has(slug)) errors.slug = 'This address is used by Zury itself; choose another.';
+  const { RESERVED } = require('../middleware/permissions');
 
   // Optional recurring-event address: /<series>/<edition>, e.g. /wam/2026.
-  const seriesSlug = str(body.seriesSlug).toLowerCase();
+  // "Part of" takes an existing series' address or a new name ("Wiki Loves Food").
+  const seriesRaw = str(body.seriesSlug);
+  const seriesIsSlug = SLUG.test(seriesRaw.toLowerCase());
+  const seriesSlug = seriesIsSlug ? seriesRaw.toLowerCase() : slugify(seriesRaw).slice(0, 40).replace(/-+$/, '');
+  const seriesTitle = seriesRaw && !seriesIsSlug ? seriesRaw.slice(0, 200) : '';
   const edition = str(body.edition).toLowerCase();
-  if (seriesSlug || edition) {
-    const { RESERVED } = require('../middleware/permissions');
-    if (!SLUG.test(seriesSlug) || seriesSlug.length > 40 || RESERVED.has(seriesSlug)) errors.seriesSlug = 'Use lowercase letters, numbers and hyphens.';
-    if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) errors.edition = 'Use a short edition name such as 2026.';
+  const inSeries = !!(seriesRaw || edition);
+  if (inSeries) {
+    if (!seriesSlug || seriesSlug.length > 40 || RESERVED.has(seriesSlug)) errors.seriesSlug = 'Use a name in Latin letters or numbers, e.g. Wiki Loves Monuments.';
+    if (!edition) errors.edition = 'Add the edition, e.g. 2026.';
+    else if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) errors.edition = 'Use a short edition such as 2026.';
   }
+
+  // The address. Made from the title when left empty; titles without Latin letters
+  // (e.g. Bangla) fall back to the series and edition, or "event". In a series the
+  // address isn't shown, so an unusable one is replaced instead of reported.
+  const typedSlug = str(body.slug).toLowerCase();
+  const fallbackSlug = slugify(title) || (seriesSlug && edition ? `${seriesSlug}-${edition}` : 'event');
+  let slug = typedSlug || fallbackSlug;
+  const autoSlug = !typedSlug || (inSeries && (!SLUG.test(typedSlug) || RESERVED.has(typedSlug)));
+  if (autoSlug) slug = fallbackSlug.slice(0, 80).replace(/-+$/, '');
+  if (!SLUG.test(slug) || slug.length > 80) errors.slug = 'Use lowercase Latin letters, numbers and single hyphens, e.g. dhaka-photowalk-2026.';
+  else if (RESERVED.has(slug)) errors.slug = 'This address is used by Zury itself; choose another.';
 
   const category = PROJECT_CATEGORIES[body.category] ? body.category : '';
   const previousEditionUrl = str(body.previousEditionUrl);
@@ -202,7 +216,8 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
 
   return {
     errors,
-    series: seriesSlug && edition ? { slug: seriesSlug, edition } : null,
+    series: seriesSlug && edition ? { slug: seriesSlug, edition, title: seriesTitle } : null,
+    autoSlug,
     contest: {
       title,
       slug,
@@ -221,7 +236,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
       ...dates,
     },
     settings,
-    form: { ...body, slug, type },
+    form: { ...body, slug: typedSlug && !autoSlug ? typedSlug : slug, type },
   };
 }
 

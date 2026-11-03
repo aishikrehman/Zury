@@ -171,7 +171,7 @@ async function updateConfig(req, res, next) {
   const parsed = contestForm.parse({ ...req.body, type }, { type, wikiAllowed: wikiAllowedForEdit(req), catalog });
   if (Object.keys(parsed.errors).length) return renderConfig(req, res, { form: parsed.form, errors: parsed.errors, status: 422 });
   try {
-    await eventService.update({ actorId: req.user.id, contest: { ...req.contest, series: req.series }, settings: req.eventSettings, parsed, autoSlug: !req.body.slug?.trim() });
+    await eventService.update({ actorId: req.user.id, contest: { ...req.contest, series: req.series }, settings: req.eventSettings, parsed, autoSlug: parsed.autoSlug });
     req.flash('success', 'Event settings saved.');
     res.redirect(back(req, '/config'));
   } catch (err) {

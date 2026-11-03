@@ -145,3 +145,24 @@ test('role conflicts follow the event settings', () => {
   assert.equal(roleConflict('participant', ['jury'], { ...strict, allowJuryParticipation: true }), null);
   assert.equal(roleConflict('viewer', ['participant'], strict), null);
 });
+
+test('addresses: Bangla titles, new series names and hidden addresses in a series', () => {
+  const { parse } = require('../src/services/contestFormService');
+  const base = { type: 'writing', title: 'উইকিপিডিয়া এশীয় মাস ২০২৬', timezone: 'UTC', primaryWiki: 'bnwiki', language: 'bn', minAccountAgeDays: '0', minEditCount: '0' };
+  const run = (extra) => parse({ ...base, ...extra }, { type: 'writing', wikiAllowed: () => true });
+
+  const bangla = run({});
+  assert.deepEqual(bangla.errors, {});
+  assert.equal(bangla.contest.slug, 'event', 'a usable address even without Latin letters');
+
+  const newSeries = run({ seriesSlug: 'Wiki Loves Food', edition: '2027' });
+  assert.deepEqual(newSeries.errors, {});
+  assert.deepEqual(newSeries.series, { slug: 'wiki-loves-food', edition: '2027', title: 'Wiki Loves Food' });
+
+  const hidden = run({ seriesSlug: 'wam', edition: '2026', slug: 'Bad Slug!' });
+  assert.deepEqual(hidden.errors, {}, 'the address is hidden in a series, so it is replaced, not reported');
+  assert.equal(hidden.autoSlug, true);
+
+  assert.ok(run({ slug: 'Bad Slug!' }).errors.slug, 'a visible bad address is reported');
+  assert.ok(run({ seriesSlug: 'wam' }).errors.edition, 'a series needs an edition');
+});

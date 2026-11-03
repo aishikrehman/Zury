@@ -36,7 +36,7 @@ async function seriesFields(tx, series, title, excludeId) {
   if (!row && (await tx.contest.findFirst({ where: { slug: series.slug, seriesId: null, id: excludeId ? { not: excludeId } : undefined }, select: { id: true } }))) {
     throw new EventError(`/${series.slug} is already the address of another event.`, 'seriesSlug');
   }
-  if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
+  if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: series.title || title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
   const taken = await tx.contest.findFirst({ where: { seriesId: row.id, edition: series.edition, NOT: excludeId ? { id: excludeId } : undefined }, select: { id: true } });
   if (taken) throw new EventError(`/${series.slug}/${series.edition} is already used by another event.`, 'edition');
   return { seriesId: row.id, edition: series.edition };

@@ -50,11 +50,11 @@
 
   function showAddress() {
     const s = series.value.trim();
-    const inSeries = s !== '';
+    const inSeries = s !== '' && !slug.classList.contains('is-invalid');
     slug.classList.toggle('d-none', inSeries);
     seriesAddress.classList.toggle('d-none', !inSeries);
     seriesAddress.classList.toggle('flex-fill', inSeries);
-    seriesAddress.textContent = `${s}/${edition.value.trim() || '…'}`;
+    seriesAddress.textContent = `${slugify(s).slice(0, 40)}/${edition.value.trim().toLowerCase() || '…'}`;
     hint.textContent = inSeries ? 'Part of a series: the address is the series and the edition.' : 'Made from the title; you can change it.';
   }
   // Values filled in from a series; cleared again if the series changes or is removed.
