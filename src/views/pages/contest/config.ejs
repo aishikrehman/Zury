@@ -1,25 +1,69 @@
+<% const statusLabel = (s) => (CONTEST_STATUSES[s] || { label: s }).label; const sticky = ['draft', 'cancelled', 'archived'].includes(contest.status); %>
 <div class="container py-5">
   <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 
-  <div class="alert alert-info small">Read-only for now. Editing event settings arrives with event management (Phase 4).</div>
+  <% if (can('manageEvent')) { %>
+    <section class="card mb-5">
+      <div class="card-body">
+        <h2 class="h5">Status</h2>
+        <p class="mb-3">
+          Currently <strong><%= statusLabel(contest.status) %></strong>
+          <% if (!sticky) { %>
+            <% if (contest.statusMode === 'auto') { %>· follows the dates automatically.<% } else { %>· pinned by an organizer (by the dates it would be <%= statusLabel(autoStatus) %>).<% } %>
+          <% } %>
+        </p>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <% const action = (name, label, cls = 'outline-primary') => ({ name, label, cls }); %>
+          <% [
+            contest.status === 'draft' && action('publish', 'Publish', 'primary'),
+            ['published', 'upcoming'].includes(contest.status) && action('unpublish', 'Back to draft', 'outline-secondary'),
+            !sticky && contest.statusMode === 'manual' && action('resume_auto', 'Follow the dates again'),
+            ['completed', 'cancelled'].includes(contest.status) && action('archive', 'Archive', 'outline-secondary'),
+            contest.status === 'cancelled' && action('reopen', 'Reopen as draft', 'outline-secondary'),
+            !['cancelled', 'archived'].includes(contest.status) && action('cancel', 'Cancel event', 'outline-danger'),
+          ].filter(Boolean).forEach((a) => { %>
+            <form method="post" action="/contest/<%= contest.id %>/status" class="d-inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="action" value="<%= a.name %>">
+              <button type="submit" class="btn btn-sm btn-<%= a.cls %>"><%= a.label %></button>
+            </form>
+          <% }) %>
+          <% if (!sticky) { %>
+            <form method="post" action="/contest/<%= contest.id %>/status" class="d-inline-flex gap-1 align-items-center ms-md-3">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="action" value="set_status">
+              <label class="small text-muted" for="pinStatus">Pin to</label>
+              <select id="pinStatus" name="status" class="form-select form-select-sm w-auto">
+                <% manualStatuses.forEach((s) => { %><option value="<%= s %>"<%= s === contest.status ? ' selected' : '' %>><%= statusLabel(s) %></option><% }) %>
+              </select>
+              <button type="submit" class="btn btn-sm btn-outline-primary">Set</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    </section>
+  <% } %>
 
-  <table class="table table-sm" style="max-width: 640px">
-    <tbody>
-      <tr><th scope="row">Slug</th><td><code><%= contest.slug %></code></td></tr>
-      <tr><th scope="row">Type</th><td><%= CONTEST_TYPES[contest.type] || contest.type %></td></tr>
-      <tr><th scope="row">Status</th><td><%= (CONTEST_STATUSES[contest.status] || {}).label || contest.status %></td></tr>
-      <tr><th scope="row">Visibility</th><td class="text-capitalize"><%= contest.visibility %></td></tr>
-      <tr><th scope="row">Primary wiki</th><td><%= contest.primaryWiki %></td></tr>
-      <tr><th scope="row">Language</th><td><%= contest.language %></td></tr>
-      <tr><th scope="row">Timezone</th><td><%= contest.timezone %></td></tr>
-      <tr><th scope="row">Starts</th><td><%= formatDateTime(contest.startDate, contest.timezone) || '—' %></td></tr>
-      <tr><th scope="row">Ends</th><td><%= formatDateTime(contest.endDate, contest.timezone) || '—' %></td></tr>
-      <tr><th scope="row">Created</th><td><%= formatDateTime(contest.createdAt) %> UTC</td></tr>
-    </tbody>
-  </table>
+  <% if (can('editEvent')) { %>
+    <%- include('../../partials/contestForm', { action: `/contest/${contest.id}/config`, submitLabel: 'Save settings' }) %>
+  <% } else { %>
+    <p class="text-muted">You can change the event's status, but not its settings.</p>
+  <% } %>
 
-  <div class="d-flex gap-2">
-    <button class="btn btn-outline-primary btn-sm" disabled>Edit event<%= can('editEvent') ? '' : ' (not permitted)' %></button>
-    <% if (can('deleteEvent')) { %><button class="btn btn-outline-danger btn-sm" disabled>Delete event</button><% } %>
-  </div>
+  <% if (can('deleteEvent')) { %>
+    <section class="card border-danger mt-5">
+      <div class="card-body">
+        <h2 class="h5 text-danger">Delete event</h2>
+        <p class="small">The event disappears from Zury for everyone. It is kept in the database and logged, but there is no undo button yet.</p>
+        <form method="post" action="/contest/<%= contest.id %>/delete" class="row g-2 align-items-end">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-sm-6 col-md-4">
+            <label class="form-label small" for="confirmation">Type <code><%= contest.slug %></code> to confirm</label>
+            <input class="form-control form-control-sm" id="confirmation" name="confirmation" autocomplete="off">
+          </div>
+          <div class="col-auto"><button type="submit" class="btn btn-sm btn-danger">Delete</button></div>
+        </form>
+      </div>
+    </section>
+  <% } %>
 </div>

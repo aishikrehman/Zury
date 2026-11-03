@@ -1,7 +1,12 @@
 const prisma = require('../config/prisma');
 const { STATUS_GROUPS, CONTEST_TYPES } = require('../utils/contestLabels');
 
-const PUBLIC_WHERE = { visibility: 'public', status: { not: 'draft' } };
+const PUBLIC_WHERE = { visibility: 'public', status: { not: 'draft' }, deletedAt: null };
+const SORTS = {
+  newest: [{ startDate: 'desc' }, { id: 'desc' }],
+  soonest: [{ startDate: 'asc' }, { id: 'asc' }],
+  title: [{ title: 'asc' }],
+};
 
 // Draft and private events are visible only to their members and to those
 // with management authority over them (platform roles, local admins).
@@ -33,16 +38,17 @@ function listByGroup(group, take = 6) {
   });
 }
 
-async function listPublic({ group, type, wiki, page = 1, perPage = 12 }) {
+async function listPublic({ group, type, wiki, q, sort, page = 1, perPage = 12 }) {
   const where = { ...PUBLIC_WHERE };
   if (STATUS_GROUPS[group]) where.status = { in: STATUS_GROUPS[group] };
   if (CONTEST_TYPES[type]) where.type = type;
   if (wiki) where.primaryWiki = wiki;
+  if (q) where.OR = [{ title: { contains: q } }, { organizingCommunity: { contains: q } }];
 
   const [items, total, wikis] = await Promise.all([
     prisma.contest.findMany({
       where,
-      orderBy: [{ startDate: 'desc' }, { id: 'desc' }],
+      orderBy: SORTS[sort] || SORTS.newest,
       select: CARD_SELECT,
       skip: (page - 1) * perPage,
       take: perPage,
@@ -56,7 +62,7 @@ async function listPublic({ group, type, wiki, page = 1, perPage = 12 }) {
 // A user's events with all their roles in each, newest first.
 async function listForUser(userId, { publicOnly = false } = {}) {
   const memberships = await prisma.contestMembership.findMany({
-    where: { userId, status: 'active', ...(publicOnly && { contest: PUBLIC_WHERE }) },
+    where: { userId, status: 'active', contest: publicOnly ? PUBLIC_WHERE : { deletedAt: null } },
     include: { contest: { select: CARD_SELECT } },
     orderBy: { contest: { startDate: 'desc' } },
   });
@@ -84,4 +90,13 @@ function overrides(contestId) {
   });
 }
 
-module.exports = { isVisible, listByGroup, listPublic, listForUser, members, overrides };
+function activity(contestId, take = 100) {
+  return prisma.auditLog.findMany({
+    where: { contestId },
+    orderBy: { id: 'desc' },
+    take,
+    include: { actor: { select: { username: true } } },
+  });
+}
+
+module.exports = { SORTS, isVisible, listByGroup, listPublic, listForUser, members, overrides, activity };

@@ -1,0 +1,17 @@
+<div class="container py-5">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb small"><li class="breadcrumb-item"><a href="/events">Events</a></li><li class="breadcrumb-item active">Create</li></ol></nav>
+  <h1 class="h3">Create an event</h1>
+  <p class="text-muted">Step 1 of 2: what kind of event is it? The type can't be changed later.</p>
+  <div class="row g-3">
+    <% Object.entries(types).forEach(([key, t]) => { %>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h2 class="h5"><a class="stretched-link text-decoration-none" href="/events/create?type=<%= key %>"><%= t.label %></a></h2>
+            <p class="mb-0 text-muted"><%= t.description %></p>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>

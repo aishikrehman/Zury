@@ -1,30 +1,101 @@
+<%
+  const tz = contest.timezone;
+  const timeline = dateFields.filter(([key]) => contest[key]).map(([key, label]) => ({ label, at: contest[key] }));
+  const showParticipants = !settings.anonymousParticipants || can('manageParticipants');
+  const enabled = featureFields.filter(([key]) => settings[key]);
+  const display = (f, value) => {
+    if (f.type === 'bool') return value ? 'Yes' : 'No';
+    if (f.type === 'choices') return [].concat(value).map((k) => f.choices[k] || k).join(', ');
+    if (f.type === 'list') return value.length ? value.join(', ') : '—';
+    if (f.type === 'int' && value === 0 && /max/i.test(f.key)) return 'No limit';
+    return value === '' ? '—' : value;
+  };
+%>
 <div class="container py-5">
   <%- include('../../partials/contestHeader', { active: 'overview' }) %>
 
   <div class="row g-4">
     <div class="col-lg-8">
-      <% if (contest.description) { %><p class="lead"><%= contest.description %></p><% } %>
+      <% if (contest.description) { %><p class="lead" style="white-space: pre-line"><%= contest.description %></p><% } %>
+
+      <h2 class="h5 mt-4">Timeline <span class="small text-muted fw-normal">(<%= tz %>)</span></h2>
+      <% if (!timeline.length) { %>
+        <p class="text-muted">Dates haven't been set yet.</p>
+      <% } else { %>
+        <ul class="list-group list-group-flush mb-4">
+          <% timeline.forEach((t) => { %>
+            <li class="list-group-item d-flex justify-content-between px-0">
+              <span><%= t.label %></span><span class="text-muted"><%= formatDateTime(t.at, tz) %></span>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+
+      <h2 class="h5">Details</h2>
       <dl class="row">
-        <dt class="col-sm-4">Dates</dt>
-        <dd class="col-sm-8">
-          <% if (contest.startDate) { %><%= formatDate(contest.startDate, contest.timezone) %> – <%= formatDate(contest.endDate, contest.timezone) %> <span class="text-muted small">(<%= contest.timezone %>)</span><% } else { %>Not set<% } %>
-        </dd>
-        <dt class="col-sm-4">Primary wiki</dt><dd class="col-sm-8"><%= contest.primaryWiki %></dd>
+        <% if (contest.organizingCommunity) { %><dt class="col-sm-4">Organized by</dt><dd class="col-sm-8"><%= contest.organizingCommunity %></dd><% } %>
+        <dt class="col-sm-4">Wikis</dt><dd class="col-sm-8"><%= [contest.primaryWiki, ...additionalWikis].join(', ') %></dd>
         <dt class="col-sm-4">Language</dt><dd class="col-sm-8"><%= contest.language %></dd>
+        <% if (contest.contactInfo) { %><dt class="col-sm-4">Contact</dt><dd class="col-sm-8"><%= contest.contactInfo %></dd><% } %>
         <dt class="col-sm-4">Organizers</dt>
         <dd class="col-sm-8">
           <% if (!organizers.length) { %><span class="text-muted">None listed</span><% } %>
           <% organizers.forEach((u, i) => { %><a href="<%= userPath(u.username) %>"><%= u.username %></a><%= i < organizers.length - 1 ? ', ' : '' %><% }) %>
         </dd>
-        <dt class="col-sm-4">Jury</dt>
-        <dd class="col-sm-8"><%= jury.length %> member<%= jury.length === 1 ? '' : 's' %></dd>
+        <% if (settings.juryReviewEnabled) { %><dt class="col-sm-4">Jury</dt><dd class="col-sm-8"><%= jury.length %> member<%= jury.length === 1 ? '' : 's' %></dd><% } %>
         <dt class="col-sm-4">Participants</dt>
-        <dd class="col-sm-8"><%= participantCount %></dd>
+        <dd class="col-sm-8">
+          <%= participantCount %><%= settings.participantLimit ? ` of ${settings.participantLimit}` : '' %>
+          <% if (showParticipants && participants.length) { %>
+            <details class="small"><summary>Show names</summary>
+              <% participants.forEach((u, i) => { %><a href="<%= userPath(u.username) %>"><%= u.username %></a><%= i < participants.length - 1 ? ', ' : '' %><% }) %>
+            </details>
+          <% } %>
+        </dd>
       </dl>
-      <p class="text-muted small">Submissions, jury review and results will appear here in later phases.</p>
+
+      <h2 class="h5 mt-4">Rules</h2>
+      <ul class="small">
+        <li><%= PARTICIPATION_MODES[settings.participationMode] %>.</li>
+        <% if (settings.minAccountAgeDays) { %><li>Wikimedia account at least <%= settings.minAccountAgeDays %> days old.</li><% } %>
+        <% if (settings.minEditCount) { %><li>At least <%= settings.minEditCount %> edits across Wikimedia projects.</li><% } %>
+        <% if (settings.registrationRequired) { %><li>Register before submitting.</li><% } %>
+        <% typeDef.fields.forEach((f) => { %><li><%= f.label %>: <%= display(f, typeConfig[f.key]) %></li><% }) %>
+      </ul>
+      <% if (enabled.length) { %>
+        <p class="small mb-0">
+          <% enabled.forEach(([, label]) => { %><span class="badge text-bg-light border me-1"><%= label %></span><% }) %>
+        </p>
+      <% } %>
     </div>
 
     <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h2 class="h6">Take part</h2>
+          <% if (isParticipant) { %>
+            <p class="small text-success mb-2">You're a participant.</p>
+            <% if (!['completed', 'archived'].includes(contest.status)) { %>
+              <form method="post" action="/contest/<%= contest.id %>/leave">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Leave event</button>
+              </form>
+            <% } %>
+          <% } else if (!currentUser) { %>
+            <a class="btn btn-sm btn-primary" href="/login">Log in to join</a>
+          <% } else if (eligibility.eligible) { %>
+            <form method="post" action="/contest/<%= contest.id %>/join">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-primary" type="submit">Join this event</button>
+            </form>
+          <% } else { %>
+            <ul class="small text-muted mb-0 ps-3">
+              <% eligibility.reasons.forEach((r) => { %><li><%= r %></li><% }) %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-body">
           <h2 class="h6">Your access to this event</h2>

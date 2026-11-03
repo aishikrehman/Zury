@@ -20,6 +20,8 @@ model User {
   avatarUrl             String?
   homeWiki              String?
   wikimediaRegisteredAt DateTime?
+  // Global edit count from CentralAuth, refreshed with rights; used for eligibility.
+  globalEditCount       Int?
   preferredLanguage     String?
   timezone              String?
   status                String    @default("active")
@@ -35,7 +37,8 @@ model User {
   memberships          ContestMembership[] @relation("MembershipHolder")
   membershipsAssigned  ContestMembership[] @relation("MembershipAssigner")
   permissionOverrides  ContestPermission[]
-  contestsCreated      Contest[]
+  contestsCreated      Contest[]           @relation("ContestCreator")
+  contestsDeleted      Contest[]           @relation("ContestDeleter")
   auditLogs            AuditLog[]
 }
 
@@ -70,30 +73,87 @@ model UserWikiRole {
 }
 
 model Contest {
-  id          Int       @id @default(autoincrement())
-  slug        String    @unique
-  title       String
-  description String    @default("")
-  type        String
-  status      String    @default("draft")
-  visibility  String    @default("public")
-  primaryWiki String
-  language    String    @default("en")
-  timezone    String    @default("UTC")
-  startDate   DateTime?
-  endDate     DateTime?
+  id                  Int       @id @default(autoincrement())
+  slug                String    @unique
+  title               String
+  description         String    @default("")
+  type                String
+  status              String    @default("draft")
+  // "auto": status follows the dates once published. "manual": pinned by an organizer.
+  statusMode          String    @default("auto")
+  visibility          String    @default("public")
+  organizingCommunity String    @default("")
+  primaryWiki         String
+  // JSON array of wiki database names.
+  additionalWikis     String    @default("[]")
+  language            String    @default("en")
+  timezone            String    @default("UTC")
+  contactInfo         String    @default("")
+  logoUrl             String?
+  bannerUrl           String?
+
+  // All stored in UTC; entered and shown in the event's timezone.
+  registrationOpensAt  DateTime?
+  registrationClosesAt DateTime?
+  startDate            DateTime?
+  endDate              DateTime?
+  submissionOpensAt    DateTime?
+  submissionDeadline   DateTime?
+  reviewOpensAt        DateTime?
+  reviewDeadline       DateTime?
+  appealDeadline       DateTime?
+  resultsAnnouncedAt   DateTime?
+
   isDemo      Boolean   @default(false)
   createdById Int?
+  deletedAt   DateTime?
+  deletedById Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  createdBy           User?               @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy           User?               @relation("ContestCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  deletedBy           User?               @relation("ContestDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
+  settings            ContestSettings?
   memberships         ContestMembership[]
   permissionOverrides ContestPermission[]
   auditLogs           AuditLog[]
 
   @@index([status, visibility])
   @@index([primaryWiki])
+  @@index([deletedAt])
+}
+
+// Per-event feature switches and participation rules. Type-specific options
+// (validated against src/events/eventTypes.js) are the only JSON here.
+model ContestSettings {
+  contestId Int @id
+
+  juryReviewEnabled               Boolean @default(true)
+  appealsEnabled                  Boolean @default(false)
+  registrationEnabled             Boolean @default(true)
+  massSubmissionEnabled           Boolean @default(false)
+  autoValidationEnabled           Boolean @default(true)
+  contributionDiscoveryEnabled    Boolean @default(false)
+  badgesEnabled                   Boolean @default(false)
+  publicStatisticsEnabled         Boolean @default(true)
+  participantNotificationsEnabled Boolean @default(true)
+
+  registrationRequired        Boolean @default(false)
+  // individual | team | both
+  participationMode           String  @default("individual")
+  minAccountAgeDays           Int     @default(0)
+  minEditCount                Int     @default(0)
+  participantLimit            Int?
+  allowJuryParticipation      Boolean @default(false)
+  allowOrganizerParticipation Boolean @default(false)
+  anonymousParticipants       Boolean @default(false)
+  // JSON array of namespace numbers; empty means the event type's default.
+  eligibleNamespaces          String  @default("[]")
+  typeConfig                  String  @default("{}")
+
+  updatedAt DateTime @updatedAt
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
 }
 
 // Event-level roles: organizer, jury, participant, viewer. A user may hold several.

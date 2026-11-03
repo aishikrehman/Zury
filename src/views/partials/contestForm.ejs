@@ -1,0 +1,207 @@
+<%#
+  Shared by create and configure. Expects: form, errors, type, typeDef, action, submitLabel.
+%>
+<%
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const v = (k) => (form[k] == null ? '' : Array.isArray(form[k]) ? form[k].join('\n') : form[k]);
+  const inv = (k) => (errors[k] ? ' is-invalid' : '');
+  const err = (k) => (errors[k] ? `<div class="invalid-feedback d-block">${esc(errors[k])}</div>` : '');
+  const on = (k) => form[k] === true || form[k] === 'on' || form[k] === 'true';
+  const wikiScope = eventWikiScope(subject);
+  const errorCount = Object.keys(errors).length;
+%>
+<% if (errorCount) { %>
+  <div class="alert alert-danger" role="alert">Please fix the <%= errorCount %> highlighted field<%= errorCount === 1 ? '' : 's' %> below.</div>
+<% } %>
+
+<form method="post" action="<%= action %>" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <input type="hidden" name="type" value="<%= type %>">
+
+  <fieldset class="mb-5">
+    <legend class="h5">Basics</legend>
+    <div class="row g-3">
+      <div class="col-md-8">
+        <label class="form-label" for="title">Title</label>
+        <input class="form-control<%= inv('title') %>" id="title" name="title" maxlength="200" required value="<%= v('title') %>">
+        <%- err('title') %>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="slug">Slug</label>
+        <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" aria-describedby="slugHelp">
+        <div id="slugHelp" class="form-text">Short identifier. Leave blank to generate from the title.</div>
+        <%- err('slug') %>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="description">Description</label>
+        <textarea class="form-control<%= inv('description') %>" id="description" name="description" rows="4" maxlength="5000"><%= v('description') %></textarea>
+        <%- err('description') %>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="organizingCommunity">Organizing community</label>
+        <input class="form-control<%= inv('organizingCommunity') %>" id="organizingCommunity" name="organizingCommunity" maxlength="200" value="<%= v('organizingCommunity') %>" placeholder="e.g. Wikimedia Bangladesh">
+        <%- err('organizingCommunity') %>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="primaryWiki">Primary wiki</label>
+        <input class="form-control<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" maxlength="64" value="<%= v('primaryWiki') %>" placeholder="bnwiki" aria-describedby="wikiHelp">
+        <div id="wikiHelp" class="form-text">
+          Database name, e.g. bnwiki, commonswiki, wikidatawiki.
+          <% if (wikiScope) { %>You can use: <%= wikiScope.length ? wikiScope.join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.<% } %>
+        </div>
+        <%- err('primaryWiki') %>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="additionalWikis">Additional wikis</label>
+        <textarea class="form-control<%= inv('additionalWikis') %>" id="additionalWikis" name="additionalWikis" rows="2" placeholder="One per line"><%= v('additionalWikis') %></textarea>
+        <%- err('additionalWikis') %>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="language">Language</label>
+        <input class="form-control<%= inv('language') %>" id="language" name="language" maxlength="35" value="<%= v('language') %>">
+        <%- err('language') %>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="timezone">Timezone</label>
+        <select class="form-select<%= inv('timezone') %>" id="timezone" name="timezone">
+          <% TIMEZONES.forEach((tz) => { %><option value="<%= tz %>"<%= v('timezone') === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
+        </select>
+        <%- err('timezone') %>
+      </div>
+      <div class="col-md-6">
+        <span class="form-label d-block">Visibility</span>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="visibility" id="visPublic" value="public"<%= v('visibility') !== 'private' ? ' checked' : '' %>>
+          <label class="form-check-label" for="visPublic">Public</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="visibility" id="visPrivate" value="private"<%= v('visibility') === 'private' ? ' checked' : '' %>>
+          <label class="form-check-label" for="visPrivate">Private (members only)</label>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="contactInfo">Contact</label>
+        <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="Talk page, email list or similar">
+        <%- err('contactInfo') %>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="logoUrl">Logo URL</label>
+        <input class="form-control<%= inv('logoUrl') %>" id="logoUrl" name="logoUrl" value="<%= v('logoUrl') %>" placeholder="https://upload.wikimedia.org/...">
+        <%- err('logoUrl') %>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="bannerUrl">Banner URL</label>
+        <input class="form-control<%= inv('bannerUrl') %>" id="bannerUrl" name="bannerUrl" value="<%= v('bannerUrl') %>" placeholder="https://upload.wikimedia.org/...">
+        <%- err('bannerUrl') %>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="mb-5">
+    <legend class="h5">Dates</legend>
+    <p class="form-text mt-0">In the event's timezone (<%= v('timezone') || 'UTC' %>). Start and end are needed before publishing; the rest are optional.</p>
+    <div class="row g-3">
+      <% DATE_FIELDS.forEach(([key, label]) => { %>
+        <div class="col-sm-6 col-lg-4">
+          <label class="form-label" for="<%= key %>"><%= label %></label>
+          <input type="datetime-local" class="form-control<%= inv(key) %>" id="<%= key %>" name="<%= key %>" value="<%= v(key) %>">
+          <%- err(key) %>
+        </div>
+      <% }) %>
+    </div>
+  </fieldset>
+
+  <fieldset class="mb-5">
+    <legend class="h5">Participation</legend>
+    <div class="row g-3">
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="participationMode">Who can take part</label>
+        <select class="form-select" id="participationMode" name="participationMode">
+          <% Object.entries(PARTICIPATION_MODES).forEach(([key, label]) => { %><option value="<%= key %>"<%= v('participationMode') === key ? ' selected' : '' %>><%= label %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="minAccountAgeDays">Minimum account age (days)</label>
+        <input type="number" min="0" class="form-control<%= inv('minAccountAgeDays') %>" id="minAccountAgeDays" name="minAccountAgeDays" value="<%= v('minAccountAgeDays') %>">
+        <%- err('minAccountAgeDays') %>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="minEditCount">Minimum global edits</label>
+        <input type="number" min="0" class="form-control<%= inv('minEditCount') %>" id="minEditCount" name="minEditCount" value="<%= v('minEditCount') %>">
+        <%- err('minEditCount') %>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="participantLimit">Participant limit</label>
+        <input type="number" min="1" class="form-control<%= inv('participantLimit') %>" id="participantLimit" name="participantLimit" value="<%= v('participantLimit') %>" placeholder="No limit">
+        <%- err('participantLimit') %>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="eligibleNamespaces">Eligible namespaces</label>
+        <input class="form-control<%= inv('eligibleNamespaces') %>" id="eligibleNamespaces" name="eligibleNamespaces" value="<%= v('eligibleNamespaces') %>" placeholder="Default: <%= typeDef.defaultNamespaces.join(', ') %>">
+        <%- err('eligibleNamespaces') %>
+      </div>
+      <div class="col-lg-9">
+        <% [
+          ['registrationRequired', 'Participants must register before submitting'],
+          ['allowJuryParticipation', 'Jury members may also participate'],
+          ['allowOrganizerParticipation', 'Organizers may also participate'],
+          ['anonymousParticipants', 'Hide participant names from the public'],
+        ].forEach(([key, label]) => { %>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="<%= key %>" name="<%= key %>"<%= on(key) ? ' checked' : '' %>>
+            <label class="form-check-label" for="<%= key %>"><%= label %></label>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="mb-5">
+    <legend class="h5">Features</legend>
+    <div class="row g-2">
+      <% FEATURE_FIELDS.forEach(([key, label, help]) => { %>
+        <div class="col-md-6 col-lg-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="<%= key %>" name="<%= key %>"<%= on(key) ? ' checked' : '' %>>
+            <label class="form-check-label" for="<%= key %>"><%= label %></label>
+            <div class="form-text mt-0"><%= help %></div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </fieldset>
+
+  <fieldset class="mb-5">
+    <legend class="h5"><%= typeDef.label %> settings</legend>
+    <div class="row g-3">
+      <% typeDef.fields.forEach((f) => { const name = 'type_' + f.key; %>
+        <div class="<%= f.type === 'list' ? 'col-md-6' : 'col-sm-6 col-lg-4' %>">
+          <% if (f.type === 'bool') { %>
+            <div class="form-check mt-md-4">
+              <input class="form-check-input" type="checkbox" id="<%= name %>" name="<%= name %>"<%= on(name) ? ' checked' : '' %>>
+              <label class="form-check-label" for="<%= name %>"><%= f.label %></label>
+            </div>
+          <% } else if (f.type === 'choices') { const selected = [].concat(form[name] || []); %>
+            <span class="form-label d-block"><%= f.label %></span>
+            <% Object.entries(f.choices).forEach(([key, label]) => { %>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="<%= name %>_<%= key %>" name="<%= name %>" value="<%= key %>"<%= selected.includes(key) ? ' checked' : '' %>>
+                <label class="form-check-label" for="<%= name %>_<%= key %>"><%= label %></label>
+              </div>
+            <% }) %>
+          <% } else if (f.type === 'list') { %>
+            <label class="form-label" for="<%= name %>"><%= f.label %></label>
+            <textarea class="form-control<%= inv(name) %>" id="<%= name %>" name="<%= name %>" rows="3"><%= v(name) %></textarea>
+          <% } else { %>
+            <label class="form-label" for="<%= name %>"><%= f.label %></label>
+            <input class="form-control<%= inv(name) %>" id="<%= name %>" name="<%= name %>" <%= f.type === 'int' ? `type=number min=${f.min} max=${f.max}` : '' %> value="<%= v(name) %>">
+          <% } %>
+          <% if (f.help) { %><div class="form-text"><%= f.help %></div><% } %>
+          <%- err(name) %>
+        </div>
+      <% }) %>
+    </div>
+  </fieldset>
+
+  <button type="submit" class="btn btn-primary"><%= submitLabel %></button>
+</form>

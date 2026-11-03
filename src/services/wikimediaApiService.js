@@ -15,29 +15,42 @@ async function apiGet(params) {
   return data;
 }
 
+function normalize(info) {
+  const registration = info.registration ? new Date(info.registration) : null;
+  return {
+    id: Number(info.id),
+    name: info.name,
+    home: typeof info.home === 'string' ? info.home : null,
+    registeredAt: registration && !Number.isNaN(registration.getTime()) ? registration : null,
+    editCount: Number.isInteger(info.editcount) ? info.editcount : null,
+    globalGroups: Array.isArray(info.groups) ? info.groups : [],
+    localGroups: (Array.isArray(info.merged) ? info.merged : [])
+      .filter((m) => typeof m.wiki === 'string' && Array.isArray(m.groups) && m.groups.length)
+      .map((m) => ({ wiki: m.wiki, groups: m.groups })),
+  };
+}
+
 // Returns null when the account can't be looked up; callers must then keep
 // whatever was verified before rather than treat the user as having no rights.
-async function fetchGlobalUserInfo(centralId) {
+async function lookup(params, label) {
   try {
-    const data = await apiGet({
-      action: 'query',
-      meta: 'globaluserinfo',
-      guiid: String(centralId),
-      guiprop: 'groups|merged',
-    });
+    const data = await apiGet({ action: 'query', meta: 'globaluserinfo', guiprop: 'groups|merged|editcount', ...params });
     const info = data?.query?.globaluserinfo;
-    if (!info || info.missing || Number(info.id) !== Number(centralId)) return null;
-    return {
-      home: typeof info.home === 'string' ? info.home : null,
-      globalGroups: Array.isArray(info.groups) ? info.groups : [],
-      localGroups: (Array.isArray(info.merged) ? info.merged : [])
-        .filter((m) => typeof m.wiki === 'string' && Array.isArray(m.groups) && m.groups.length)
-        .map((m) => ({ wiki: m.wiki, groups: m.groups })),
-    };
+    if (!info || info.missing || !Number.isInteger(Number(info.id)) || !info.name) return null;
+    return normalize(info);
   } catch (err) {
-    console.error(`globaluserinfo lookup failed for central ID ${centralId}: ${err.message}`);
+    console.error(`globaluserinfo lookup failed for ${label}: ${err.message}`);
     return null;
   }
 }
 
-module.exports = { fetchGlobalUserInfo };
+async function fetchGlobalUserInfo(centralId) {
+  const info = await lookup({ guiid: String(centralId) }, `central ID ${centralId}`);
+  return info && info.id === Number(centralId) ? info : null;
+}
+
+function fetchGlobalUserInfoByName(username) {
+  return lookup({ guiuser: username }, `"${username}"`);
+}
+
+module.exports = { fetchGlobalUserInfo, fetchGlobalUserInfoByName };

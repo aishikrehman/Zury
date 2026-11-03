@@ -48,7 +48,9 @@ async function callback(req, res, next) {
     }
     // If the lookup failed, previously verified rights stay until they expire.
     if (globalInfo) {
-      await rightsService.replaceVerifiedRights(user.id, rightsService.extractTrackedRights(globalInfo));
+      await rightsService.replaceVerifiedRights(user.id, rightsService.extractTrackedRights(globalInfo), {
+        editCount: globalInfo.editCount,
+      });
     }
 
     const returnTo = safeReturnTo(req.session.returnTo);

@@ -60,12 +60,20 @@ function createMockWikimedia({ consumerKey, consumerSecret, user }) {
     if (url.pathname === '/w/api.php') {
       log.push({ step: 'globaluserinfo', userAgent: req.headers['user-agent'], params: Object.fromEntries(url.searchParams) });
       if (mock.apiDown) return send(503, 'Service Unavailable');
-      const found = url.searchParams.get('guiid') === String(user.wikimediaId);
+      const byId = url.searchParams.get('guiid');
+      const byName = url.searchParams.get('guiuser');
+      const target = [user, ...(mock.extraUsers || [])].find((u) => (byId ? String(u.wikimediaId) === byId : u.username === byName));
+      const found = Boolean(target) && target === user;
+      if (target && target !== user) {
+        return send(200, JSON.stringify({ query: { globaluserinfo: { id: target.wikimediaId, name: target.username, home: target.homeWiki, registration: target.registration, editcount: target.editCount } } }), 'application/json');
+      }
       const info = found
         ? {
             id: user.wikimediaId,
             name: user.username,
             home: user.homeWiki,
+            registration: user.registration,
+            editcount: user.editCount,
             groups: user.globalGroups || [],
             merged: [
               { wiki: user.homeWiki, url: 'https://example.org' },

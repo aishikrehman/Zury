@@ -7,8 +7,12 @@ const env = require('./config/env');
 const format = require('./utils/format');
 const contestLabels = require('./utils/contestLabels');
 const { PLATFORM_ROLES, EVENT_ROLES } = require('./permissions/registry');
+const { TIMEZONES } = require('./utils/time');
+const { FEATURE_FIELDS, DATE_FIELDS, PARTICIPATION_MODES } = require('./services/contestFormService');
+const { eventWikiScope } = require('./services/permissionService');
 const { attachUser } = require('./middleware/auth');
 const { csrfProtection } = require('./middleware/csrf');
+const { flashMessages } = require('./middleware/flash');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -20,7 +24,16 @@ app.set('layout', 'layout');
 
 if (env.nodeEnv === 'production') app.set('trust proxy', 1);
 
-Object.assign(app.locals, format, contestLabels, { PLATFORM_ROLES, EVENT_ROLES, demoMode: env.demoMode });
+Object.assign(app.locals, format, contestLabels, {
+  PLATFORM_ROLES,
+  EVENT_ROLES,
+  TIMEZONES,
+  FEATURE_FIELDS,
+  DATE_FIELDS,
+  PARTICIPATION_MODES,
+  eventWikiScope,
+  demoMode: env.demoMode,
+});
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -54,6 +67,7 @@ app.use(
 
 app.use(attachUser);
 app.use(csrfProtection);
+app.use(flashMessages);
 
 app.use('/', require('./routes'));
 app.use('/', require('./routes/auth'));

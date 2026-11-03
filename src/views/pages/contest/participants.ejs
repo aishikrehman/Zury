@@ -1,33 +1,95 @@
+<% const roleOrder = Object.keys(EVENT_ROLES); %>
 <div class="container py-5">
   <%- include('../../partials/contestHeader', { active: 'people' }) %>
 
-  <h2 class="h5">Members</h2>
-  <div class="table-responsive">
-    <table class="table table-sm align-middle">
-      <thead><tr><th scope="col">User</th><th scope="col">Role</th><th scope="col">Home wiki</th><th scope="col">Since</th></tr></thead>
-      <tbody>
-        <% if (!members.length) { %><tr><td colspan="4" class="text-muted">No members yet.</td></tr><% } %>
-        <% members.forEach((m) => { %>
-          <tr>
-            <td><a href="<%= userPath(m.user.username) %>"><%= m.user.username %></a></td>
-            <td><span class="badge rounded-pill text-bg-primary"><%= EVENT_ROLES[m.role] ? EVENT_ROLES[m.role].label : m.role %></span></td>
-            <td><%= m.user.homeWiki || '—' %></td>
-            <td><%= formatDate(m.assignedAt, contest.timezone) %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+  <% if (roleOptions.length) { %>
+    <form method="post" action="/contest/<%= contest.id %>/members" class="row g-2 align-items-end mb-4">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="col-sm-5 col-md-4">
+        <label class="form-label small" for="memberUsername">Wikimedia username</label>
+        <input class="form-control form-control-sm" id="memberUsername" name="username" required maxlength="85" autocomplete="off">
+      </div>
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label small" for="memberRole">Role</label>
+        <select class="form-select form-select-sm" id="memberRole" name="role">
+          <% roleOptions.forEach(([key, role]) => { %><option value="<%= key %>"><%= role.label %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Add</button></div>
+      <div class="col-12 form-text mt-1">People who haven't used Zury yet are looked up on Wikimedia and added.</div>
+    </form>
+  <% } %>
 
-  <h2 class="h5 mt-4">Permission overrides</h2>
+  <% roleOrder.forEach((role) => { const list = members.filter((m) => m.role === role); %>
+    <h2 class="h6 mt-4"><%= EVENT_ROLES[role].plural %> <span class="text-muted fw-normal">(<%= list.length %>)</span></h2>
+    <% if (!list.length) { %>
+      <p class="small text-muted">None.</p>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-2">
+          <tbody>
+            <% list.forEach((m) => { %>
+              <tr>
+                <td style="width: 40%"><a href="<%= userPath(m.user.username) %>"><%= m.user.username %></a></td>
+                <td class="small text-muted"><%= m.user.homeWiki || '' %></td>
+                <td class="small text-muted">since <%= formatDate(m.assignedAt, contest.timezone) %></td>
+                <td class="text-end">
+                  <% if (can(ROLE_MANAGEMENT_PERMISSION[m.role])) { %>
+                    <form method="post" action="/contest/<%= contest.id %>/members/<%= m.id %>/remove" class="d-inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn-sm btn-link text-danger p-0" type="submit">Remove</button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  <% }) %>
+
+  <h2 class="h5 mt-5">Permission overrides</h2>
+  <p class="small text-muted">Give or take away a single permission for one person in this event. Overrides never reduce the authority of stewards, global sysops or local admins.</p>
   <% if (!overrides.length) { %>
-    <p class="text-muted small">No overrides. Everyone has the standard permissions for their roles.</p>
+    <p class="small text-muted">No overrides.</p>
   <% } else { %>
-    <ul class="small">
+    <ul class="list-unstyled small">
       <% overrides.forEach((o) => { %>
-        <li><%= o.user.username %>: <span class="badge text-bg-<%= o.allowed ? 'success' : 'danger' %>"><%= o.allowed ? 'allowed' : 'denied' %></span> <code><%= o.permission %></code></li>
+        <li class="mb-1">
+          <%= o.user.username %>: <span class="badge text-bg-<%= o.allowed ? 'success' : 'danger' %>"><%= o.allowed ? 'allowed' : 'denied' %></span>
+          <%= permissionLabels[o.permission] || o.permission %> <code class="text-muted"><%= o.permission %></code>
+          <% if (can('manageEvent')) { %>
+            <form method="post" action="/contest/<%= contest.id %>/overrides/<%= o.id %>/remove" class="d-inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-link text-danger p-0 ms-1" type="submit">Remove</button>
+            </form>
+          <% } %>
+        </li>
       <% }) %>
     </ul>
   <% } %>
-  <p class="text-muted small">Adding and removing members arrives with event management (Phase 4).</p>
+  <% if (can('manageEvent')) { %>
+    <form method="post" action="/contest/<%= contest.id %>/overrides" class="row g-2 align-items-end">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label small" for="ovUser">Username</label>
+        <input class="form-control form-control-sm" id="ovUser" name="username" required maxlength="85" autocomplete="off">
+      </div>
+      <div class="col-sm-5 col-md-4">
+        <label class="form-label small" for="ovPermission">Permission</label>
+        <select class="form-select form-select-sm" id="ovPermission" name="permission">
+          <% overridable.forEach((p) => { %><option value="<%= p %>"><%= permissionLabels[p] %> (<%= p %>)</option><% }) %>
+        </select>
+      </div>
+      <div class="col-sm-3 col-md-2">
+        <label class="form-label small" for="ovAllowed">Effect</label>
+        <select class="form-select form-select-sm" id="ovAllowed" name="allowed">
+          <option value="true">Allow</option>
+          <option value="false">Deny</option>
+        </select>
+      </div>
+      <div class="col-auto"><button class="btn btn-sm btn-outline-primary" type="submit">Save override</button></div>
+    </form>
+  <% } %>
 </div>

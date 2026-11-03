@@ -1,6 +1,7 @@
 const prisma = require('../config/prisma');
 const permissionService = require('../services/permissionService');
 const contestService = require('../services/contestService');
+const { defaultSettings } = require('../services/contestFormService');
 const { requireAuth } = require('./auth');
 
 function forbidden() {
@@ -10,19 +11,26 @@ function forbidden() {
 }
 
 // Loads :contestId and switches req.permissions / can() to that event's scope.
-// Events the user may not see return 404 so their existence isn't revealed.
+// Deleted events, and events the user may not see, return 404 so their
+// existence isn't revealed.
 async function loadContest(req, res, next) {
   try {
     const id = Number(req.params.contestId);
-    const contest = Number.isSafeInteger(id) && id > 0 ? await prisma.contest.findUnique({ where: { id } }) : null;
+    const contest =
+      Number.isSafeInteger(id) && id > 0
+        ? await prisma.contest.findFirst({ where: { id, deletedAt: null }, include: { settings: true } })
+        : null;
     const scope = contest && (await permissionService.contestScope(req.subject, contest));
     if (!contest || !contestService.isVisible(contest, scope)) {
       return res.status(404).render('pages/404', { title: 'Event Not Found' });
     }
-    req.contest = contest;
+    const { settings, ...rest } = contest;
+    req.contest = rest;
+    req.settings = settings || { contestId: contest.id, ...defaultSettings(contest.type) };
     req.scope = scope;
     req.permissions = scope.permissions;
-    res.locals.contest = contest;
+    res.locals.contest = rest;
+    res.locals.settings = req.settings;
     res.locals.scope = scope;
     res.locals.can = (permission) => scope.permissions.has(permission);
     next();

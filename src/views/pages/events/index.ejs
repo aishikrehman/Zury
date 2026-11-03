@@ -4,13 +4,18 @@
     const p = new URLSearchParams();
     if (filters.type) p.set('type', filters.type);
     if (filters.wiki) p.set('wiki', filters.wiki);
+    if (filters.q) p.set('q', filters.q);
+    if (filters.sort !== 'newest') p.set('sort', filters.sort);
     Object.entries(extra).forEach(([k, v]) => p.set(k, v));
     const s = p.toString();
     return s ? `?${s}` : '';
   };
 %>
 <div class="container py-5">
-  <h1 class="h3 mb-4"><%= heading %></h1>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><%= heading %></h1>
+    <% if (can('createEvent')) { %><a class="btn btn-primary btn-sm" href="/events/create">Create event</a><% } %>
+  </div>
 
   <ul class="nav nav-pills mb-3">
     <li class="nav-item"><a class="nav-link<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>">All</a></li>
@@ -20,7 +25,19 @@
   </ul>
 
   <form class="row g-2 align-items-end mb-4" method="get" action="<%= base %>">
-    <div class="col-sm-4 col-md-3">
+    <div class="col-sm-12 col-md-3">
+      <label for="q" class="form-label small">Search</label>
+      <input id="q" name="q" type="search" class="form-control form-control-sm" value="<%= filters.q %>" placeholder="Title or community">
+    </div>
+    <div class="col-sm-4 col-md-2">
+      <label for="sort" class="form-label small">Sort</label>
+      <select id="sort" name="sort" class="form-select form-select-sm">
+        <% [['newest', 'Newest first'], ['soonest', 'Oldest first'], ['title', 'Title']].forEach(([key, label]) => { %>
+          <option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-sm-4 col-md-2">
       <label for="type" class="form-label small">Type</label>
       <select id="type" name="type" class="form-select form-select-sm">
         <option value="">All types</option>
@@ -29,7 +46,7 @@
         <% }) %>
       </select>
     </div>
-    <div class="col-sm-4 col-md-3">
+    <div class="col-sm-4 col-md-2">
       <label for="wiki" class="form-label small">Wiki</label>
       <select id="wiki" name="wiki" class="form-select form-select-sm">
         <option value="">All wikis</option>
@@ -40,7 +57,7 @@
     </div>
     <div class="col-auto">
       <button class="btn btn-sm btn-primary" type="submit">Filter</button>
-      <% if (filters.type || filters.wiki) { %><a class="btn btn-sm btn-link" href="<%= base %>">Clear</a><% } %>
+      <% if (filters.type || filters.wiki || filters.q) { %><a class="btn btn-sm btn-link" href="<%= base %>">Clear</a><% } %>
     </div>
   </form>
 

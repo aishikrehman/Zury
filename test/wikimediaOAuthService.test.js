@@ -10,6 +10,8 @@ const USER = {
   username: 'Test User',
   homeWiki: 'bnwiki',
   registered: '20130503042305',
+  registration: '2013-05-03T04:23:05Z',
+  editCount: 1234,
   globalGroups: ['steward', 'global-rollbacker'],
   localGroups: [{ wiki: 'bnwiki', groups: ['sysop', 'bureaucrat'] }],
 };
@@ -60,12 +62,16 @@ test('globaluserinfo lookup by central ID returns home wiki and groups', async (
   const api = require('../src/services/wikimediaApiService');
   const info = await api.fetchGlobalUserInfo(4242);
   assert.deepEqual(info, {
+    id: 4242,
+    name: 'Test User',
+    registeredAt: new Date('2013-05-03T04:23:05Z'),
+    editCount: 1234,
     home: 'bnwiki',
     globalGroups: ['steward', 'global-rollbacker'],
     localGroups: [{ wiki: 'bnwiki', groups: ['sysop', 'bureaucrat'] }],
   });
   const call = mock.log.findLast((e) => e.step === 'globaluserinfo');
-  assert.equal(call.params.guiprop, 'groups|merged');
+  assert.equal(call.params.guiprop, 'groups|merged|editcount');
   assert.match(call.userAgent, /^Zury\//);
 
   assert.equal(await api.fetchGlobalUserInfo(1), null, 'unknown account');

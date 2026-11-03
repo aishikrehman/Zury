@@ -106,6 +106,13 @@ const PLATFORM_ROLES = {
     permissions: ['deleteAnyEvent', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
     globalPermissions: ['createEvent'],
   },
+  'event-creator': {
+    label: 'Event Creator',
+    source: 'zury',
+    scope: 'global',
+    description: 'Trusted community organizer who can create events on any wiki and organizes them.',
+    permissions: ['createEvent'],
+  },
   'platform-admin': {
     label: 'Platform Administrator',
     source: 'zury',
@@ -115,24 +122,50 @@ const PLATFORM_ROLES = {
   },
 };
 
+// Platform-level keys can't be handed out per event.
+const NON_OVERRIDABLE = new Set([
+  'createEvent',
+  'deleteAnyEvent',
+  'editAnyEvent',
+  'manageAnyEvent',
+  'reviewAnyEvent',
+  'accessAdmin',
+  'managePlatformRoles',
+  'manageSiteConfig',
+  'viewAuditLog',
+]);
+const OVERRIDABLE_PERMISSIONS = Object.keys(PERMISSIONS).filter((p) => !NON_OVERRIDABLE.has(p));
+
+// Which event permission is needed to add or remove each event role.
+const ROLE_MANAGEMENT_PERMISSION = {
+  organizer: 'manageEvent',
+  jury: 'manageJury',
+  participant: 'manageParticipants',
+  viewer: 'manageParticipants',
+};
+
 const EVENT_ROLES = {
   organizer: {
     label: 'Organizer',
+    plural: 'Organizers',
     description: 'Runs the event.',
     permissions: ['editOwnEvent', 'deleteOwnEvent', 'manageOwnEvent', 'reviewEvent', 'viewSubmissions', ...EVENT_MANAGEMENT],
   },
   jury: {
     label: 'Jury',
+    plural: 'Jury',
     description: 'Reviews entries.',
     permissions: ['reviewEvent', 'reviewAssignedEntry', 'massReview', 'viewSubmissions', 'viewStatistics'],
   },
   participant: {
     label: 'Participant',
+    plural: 'Participants',
     description: 'Submits entries.',
     permissions: ['submitOwnEntry', 'viewOwnSubmissions', 'createAppeal'],
   },
   viewer: {
     label: 'Viewer',
+    plural: 'Viewers',
     description: 'Can follow a private event.',
     permissions: ['viewSubmissions'],
   },
@@ -156,6 +189,11 @@ function validateRegistry() {
   for (const role of [...Object.values(GLOBAL_GROUP_ROLES), ...Object.values(LOCAL_GROUP_ROLES)]) {
     if (!PLATFORM_ROLES[role]) throw new Error(`Wiki group maps to unknown role "${role}"`);
   }
+  NON_OVERRIDABLE.forEach((p) => known(p, 'NON_OVERRIDABLE'));
+  for (const [role, permission] of Object.entries(ROLE_MANAGEMENT_PERMISSION)) {
+    if (!EVENT_ROLES[role]) throw new Error(`Unknown event role "${role}" in ROLE_MANAGEMENT_PERMISSION`);
+    known(permission, 'ROLE_MANAGEMENT_PERMISSION');
+  }
 }
 
 validateRegistry();
@@ -167,5 +205,7 @@ module.exports = {
   EVENT_ROLES,
   GLOBAL_GROUP_ROLES,
   LOCAL_GROUP_ROLES,
+  OVERRIDABLE_PERMISSIONS,
+  ROLE_MANAGEMENT_PERMISSION,
   validateRegistry,
 };

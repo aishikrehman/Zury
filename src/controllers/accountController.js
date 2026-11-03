@@ -1,7 +1,7 @@
 const userService = require('../services/userService');
 const contestService = require('../services/contestService');
 
-const TIMEZONES = ['UTC', ...Intl.supportedValuesOf('timeZone')];
+const { TIMEZONES } = require('../utils/time');
 
 async function dashboard(req, res, next) {
   try {

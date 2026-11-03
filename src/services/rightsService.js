@@ -17,7 +17,7 @@ function extractTrackedRights(info) {
 
 const rightKey = (r) => `${r.wiki}:${r.rightName}`;
 
-async function replaceVerifiedRights(userId, rights, source = 'globaluserinfo') {
+async function replaceVerifiedRights(userId, rights, { source = 'globaluserinfo', editCount } = {}) {
   const now = new Date();
   await prisma.$transaction(async (tx) => {
     const before = await tx.userWikiRole.findMany({ where: { userId } });
@@ -27,7 +27,10 @@ async function replaceVerifiedRights(userId, rights, source = 'globaluserinfo') 
         data: rights.map((r) => ({ userId, ...r, verifiedAt: now, verificationSource: source })),
       });
     }
-    await tx.user.update({ where: { id: userId }, data: { rightsCheckedAt: now } });
+    await tx.user.update({
+      where: { id: userId },
+      data: { rightsCheckedAt: now, ...(Number.isInteger(editCount) && { globalEditCount: editCount }) },
+    });
 
     const beforeKeys = new Set(before.map(rightKey));
     const afterKeys = new Set(rights.map(rightKey));
@@ -45,7 +48,7 @@ async function replaceVerifiedRights(userId, rights, source = 'globaluserinfo') 
 async function refreshFromWikimedia(user) {
   const info = await wikimediaApi.fetchGlobalUserInfo(user.wikimediaId);
   if (!info) return null;
-  await replaceVerifiedRights(user.id, extractTrackedRights(info));
+  await replaceVerifiedRights(user.id, extractTrackedRights(info), { editCount: info.editCount });
   return info;
 }
 

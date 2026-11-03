@@ -1,0 +1,36 @@
+<%
+  const describe = (e) => {
+    let d = {};
+    try { d = JSON.parse(e.details || '{}'); } catch { d = {}; }
+    const label = (s) => (CONTEST_STATUSES[s] || { label: s }).label;
+    switch (e.action) {
+      case 'contest.created': return 'created the event';
+      case 'contest.updated': return `changed ${(d.changed || []).length} setting${(d.changed || []).length === 1 ? '' : 's'}: ${(d.changed || []).join(', ')}`;
+      case 'contest.statusChanged': return `status ${label(d.from)} → ${label(d.to)}${d.by ? ` (${d.by})` : ''}`;
+      case 'contest.deleted': return 'deleted the event';
+      case 'membership.added': return `added ${d.username} as ${d.role}`;
+      case 'membership.removed': return `removed ${d.username} (${d.role})`;
+      case 'membership.joined': return 'joined as a participant';
+      case 'membership.left': return 'left the event';
+      case 'contestPermission.set': return `${d.allowed ? 'allowed' : 'denied'} ${d.permission} for ${d.username}`;
+      case 'contestPermission.removed': return `removed the ${d.permission} override for ${d.username}`;
+      default: return e.action;
+    }
+  };
+%>
+<div class="container py-5">
+  <%- include('../../partials/contestHeader', { active: 'activity' }) %>
+  <% if (!entries.length) { %>
+    <p class="text-muted">No activity yet.</p>
+  <% } else { %>
+    <ul class="list-group list-group-flush">
+      <% entries.forEach((e) => { %>
+        <li class="list-group-item px-0 small">
+          <span class="text-muted text-nowrap me-2"><%= formatDateTime(e.createdAt, contest.timezone) %></span>
+          <strong><%= e.actor ? e.actor.username : 'Zury' %></strong> <%= describe(e) %>
+        </li>
+      <% }) %>
+    </ul>
+    <p class="small text-muted mt-2">Showing the latest <%= entries.length %> entries, in <%= contest.timezone %>.</p>
+  <% } %>
+</div>

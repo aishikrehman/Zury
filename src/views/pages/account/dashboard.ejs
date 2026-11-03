@@ -35,7 +35,7 @@
         <div class="card-body">
           <h2 class="h6">Platform roles</h2>
           <%- include('../../partials/accessSummary', { s: subject }) %>
-          <% if (can('createEvent')) { %><p class="small mt-2 mb-0 text-success">You can create events.</p><% } %>
+          <% if (can('createEvent')) { %><a class="btn btn-sm btn-primary mt-2" href="/events/create">Create an event</a><% } %>
           <% if (can('accessAdmin')) { %><a class="btn btn-sm btn-dark mt-2" href="/admin">Open administration</a><% } %>
         </div>
       </div>

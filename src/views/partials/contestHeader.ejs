@@ -6,18 +6,30 @@
     <% if (active !== 'overview') { %><li class="breadcrumb-item active text-capitalize"><%= active %></li><% } %>
   </ol>
 </nav>
-<div class="d-flex flex-wrap gap-1 mb-2">
-  <span class="badge text-bg-<%= st.badge %>"><%= st.label %></span>
-  <span class="badge text-bg-light border"><%= CONTEST_TYPES[contest.type] || contest.type %></span>
-  <% if (contest.visibility === 'private') { %><span class="badge text-bg-warning">Private</span><% } %>
+<% if (contest.bannerUrl && active === 'overview') { %>
+  <img src="<%= contest.bannerUrl %>" alt="" class="w-100 rounded mb-3" style="max-height: 220px; object-fit: cover" referrerpolicy="no-referrer">
+<% } %>
+<div class="d-flex align-items-center gap-3">
+  <% if (contest.logoUrl) { %><img src="<%= contest.logoUrl %>" alt="" width="56" height="56" class="rounded" style="object-fit: contain" referrerpolicy="no-referrer"><% } %>
+  <div>
+    <div class="d-flex flex-wrap gap-1 mb-1">
+      <span class="badge text-bg-<%= st.badge %>"><%= st.label %></span>
+      <span class="badge text-bg-light border"><%= CONTEST_TYPES[contest.type] || contest.type %></span>
+      <% if (contest.visibility === 'private') { %><span class="badge text-bg-warning">Private</span><% } %>
+      <% if (contest.statusMode === 'manual' && !['draft', 'cancelled', 'archived'].includes(contest.status)) { %><span class="badge text-bg-light border" title="Status set by an organizer">pinned</span><% } %>
+    </div>
+    <h1 class="h3 mb-0"><%= contest.title %></h1>
+  </div>
 </div>
-<h1 class="h3"><%= contest.title %></h1>
 <ul class="nav nav-tabs my-4">
   <li class="nav-item"><a class="nav-link<%= active === 'overview' ? ' active' : '' %>" href="/contest/<%= contest.id %>">Overview</a></li>
-  <% if (can('manageParticipants')) { %>
+  <% if (can('manageParticipants') || can('manageJury') || can('manageEvent')) { %>
     <li class="nav-item"><a class="nav-link<%= active === 'people' ? ' active' : '' %>" href="/contest/<%= contest.id %>/participants">People</a></li>
   <% } %>
-  <% if (can('manageEvent')) { %>
+  <% if (can('editEvent') || can('manageEvent')) { %>
     <li class="nav-item"><a class="nav-link<%= active === 'configuration' ? ' active' : '' %>" href="/contest/<%= contest.id %>/config">Configuration</a></li>
+  <% } %>
+  <% if (can('manageEvent')) { %>
+    <li class="nav-item"><a class="nav-link<%= active === 'activity' ? ' active' : '' %>" href="/contest/<%= contest.id %>/activity">Activity</a></li>
   <% } %>
 </ul>

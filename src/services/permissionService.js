@@ -65,6 +65,26 @@ function globalPermissions(subject) {
   return platformPermissions(subject, null);
 }
 
+// Which wikis this person may use as an event's primary wiki: any wiki if they
+// can create events through a non-wiki-scoped role, otherwise only wikis where
+// they are a local admin.
+function canUseWikiForEvents(subject, wiki) {
+  for (const role of subject.platformRoles) {
+    const def = PLATFORM_ROLES[role];
+    if (def.scope !== 'wiki' && def.permissions.includes('createEvent')) return true;
+  }
+  return subject.adminWikis.has(wiki);
+}
+
+// null means "any wiki"; otherwise the list of wikis this person may use.
+function eventWikiScope(subject) {
+  for (const role of subject.platformRoles) {
+    const def = PLATFORM_ROLES[role];
+    if (def.scope !== 'wiki' && def.permissions.includes('createEvent')) return null;
+  }
+  return [...subject.adminWikis].sort();
+}
+
 // Pure: combines platform authority with event roles and overrides for one event.
 // Overrides only adjust event-derived permissions; they can't take away platform authority.
 function computeContestScope(subject, contest, memberships = [], overrides = []) {
@@ -110,6 +130,8 @@ module.exports = {
   expand,
   buildSubject,
   globalPermissions,
+  canUseWikiForEvents,
+  eventWikiScope,
   computeContestScope,
   loadSubject,
   contestScope,

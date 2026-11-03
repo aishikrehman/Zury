@@ -41,7 +41,7 @@ test('demo mode is never enabled in production', () => {
 
 test('seed is idempotent', async () => {
   assert.equal(await t.prisma.user.count({ where: { isDemo: true } }), 8);
-  assert.equal(await t.prisma.contest.count({ where: { isDemo: true } }), 7);
+  assert.equal(await t.prisma.contest.count({ where: { isDemo: true } }), 8);
 });
 
 test('public pages show demo events but never private ones', async () => {
@@ -124,9 +124,13 @@ test('platform admins grant and revoke roles with an audit trail', async () => {
 
   const revoke = await t.request(`/admin/users/${target}/roles/revoke`, { cookie: adminCookie, method: 'POST', form: { _csrf: csrf, role: 'platform-admin' } });
   assert.equal(revoke.status, 302);
-  assert.equal(await t.prisma.userGlobalRole.count({ where: { userId: target } }), 0);
+  assert.equal(await t.prisma.userGlobalRole.count({ where: { userId: target, role: 'platform-admin' } }), 0);
 
-  const actions = (await t.prisma.auditLog.findMany({ where: { entityId: String(target), action: { startsWith: 'platformRole.' } } })).map((l) => l.action);
+  const actions = (
+    await t.prisma.auditLog.findMany({
+      where: { entityId: String(target), actorId: ids.user['Platform Admin (demo)'], action: { startsWith: 'platformRole.' } },
+    })
+  ).map((l) => l.action);
   assert.deepEqual(actions.sort(), ['platformRole.granted', 'platformRole.revoked']);
 
   const stewardCookie = await loginAs('Steward (demo)');

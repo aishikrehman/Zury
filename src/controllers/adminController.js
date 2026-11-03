@@ -10,7 +10,7 @@ async function index(req, res, next) {
   try {
     const [users, contests, admins, auditEntries] = await Promise.all([
       prisma.user.count(),
-      prisma.contest.count(),
+      prisma.contest.count({ where: { deletedAt: null } }),
       prisma.userGlobalRole.count({ where: { role: 'platform-admin' } }),
       prisma.auditLog.count(),
     ]);
