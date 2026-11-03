@@ -24,12 +24,10 @@ function assertConfigured() {
   }
 }
 
-// The registered callback is a required prefix (callback override enabled),
-// so the dedicated callback path must be appended to it, not swapped in.
-function buildCallbackUrl() {
-  const base = callbackUrl.endsWith('/') ? callbackUrl : `${callbackUrl}/`;
-  return `${base}auth/callback`;
-}
+// "oob" tells MediaWiki to send the user back to the consumer's registered
+// callback URL (WIKIMEDIA_CALLBACK_URL). This works whether or not the
+// consumer allows callback overrides; Zury handles the return on that URL.
+const OAUTH_CALLBACK = 'oob';
 
 function specialPageUrl(page, params = {}) {
   const url = new URL(oauthBaseUrl);
@@ -50,8 +48,17 @@ async function signedPost(url, token) {
   return { text: (await response.text()).trim(), nonce: oauthData.oauth_nonce };
 }
 
+// Meta-Wiki answers in JSON when format=json is sent; plain OAuth servers use form encoding.
 function parseCredentials(text, step) {
-  const params = new URLSearchParams(text);
+  let params;
+  try {
+    const json = JSON.parse(text);
+    if (json.error) throw new WikimediaOAuthError(`Wikimedia OAuth ${step} failed: ${json.message || json.error}`);
+    params = new URLSearchParams(Object.entries(json).map(([k, v]) => [k, String(v)]));
+  } catch (err) {
+    if (err instanceof WikimediaOAuthError) throw err;
+    params = new URLSearchParams(text);
+  }
   const key = params.get('oauth_token');
   const secret = params.get('oauth_token_secret');
   if (!key || !secret) {
@@ -62,7 +69,7 @@ function parseCredentials(text, step) {
 
 async function getRequestToken() {
   assertConfigured();
-  const url = specialPageUrl('initiate', { format: 'json', oauth_callback: buildCallbackUrl() });
+  const url = specialPageUrl('initiate', { format: 'json', oauth_callback: OAUTH_CALLBACK });
   const { text } = await signedPost(url);
   const { key, secret, params } = parseCredentials(text, 'initiate');
   if (params.get('oauth_callback_confirmed') !== 'true') {
@@ -144,5 +151,4 @@ module.exports = {
   identify,
   verifyIdentityToken,
   parseMediaWikiTimestamp,
-  buildCallbackUrl,
 };

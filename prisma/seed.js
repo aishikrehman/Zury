@@ -6,14 +6,14 @@ const { defaultSettings } = require('../src/services/contestFormService');
 const { readTypeConfig } = require('../src/events/eventTypes');
 
 const DEMO_USERS = [
-  { key: 'steward', username: 'Steward (demo)', homeWiki: 'metawiki', registered: '2009-02-14', edits: 85210, rights: [['*', 'steward']] },
-  { key: 'gsysop', username: 'Global Sysop (demo)', homeWiki: 'enwiki', registered: '2011-06-01', edits: 42377, rights: [['*', 'global-sysop']] },
-  { key: 'bnadmin', username: 'Bn Admin (demo)', homeWiki: 'bnwiki', registered: '2012-03-21', edits: 18450, rights: [['bnwiki', 'sysop']] },
-  { key: 'padmin', username: 'Platform Admin (demo)', homeWiki: 'enwiki', registered: '2015-09-09', edits: 3120, platformRoles: ['platform-admin'] },
-  { key: 'organizer', username: 'Organizer (demo)', homeWiki: 'bnwiki', registered: '2016-01-10', edits: 6204, platformRoles: ['event-creator'] },
-  { key: 'juror', username: 'Juror (demo)', homeWiki: 'commonswiki', registered: '2014-07-30', edits: 9815 },
-  { key: 'participant', username: 'Participant (demo)', homeWiki: 'bnwiki', registered: '2019-11-02', edits: 2417 },
-  { key: 'newcomer', username: 'Newcomer (demo)', homeWiki: 'bnwiki', registered: '2026-08-15', edits: 12 },
+  { key: 'steward', username: 'Mahbub Alam', label: 'Steward', homeWiki: 'metawiki', registered: '2009-02-14', edits: 85210, rights: [['*', 'steward']] },
+  { key: 'gsysop', username: 'Elena Varga', label: 'Global Sysop', homeWiki: 'enwiki', registered: '2011-06-01', edits: 42377, rights: [['*', 'global-sysop']] },
+  { key: 'bnadmin', username: 'Tanvir Hossain', label: 'Bn Admin', homeWiki: 'bnwiki', registered: '2012-03-21', edits: 18450, rights: [['bnwiki', 'sysop']] },
+  { key: 'padmin', username: 'Sadia Karim', label: 'Platform Admin', homeWiki: 'enwiki', registered: '2015-09-09', edits: 3120, platformRoles: ['platform-admin'] },
+  { key: 'organizer', username: 'Nusrat Jahan', label: 'Organizer', homeWiki: 'bnwiki', registered: '2016-01-10', edits: 6204, platformRoles: ['event-creator'] },
+  { key: 'juror', username: 'Farhan Ahmed', label: 'Juror', homeWiki: 'commonswiki', registered: '2014-07-30', edits: 9815 },
+  { key: 'participant', username: 'Rakib Hasan', label: 'Participant', homeWiki: 'bnwiki', registered: '2019-11-02', edits: 2417 },
+  { key: 'newcomer', username: 'Maliha Chowdhury', label: 'Newcomer', homeWiki: 'bnwiki', registered: '2026-08-15', edits: 12 },
 ];
 
 // Dates are midnight in Dhaka unless a time is given.
@@ -176,6 +176,7 @@ async function seedDemoData(prisma, now = new Date()) {
         homeWiki: u.homeWiki,
         wikimediaRegisteredAt: d(u.registered),
         globalEditCount: u.edits,
+        lastLoginAt: new Date(now.getTime() - (i * 9 + 2) * 3600000),
         isDemo: true,
         wikiRoles: { create: (u.rights || []).map(([wiki, rightName]) => ({ wiki, rightName, verificationSource: 'demo' })) },
         globalRoles: { create: (u.platformRoles || []).map((role) => ({ role })) },
@@ -265,7 +266,7 @@ async function seedSubmissions(prisma, users) {
     const contest = await prisma.contest.findUnique({ where: { slug } });
     const wiki = entryType === 'item' ? 'wikidatawiki' : contest.primaryWiki;
     const pageId = 900000 + n;
-    const meta = { exists: true, wiki, pageId, ns: entryType === 'file' ? 6 : 0, title, url: pageUrl(wiki, title), entryType, creator: users[userKey].username.replace(' (demo)', ''), categories: [], ...extra };
+    const meta = { exists: true, wiki, pageId, ns: entryType === 'file' ? 6 : 0, title, url: pageUrl(wiki, title), entryType, creator: users[userKey].username, categories: [], ...extra };
     const submittedAt = new Date(meta.createdAt ? new Date(meta.createdAt).getTime() + 3600000 : contest.startDate.getTime() + 86400000 * (n + 1));
     const history = [{ actorId: users[userKey].id, action: 'submitted', newValue: errors.length ? 'invalid' : 'validated', createdAt: submittedAt }];
     if (!['validated', 'invalid'].includes(status)) {
@@ -373,7 +374,7 @@ if (require.main === module) {
   require('dotenv').config();
   const prisma = require('../src/config/prisma');
   seedDemoData(prisma)
-    .then(({ users, contests, submissions }) => console.log(`Seeded ${users} demo users, ${contests} demo events and ${submissions} submissions.`))
+    .then(({ users, contests, submissions }) => console.log(`Seeded ${users} users, ${contests} events and ${submissions} submissions of sample data.`))
     .catch((err) => {
       console.error(err);
       process.exitCode = 1;

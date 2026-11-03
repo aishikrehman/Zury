@@ -46,9 +46,9 @@ async function logIn(startPath = '/dashboard') {
 
   const requestKey = authorizeUrl.searchParams.get('oauth_token');
   const { verifier, callback } = mock.approve(requestKey);
-  assert.equal(callback, 'http://127.0.0.1:5000/auth/callback');
+  assert.equal(callback, 'oob');
 
-  const cb = await t.request(`/auth/callback?oauth_token=${requestKey}&oauth_verifier=${verifier}`, { cookie: preLoginCookie });
+  const cb = await t.request(`/?oauth_token=${requestKey}&oauth_verifier=${verifier}`, { cookie: preLoginCookie });
   assert.equal(cb.status, 302);
   assert.equal(cb.location, startPath, 'returns to the originally requested page');
   assert.ok(cb.cookie && cb.cookie !== preLoginCookie, 'session id is regenerated on login');

@@ -1,5 +1,6 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const { NAME, LABEL } = require('./helpers/people');
 const { startTestApp, csrfFrom } = require('./helpers/testApp');
 const { createMockWikiApi } = require('./helpers/mockWikiApi');
 
@@ -30,7 +31,7 @@ before(async () => {
   await require('../prisma/seed').seedDemoData(t.prisma);
   ids = {
     contest: Object.fromEntries((await t.prisma.contest.findMany()).map((c) => [c.slug, c.id])),
-    user: Object.fromEntries((await t.prisma.user.findMany()).map((u) => [u.username.replace(' (demo)', ''), u.id])),
+    user: Object.fromEntries((await t.prisma.user.findMany()).map((u) => [(LABEL[u.username] || u.username), u.id])),
   };
 });
 
@@ -104,20 +105,20 @@ test('people outside the event: auto-join when allowed, blocked when not eligibl
 
 test('organizers submit on behalf of participants; others cannot', async () => {
   const organizer = await session('Organizer');
-  const res = await organizer.post(`${wlm()}/submit`, { entries: 'File:Good three.jpg', participant: 'Newcomer (demo)' });
+  const res = await organizer.post(`${wlm()}/submit`, { entries: 'File:Good three.jpg', participant: NAME.Newcomer });
   assert.equal(res.status, 302);
   const s = await t.prisma.submission.findFirst({ where: { title: 'File:Good three.jpg' }, include: { history: true } });
   assert.deepEqual([s.participantId, s.submittedById], [ids.user.Newcomer, ids.user.Organizer]);
-  assert.match(s.history[0].note, /on behalf of Newcomer/);
+  assert.ok(s.history[0].note.includes(`on behalf of ${NAME.Newcomer}`));
   assert.ok(await t.prisma.auditLog.findFirst({ where: { action: 'submissions.created', actorId: ids.user.Organizer } }));
 
-  const notMember = await organizer.post(`${wlm()}/submit/preview`, { entries: 'File:Good three.jpg', participant: 'Global Sysop (demo)' });
+  const notMember = await organizer.post(`${wlm()}/submit/preview`, { entries: 'File:Good three.jpg', participant: NAME['Global Sysop'] });
   assert.match(notMember.body, /not a participant/);
 
   // A participant's "participant" field is ignored: they always submit as themselves.
   const p = await session('Participant');
-  const ignored = await p.post(`${wlm()}/submit/preview`, { entries: 'File:Tiny.jpg', participant: 'Newcomer (demo)' });
-  assert.doesNotMatch(ignored.body, /Newcomer/);
+  const ignored = await p.post(`${wlm()}/submit/preview`, { entries: 'File:Tiny.jpg', participant: NAME.Newcomer });
+  assert.ok(!ignored.body.includes(NAME.Newcomer));
 });
 
 test('submissions are closed outside the window except for organizers', async () => {

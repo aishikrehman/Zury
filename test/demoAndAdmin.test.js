@@ -1,5 +1,6 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const { NAME, LABEL } = require('./helpers/people');
 const { startTestApp, csrfFrom } = require('./helpers/testApp');
 
 let t;
@@ -51,14 +52,14 @@ test('public pages show demo events but never private ones', async () => {
   const events = await t.request('/events?type=photo');
   assert.match(events.body, /Wiki Loves Earth 2026/);
   assert.doesNotMatch(events.body, /Liberation War/);
-  const profile = await t.request(`/users/${encodeURIComponent('Juror (demo)')}`);
+  const profile = await t.request(`/users/${encodeURIComponent(NAME.Juror)}`);
   assert.doesNotMatch(profile.body, /Jury Calibration Round/, 'private membership not shown on public profile');
 });
 
 test('demo login requires a CSRF token and only accepts demo users', async () => {
   const page = await t.request('/demo');
   assert.equal(page.status, 200);
-  const noToken = await t.request('/demo/login', { cookie: page.cookie, method: 'POST', form: { userId: ids.user['Steward (demo)'] } });
+  const noToken = await t.request('/demo/login', { cookie: page.cookie, method: 'POST', form: { userId: ids.user[NAME.Steward] } });
   assert.equal(noToken.status, 403);
 });
 
@@ -74,14 +75,14 @@ test('each demo user gets exactly the access their roles allow', async () => {
     logs: '/admin/logs',
   };
   const expected = {
-    'Steward (demo)': [200, 200, 200, 200, 200, 403, 403],
-    'Global Sysop (demo)': [200, 200, 200, 200, 200, 403, 403],
-    'Bn Admin (demo)': [200, 403, 403, 200, 404, 403, 403],
-    'Platform Admin (demo)': [200, 403, 403, 403, 404, 200, 200],
-    'Organizer (demo)': [200, 200, 200, 200, 404, 403, 403],
-    'Juror (demo)': [200, 403, 403, 403, 200, 403, 403],
-    'Participant (demo)': [200, 403, 403, 403, 200, 403, 403],
-    'Newcomer (demo)': [200, 403, 403, 403, 404, 403, 403],
+    [NAME['Steward']]: [200, 200, 200, 200, 200, 403, 403],
+    [NAME['Global Sysop']]: [200, 200, 200, 200, 200, 403, 403],
+    [NAME['Bn Admin']]: [200, 403, 403, 200, 404, 403, 403],
+    [NAME['Platform Admin']]: [200, 403, 403, 403, 404, 200, 200],
+    [NAME['Organizer']]: [200, 200, 200, 200, 404, 403, 403],
+    [NAME['Juror']]: [200, 403, 403, 403, 200, 403, 403],
+    [NAME['Participant']]: [200, 403, 403, 403, 200, 403, 403],
+    [NAME['Newcomer']]: [200, 403, 403, 403, 404, 403, 403],
   };
   for (const [username, codes] of Object.entries(expected)) {
     const cookie = await loginAs(username);
@@ -93,20 +94,20 @@ test('each demo user gets exactly the access their roles allow', async () => {
 
 test('overrides show up in the event access panel', async () => {
   const wlm = `/contest/${ids.contest['demo-wlm-bangladesh-2026']}`;
-  const juror = await t.request(wlm, { cookie: await loginAs('Juror (demo)') });
+  const juror = await t.request(wlm, { cookie: await loginAs(NAME.Juror) });
   assert.match(juror.body, /exportData/);
   const editathon = `/contest/${ids.contest['demo-liberation-war-editathon']}`;
-  const organizer = await t.request(editathon, { cookie: await loginAs('Organizer (demo)') });
+  const organizer = await t.request(editathon, { cookie: await loginAs(NAME.Organizer) });
   assert.match(organizer.body, /− sendMassMessage/);
   assert.doesNotMatch(organizer.body, /Send MassMessage campaigns/, 'denied permission is not listed as held');
 });
 
 test('platform admins grant and revoke roles with an audit trail', async () => {
-  const adminCookie = await loginAs('Platform Admin (demo)');
+  const adminCookie = await loginAs(NAME['Platform Admin']);
   const usersPage = await t.request('/admin/users', { cookie: adminCookie });
   assert.equal(usersPage.status, 200);
   const csrf = csrfFrom(usersPage.body);
-  const target = ids.user['Organizer (demo)'];
+  const target = ids.user[NAME.Organizer];
 
   const grant = await t.request(`/admin/users/${target}/roles`, { cookie: adminCookie, method: 'POST', form: { _csrf: csrf, role: 'platform-admin' } });
   assert.equal(grant.status, 302);
@@ -115,7 +116,7 @@ test('platform admins grant and revoke roles with an audit trail', async () => {
   const steward = await t.request(`/admin/users/${target}/roles`, { cookie: adminCookie, method: 'POST', form: { _csrf: csrf, role: 'steward' } });
   assert.equal(steward.status, 400, 'Wikimedia roles cannot be granted in Zury');
 
-  const self = await t.request(`/admin/users/${ids.user['Platform Admin (demo)']}/roles/revoke`, {
+  const self = await t.request(`/admin/users/${ids.user[NAME['Platform Admin']]}/roles/revoke`, {
     cookie: adminCookie,
     method: 'POST',
     form: { _csrf: csrf, role: 'platform-admin' },
@@ -128,12 +129,12 @@ test('platform admins grant and revoke roles with an audit trail', async () => {
 
   const actions = (
     await t.prisma.auditLog.findMany({
-      where: { entityId: String(target), actorId: ids.user['Platform Admin (demo)'], action: { startsWith: 'platformRole.' } },
+      where: { entityId: String(target), actorId: ids.user[NAME['Platform Admin']], action: { startsWith: 'platformRole.' } },
     })
   ).map((l) => l.action);
   assert.deepEqual(actions.sort(), ['platformRole.granted', 'platformRole.revoked']);
 
-  const stewardCookie = await loginAs('Steward (demo)');
+  const stewardCookie = await loginAs(NAME.Steward);
   const stewardPage = await t.request('/dashboard', { cookie: stewardCookie });
   const forbidden = await t.request(`/admin/users/${target}/roles`, {
     cookie: stewardCookie,

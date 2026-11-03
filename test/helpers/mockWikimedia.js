@@ -27,7 +27,9 @@ function expectedSignature(method, baseUrl, params, consumerSecret, tokenSecret 
   return crypto.createHmac('sha1', `${rfc3986(consumerSecret)}&${rfc3986(tokenSecret)}`).update(base).digest('base64');
 }
 
-function createMockWikimedia({ consumerKey, consumerSecret, user }) {
+// registeredCallback plays the consumer's callback URL registered on Meta-Wiki,
+// used when the client asks for "oob".
+function createMockWikimedia({ consumerKey, consumerSecret, user, registeredCallback = 'http://127.0.0.1:5000/' }) {
   const requestTokens = new Map();
   const accessTokens = new Map();
   const log = [];
@@ -88,7 +90,7 @@ function createMockWikimedia({ consumerKey, consumerSecret, user }) {
       const entry = requestTokens.get(url.searchParams.get('oauth_token'));
       if (!entry) return send(400, 'Error: mwoauth-invalid-token');
       entry.verifier = crypto.randomBytes(8).toString('hex');
-      const callback = new URL(entry.callback);
+      const callback = new URL(entry.callback === 'oob' ? registeredCallback : entry.callback);
       callback.searchParams.set('oauth_token', url.searchParams.get('oauth_token'));
       callback.searchParams.set('oauth_verifier', entry.verifier);
       res.writeHead(302, { Location: callback.toString() });

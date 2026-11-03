@@ -8,7 +8,7 @@
       <div>
         <span class="badge bg-<%= roleColor[key] || 'blue' %>-lt"><i class="ti ti-<%= role.source === 'zury' ? 'shield' : 'world' %> me-1"></i><%= role.label %></span>
         <% if (role.scope === 'wiki') { %><span class="small">on <%= [...s.adminWikis].join(', ') %></span><% } %>
-        <span class="small text-secondary">· <%= s.user && s.user.isDemo ? 'demo data' : role.source === 'zury' ? 'assigned in Zury' : 'verified from Wikimedia' %></span>
+        <span class="small text-secondary">· <%= role.source === 'zury' ? 'assigned in Zury' : 'verified from Wikimedia' %></span>
       </div>
     <% }) %>
   </div>

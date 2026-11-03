@@ -24,7 +24,7 @@
                   <div class="d-flex py-1 align-items-center">
                     <span class="avatar me-2"><%= u.username.charAt(0).toUpperCase() %></span>
                     <div class="flex-fill">
-                      <div class="font-weight-medium"><a href="<%= userPath(u.username) %>" class="text-reset"><%= u.username %></a><% if (u.isDemo) { %> <span class="badge bg-yellow-lt">demo</span><% } %></div>
+                      <div class="font-weight-medium"><a href="<%= userPath(u.username) %>" class="text-reset"><%= u.username %></a></div>
                       <div class="text-secondary small"><%= u.homeWiki || '—' %></div>
                     </div>
                   </div>

@@ -52,7 +52,7 @@
                   <div class="row g-2">
                     <div class="col">
                       <select name="userId" class="form-select" aria-label="Demo account">
-                        <% demoUsers.forEach((u) => { %><option value="<%= u.id %>"<%= u.username.startsWith('Participant') ? ' selected' : '' %>><%= u.username.replace(' (demo)', '') %></option><% }) %>
+                        <% demoUsers.forEach((u) => { %><option value="<%= u.id %>"<%= u.username === 'Rakib Hasan' ? ' selected' : '' %>><%= u.username %></option><% }) %>
                       </select>
                     </div>
                     <div class="col-auto"><button type="submit" class="btn"><i class="ti ti-login me-1"></i>Continue</button></div>

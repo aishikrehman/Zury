@@ -1,5 +1,6 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const { NAME, LABEL } = require('./helpers/people');
 const { startTestApp, csrfFrom } = require('./helpers/testApp');
 const { createMockWikimedia } = require('./helpers/mockWikimedia');
 
@@ -19,7 +20,7 @@ before(async () => {
   const users = await t.prisma.user.findMany();
   ids = {
     contest: Object.fromEntries(contests.map((c) => [c.slug, c.id])),
-    user: Object.fromEntries(users.map((u) => [u.username.replace(' (demo)', ''), u.id])),
+    user: Object.fromEntries(users.map((u) => [(LABEL[u.username] || u.username), u.id])),
   };
 });
 
@@ -169,19 +170,19 @@ test('members: add by Wikimedia lookup, role permissions, conflicts, last organi
   assert.equal((await juror.post(`${wlm}/members`, { username: 'Remote Juror', role: 'viewer' })).status, 403);
 
   // A per-event override lets the juror manage the jury, and only the jury.
-  r = await organizer.flashAfter(`${wlm}/overrides`, { username: 'Juror (demo)', permission: 'manageJury', allowed: 'true' });
+  r = await organizer.flashAfter(`${wlm}/overrides`, { username: NAME.Juror, permission: 'manageJury', allowed: 'true' });
   assert.match(r.text, /Override saved/);
   const jurorAgain = await session('Juror');
   const people = await jurorAgain.get(`${wlm}/participants`);
   assert.equal(people.status, 200);
   assert.doesNotMatch(people.body, /<option value="participant">/);
-  r = await jurorAgain.flashAfter(`${wlm}/members`, { username: 'Newcomer (demo)', role: 'participant' });
+  r = await jurorAgain.flashAfter(`${wlm}/members`, { username: NAME.Newcomer, role: 'participant' });
   assert.match(r.text, /can't add people with that role|can&#39;t add/);
   const participantRow = await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['demo-wlm-bangladesh-2026'], role: 'participant', status: 'active' } });
   assert.equal((await jurorAgain.post(`${wlm}/members/${participantRow.id}/remove`)).status, 403);
   assert.equal((await t.prisma.contestMembership.findUnique({ where: { id: participantRow.id } })).status, 'active', 'jury managers cannot remove participants');
 
-  r = await organizer.flashAfter(`${wlm}/overrides`, { username: 'Juror (demo)', permission: 'accessAdmin', allowed: 'true' });
+  r = await organizer.flashAfter(`${wlm}/overrides`, { username: NAME.Juror, permission: 'accessAdmin', allowed: 'true' });
   assert.match(r.text, /cannot be changed per event/);
 });
 

@@ -12,7 +12,7 @@
       <div class="col-auto"><span class="avatar avatar-lg rounded"><%= profileUser.username.charAt(0).toUpperCase() %></span></div>
       <div class="col">
         <div class="page-pretitle">Profile</div>
-        <h2 class="page-title"><%= profileUser.username %><% if (profileUser.isDemo) { %><span class="badge bg-yellow-lt ms-2">Demo user</span><% } %></h2>
+        <h2 class="page-title"><%= profileUser.username %></h2>
       </div>
       <div class="col-auto ms-auto btn-list">
         <% if (!profileUser.isDemo) { %><a class="btn btn-outline-secondary" href="<%= wikiUserUrl %>" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i>Wikimedia account</a><% } %>

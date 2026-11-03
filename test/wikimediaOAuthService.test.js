@@ -38,7 +38,7 @@ test('full handshake: initiate, authorize, token, identify', async () => {
   const requestToken = await oauth.getRequestToken();
   const initiate = mock.log.find((e) => e.step === 'initiate');
   assert.equal(initiate.error, undefined, 'initiate signature must verify');
-  assert.equal(initiate.allParams.oauth_callback, 'http://127.0.0.1:5000/auth/callback');
+  assert.equal(initiate.allParams.oauth_callback, 'oob', 'returns to the registered callback');
   assert.match(initiate.userAgent, /^Zury\//);
 
   const authorizeUrl = new URL(oauth.getAuthorizeUrl(requestToken.key));
