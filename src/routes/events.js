@@ -19,6 +19,8 @@ router.get('/submissions', requireAuth, submissionController.mine);
 const contest = express.Router({ mergeParams: true });
 
 contest.get('/', contestController.show);
+// Joining is a form button; opening /join directly goes to the event page with that button.
+contest.get('/join', (req, res) => res.redirect(req.base));
 contest.post('/join', requireAuth, contestController.join);
 contest.post('/leave', requireAuth, contestController.leave);
 
