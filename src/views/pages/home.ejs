@@ -1,107 +1,293 @@
-<% const step = currentUser ? 2 : 1; %>
-<div class="page-body">
+<%
+  const now = Date.now();
+  const typeIcon = { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group' };
+  const typeColor = { photo: 'blue', writing: 'green', data: 'purple', editathon: 'orange' };
+  const daysLeft = (c) => (c.endDate ? Math.max(0, Math.ceil((new Date(c.endDate) - now) / 86400000)) : null);
+  const elapsed = (c) => {
+    if (!c.startDate || !c.endDate) return 0;
+    const total = new Date(c.endDate) - new Date(c.startDate);
+    return Math.min(100, Math.max(0, Math.round(((now - new Date(c.startDate)) / total) * 100)));
+  };
+  const month = (d) => new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(new Date(d));
+  const day = (d) => new Intl.DateTimeFormat('en', { day: 'numeric', timeZone: 'UTC' }).format(new Date(d));
+  const fmt = (n) => n.toLocaleString('en');
+  const step = currentUser ? 2 : 1;
+%>
+
+<!-- Hero -->
+<div class="page-body mt-0 pt-4 pt-lg-5">
   <div class="container-xl">
-    <div class="row g-4 align-items-center py-4">
+    <div class="row align-items-center g-5">
       <div class="col-lg-6">
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <img src="/images/zury-logo.svg" width="56" height="56" alt="">
-          <span class="badge bg-blue-lt">Open source · for Wikimedia communities</span>
-        </div>
-        <h1 class="display-6 fw-bold mb-3">Run Wikimedia contests and events in one place</h1>
-        <p class="fs-3 text-secondary mb-4">
-          Photo contests, writing contests, Wikidata drives and edit-a-thons, with submissions checked live against Wikipedia, Commons and Wikidata.
+        <span class="badge bg-blue-lt mb-3"><i class="ti ti-world me-1"></i>For Wikimedia communities</span>
+        <h1 class="display-5 fw-bold lh-sm mb-3">Run Wikimedia contests from one place.</h1>
+        <p class="fs-2 text-secondary mb-4 lh-base">
+          Zury handles photo contests, writing contests, Wikidata drives and edit-a-thons: from registration and submissions to jury review and results.
         </p>
         <div class="btn-list mb-4">
-          <a href="/events" class="btn btn-primary btn-lg"><i class="ti ti-calendar-event me-1"></i>Browse events</a>
-          <a href="/about" class="btn btn-lg">How it works</a>
+          <% if (currentUser) { %>
+            <a href="/dashboard" class="btn btn-primary btn-lg"><i class="ti ti-layout-dashboard me-1"></i>Go to your dashboard</a>
+          <% } else { %>
+            <a href="/login" class="btn btn-primary btn-lg"><i class="ti ti-brand-wikipedia me-1"></i>Log in with Wikipedia</a>
+          <% } %>
+          <a href="/events/active" class="btn btn-lg"><i class="ti ti-calendar-event me-1"></i>Browse events</a>
         </div>
-        <div class="row g-3">
-          <% [['calendar-event', 'blue', stats.events, 'public events'], ['files', 'green', stats.submissions, 'submissions'], ['users', 'orange', stats.users, 'people']].forEach(([icon, color, value, label]) => { %>
-            <div class="col-4">
-              <div class="d-flex align-items-center">
-                <span class="avatar bg-<%= color %>-lt me-2"><i class="ti ti-<%= icon %>"></i></span>
-                <div><div class="h3 m-0"><%= value %></div><div class="text-secondary small"><%= label %></div></div>
-              </div>
-            </div>
-          <% }) %>
+        <div class="d-flex flex-wrap gap-3 text-secondary small">
+          <span><i class="ti ti-circle-check text-green me-1"></i>Uses your Wikimedia account</span>
+          <span><i class="ti ti-circle-check text-green me-1"></i>Entries checked live on the wikis</span>
+          <span><i class="ti ti-circle-check text-green me-1"></i>Open source</span>
         </div>
       </div>
-
       <div class="col-lg-6">
-        <div class="card card-md">
-          <div class="card-body">
-            <h2 class="h2 text-center mb-2">Get started</h2>
-            <p class="text-secondary text-center mb-4">Three steps to your first entry.</p>
-            <ul class="steps steps-counter steps-green my-4">
-              <li class="step-item<%= step === 1 ? ' active' : '' %>">Log in</li>
-              <li class="step-item<%= step === 2 ? ' active' : '' %>">Pick an event</li>
-              <li class="step-item">Submit entries</li>
-            </ul>
-
-            <% if (!currentUser) { %>
-              <div class="mb-3">
-                <a href="/login" class="btn btn-primary w-100 btn-lg">
-                  <i class="ti ti-brand-wikipedia me-2"></i>Log in with your Wikimedia account
-                </a>
-                <div class="form-hint text-center mt-2">One account for Wikipedia, Commons, Wikidata and all other Wikimedia projects. Zury only reads your username and groups.</div>
-              </div>
-              <% if (demoUsers.length) { %>
-                <div class="hr-text">or explore with a demo account</div>
-                <form method="post" action="/demo/login">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <div class="row g-2">
-                    <div class="col">
-                      <select name="userId" class="form-select" aria-label="Demo account">
-                        <% demoUsers.forEach((u) => { %><option value="<%= u.id %>"<%= u.username === 'Rakib Hasan' ? ' selected' : '' %>><%= u.username %></option><% }) %>
-                      </select>
-                    </div>
-                    <div class="col-auto"><button type="submit" class="btn"><i class="ti ti-login me-1"></i>Continue</button></div>
-                  </div>
-                </form>
-              <% } %>
-            <% } else { %>
-              <div class="text-center">
-                <span class="avatar avatar-lg mb-3"><%= currentUser.username.charAt(0).toUpperCase() %></span>
-                <h3 class="mb-1">You're logged in as <%= currentUser.username %></h3>
-                <p class="text-secondary">Next, pick an active event and submit your entries.</p>
-                <div class="btn-list justify-content-center">
-                  <a href="/events/active" class="btn btn-primary"><i class="ti ti-player-play me-1"></i>Active events</a>
-                  <a href="/dashboard" class="btn"><i class="ti ti-layout-dashboard me-1"></i>Dashboard</a>
-                </div>
-              </div>
-            <% } %>
+        <div class="position-relative px-lg-4">
+          <div class="card card-lg shadow-sm">
+            <div class="card-body text-center py-5">
+              <img src="/images/illustrations/contest.svg" alt="" class="img-fluid" style="max-height: 260px">
+            </div>
+          </div>
+          <div class="card card-sm shadow position-absolute d-none d-md-block" style="right: -0.5rem; bottom: 1.5rem; width: 13rem">
+            <div class="card-body d-flex align-items-center">
+              <span class="avatar bg-green text-white me-3"><i class="ti ti-upload"></i></span>
+              <div><div class="h3 m-0"><%= fmt(trend.values.reduce((a, b) => a + b, 0)) %></div><div class="text-secondary small">entries this month</div></div>
+            </div>
+          </div>
+          <div class="card card-sm shadow position-absolute d-none d-md-block" style="left: -0.5rem; top: 1.5rem; width: 12rem">
+            <div class="card-body d-flex align-items-center">
+              <span class="avatar bg-primary text-white me-3"><i class="ti ti-player-play"></i></span>
+              <div><div class="h3 m-0"><%= active.length %></div><div class="text-secondary small">events running now</div></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card mb-2">
-      <div class="row g-0 align-items-center">
-        <div class="col-md-4 p-4">
-          <div class="subheader">Community activity</div>
-          <div class="h1 mb-1"><%= trend.values.reduce((a, b) => a + b, 0) %></div>
-          <div class="text-secondary">submissions in the last 30 days, across <%= stats.events %> public events</div>
+    <!-- Numbers -->
+    <div class="card mt-5">
+      <div class="row g-0 text-center">
+        <% [['calendar-event', 'blue', stats.events, 'Public events'], ['files', 'green', stats.submissions, 'Submissions'], ['users', 'orange', stats.users, 'Contributors'], ['world', 'purple', stats.wikis, 'Wikis']].forEach(([icon, color, value, label], i) => { %>
+          <div class="col-6 col-md-3 py-4<%= i < 3 ? ' border-end' : '' %><%= i < 2 ? ' border-bottom border-md-bottom-0' : '' %>">
+            <span class="avatar avatar-sm bg-<%= color %>-lt mb-2"><i class="ti ti-<%= icon %>"></i></span>
+            <div class="h1 mb-0"><%= fmt(value) %></div>
+            <div class="text-secondary"><%= label %></div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Happening now -->
+<section class="page-body">
+  <div class="container-xl">
+    <div class="d-flex align-items-end mb-3">
+      <div>
+        <div class="subheader">Happening now</div>
+        <h2 class="h1 mb-0">Join an event</h2>
+      </div>
+      <a href="/events" class="ms-auto">All events <i class="ti ti-arrow-right"></i></a>
+    </div>
+    <div class="row row-cards">
+      <div class="col-lg-8">
+        <% if (!active.length) { %>
+          <div class="card"><%- include('../partials/emptyArt', { title: 'No events are running right now', text: 'Check the upcoming events, or come back soon.' }) %></div>
+        <% } %>
+        <div class="row row-cards">
+          <% active.slice(0, 4).forEach((c) => { const left = daysLeft(c); %>
+            <div class="col-md-6">
+              <div class="card card-link card-link-pop h-100">
+                <div class="card-body d-flex flex-column">
+                  <div class="d-flex align-items-center mb-3">
+                    <span class="avatar bg-<%= typeColor[c.type] %>-lt me-3"><i class="ti ti-<%= typeIcon[c.type] %>"></i></span>
+                    <div class="text-secondary small"><%= CONTEST_TYPES[c.type] %><br><%= c.primaryWiki %></div>
+                    <span class="badge bg-green-lt ms-auto"><span class="status-dot status-dot-animated bg-green me-1"></span>Open</span>
+                  </div>
+                  <h3 class="card-title mb-3"><a href="/contest/<%= c.id %>" class="stretched-link text-reset"><%= c.title %></a></h3>
+                  <div class="mt-auto">
+                    <div class="d-flex small mb-1">
+                      <span class="text-secondary"><i class="ti ti-users me-1"></i><%= c._count.memberships %> taking part</span>
+                      <span class="ms-auto fw-medium"><%= left === 0 ? 'Ends today' : `${left} day${left === 1 ? '' : 's'} left` %></span>
+                    </div>
+                    <div class="progress progress-sm"><div class="progress-bar bg-green" style="width: <%= elapsed(c) %>%" aria-label="<%= elapsed(c) %>% of the event has passed"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
         </div>
-        <div class="col-md-8">
-          <%- include('../partials/chart', { spec: { type: 'area', height: 120, sparkline: true, series: [{ name: 'Submissions', data: trend.values }], labels: trend.labels, colors: ['primary'] }, label: 'Submissions per day across Zury' }) %>
+      </div>
+      <div class="col-lg-4">
+        <div class="card h-100">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-clock me-2 text-azure"></i>Coming up</h3></div>
+          <% if (!upcoming.length) { %>
+            <div class="card-body text-secondary">Nothing scheduled yet.</div>
+          <% } else { %>
+            <div class="list-group list-group-flush">
+              <% upcoming.slice(0, 5).forEach((c) => { %>
+                <a href="/contest/<%= c.id %>" class="list-group-item list-group-item-action">
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      <div class="text-center rounded border px-2 py-1" style="min-width: 3rem">
+                        <div class="small text-uppercase text-secondary lh-1"><%= c.startDate ? month(c.startDate) : '—' %></div>
+                        <div class="h3 m-0"><%= c.startDate ? day(c.startDate) : '' %></div>
+                      </div>
+                    </div>
+                    <div class="col text-truncate">
+                      <div class="text-reset text-truncate"><%= c.title %></div>
+                      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= c.primaryWiki %></div>
+                    </div>
+                  </div>
+                </a>
+              <% }) %>
+            </div>
+          <% } %>
+          <div class="card-footer"><a href="/events/upcoming">See all upcoming <i class="ti ti-arrow-right"></i></a></div>
         </div>
       </div>
     </div>
+  </div>
+</section>
 
-    <% sections.forEach((section) => { %>
-      <div class="d-flex justify-content-between align-items-baseline mb-3 mt-4">
-        <h2 class="mb-0"><%= section.heading %></h2>
-        <a href="/events/<%= section.key %>">See all <i class="ti ti-arrow-right"></i></a>
-      </div>
-      <% if (!section.items.length) { %>
-        <div class="card"><div class="empty py-4"><p class="empty-subtitle text-secondary"><%= section.empty %></p></div></div>
-      <% } else { %>
-        <div class="row row-cards">
-          <% section.items.forEach((c) => { %>
-            <div class="col-sm-6 col-lg-4"><%- include('../partials/contestCard', { c, roles: [] }) %></div>
+<!-- How it works -->
+<section class="page-body">
+  <div class="container-xl">
+    <div class="card card-lg">
+      <div class="card-body">
+        <div class="text-center mb-5">
+          <div class="subheader">How it works</div>
+          <h2 class="h1">Your first entry in three steps</h2>
+        </div>
+        <ul class="steps steps-counter steps-green mb-5">
+          <li class="step-item<%= step === 1 ? ' active' : '' %>">Log in</li>
+          <li class="step-item<%= step === 2 ? ' active' : '' %>">Join an event</li>
+          <li class="step-item">Submit entries</li>
+        </ul>
+        <div class="row g-4 text-center">
+          <% [
+            ['brand-wikipedia', 'blue', 'Log in with Wikipedia', 'Use the Wikimedia account you already have. There is no new password to remember.'],
+            ['calendar-plus', 'green', 'Join an event', 'Pick a contest or edit-a-thon. Zury checks that you meet its rules before you sign up.'],
+            ['upload', 'orange', 'Submit your work', 'Paste links to your photos, articles or Wikidata items. They are checked against the rules straight away.'],
+          ].forEach(([icon, color, title, text], i) => { %>
+            <div class="col-md-4">
+              <span class="avatar avatar-lg rounded bg-<%= color %>-lt mb-3"><i class="ti ti-<%= icon %>" style="font-size: 1.5rem"></i></span>
+              <h3 class="mb-2"><%= i + 1 %>. <%= title %></h3>
+              <p class="text-secondary mb-0"><%= text %></p>
+            </div>
           <% }) %>
         </div>
-      <% } %>
-    <% }) %>
+        <div class="text-center mt-5">
+          <% if (currentUser) { %>
+            <a href="/events/active" class="btn btn-primary btn-lg">Find an event to join</a>
+          <% } else { %>
+            <a href="/login" class="btn btn-primary btn-lg"><i class="ti ti-brand-wikipedia me-1"></i>Log in to get started</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</section>
+
+<!-- Event types -->
+<section class="page-body">
+  <div class="container-xl">
+    <div class="text-center mb-4">
+      <div class="subheader">One tool, every format</div>
+      <h2 class="h1">Built for how Wikimedia communities work</h2>
+    </div>
+    <div class="row row-cards">
+      <% [
+        ['photo', 'Photo contests', 'Commons uploads checked for resolution, category and upload date. Made for Wiki Loves Monuments and Earth.', '/events?type=photo'],
+        ['writing', 'Writing contests', 'Wikipedia articles checked for size, word count and creation date, with jury scoring.', '/events?type=writing'],
+        ['data', 'Data contests', 'Wikidata items, properties and lexemes checked for required statements.', '/events?type=data'],
+        ['editathon', 'Edit-a-thons', 'Registration with eligibility rules, participant tracking and organizer reports.', '/events?type=editathon'],
+      ].forEach(([type, title, text, href]) => { %>
+        <div class="col-sm-6 col-lg-3">
+          <a href="<%= href %>" class="card card-link card-link-pop h-100">
+            <div class="card-status-top bg-<%= typeColor[type] %>"></div>
+            <div class="card-body">
+              <span class="avatar avatar-md bg-<%= typeColor[type] %>-lt mb-3"><i class="ti ti-<%= typeIcon[type] %>"></i></span>
+              <h3 class="card-title mb-2"><%= title %></h3>
+              <p class="text-secondary mb-0"><%= text %></p>
+            </div>
+          </a>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<!-- For organizers -->
+<section class="page-body">
+  <div class="container-xl">
+    <div class="card">
+      <div class="row g-0 align-items-stretch">
+        <div class="col-lg-6 p-4 p-lg-5">
+          <div class="subheader">For organizers and jury</div>
+          <h2 class="h1 mb-3">Everything a contest needs</h2>
+          <ul class="list-unstyled space-y-3 mb-4">
+            <% [
+              ['shield-check', 'Permissions checked against Wikimedia: stewards, admins and organizers each see what they should.'],
+              ['list-check', 'Rules for each event: dates in your timezone, eligibility, and settings for each event type.'],
+              ['gavel', 'Jury review, appeals and results, with every decision recorded.'],
+              ['chart-bar', 'Live statistics for every event, public if you choose.'],
+            ].forEach(([icon, text]) => { %>
+              <li class="d-flex mb-3"><span class="avatar avatar-sm bg-primary-lt me-3 flex-shrink-0"><i class="ti ti-<%= icon %>"></i></span><span class="pt-1"><%= text %></span></li>
+            <% }) %>
+          </ul>
+          <a href="/about" class="btn">Learn more about Zury</a>
+        </div>
+        <div class="col-lg-6 border-start bg-surface-secondary p-4 p-lg-5 d-flex flex-column justify-content-center">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="d-flex align-items-baseline mb-1">
+                <div class="subheader">Submissions across Zury</div>
+                <span class="ms-auto badge bg-green-lt">last 30 days</span>
+              </div>
+              <div class="h1 mb-2"><%= fmt(trend.values.reduce((a, b) => a + b, 0)) %></div>
+              <%- include('../partials/chart', { spec: { type: 'area', height: 140, sparkline: true, series: [{ name: 'Submissions', data: trend.values }], labels: trend.labels, colors: ['primary'] }, label: 'Submissions per day across Zury, last 30 days' }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Recently completed -->
+<% if (completed.length) { %>
+  <section class="page-body">
+    <div class="container-xl">
+      <div class="d-flex align-items-end mb-3">
+        <div><div class="subheader">Recently completed</div><h2 class="h1 mb-0">Past events</h2></div>
+        <a href="/events/completed" class="ms-auto">See all <i class="ti ti-arrow-right"></i></a>
+      </div>
+      <div class="row row-cards">
+        <% completed.slice(0, 3).forEach((c) => { %>
+          <div class="col-md-4"><%- include('../partials/contestCard', { c, roles: [] }) %></div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+<% } %>
+
+<!-- Call to action -->
+<section class="page-body mb-5">
+  <div class="container-xl">
+    <div class="card bg-primary text-primary-fg">
+      <div class="card-body p-4 p-lg-5">
+        <div class="row align-items-center g-4">
+          <div class="col-lg">
+            <h2 class="h1 mb-2">Organizing a contest or an edit-a-thon?</h2>
+            <p class="mb-0 opacity-75 fs-3">Set it up in minutes. Your community logs in with Wikipedia, and Zury handles submissions and checks.</p>
+          </div>
+          <div class="col-lg-auto">
+            <% if (currentUser) { %>
+              <a href="<%= can('createEvent') ? '/events/create' : '/events' %>" class="btn btn-light btn-lg"><%= can('createEvent') ? 'Create an event' : 'Explore events' %></a>
+            <% } else { %>
+              <a href="/login" class="btn btn-light btn-lg"><i class="ti ti-brand-wikipedia me-1"></i>Log in with Wikipedia</a>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

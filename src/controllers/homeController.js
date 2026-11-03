@@ -15,6 +15,7 @@ async function index(req, res, next) {
         prisma.contest.count({ where: { deletedAt: null, visibility: 'public', status: { not: 'draft' } } }),
         prisma.submission.count({ where: { contest: { deletedAt: null } } }),
         prisma.user.count(),
+        prisma.submission.groupBy({ by: ['wiki'], where: { contest: { deletedAt: null } } }).then((rows) => rows.length),
       ]),
       statsService.platformStats(),
     ]);
@@ -27,14 +28,12 @@ async function index(req, res, next) {
     res.locals.layoutKey = PUBLIC_LAYOUT;
     res.render('pages/home', {
       title: 'Zury — Wikimedia Contests & Events',
-      stats: { events: stats[0], submissions: stats[1], users: stats[2] },
+      stats: { events: stats[0], submissions: stats[1], users: stats[2], wikis: stats[3] },
       demoUsers,
       trend: platform.submissions,
-      sections: [
-        { key: 'active', heading: 'Active events', items: active, empty: 'No active events right now.' },
-        { key: 'upcoming', heading: 'Upcoming events', items: upcoming, empty: 'No upcoming events yet.' },
-        { key: 'completed', heading: 'Recently completed', items: completed, empty: 'No completed events yet.' },
-      ],
+      active,
+      upcoming,
+      completed,
     });
   } catch (err) {
     next(err);
