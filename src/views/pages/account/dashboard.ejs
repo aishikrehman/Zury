@@ -1,0 +1,43 @@
+<div class="container py-5">
+  <h1 class="h3 mb-4">Welcome, <%= currentUser.username %></h1>
+
+  <div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h6 card-title">My events</h2>
+          <p class="card-text text-muted small">You haven't joined any events yet.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h6 card-title">My submissions</h2>
+          <p class="card-text text-muted small">No submissions yet.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h6 card-title">Jury assignments</h2>
+          <p class="card-text text-muted small">No assignments.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h2 class="h6 card-title">Notifications</h2>
+          <p class="card-text text-muted small">You're all caught up.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="mt-4">
+    <a href="/users/<%= encodeURIComponent(currentUser.username) %>">View public profile</a> &middot;
+    <a href="/settings">Preferences</a>
+  </p>
+</div>

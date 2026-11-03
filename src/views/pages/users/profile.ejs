@@ -1,0 +1,32 @@
+<%
+  const wikiUserUrl = 'https://meta.wikimedia.org/wiki/Special:CentralAuth/' + encodeURIComponent(profileUser.username.replace(/ /g, '_'));
+  const fmt = (d) => d ? d.toISOString().slice(0, 10) : null;
+%>
+<div class="container py-5">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center fs-3" style="width:64px;height:64px" aria-hidden="true">
+      <%= profileUser.username.charAt(0).toUpperCase() %>
+    </div>
+    <div>
+      <h1 class="h3 mb-1"><%= profileUser.username %></h1>
+      <a href="<%= wikiUserUrl %>" rel="noopener" target="_blank">Wikimedia global account</a>
+      <% if (isOwnProfile) { %> &middot; <a href="/settings">Edit preferences</a><% } %>
+    </div>
+  </div>
+
+  <dl class="row">
+    <% if (profileUser.homeWiki) { %>
+      <dt class="col-sm-3">Home wiki</dt>
+      <dd class="col-sm-9"><%= profileUser.homeWiki %></dd>
+    <% } %>
+    <% if (profileUser.wikimediaRegisteredAt) { %>
+      <dt class="col-sm-3">Wikimedia account since</dt>
+      <dd class="col-sm-9"><%= fmt(profileUser.wikimediaRegisteredAt) %></dd>
+    <% } %>
+    <dt class="col-sm-3">Joined Zury</dt>
+    <dd class="col-sm-9"><%= fmt(profileUser.createdAt) %></dd>
+  </dl>
+
+  <h2 class="h5 mt-5">Activity</h2>
+  <p class="text-muted">Events, submissions and badges will appear here once those features are available.</p>
+</div>

@@ -1,7 +1,4 @@
-// Zury database schema.
-// Phase 1: minimal User model to prove out the SQLite + Prisma wiring.
-// Additional models (roles, contests, submissions, etc.) are added
-// incrementally in later phases per the project roadmap.
+// Zury database schema. Models are added incrementally per the project roadmap.
 
 generator client {
   provider = "prisma-client-js"
@@ -14,10 +11,12 @@ datasource db {
 
 model User {
   id                Int       @id @default(autoincrement())
-  wikimediaId       Int       @unique
-  username          String
-  avatarUrl         String?
-  homeWiki          String?
+  // Central (global) Wikimedia user ID from the OAuth identify `sub` claim.
+  wikimediaId           Int       @unique
+  username              String    @unique
+  avatarUrl             String?
+  homeWiki              String?
+  wikimediaRegisteredAt DateTime?
   preferredLanguage String?
   timezone          String?
   status            String    @default("active")

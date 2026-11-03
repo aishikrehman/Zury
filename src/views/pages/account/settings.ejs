@@ -1,0 +1,35 @@
+<div class="container py-5" style="max-width: 640px">
+  <h1 class="h3 mb-2">Preferences</h1>
+  <p class="text-muted mb-4">These settings apply to Zury only and don't change your Wikimedia account.</p>
+
+  <% if (saved) { %>
+    <div class="alert alert-success" role="status">Preferences saved.</div>
+  <% } %>
+
+  <form action="/settings" method="post" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="mb-3">
+      <label for="preferredLanguage" class="form-label">Preferred language</label>
+      <input type="text" id="preferredLanguage" name="preferredLanguage" maxlength="35"
+             class="form-control<%= errors.preferredLanguage ? ' is-invalid' : '' %>"
+             value="<%= values.preferredLanguage || '' %>" placeholder="e.g. en, bn, pt-br"
+             aria-describedby="preferredLanguageHelp">
+      <div id="preferredLanguageHelp" class="form-text">A language code. Leave blank to use the default.</div>
+      <% if (errors.preferredLanguage) { %><div class="invalid-feedback"><%= errors.preferredLanguage %></div><% } %>
+    </div>
+
+    <div class="mb-4">
+      <label for="timezone" class="form-label">Timezone</label>
+      <select id="timezone" name="timezone" class="form-select<%= errors.timezone ? ' is-invalid' : '' %>">
+        <option value="">Not set</option>
+        <% timezones.forEach((tz) => { %>
+          <option value="<%= tz %>"<%= values.timezone === tz ? ' selected' : '' %>><%= tz %></option>
+        <% }) %>
+      </select>
+      <% if (errors.timezone) { %><div class="invalid-feedback"><%= errors.timezone %></div><% } %>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save preferences</button>
+  </form>
+</div>
