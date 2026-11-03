@@ -42,21 +42,24 @@
   const label = (item) => (item.localName ? `${item.text} · ${item.localName}` : item.text);
 
   function wiki(el) {
+    const row = document.createElement('div');
+    row.className = 'row g-2';
+    row.innerHTML =
+      '<div class="col-sm-6"><div class="form-hint mt-0 mb-1">1. Language</div></div>' +
+      '<div class="col-sm-6"><div class="form-hint mt-0 mb-1">2. Wiki</div></div>';
+    el.parentNode.insertBefore(row, el);
     const langSelect = document.createElement('select');
-    langSelect.setAttribute('aria-label', 'Language');
+    langSelect.setAttribute('aria-label', 'Language of the wiki');
     langSelect.setAttribute('placeholder', 'Choose a language…');
-    el.parentNode.insertBefore(langSelect, el);
-    const wrap = document.createElement('div');
-    wrap.className = 'mb-2';
-    langSelect.parentNode.insertBefore(wrap, langSelect);
-    wrap.appendChild(langSelect);
+    row.children[0].appendChild(langSelect);
+    el.setAttribute('placeholder', 'Then choose the wiki…');
+    row.children[1].appendChild(el);
 
     const wikis = new window.TomSelect(el, {
       valueField: 'value',
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
       maxOptions: 500,
-      placeholder: 'Then the wiki…',
       render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => '<div class="no-results">No matches</div>' },
     });
     const loadWikis = (code, keep) => {
@@ -67,7 +70,6 @@
       json(`/api/wiki-languages/${encodeURIComponent(code)}`).then((list) => {
         wikis.addOptions(list.map((w) => ({ ...w, label: label(w), hint: w.value })));
         if (keep) wikis.setValue(keep, true);
-        else if (list.length === 1) wikis.setValue(list[0].value);
       });
     };
 

@@ -135,10 +135,12 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   if (unknownWiki) errors.additionalWikis = `Unknown wiki: ${unknownWiki}`;
   else if (additionalWikis.length > 20) errors.additionalWikis = 'At most 20 additional wikis.';
 
-  const language = str(body.language) || 'en';
-  if (!LANGUAGE_CODE.test(language) || !catalog.language(language)) errors.language = 'Unknown language.';
-  const timezone = str(body.timezone) || 'UTC';
-  if (!isValidTimezone(timezone)) errors.timezone = 'Unknown timezone.';
+  const language = str(body.language);
+  if (!language) errors.language = 'Choose a language.';
+  else if (!LANGUAGE_CODE.test(language) || !catalog.language(language)) errors.language = 'Unknown language.';
+  const timezone = str(body.timezone);
+  if (!timezone) errors.timezone = 'Choose a time zone.';
+  else if (!isValidTimezone(timezone)) errors.timezone = 'Unknown time zone.';
   const visibility = body.visibility === 'private' ? 'private' : 'public';
 
   const logoUrl = imageUrl(str(body.logoUrl), errors, 'logoUrl');
@@ -282,7 +284,6 @@ function defaultSettings(type) {
 }
 
 function newForm(type) {
-  const t = EVENT_TYPES[type];
   return toForm(
     {
       type,
@@ -290,10 +291,10 @@ function newForm(type) {
       slug: '',
       description: '',
       organizingCommunity: '',
-      primaryWiki: t.defaultWiki || '',
+      primaryWiki: '',
       additionalWikis: '[]',
-      language: 'en',
-      timezone: 'UTC',
+      language: '',
+      timezone: '',
       visibility: 'public',
       contactInfo: '',
     },
