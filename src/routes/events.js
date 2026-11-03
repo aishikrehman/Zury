@@ -33,6 +33,7 @@ contest.post('/overrides', requirePermission('manageEvent'), contestController.s
 contest.post('/overrides/:overrideId(\\d+)/remove', requirePermission('manageEvent'), contestController.removeOverride);
 
 contest.get('/activity', requirePermission('manageEvent'), contestController.activity);
+contest.get('/statistics', contestController.statistics);
 
 contest.get('/submit', requireAuth, submissionController.submitForm);
 contest.post('/submit/preview', requireAuth, submissionController.preview);

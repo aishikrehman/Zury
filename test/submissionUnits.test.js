@@ -112,3 +112,14 @@ test('submission window follows status and dates', () => {
   assert.match(submissionWindow({ ...photoContest, status: 'active', submissionDeadline: new Date('2026-09-15T00:00:00Z') }, now).reason, /deadline/);
   assert.match(submissionWindow({ ...photoContest, status: 'active', submissionOpensAt: new Date('2026-10-15T00:00:00Z') }, now).reason, /not opened/);
 });
+
+test('daily series fills empty days and buckets by timezone', () => {
+  const { dailySeries } = require('../src/services/statsService');
+  const from = new Date('2026-10-01T00:00:00Z');
+  const to = new Date('2026-10-04T00:00:00Z');
+  const s = dailySeries([new Date('2026-10-01T05:00:00Z'), new Date('2026-10-01T20:00:00Z'), new Date('2026-10-03T12:00:00Z')], from, to);
+  assert.deepEqual(s.labels, ['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']);
+  assert.deepEqual(s.values, [2, 0, 1, 0]);
+  const dhaka = dailySeries([new Date('2026-10-01T20:00:00Z')], from, to, 'Asia/Dhaka');
+  assert.equal(dhaka.values[dhaka.labels.indexOf('2026-10-02')], 1, '20:00 UTC is the next day in Dhaka');
+});

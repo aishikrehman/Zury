@@ -292,6 +292,78 @@ async function seedSubmissions(prisma, users) {
     });
     n += 1;
   }
+  return n + (await seedBulkSubmissions(prisma, users));
+}
+
+// Deterministic pseudo-random numbers, so every re-seed produces the same data.
+function prng(seed) {
+  let a = seed;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Volume for the charts: many entries spread over each event's dates.
+const BULK = [
+  { slug: 'demo-wlm-bangladesh-2026', count: 72, who: ['participant', 'newcomer', 'participant'], type: 'file', title: (i) => `File:WLM Bangladesh 2026 heritage site ${String(i).padStart(3, '0')}.jpg`, from: '2026-09-01', mix: { validated: 45, under_review: 20, approved: 18, rejected: 9, invalid: 8 } },
+  { slug: 'demo-liberation-war-editathon', count: 34, who: ['participant', 'juror', 'newcomer'], type: 'article', title: (i) => `মুক্তিযুদ্ধ নিবন্ধ ${i}`, from: '2026-10-15', mix: { validated: 70, pending: 20, withdrawn: 10 } },
+  { slug: 'demo-wle-bangladesh-2026', count: 48, who: ['participant'], type: 'file', title: (i) => `File:WLE Bangladesh 2026 nature ${String(i).padStart(3, '0')}.jpg`, from: '2026-05-01', mix: { approved: 55, rejected: 35, disqualified: 10 } },
+  { slug: 'demo-wikidata-heritage-sprint', count: 28, who: ['participant', 'organizer'], type: 'item', title: (i) => `Q${7000000 + i * 37}`, from: '2026-05-01', mix: { approved: 80, rejected: 20 } },
+];
+
+function pick(mix, r) {
+  const total = Object.values(mix).reduce((a, b) => a + b, 0);
+  let x = r * total;
+  for (const [k, w] of Object.entries(mix)) if ((x -= w) < 0) return k;
+  return Object.keys(mix)[0];
+}
+
+async function seedBulkSubmissions(prisma, users, now = new Date()) {
+  const { pageUrl } = require('../src/wiki/wikiUrls');
+  let n = 0;
+  for (const [b, spec] of BULK.entries()) {
+    const rand = prng(1000 + b);
+    const contest = await prisma.contest.findUnique({ where: { slug: spec.slug } });
+    const from = new Date(`${spec.from}T00:00:00Z`).getTime();
+    const to = Math.min(contest.endDate.getTime(), now.getTime());
+    const wiki = spec.type === 'item' ? 'wikidatawiki' : contest.primaryWiki;
+    const rows = [];
+    for (let i = 1; i <= spec.count; i++) {
+      // Skewed toward later days, like real contests that pick up near the deadline.
+      const submittedAt = new Date(from + Math.pow(rand(), 0.7) * (to - from));
+      const userKey = spec.who[Math.floor(rand() * spec.who.length)];
+      const status = pick(spec.mix, rand());
+      const title = spec.title(i);
+      const mp = Math.round((4 + rand() * 30) * 10) / 10;
+      const meta = {
+        exists: true, wiki, pageId: 800000 + b * 1000 + i, ns: spec.type === 'file' ? 6 : 0, title, url: pageUrl(wiki, title), entryType: spec.type,
+        createdAt: new Date(submittedAt.getTime() - 3600000).toISOString(), categories: [],
+        ...(spec.type === 'file' && { file: { width: Math.round(Math.sqrt(mp * 1.5e6)), height: Math.round(Math.sqrt(mp * 1e6 / 1.5)), megapixels: mp, mime: 'image/jpeg', license: 'CC BY-SA 4.0' } }),
+        ...(spec.type === 'article' && { sizeBytes: Math.round(3000 + rand() * 30000), wordCount: Math.round(300 + rand() * 2500) }),
+        ...(spec.type === 'item' && { entity: { id: title, type: 'item', label: `Heritage site ${i}`, properties: ['P31', 'P17', 'P625', 'P1435'], statementCount: 4 + Math.floor(rand() * 12) } }),
+      };
+      rows.push({
+        contestId: contest.id,
+        participantId: users[userKey].id,
+        submittedById: users[userKey].id,
+        wiki,
+        title,
+        url: meta.url,
+        pageKey: spec.type === 'item' ? `wikidata:${title}` : `${wiki}:${meta.pageId}`,
+        entryType: spec.type,
+        status,
+        metadata: JSON.stringify(meta),
+        validation: JSON.stringify({ errors: status === 'invalid' ? ['Resolution is below the minimum.'] : [], warnings: [] }),
+        checkedAt: submittedAt,
+        submittedAt,
+      });
+    }
+    await prisma.submission.createMany({ data: rows });
+    n += rows.length;
+  }
   return n;
 }
 

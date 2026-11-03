@@ -1,5 +1,6 @@
 const prisma = require('../config/prisma');
 const audit = require('../services/auditService');
+const statsService = require('../services/statsService');
 const platformRoles = require('../services/platformRoleService');
 const { buildSubject, expand } = require('../services/permissionService');
 const { PERMISSIONS, PLATFORM_ROLES, EVENT_ROLES, IMPLIES } = require('../permissions/registry');
@@ -8,13 +9,14 @@ const pageParam = (req) => Math.max(1, Number.parseInt(req.query.page, 10) || 1)
 
 async function index(req, res, next) {
   try {
-    const [users, contests, admins, auditEntries] = await Promise.all([
+    const [users, contests, admins, auditEntries, platform] = await Promise.all([
       prisma.user.count(),
       prisma.contest.count({ where: { deletedAt: null } }),
       prisma.userGlobalRole.count({ where: { role: 'platform-admin' } }),
       prisma.auditLog.count(),
+      statsService.platformStats(),
     ]);
-    res.render('pages/admin/index', { title: 'Administration — Zury', stats: { users, contests, admins, auditEntries } });
+    res.render('pages/admin/index', { title: 'Administration — Zury', stats: { users, contests, admins, auditEntries }, platform });
   } catch (err) {
     next(err);
   }

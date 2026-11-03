@@ -75,6 +75,19 @@
       </div>
     </div>
 
+    <div class="card mb-2">
+      <div class="row g-0 align-items-center">
+        <div class="col-md-4 p-4">
+          <div class="subheader">Community activity</div>
+          <div class="h1 mb-1"><%= trend.values.reduce((a, b) => a + b, 0) %></div>
+          <div class="text-secondary">submissions in the last 30 days, across <%= stats.events %> public events</div>
+        </div>
+        <div class="col-md-8">
+          <%- include('../partials/chart', { spec: { type: 'area', height: 120, sparkline: true, series: [{ name: 'Submissions', data: trend.values }], labels: trend.labels, colors: ['primary'] }, label: 'Submissions per day across Zury' }) %>
+        </div>
+      </div>
+    </div>
+
     <% sections.forEach((section) => { %>
       <div class="d-flex justify-content-between align-items-baseline mb-3 mt-4">
         <h2 class="mb-0"><%= section.heading %></h2>

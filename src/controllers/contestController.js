@@ -4,6 +4,7 @@ const eventService = require('../services/eventService');
 const membershipService = require('../services/membershipService');
 const userDirectory = require('../services/userDirectoryService');
 const lifecycle = require('../services/lifecycleService');
+const statsService = require('../services/statsService');
 const { canUseWikiForEvents } = require('../services/permissionService');
 const { EVENT_TYPES, readTypeConfig } = require('../events/eventTypes');
 const { PERMISSIONS, EVENT_ROLES, OVERRIDABLE_PERMISSIONS, ROLE_MANAGEMENT_PERMISSION } = require('../permissions/registry');
@@ -215,6 +216,23 @@ async function leave(req, res, next) {
   res.redirect(back(req));
 }
 
+async function statistics(req, res, next) {
+  if (!req.settings.publicStatisticsEnabled && !req.permissions.has('viewStatistics')) {
+    const err = new Error("This event's statistics aren't public.");
+    err.status = 403;
+    return next(err);
+  }
+  try {
+    res.render('pages/contest/statistics', {
+      title: `Statistics — ${req.contest.title}`,
+      stats: await statsService.eventStats(req.contest),
+      showNames: !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function activity(req, res, next) {
   try {
     res.render('pages/contest/activity', { title: `Activity — ${req.contest.title}`, entries: await contestService.activity(req.contest.id) });
@@ -237,4 +255,5 @@ module.exports = {
   join,
   leave,
   activity,
+  statistics,
 };

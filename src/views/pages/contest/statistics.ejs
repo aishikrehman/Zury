@@ -1,0 +1,170 @@
+<%
+  const s = stats;
+  const statusKeys = Object.keys(SUBMISSION_STATUSES).filter((k) => s.status[k]);
+  const participants = s.roles.participant || 0;
+  const typeIcons = { file: 'photo', article: 'file-text', item: 'database', lexeme: 'language', property: 'tag', page: 'file' };
+  const maxTop = Math.max(1, ...s.topParticipants.map((p) => p.count));
+  const sum7 = s.last7.reduce((a, b) => a + b, 0);
+%>
+<div class="page-body"><div class="container-xl">
+  <%- include('../../partials/contestHeader', { active: 'statistics' }) %>
+
+  <div class="row row-deck row-cards mb-3">
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center"><div class="subheader">Submissions</div><div class="ms-auto text-secondary small">all time</div></div>
+          <div class="d-flex align-items-baseline">
+            <div class="h1 mb-0 me-2"><%= s.active %></div>
+            <div class="me-auto"><span class="text-<%= sum7 ? 'green' : 'secondary' %> d-inline-flex align-items-center lh-1"><%= sum7 %> this week <i class="ti ti-trending-up ms-1"></i></span></div>
+          </div>
+        </div>
+        <%- include('../../partials/chart', { spec: { type: 'area', sparkline: true, height: 40, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: 'Daily submissions' }) %>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="subheader">Participants</div>
+          <div class="h1 mb-3"><%= participants %></div>
+          <div class="d-flex mb-2"><div>Jury members</div><div class="ms-auto"><span class="text-secondary"><%= s.roles.jury || 0 %></span></div></div>
+          <div class="d-flex"><div>Organizers</div><div class="ms-auto"><span class="text-secondary"><%= s.roles.organizer || 0 %></span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="subheader">Valid entries</div>
+          <div class="h1 mb-3"><%= s.validRate %>%</div>
+          <div class="d-flex mb-2"><div>Passed automatic checks</div><div class="ms-auto"><span class="text-green d-inline-flex align-items-center lh-1"><%= s.active - (s.status.invalid || 0) %> / <%= s.active %></span></div></div>
+          <div class="progress progress-sm"><div class="progress-bar bg-green" style="width: <%= s.validRate %>%" role="progressbar" aria-valuenow="<%= s.validRate %>" aria-valuemin="0" aria-valuemax="100" aria-label="<%= s.validRate %>% valid"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="subheader">Review progress</div>
+          <div class="h1 mb-3"><%= s.reviewProgress %>%</div>
+          <div class="d-flex mb-2"><div>Decided</div><div class="ms-auto"><span class="text-secondary"><%= s.decided %> of <%= s.active %></span></div></div>
+          <div class="progress progress-sm"><div class="progress-bar bg-primary" style="width: <%= s.reviewProgress %>%" role="progressbar" aria-valuenow="<%= s.reviewProgress %>" aria-valuemin="0" aria-valuemax="100" aria-label="<%= s.reviewProgress %>% decided"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-cards mb-3">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Submissions per day</h3><div class="card-actions text-secondary small"><%= contest.timezone %></div></div>
+        <div class="card-body">
+          <% if (!s.total) { %>
+            <%- include('../../partials/emptyArt', { title: 'No submissions yet', text: 'The chart fills in as entries arrive.' }) %>
+          <% } else { %>
+            <%- include('../../partials/chart', { spec: { type: 'area', height: 260, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: 'Submissions per day' }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">By status</h3></div>
+        <div class="card-body">
+          <% if (!s.total) { %>
+            <p class="text-secondary mb-0">No entries yet.</p>
+          <% } else { %>
+            <%- include('../../partials/chart', { spec: { type: 'donut', height: 260, series: statusKeys.map((k) => s.status[k]), labels: statusKeys.map((k) => SUBMISSION_STATUSES[k].label), colors: statusKeys.map((k) => SUBMISSION_STATUSES[k].color), totalLabel: 'Entries' }, label: 'Submissions by status' }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-cards">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+            <li class="nav-item" role="presentation"><a href="#tab-top" class="nav-link active" data-bs-toggle="tab" role="tab" aria-selected="true"><i class="ti ti-trophy me-1"></i>Top participants</a></li>
+            <li class="nav-item" role="presentation"><a href="#tab-wikis" class="nav-link" data-bs-toggle="tab" role="tab" aria-selected="false" tabindex="-1"><i class="ti ti-world me-1"></i>By wiki</a></li>
+            <li class="nav-item" role="presentation"><a href="#tab-types" class="nav-link" data-bs-toggle="tab" role="tab" aria-selected="false" tabindex="-1"><i class="ti ti-category me-1"></i>By type</a></li>
+          </ul>
+        </div>
+        <div class="tab-content">
+          <div class="tab-pane active show" id="tab-top" role="tabpanel">
+            <% if (!s.topParticipants.length) { %>
+              <div class="card-body text-secondary">No entries yet.</div>
+            <% } else { %>
+              <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                  <thead><tr><th class="w-1">#</th><th>Participant</th><th>Entries</th><th>Approved</th><th class="w-50"></th></tr></thead>
+                  <tbody>
+                    <% s.topParticipants.forEach((p, i) => { %>
+                      <tr>
+                        <td class="text-secondary"><%= i + 1 %></td>
+                        <td>
+                          <div class="d-flex align-items-center">
+                            <span class="avatar avatar-xs me-2"><%= showNames ? p.username.charAt(0).toUpperCase() : '?' %></span>
+                            <%= showNames ? p.username : `Participant ${i + 1}` %>
+                          </div>
+                        </td>
+                        <td><%= p.count %></td>
+                        <td><span class="badge bg-green-lt"><%= p.approved %></span></td>
+                        <td>
+                          <div class="progress progress-xs">
+                            <div class="progress-bar bg-primary" style="width: <%= Math.round((p.count / maxTop) * 100) %>%"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </div>
+          <div class="tab-pane" id="tab-wikis" role="tabpanel">
+            <div class="card-body">
+              <% const wikis = Object.entries(s.byWiki).sort((a, b) => b[1] - a[1]); %>
+              <% if (!wikis.length) { %><p class="text-secondary mb-0">No entries yet.</p><% } else { %>
+                <%- include('../../partials/chart', { spec: { type: 'bar', height: 240, distributed: true, series: [{ name: 'Entries', data: wikis.map((w) => w[1]) }], labels: wikis.map((w) => w[0]), colors: ['primary', 'green', 'orange', 'purple', 'azure', 'pink'] }, label: 'Entries by wiki' }) %>
+              <% } %>
+            </div>
+          </div>
+          <div class="tab-pane" id="tab-types" role="tabpanel">
+            <div class="card-body">
+              <% const types = Object.entries(s.byType); %>
+              <% if (!types.length) { %><p class="text-secondary mb-0">No entries yet.</p><% } %>
+              <% types.forEach(([type, n]) => { const pct = Math.round((n / Math.max(1, s.active)) * 100); %>
+                <div class="row align-items-center mb-3">
+                  <div class="col-auto"><span class="avatar bg-primary-lt"><i class="ti ti-<%= typeIcons[type] || 'file' %>"></i></span></div>
+                  <div class="col">
+                    <div class="d-flex mb-1"><span class="text-capitalize"><%= type %></span><span class="ms-auto text-secondary"><%= n %> · <%= pct %>%</span></div>
+                    <div class="progress progress-sm"><div class="progress-bar" style="width: <%= pct %>%"></div></div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Jury progress</h3></div>
+        <div class="card-body">
+          <%- include('../../partials/chart', { spec: { type: 'radialBar', height: 220, series: [s.reviewProgress], label: 'Decided', colors: ['primary'] }, label: `${s.reviewProgress}% of entries decided` }) %>
+          <div class="row text-center mt-2">
+            <% [['approved', 'green'], ['rejected', 'orange'], ['under_review', 'yellow']].forEach(([k, c]) => { %>
+              <div class="col">
+                <div class="h3 mb-0"><span class="status-dot status-dot-animated bg-<%= c %> me-1"></span><%= s.status[k] || 0 %></div>
+                <div class="text-secondary small"><%= SUBMISSION_STATUSES[k].label %></div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

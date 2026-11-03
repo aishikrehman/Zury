@@ -3,6 +3,7 @@
   const color = st.badge === 'dark' ? 'secondary' : st.badge;
   const tabs = [['overview', 'Overview', '', 'info-circle', true]];
   tabs.push(['submissions', 'Submissions', '/submissions', 'files', true]);
+  if (settings.publicStatisticsEnabled || can('viewStatistics')) tabs.push(['statistics', 'Statistics', '/statistics', 'chart-bar', true]);
   if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', 'People', '/participants', 'users', true]);
   if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', 'Configuration', '/config', 'adjustments', true]);
   if (can('manageEvent')) tabs.push(['activity', 'Activity', '/activity', 'history', true]);

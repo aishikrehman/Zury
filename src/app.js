@@ -43,6 +43,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules', pkg, 'dist'), { maxAge: '7d' });
 app.use('/vendor/tabler', vendor('@tabler/core'));
 app.use('/vendor/tabler-icons', vendor('@tabler/icons-webfont'));
+app.use('/vendor/apexcharts', vendor('apexcharts'));
 
 // Defaults so the layout can always render, even for early errors.
 app.use((req, res, next) => {

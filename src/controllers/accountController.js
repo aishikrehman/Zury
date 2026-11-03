@@ -1,19 +1,22 @@
 const prisma = require('../config/prisma');
 const userService = require('../services/userService');
 const contestService = require('../services/contestService');
+const statsService = require('../services/statsService');
 
 const { TIMEZONES } = require('../utils/time');
 
 async function dashboard(req, res, next) {
   try {
-    const [myEvents, submissionCount] = await Promise.all([
+    const [myEvents, submissionCount, activity] = await Promise.all([
       contestService.listForUser(req.user.id),
       prisma.submission.count({ where: { participantId: req.user.id, contest: { deletedAt: null } } }),
+      statsService.userStats(req.user.id),
     ]);
     res.render('pages/account/dashboard', {
       title: 'Dashboard — Zury',
       myEvents,
       submissionCount,
+      activity,
       juryEvents: myEvents.filter((e) => e.roles.includes('jury')),
       wikiRoles: req.subject.user.wikiRoles,
     });

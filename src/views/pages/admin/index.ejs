@@ -24,6 +24,54 @@
         </div>
       <% }) %>
     </div>
+    <%
+      const p = platform;
+      const typeKeys = Object.keys(p.eventsByType);
+      const statusKeys = Object.keys(p.eventsByStatus);
+      const statusColor = (k) => { const b = (CONTEST_STATUSES[k] || {}).badge || 'secondary'; return b === 'dark' ? 'gray-500' : b === 'light' ? 'gray-300' : b; };
+      const wikis = Object.entries(p.submissionsByWiki);
+    %>
+    <div class="row row-cards mb-4">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Activity, last 30 days</h3></div>
+          <div class="card-body">
+            <%- include('../../partials/chart', { spec: { type: 'line', height: 260, legend: true, series: [{ name: 'Submissions', data: p.submissions.values }, { name: 'New users', data: p.signups.values }], labels: p.submissions.labels, colors: ['primary', 'green'] }, label: 'Submissions and new users per day' }) %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Events by type</h3></div>
+          <div class="card-body">
+            <%- include('../../partials/chart', { spec: { type: 'donut', height: 260, series: typeKeys.map((k) => p.eventsByType[k]), labels: typeKeys.map((k) => CONTEST_TYPES[k] || k), colors: ['blue', 'green', 'purple', 'orange'], totalLabel: 'Events' }, label: 'Events by type' }) %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Events by status</h3></div>
+          <div class="card-body">
+            <%- include('../../partials/chart', { spec: { type: 'bar', height: 220, distributed: true, series: [{ name: 'Events', data: statusKeys.map((k) => p.eventsByStatus[k]) }], labels: statusKeys.map((k) => (CONTEST_STATUSES[k] || { label: k }).label), colors: statusKeys.map(statusColor) }, label: 'Events by status' }) %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Top wikis by submissions</h3></div>
+          <div class="card-body">
+            <% const maxWiki = Math.max(1, ...wikis.map((w) => w[1])); %>
+            <% if (!wikis.length) { %><p class="text-secondary mb-0">No submissions yet.</p><% } %>
+            <% wikis.forEach(([wiki, n]) => { %>
+              <div class="mb-3">
+                <div class="d-flex mb-1"><span><%= wiki %></span><span class="ms-auto text-secondary"><%= n %></span></div>
+                <div class="progress progress-sm"><div class="progress-bar" style="width: <%= Math.round((n / maxWiki) * 100) %>%"></div></div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="row row-cards">
       <div class="col-md-6">
         <div class="card">

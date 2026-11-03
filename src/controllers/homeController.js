@@ -1,12 +1,13 @@
 const prisma = require('../config/prisma');
 const contestService = require('../services/contestService');
+const statsService = require('../services/statsService');
 const { ensureCsrfToken } = require('../middleware/csrf');
 const { PUBLIC_LAYOUT } = require('../utils/layouts');
 const env = require('../config/env');
 
 async function index(req, res, next) {
   try {
-    const [active, upcoming, completed, stats] = await Promise.all([
+    const [active, upcoming, completed, stats, platform] = await Promise.all([
       contestService.listByGroup('active'),
       contestService.listByGroup('upcoming'),
       contestService.listByGroup('completed'),
@@ -15,6 +16,7 @@ async function index(req, res, next) {
         prisma.submission.count({ where: { contest: { deletedAt: null } } }),
         prisma.user.count(),
       ]),
+      statsService.platformStats(),
     ]);
     // The demo user picker in the login wizard posts a form, which needs a token.
     let demoUsers = [];
@@ -27,6 +29,7 @@ async function index(req, res, next) {
       title: 'Zury — Wikimedia Contests & Events',
       stats: { events: stats[0], submissions: stats[1], users: stats[2] },
       demoUsers,
+      trend: platform.submissions,
       sections: [
         { key: 'active', heading: 'Active events', items: active, empty: 'No active events right now.' },
         { key: 'upcoming', heading: 'Upcoming events', items: upcoming, empty: 'No upcoming events yet.' },
