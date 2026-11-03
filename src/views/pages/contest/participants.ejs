@@ -8,27 +8,36 @@
         <div class="card-header"><h3 class="card-title">Members</h3><div class="card-actions text-secondary small"><%= members.length %> active</div></div>
         <% if (roleOptions.length) { %>
           <div class="card-body border-bottom">
-            <form method="post" action="/contest/<%= contest.id %>/members" class="row g-2 align-items-end">
+            <form method="post" action="<%= base %>/members" class="row g-2 align-items-end">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <div class="col-sm-6">
+              <div class="<%= memberWikis.length ? 'col-sm-4' : 'col-sm-6' %>">
                 <label class="form-label" for="memberUsername">Wikimedia username</label>
                 <select class="form-select" id="memberUsername" name="username" required data-picker="user" placeholder="Search Wikimedia users…"></select>
               </div>
-              <div class="col-sm-4">
+              <div class="<%= memberWikis.length ? 'col-sm-3' : 'col-sm-4' %>">
                 <label class="form-label" for="memberRole">Role</label>
                 <select class="form-select" id="memberRole" name="role">
                   <% roleOptions.forEach(([key, role]) => { %><option value="<%= key %>"><%= role.label %></option><% }) %>
                 </select>
               </div>
+              <% if (memberWikis.length) { %>
+                <div class="col-sm-3">
+                  <label class="form-label" for="memberWiki">For</label>
+                  <select class="form-select" id="memberWiki" name="wiki">
+                    <option value="">Whole event</option>
+                    <% memberWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= w.code %> · <%= w.wiki %></option><% }) %>
+                  </select>
+                </div>
+              <% } %>
               <div class="col-sm-2"><button class="btn btn-primary w-100" type="submit"><i class="ti ti-user-plus me-1"></i>Add</button></div>
             </form>
           </div>
         <% } %>
         <div class="table-responsive">
           <table class="table table-vcenter card-table">
-            <thead><tr><th>User</th><th>Role</th><th>Home wiki</th><th>Since</th><th class="w-1"></th></tr></thead>
+            <thead><tr><th>User</th><th>Role</th><th>Scope</th><th>Home wiki</th><th>Since</th><th class="w-1"></th></tr></thead>
             <tbody>
-              <% if (!members.length) { %><tr><td colspan="5" class="text-secondary">No members yet.</td></tr><% } %>
+              <% if (!members.length) { %><tr><td colspan="6" class="text-secondary">No members yet.</td></tr><% } %>
               <% roleOrder.forEach((role) => members.filter((m) => m.role === role).forEach((m) => { %>
                 <tr>
                   <td>
@@ -38,11 +47,12 @@
                     </div>
                   </td>
                   <td><span class="badge bg-<%= { organizer: 'green', jury: 'orange', participant: 'blue', viewer: 'secondary' }[role] %>-lt"><%= EVENT_ROLES[role].label %></span></td>
+                  <td><% if (m.wiki) { %><span class="badge bg-azure-lt"><%= m.wiki %></span><% } else { %><span class="text-secondary">Event</span><% } %></td>
                   <td class="text-secondary"><%= m.user.homeWiki || '—' %></td>
                   <td class="text-secondary text-nowrap"><%= formatDate(m.assignedAt, contest.timezone) %></td>
                   <td>
-                    <% if (can(ROLE_MANAGEMENT_PERMISSION[m.role])) { %>
-                      <form method="post" action="/contest/<%= contest.id %>/members/<%= m.id %>/remove" class="d-inline">
+                    <% if ((m.wiki ? scope.forWiki(m.wiki) : (wikiScope && m.role !== 'participant' ? scope.global : scope.permissions)).has(ROLE_MANAGEMENT_PERMISSION[m.role])) { %>
+                      <form method="post" action="<%= base %>/members/<%= m.id %>/remove" class="d-inline">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <button class="btn btn-sm btn-ghost-danger" type="submit" title="Remove <%= m.user.username %>"><i class="ti ti-trash"></i><span class="visually-hidden">Remove</span></button>
                       </form>
@@ -73,7 +83,7 @@
                     <div class="text-secondary small"><%= permissionLabels[o.permission] || o.permission %> · <code><%= o.permission %></code></div>
                   </div>
                   <% if (can('manageEvent')) { %>
-                    <form method="post" action="/contest/<%= contest.id %>/overrides/<%= o.id %>/remove">
+                    <form method="post" action="<%= base %>/overrides/<%= o.id %>/remove">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button class="btn btn-sm btn-ghost-danger" type="submit" title="Remove override"><i class="ti ti-x"></i><span class="visually-hidden">Remove</span></button>
                     </form>
@@ -85,7 +95,7 @@
         <% } %>
         <% if (can('manageEvent')) { %>
           <div class="card-footer">
-            <form method="post" action="/contest/<%= contest.id %>/overrides">
+            <form method="post" action="<%= base %>/overrides">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <div class="mb-2">
                 <label class="form-label" for="ovUser">Username</label>

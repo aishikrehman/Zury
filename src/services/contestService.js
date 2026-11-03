@@ -12,7 +12,7 @@ const SORTS = {
 // with management authority over them (platform roles, local admins).
 function isVisible(contest, scope) {
   if (contest.visibility === 'public' && contest.status !== 'draft') return true;
-  return scope.eventRoles.length > 0 || scope.permissions.has('manageEvent');
+  return scope.hasAnyRole || scope.permissions.has('manageEvent') || scope.wikisWith('manageEvent').length > 0;
 }
 
 const CARD_SELECT = {
@@ -26,6 +26,9 @@ const CARD_SELECT = {
   timezone: true,
   startDate: true,
   endDate: true,
+  edition: true,
+  series: { select: { slug: true, title: true } },
+  wikis: { where: { status: { not: 'pending' } }, select: { wiki: true, code: true }, orderBy: { code: 'asc' } },
   _count: { select: { memberships: { where: { role: 'participant', status: 'active' } } } },
 };
 
@@ -42,7 +45,7 @@ async function listPublic({ group, type, wiki, q, sort, page = 1, perPage = 12 }
   const where = { ...PUBLIC_WHERE };
   if (STATUS_GROUPS[group]) where.status = { in: STATUS_GROUPS[group] };
   if (CONTEST_TYPES[type]) where.type = type;
-  if (wiki) where.primaryWiki = wiki;
+  if (wiki) where.wikis = { some: { wiki, status: { not: 'pending' } } };
   if (q) where.OR = [{ title: { contains: q } }, { organizingCommunity: { contains: q } }];
 
   const [items, total, wikis] = await Promise.all([
@@ -54,9 +57,9 @@ async function listPublic({ group, type, wiki, q, sort, page = 1, perPage = 12 }
       take: perPage,
     }),
     prisma.contest.count({ where }),
-    prisma.contest.findMany({ where: PUBLIC_WHERE, distinct: ['primaryWiki'], select: { primaryWiki: true }, orderBy: { primaryWiki: 'asc' } }),
+    prisma.contestWiki.findMany({ where: { status: { not: 'pending' }, contest: PUBLIC_WHERE }, distinct: ['wiki'], select: { wiki: true }, orderBy: { wiki: 'asc' } }),
   ]);
-  return { items, total, page, perPage, pages: Math.max(1, Math.ceil(total / perPage)), wikis: wikis.map((w) => w.primaryWiki) };
+  return { items, total, page, perPage, pages: Math.max(1, Math.ceil(total / perPage)), wikis: wikis.map((w) => w.wiki) };
 }
 
 // A user's events with all their roles in each, newest first.
@@ -69,7 +72,8 @@ async function listForUser(userId, { publicOnly = false } = {}) {
   const byContest = new Map();
   for (const m of memberships) {
     if (!byContest.has(m.contestId)) byContest.set(m.contestId, { contest: m.contest, roles: [] });
-    byContest.get(m.contestId).roles.push(m.role);
+    const roles = byContest.get(m.contestId).roles;
+    if (!roles.includes(m.role)) roles.push(m.role);
   }
   return [...byContest.values()];
 }
@@ -99,4 +103,4 @@ function activity(contestId, take = 100) {
   });
 }
 
-module.exports = { SORTS, isVisible, listByGroup, listPublic, listForUser, members, overrides, activity };
+module.exports = { SORTS, CARD_SELECT, isVisible, listByGroup, listPublic, listForUser, members, overrides, activity };

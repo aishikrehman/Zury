@@ -42,7 +42,8 @@ test('demo mode is never enabled in production', () => {
 
 test('seed is idempotent', async () => {
   assert.equal(await t.prisma.user.count({ where: { isDemo: true } }), 8);
-  assert.equal(await t.prisma.contest.count({ where: { isDemo: true } }), 8);
+  assert.equal(await t.prisma.contest.count({ where: { isDemo: true } }), 9);
+  assert.equal(await t.prisma.eventSeries.count({ where: { isDemo: true } }), 2);
 });
 
 test('public pages show demo events but never private ones', async () => {

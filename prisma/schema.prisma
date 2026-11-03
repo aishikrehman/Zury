@@ -112,6 +112,9 @@ model Contest {
   resultsAnnouncedAt   DateTime?
 
   isDemo      Boolean   @default(false)
+  // Recurring events: /<series slug>/<edition>, e.g. /wam/2026.
+  seriesId    Int?
+  edition     String?
   createdById Int?
   deletedAt   DateTime?
   deletedById Int?
@@ -121,6 +124,8 @@ model Contest {
   createdBy           User?               @relation("ContestCreator", fields: [createdById], references: [id], onDelete: SetNull)
   deletedBy           User?               @relation("ContestDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
   settings            ContestSettings?
+  wikis               ContestWiki[]
+  series              EventSeries?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   submissions         Submission[]
   memberships         ContestMembership[]
   permissionOverrides ContestPermission[]
@@ -129,6 +134,40 @@ model Contest {
   @@index([status, visibility])
   @@index([primaryWiki])
   @@index([deletedAt])
+  @@unique([seriesId, edition])
+}
+
+// A recurring event such as Wikipedia Asian Month; each year is an edition (a Contest).
+model EventSeries {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  description String   @default("")
+  isDemo      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  editions Contest[]
+}
+
+// A wiki taking part in an event. Settings it doesn't override come from the event.
+model ContestWiki {
+  id            Int      @id @default(autoincrement())
+  contestId     Int
+  wiki          String
+  // Short code used in URLs, e.g. "bn" in /wam/2026/bn.
+  code          String
+  // active | pending (requested, awaiting approval) | paused
+  status        String   @default("active")
+  // JSON: { contest: {...}, settings: {...}, typeConfig: {...} } — only overridden fields.
+  overrides     String   @default("{}")
+  requestedById Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, wiki])
+  @@unique([contestId, code])
 }
 
 // Per-event feature switches and participation rules. Type-specific options
@@ -170,6 +209,8 @@ model ContestMembership {
   contestId    Int
   userId       Int
   role         String
+  // Wiki database name this role is limited to; "" means the whole event.
+  wiki         String   @default("")
   status       String   @default("active")
   assignedAt   DateTime @default(now())
   assignedById Int?
@@ -178,7 +219,7 @@ model ContestMembership {
   user       User    @relation("MembershipHolder", fields: [userId], references: [id], onDelete: Cascade)
   assignedBy User?   @relation("MembershipAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
 
-  @@unique([contestId, userId, role])
+  @@unique([contestId, userId, role, wiki])
   @@index([userId])
 }
 

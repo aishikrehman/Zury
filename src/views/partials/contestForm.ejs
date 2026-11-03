@@ -10,6 +10,10 @@
   const wikiScope = eventWikiScope(subject);
   const errorCount = Object.keys(errors).length;
   const listVal = (k) => [].concat(form[k] ?? []).flatMap((x) => String(x).split(/[s,]+/)).filter(Boolean);
+  // wikiMode: editing one wiki's part of a multi-wiki event; only overridable fields are shown.
+  const wikiMode = !!locals.wikiMode;
+  const marks = locals.wikiMode ? locals.overridden : new Set();
+  const mark = (key) => (marks.has(key) ? '<span class="badge bg-orange-lt ms-1">this wiki</span>' : '');
 %>
 <% if (errorCount) { %>
   <div class="alert alert-danger" role="alert">Please fix the <%= errorCount %> highlighted field<%= errorCount === 1 ? '' : 's' %> below.</div>
@@ -18,11 +22,13 @@
 <form method="post" action="<%= action %>" novalidate>
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <input type="hidden" name="type" value="<%= type %>">
+  <% if (wikiMode) { %><input type="hidden" id="primaryWiki" value="<%= v('primaryWiki') %>"><% } %>
 
   <fieldset class="card mb-4">
     <div class="card-header"><h3 class="card-title">Basics</h3></div>
     <div class="card-body">
     <div class="row g-3">
+      <% if (!wikiMode) { %>
       <div class="col-md-8">
         <label class="form-label" for="title">Title</label>
         <input class="form-control<%= inv('title') %>" id="title" name="title" maxlength="200" required value="<%= v('title') %>">
@@ -33,11 +39,23 @@
         <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>">
         <%- err('slug') %>
       </div>
+      <div class="col-md-4">
+        <label class="form-label" for="seriesSlug">Series</label>
+        <input class="form-control<%= inv('seriesSlug') %>" id="seriesSlug" name="seriesSlug" maxlength="40" value="<%= v('seriesSlug') %>" placeholder="wam">
+        <%- err('seriesSlug') %>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="edition">Edition</label>
+        <input class="form-control<%= inv('edition') %>" id="edition" name="edition" maxlength="20" value="<%= v('edition') %>" placeholder="2026">
+        <%- err('edition') %>
+      </div>
+      <% } %>
       <div class="col-12">
-        <label class="form-label" for="description">Description</label>
+        <label class="form-label" for="description">Description<%- mark('contest.description') %></label>
         <textarea class="form-control<%= inv('description') %>" id="description" name="description" rows="4" maxlength="5000"><%= v('description') %></textarea>
         <%- err('description') %>
       </div>
+      <% if (!wikiMode) { %>
       <div class="col-md-6">
         <label class="form-label" for="organizingCommunity">Organizing community</label>
         <input class="form-control<%= inv('organizingCommunity') %>" id="organizingCommunity" name="organizingCommunity" maxlength="200" value="<%= v('organizingCommunity') %>" placeholder="e.g. Wikimedia Bangladesh">
@@ -53,13 +71,6 @@
         </div>
         <%- err('primaryWiki') %>
       </div>
-      <div class="col-md-6">
-        <label class="form-label" for="additionalWikis">Additional wikis</label>
-        <select class="form-select<%= inv('additionalWikis') %>" id="additionalWikis" name="additionalWikis" multiple data-picker="wiki" placeholder="Search wikis…">
-          <% listVal('additionalWikis').forEach((w) => { %><option value="<%= w %>" selected><%= w %></option><% }) %>
-        </select>
-        <%- err('additionalWikis') %>
-      </div>
       <div class="col-md-3">
         <label class="form-label" for="language">Language</label>
         <select class="form-select<%= inv('language') %>" id="language" name="language" data-picker="language" placeholder="Search languages…">
@@ -67,13 +78,15 @@
         </select>
         <%- err('language') %>
       </div>
+      <% } %>
       <div class="col-md-3">
-        <label class="form-label" for="timezone">Timezone</label>
+        <label class="form-label" for="timezone">Timezone<%- mark('contest.timezone') %></label>
         <select class="form-select<%= inv('timezone') %>" id="timezone" name="timezone">
           <% TIMEZONES.forEach((tz) => { %><option value="<%= tz %>"<%= v('timezone') === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
         </select>
         <%- err('timezone') %>
       </div>
+      <% if (!wikiMode) { %>
       <div class="col-md-6">
         <span class="form-label d-block">Visibility</span>
         <div class="form-check form-check-inline">
@@ -85,11 +98,13 @@
           <label class="form-check-label" for="visPrivate">Private (members only)</label>
         </div>
       </div>
+      <% } %>
       <div class="col-md-6">
-        <label class="form-label" for="contactInfo">Contact</label>
+        <label class="form-label" for="contactInfo">Contact<%- mark('contest.contactInfo') %></label>
         <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="Talk page, email list or similar">
         <%- err('contactInfo') %>
       </div>
+      <% if (!wikiMode) { %>
       <div class="col-md-6">
         <label class="form-label" for="logoUrl">Logo URL</label>
         <input class="form-control<%= inv('logoUrl') %>" id="logoUrl" name="logoUrl" value="<%= v('logoUrl') %>" placeholder="https://upload.wikimedia.org/...">
@@ -100,6 +115,7 @@
         <input class="form-control<%= inv('bannerUrl') %>" id="bannerUrl" name="bannerUrl" value="<%= v('bannerUrl') %>" placeholder="https://upload.wikimedia.org/...">
         <%- err('bannerUrl') %>
       </div>
+      <% } %>
     </div>
   </div>
   </fieldset>
@@ -110,7 +126,7 @@
     <div class="row g-3">
       <% DATE_FIELDS.forEach(([key, label]) => { %>
         <div class="col-sm-6 col-lg-4">
-          <label class="form-label" for="<%= key %>"><%= label %></label>
+          <label class="form-label" for="<%= key %>"><%= label %><%- mark('contest.' + key) %></label>
           <input type="datetime-local" class="form-control<%= inv(key) %>" id="<%= key %>" name="<%= key %>" value="<%= v(key) %>">
           <%- err(key) %>
         </div>
@@ -124,28 +140,28 @@
     <div class="card-body">
     <div class="row g-3">
       <div class="col-sm-6 col-lg-3">
-        <label class="form-label" for="participationMode">Who can take part</label>
+        <label class="form-label" for="participationMode">Who can take part<%- mark('settings.participationMode') %></label>
         <select class="form-select" id="participationMode" name="participationMode">
           <% Object.entries(PARTICIPATION_MODES).forEach(([key, label]) => { %><option value="<%= key %>"<%= v('participationMode') === key ? ' selected' : '' %>><%= label %></option><% }) %>
         </select>
       </div>
       <div class="col-sm-6 col-lg-3">
-        <label class="form-label" for="minAccountAgeDays">Minimum account age (days)</label>
+        <label class="form-label" for="minAccountAgeDays">Minimum account age (days)<%- mark('settings.minAccountAgeDays') %></label>
         <input type="number" min="0" class="form-control<%= inv('minAccountAgeDays') %>" id="minAccountAgeDays" name="minAccountAgeDays" value="<%= v('minAccountAgeDays') %>">
         <%- err('minAccountAgeDays') %>
       </div>
       <div class="col-sm-6 col-lg-3">
-        <label class="form-label" for="minEditCount">Minimum global edits</label>
+        <label class="form-label" for="minEditCount">Minimum global edits<%- mark('settings.minEditCount') %></label>
         <input type="number" min="0" class="form-control<%= inv('minEditCount') %>" id="minEditCount" name="minEditCount" value="<%= v('minEditCount') %>">
         <%- err('minEditCount') %>
       </div>
       <div class="col-sm-6 col-lg-3">
-        <label class="form-label" for="participantLimit">Participant limit</label>
+        <label class="form-label" for="participantLimit">Participant limit<%- mark('settings.participantLimit') %></label>
         <input type="number" min="1" class="form-control<%= inv('participantLimit') %>" id="participantLimit" name="participantLimit" value="<%= v('participantLimit') %>" placeholder="No limit">
         <%- err('participantLimit') %>
       </div>
       <div class="col-lg-6">
-        <label class="form-label" for="eligibleNamespaces">Eligible namespaces</label>
+        <label class="form-label" for="eligibleNamespaces">Eligible namespaces<%- mark('settings.eligibleNamespaces') %></label>
         <select class="form-select<%= inv('eligibleNamespaces') %>" id="eligibleNamespaces" name="eligibleNamespaces" multiple data-picker="namespace" data-wiki-source="primaryWiki" placeholder="Default: <%= typeDef.defaultNamespaces.join(', ') %>">
           <% listVal('eligibleNamespaces').forEach((n) => { %><option value="<%= n %>" selected><%= n %></option><% }) %>
         </select>
@@ -160,7 +176,7 @@
         ].forEach(([key, label]) => { %>
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="<%= key %>" name="<%= key %>"<%= on(key) ? ' checked' : '' %>>
-            <label class="form-check-label" for="<%= key %>"><%= label %></label>
+            <label class="form-check-label" for="<%= key %>"><%= label %><%- mark('settings.' + key) %></label>
           </div>
         <% }) %>
       </div>
@@ -176,7 +192,7 @@
         <div class="col-md-6 col-lg-4">
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="<%= key %>" name="<%= key %>"<%= on(key) ? ' checked' : '' %>>
-            <label class="form-check-label" for="<%= key %>"><%= label %></label>
+            <label class="form-check-label" for="<%= key %>"><%= label %><%- mark('settings.' + key) %></label>
           </div>
         </div>
       <% }) %>
@@ -193,10 +209,10 @@
           <% if (f.type === 'bool') { %>
             <div class="form-check mt-md-4">
               <input class="form-check-input" type="checkbox" id="<%= name %>" name="<%= name %>"<%= on(name) ? ' checked' : '' %>>
-              <label class="form-check-label" for="<%= name %>"><%= f.label %></label>
+              <label class="form-check-label" for="<%= name %>"><%= f.label %><%- mark('type.' + f.key) %></label>
             </div>
           <% } else if (f.type === 'choices') { const selected = [].concat(form[name] || []); %>
-            <span class="form-label d-block"><%= f.label %></span>
+            <span class="form-label d-block"><%= f.label %><%- mark('type.' + f.key) %></span>
             <% Object.entries(f.choices).forEach(([key, label]) => { %>
               <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" id="<%= name %>_<%= key %>" name="<%= name %>" value="<%= key %>"<%= selected.includes(key) ? ' checked' : '' %>>
@@ -204,10 +220,10 @@
               </div>
             <% }) %>
           <% } else if (f.type === 'list') { %>
-            <label class="form-label" for="<%= name %>"><%= f.label %></label>
+            <label class="form-label" for="<%= name %>"><%= f.label %><%- mark('type.' + f.key) %></label>
             <textarea class="form-control<%= inv(name) %>" id="<%= name %>" name="<%= name %>" rows="3"><%= v(name) %></textarea>
           <% } else { %>
-            <label class="form-label" for="<%= name %>"><%= f.label %></label>
+            <label class="form-label" for="<%= name %>"><%= f.label %><%- mark('type.' + f.key) %></label>
             <input class="form-control<%= inv(name) %>" id="<%= name %>" name="<%= name %>" <%= f.type === 'int' ? `type=number min=${f.min} max=${f.max}` : '' %> value="<%= v(name) %>">
           <% } %>
           <%- err(name) %>

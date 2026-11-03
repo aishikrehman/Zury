@@ -20,4 +20,9 @@ function userPath(username) {
   return `/users/${encodeURIComponent(username)}`;
 }
 
-module.exports = { formatDate, formatDateTime, userPath };
+// Canonical address of an event: /<series>/<edition> when it has one.
+function eventPath(c) {
+  return c.series && c.edition ? `/${c.series.slug}/${c.edition}` : `/contest/${c.id}`;
+}
+
+module.exports = { formatDate, formatDateTime, userPath, eventPath };

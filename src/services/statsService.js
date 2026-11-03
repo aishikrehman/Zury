@@ -24,8 +24,9 @@ function dailySeries(dates, from, to, timeZone = 'UTC') {
 
 const toMap = (rows, key) => Object.fromEntries(rows.map((r) => [r[key], r._count._all]));
 
-async function eventStats(contest, now = new Date()) {
-  const where = { contestId: contest.id };
+// wiki: limit submission numbers to one wiki of a multi-wiki event (people stay event-wide).
+async function eventStats(contest, { wiki, now = new Date() } = {}) {
+  const where = { contestId: contest.id, ...(wiki && { wiki }) };
   const [byStatus, byType, byWiki, top, memberships, dates] = await Promise.all([
     prisma.submission.groupBy({ by: ['status'], where, _count: { _all: true } }),
     prisma.submission.groupBy({ by: ['entryType'], where: { ...where, status: { notIn: INACTIVE } }, _count: { _all: true } }),
@@ -37,7 +38,7 @@ async function eventStats(contest, now = new Date()) {
       orderBy: { _count: { participantId: 'desc' } },
       take: 10,
     }),
-    prisma.contestMembership.groupBy({ by: ['role'], where: { ...where, status: 'active' }, _count: { _all: true } }),
+    prisma.contestMembership.groupBy({ by: ['role'], where: { contestId: contest.id, status: 'active' }, _count: { _all: true } }),
     prisma.submission.findMany({ where, select: { submittedAt: true }, orderBy: { submittedAt: 'asc' } }),
   ]);
 

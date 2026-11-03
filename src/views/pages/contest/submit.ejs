@@ -16,7 +16,7 @@
 
   <div class="row row-cards">
     <div class="col-lg-8">
-      <form method="post" action="/contest/<%= contest.id %>/submit/preview" class="card">
+      <form method="post" action="<%= base %>/submit/preview" class="card">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-upload me-2"></i>Submit <%= mass ? 'entries' : 'an entry' %></h3></div>
         <div class="card-body">
@@ -80,7 +80,7 @@
             </table>
           </div>
           <% if (okCount) { %>
-            <form method="post" action="/contest/<%= contest.id %>/submit" class="card-footer d-flex align-items-center">
+            <form method="post" action="<%= base %>/submit" class="card-footer d-flex align-items-center">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="entries" value="<%= items.filter((i) => i.ok).map((i) => i.input).join('\n') %>">
               <input type="hidden" name="participant" value="<%= participant %>">

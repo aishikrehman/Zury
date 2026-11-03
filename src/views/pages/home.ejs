@@ -101,7 +101,7 @@
                     <div class="text-secondary small"><%= CONTEST_TYPES[c.type] %><br><%= c.primaryWiki %></div>
                     <span class="badge bg-green-lt ms-auto"><span class="status-dot status-dot-animated bg-green me-1"></span>Open</span>
                   </div>
-                  <h3 class="card-title mb-3"><a href="/contest/<%= c.id %>" class="stretched-link text-reset"><%= c.title %></a></h3>
+                  <h3 class="card-title mb-3"><a href="<%= eventPath(c) %>" class="stretched-link text-reset"><%= c.title %></a></h3>
                   <div class="mt-auto">
                     <div class="d-flex small mb-1">
                       <span class="text-secondary"><i class="ti ti-users me-1"></i><%= c._count.memberships %> taking part</span>
@@ -123,7 +123,7 @@
           <% } else { %>
             <div class="list-group list-group-flush">
               <% upcoming.slice(0, 5).forEach((c) => { %>
-                <a href="/contest/<%= c.id %>" class="list-group-item list-group-item-action">
+                <a href="<%= eventPath(c) %>" class="list-group-item list-group-item-action">
                   <div class="row align-items-center">
                     <div class="col-auto">
                       <div class="text-center rounded border px-2 py-1" style="min-width: 3rem">

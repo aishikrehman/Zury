@@ -106,6 +106,15 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const slug = str(body.slug).toLowerCase() || slugify(title);
   if (!SLUG.test(slug) || slug.length > 80) errors.slug = 'Use lowercase letters, numbers and single hyphens (max 80).';
 
+  // Optional recurring-event address: /<series>/<edition>, e.g. /wam/2026.
+  const seriesSlug = str(body.seriesSlug).toLowerCase();
+  const edition = str(body.edition).toLowerCase();
+  if (seriesSlug || edition) {
+    const { RESERVED } = require('../middleware/permissions');
+    if (!SLUG.test(seriesSlug) || seriesSlug.length > 40 || RESERVED.has(seriesSlug)) errors.seriesSlug = 'Use lowercase letters, numbers and hyphens.';
+    if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) errors.edition = 'Use a short edition name such as 2026.';
+  }
+
   const description = str(body.description);
   if (description.length > 5000) errors.description = 'At most 5000 characters.';
   const organizingCommunity = str(body.organizingCommunity);
@@ -172,13 +181,13 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
 
   return {
     errors,
+    series: seriesSlug && edition ? { slug: seriesSlug, edition } : null,
     contest: {
       title,
       slug,
       description,
       organizingCommunity,
       primaryWiki,
-      additionalWikis: JSON.stringify(additionalWikis),
       language,
       timezone,
       visibility,
@@ -198,6 +207,8 @@ function toForm(contest, settings) {
     type: contest.type,
     title: contest.title,
     slug: contest.slug,
+    seriesSlug: contest.series ? contest.series.slug : '',
+    edition: contest.edition || '',
     description: contest.description,
     organizingCommunity: contest.organizingCommunity,
     primaryWiki: contest.primaryWiki,

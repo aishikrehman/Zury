@@ -1,3 +1,4 @@
+const prisma = require('../config/prisma');
 const contestService = require('../services/contestService');
 const contestForm = require('../services/contestFormService');
 const eventService = require('../services/eventService');
@@ -81,4 +82,22 @@ async function create(req, res, next) {
   }
 }
 
-module.exports = { index, createForm, create };
+// /<series>: every edition of a recurring event. Unknown slugs fall through to 404.
+async function series(req, res, next) {
+  try {
+    const { RESERVED } = require('../middleware/permissions');
+    if (RESERVED.has(req.params.series)) return next();
+    const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!found) return next();
+    const editions = await prisma.contest.findMany({
+      where: { seriesId: found.id, deletedAt: null, visibility: 'public', status: { not: 'draft' } },
+      orderBy: { edition: 'desc' },
+      select: { ...contestService.CARD_SELECT, edition: true },
+    });
+    res.render('pages/events/series', { title: `${found.title} — Zury`, series: found, editions });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { index, createForm, create, series };

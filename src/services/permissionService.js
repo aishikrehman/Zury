@@ -85,23 +85,60 @@ function eventWikiScope(subject) {
   return [...subject.adminWikis].sort();
 }
 
-// Pure: combines platform authority with event roles and overrides for one event.
-// Overrides only adjust event-derived permissions; they can't take away platform authority.
-function computeContestScope(subject, contest, memberships = [], overrides = []) {
-  const eventRoles = [...new Set(memberships.filter((m) => m.status === 'active').map((m) => m.role))]
-    .filter((role) => EVENT_ROLES[role]);
+const uniq = (xs) => [...new Set(xs)];
 
-  const eventKeys = eventRoles.flatMap((role) => EVENT_ROLES[role].permissions);
-  eventKeys.push(...overrides.filter((o) => o.allowed).map((o) => o.permission));
-  const eventPermissions = expand(eventKeys);
-  for (const o of overrides) if (!o.allowed) eventPermissions.delete(o.permission);
+/**
+ * Pure: an event's permissions for one person.
+ *
+ * - `global`: platform authority (stewards, global sysops, superusers) plus
+ *   event-wide roles (memberships with no wiki). Holding manageEvent here makes
+ *   someone a global controller of the event.
+ * - `forWiki(w)`: global, plus local-admin rights on w and roles scoped to w.
+ * - `permissions`: the set for the current context — the given wiki, or for a
+ *   single-wiki event its only wiki, otherwise the global set.
+ *
+ * Overrides only adjust event-derived permissions; they never take away platform authority.
+ */
+function computeContestScope(subject, contest, memberships = [], overrides = [], { wikis, wiki } = {}) {
+  const eventWikis = wikis && wikis.length ? wikis : [contest.primaryWiki];
+  const active = memberships.filter((m) => m.status === 'active' && EVENT_ROLES[m.role]);
+  const globalRoles = uniq(active.filter((m) => !m.wiki).map((m) => m.role));
+  const wikiRoles = {};
+  for (const m of active.filter((x) => x.wiki)) (wikiRoles[m.wiki] ||= new Set()).add(m.role);
 
-  const fromPlatform = platformPermissions(subject, contest.primaryWiki);
+  const rolePermissions = (roles) => {
+    const keys = roles.flatMap((role) => EVENT_ROLES[role].permissions);
+    keys.push(...overrides.filter((o) => o.allowed).map((o) => o.permission));
+    const set = expand(keys);
+    for (const o of overrides) if (!o.allowed) set.delete(o.permission);
+    return set;
+  };
+
+  const global = new Set([...platformPermissions(subject, null), ...(globalRoles.length || overrides.length ? rolePermissions(globalRoles) : [])]);
+  const cache = new Map();
+  const forWiki = (w) => {
+    if (!cache.has(w)) {
+      const local = [...(wikiRoles[w] || [])];
+      cache.set(w, new Set([...global, ...platformPermissions(subject, w), ...(local.length ? rolePermissions(local) : [])]));
+    }
+    return cache.get(w);
+  };
+
+  const current = wiki || (eventWikis.length === 1 ? eventWikis[0] : null);
   return {
-    permissions: new Set([...fromPlatform, ...eventPermissions]),
-    eventRoles,
+    permissions: current ? forWiki(current) : global,
+    global,
+    forWiki,
+    wiki: current,
+    eventRoles: uniq([...globalRoles, ...(current ? [...(wikiRoles[current] || [])] : [])]),
+    globalRoles,
+    wikiRoles: Object.fromEntries(Object.entries(wikiRoles).map(([w, r]) => [w, [...r]])),
+    hasAnyRole: active.length > 0,
     platformRoles: [...subject.platformRoles],
-    isLocalAdminHere: subject.adminWikis.has(contest.primaryWiki),
+    isLocalAdminHere: current ? subject.adminWikis.has(current) : false,
+    isGlobalController: global.has('manageEvent'),
+    // Wikis of this event where the person holds a permission.
+    wikisWith: (permission) => eventWikis.filter((w) => forWiki(w).has(permission)),
     overrides,
   };
 }
@@ -114,14 +151,15 @@ async function loadSubject(userId) {
   return user ? buildSubject(user) : null;
 }
 
-async function contestScope(subject, contest) {
-  if (!subject.user) return computeContestScope(subject, contest);
+// opts: { wikis: event's active wiki database names, wiki: current wiki context }
+async function contestScope(subject, contest, opts = {}) {
+  if (!subject.user) return computeContestScope(subject, contest, [], [], opts);
   const where = { contestId: contest.id, userId: subject.user.id };
   const [memberships, overrides] = await Promise.all([
     prisma.contestMembership.findMany({ where }),
     prisma.contestPermission.findMany({ where }),
   ]);
-  return computeContestScope(subject, contest, memberships, overrides);
+  return computeContestScope(subject, contest, memberships, overrides, opts);
 }
 
 module.exports = {

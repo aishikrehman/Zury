@@ -5,12 +5,15 @@ const membershipService = require('../services/membershipService');
 const userDirectory = require('../services/userDirectoryService');
 const lifecycle = require('../services/lifecycleService');
 const statsService = require('../services/statsService');
+const eventWikiService = require('../services/eventWikiService');
+const prisma = require('../config/prisma');
+const { effectiveFor, buildOverrides } = require('../events/effective');
 const catalogService = require('../wiki/catalogService');
 const { canUseWikiForEvents } = require('../services/permissionService');
 const { EVENT_TYPES, readTypeConfig } = require('../events/eventTypes');
 const { PERMISSIONS, EVENT_ROLES, OVERRIDABLE_PERMISSIONS, ROLE_MANAGEMENT_PERMISSION } = require('../permissions/registry');
 
-const back = (req, suffix = '') => `/contest/${req.contest.id}${suffix}`;
+const back = (req, suffix = "") => `${req.base}${suffix}`;
 
 // Expected, user-facing failures become a flash message; anything else is a real error.
 function handled(err) {
@@ -28,7 +31,8 @@ async function show(req, res, next) {
       req.user ? membershipService.activeRoles(req.contest.id, req.user.id) : [],
       membershipService.participantCount(req.contest.id),
     ]);
-    const byRole = (role) => members.filter((m) => m.role === role).map((m) => m.user);
+    const inView = members.filter((m) => !m.wiki || !req.contextWiki || m.wiki === req.contextWiki.wiki);
+    const byRole = (role) => [...new Map(inView.filter((m) => m.role === role).map((m) => [m.user.id, m.user])).values()];
     const eligibility = membershipService.checkEligibility({
       user: req.user,
       contest: req.contest,
@@ -46,7 +50,8 @@ async function show(req, res, next) {
       eligibility,
       typeDef: EVENT_TYPES[req.contest.type],
       typeConfig: readTypeConfig(req.contest.type, req.settings.typeConfig),
-      additionalWikis: JSON.parse(req.contest.additionalWikis || '[]'),
+      wikiParts: await wikiParts(req, members),
+      requestableWikis: req.user && !req.scope.isGlobalController,
       dateFields: contestForm.DATE_FIELDS,
       featureFields: contestForm.FEATURE_FIELDS,
       permissionList: Object.keys(PERMISSIONS).filter((p) => req.scope.permissions.has(p)),
@@ -57,12 +62,37 @@ async function show(req, res, next) {
   }
 }
 
+// The central dashboard of a multi-wiki event: one row per wiki with its own status and numbers.
+async function wikiParts(req, members) {
+  if (req.wikiScope || req.allWikis.length < 2) return [];
+  const counts = await prisma.submission.groupBy({
+    by: ['wiki'],
+    where: { contestId: req.contest.id, status: { notIn: ['withdrawn', 'removed'] } },
+    _count: { _all: true },
+  });
+  const entries = Object.fromEntries(counts.map((c) => [c.wiki, c._count._all]));
+  const visible = req.scope.isGlobalController ? req.allWikis : req.eventWikis;
+  return visible.map((w) => {
+    const staff = members.filter((m) => m.wiki === w.wiki);
+    return {
+      ...w,
+      status: w.status === 'active' ? effectiveFor(req.contest, req.eventSettings, w).contest.status : w.status,
+      entries: entries[w.wiki] || 0,
+      organizers: staff.filter((m) => m.role === 'organizer').length,
+      jury: staff.filter((m) => m.role === 'jury').length,
+      overridden: effectiveFor(req.contest, req.eventSettings, w).overridden.size,
+    };
+  });
+}
+
 function wikiAllowedForEdit(req) {
   return (wiki) => wiki === req.contest.primaryWiki || canUseWikiForEvents(req.subject, wiki);
 }
 
 function renderConfig(req, res, { form, errors = {}, status = 200 }) {
   res.status(status).render('pages/contest/config', {
+    wikiMode: !!req.wikiScope,
+    canManageWikis: !req.wikiScope && req.scope.isGlobalController,
     title: `Configuration — ${req.contest.title}`,
     type: req.contest.type,
     typeDef: EVENT_TYPES[req.contest.type],
@@ -74,10 +104,46 @@ function renderConfig(req, res, { form, errors = {}, status = 200 }) {
 }
 
 function config(req, res) {
-  renderConfig(req, res, { form: contestForm.toForm(req.contest, req.settings) });
+  const shown = req.wikiScope ? req.effective.contest : req.contest;
+  renderConfig(req, res, { form: contestForm.toForm({ ...shown, series: req.series }, req.settings) });
+}
+
+// Fields a wiki part always takes from the event.
+const EVENT_ONLY = ['title', 'slug', 'seriesSlug', 'edition', 'organizingCommunity', 'primaryWiki', 'language', 'visibility', 'logoUrl', 'bannerUrl'];
+const same = (a, b) => (a instanceof Date || b instanceof Date ? (a && a.getTime()) === (b && b.getTime()) : JSON.stringify(a) === JSON.stringify(b));
+
+// A wiki's settings form: every value that differs from the event's becomes an override.
+async function updateWikiConfig(req, res, next) {
+  const type = req.contest.type;
+  const eventForm = contestForm.toForm({ ...req.contest, series: req.series }, req.eventSettings);
+  if (req.body.reset) {
+    await eventWikiService.saveOverrides({ actorId: req.user.id, contest: req.contest, eventWiki: req.wikiScope, overrides: { contest: {}, settings: {}, typeConfig: {} } });
+    req.flash('success', 'This wiki now follows the event settings.');
+    return res.redirect(back(req, '/config'));
+  }
+  const body = { ...req.body, type };
+  for (const k of EVENT_ONLY) body[k] = eventForm[k];
+  const parsed = contestForm.parse(body, { type, wikiAllowed: () => true });
+  if (Object.keys(parsed.errors).length) return renderConfig(req, res, { form: { ...parsed.form, primaryWiki: req.wikiScope.wiki }, errors: parsed.errors, status: 422 });
+  const baseline = contestForm.parse({ ...eventForm, type }, { type, wikiAllowed: () => true });
+  const typeValues = JSON.parse(parsed.settings.typeConfig);
+  const baseType = JSON.parse(baseline.settings.typeConfig);
+  const chosen = [
+    ...Object.keys(parsed.contest).filter((k) => !same(parsed.contest[k], baseline.contest[k])).map((k) => `contest.${k}`),
+    ...Object.keys(parsed.settings).filter((k) => k !== 'typeConfig' && !same(parsed.settings[k], baseline.settings[k])).map((k) => `settings.${k}`),
+    ...Object.keys(typeValues).filter((k) => !same(typeValues[k], baseType[k])).map((k) => `type.${k}`),
+  ];
+  try {
+    await eventWikiService.saveOverrides({ actorId: req.user.id, contest: req.contest, eventWiki: req.wikiScope, overrides: buildOverrides(parsed, typeValues, chosen) });
+    req.flash('success', chosen.length ? `Saved. ${chosen.length} setting${chosen.length === 1 ? '' : 's'} differ from the event.` : 'Saved. This wiki follows the event settings.');
+    res.redirect(back(req, '/config'));
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function updateConfig(req, res, next) {
+  if (req.wikiScope) return updateWikiConfig(req, res, next);
   const type = req.contest.type;
   let loaded;
   try {
@@ -90,7 +156,7 @@ async function updateConfig(req, res, next) {
   const parsed = contestForm.parse({ ...req.body, type }, { type, wikiAllowed: wikiAllowedForEdit(req), catalog });
   if (Object.keys(parsed.errors).length) return renderConfig(req, res, { form: parsed.form, errors: parsed.errors, status: 422 });
   try {
-    await eventService.update({ actorId: req.user.id, contest: req.contest, settings: req.settings, parsed, autoSlug: !req.body.slug?.trim() });
+    await eventService.update({ actorId: req.user.id, contest: { ...req.contest, series: req.series }, settings: req.eventSettings, parsed, autoSlug: !req.body.slug?.trim() });
     req.flash('success', 'Event settings saved.');
     res.redirect(back(req, '/config'));
   } catch (err) {
@@ -127,9 +193,11 @@ async function destroy(req, res, next) {
 async function people(req, res, next) {
   try {
     const [members, overrides] = await Promise.all([contestService.members(req.contest.id), contestService.overrides(req.contest.id)]);
+    const wiki = req.wikiScope?.wiki;
     res.render('pages/contest/participants', {
       title: `People — ${req.contest.title}`,
-      members,
+      members: wiki ? members.filter((m) => !m.wiki || m.wiki === wiki) : members,
+      memberWikis: !req.wikiScope && req.eventWikis.length > 1 ? req.eventWikis : [],
       overrides,
       roleOptions: Object.entries(EVENT_ROLES).filter(([role]) => req.permissions.has(ROLE_MANAGEMENT_PERMISSION[role])),
       ROLE_MANAGEMENT_PERMISSION,
@@ -155,8 +223,9 @@ async function addMember(req, res, next) {
   }
   try {
     const user = await resolveUser(req);
-    await membershipService.addMember({ actorId: req.user.id, contest: req.contest, settings: req.settings, user, role });
-    req.flash('success', `${user.username} added as ${EVENT_ROLES[role].label.toLowerCase()}.`);
+    const wiki = req.wikiScope ? req.wikiScope.wiki : req.eventWikis.some((w) => w.wiki === req.body.wiki) ? req.body.wiki : '';
+    await membershipService.addMember({ actorId: req.user.id, contest: req.contest, settings: req.settings, user, role, wiki });
+    req.flash('success', `${user.username} added as ${EVENT_ROLES[role].label.toLowerCase()}${wiki ? ` for ${wiki}` : ''}.`);
   } catch (err) {
     if (!handled(err)) return next(err);
     req.flash('danger', err.message);
@@ -170,7 +239,8 @@ async function removeMember(req, res, next) {
       actorId: req.user.id,
       contest: req.contest,
       membershipId: Number(req.params.membershipId),
-      allowed: (p) => req.permissions.has(p),
+      // Event-wide staff can only be removed with event-wide authority (unless the event has one wiki).
+      allowed: (p, wiki) => (wiki ? req.scope.forWiki(wiki) : req.eventWikis.length > 1 && !p.includes('Participants') ? req.scope.global : req.permissions).has(p),
     });
     req.flash('success', 'Removed.');
   } catch (err) {
@@ -234,7 +304,7 @@ async function statistics(req, res, next) {
   try {
     res.render('pages/contest/statistics', {
       title: `Statistics — ${req.contest.title}`,
-      stats: await statsService.eventStats(req.contest),
+      stats: await statsService.eventStats(req.contest, { wiki: req.wikiScope?.wiki }),
       showNames: !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
     });
   } catch (err) {

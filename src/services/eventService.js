@@ -2,6 +2,7 @@ const prisma = require('../config/prisma');
 const audit = require('./auditService');
 const lifecycle = require('./lifecycleService');
 const { defaultSettings } = require('./contestFormService');
+const { defaultCode } = require('./eventWikiService');
 
 class EventError extends Error {
   constructor(message, field) {
@@ -25,13 +26,25 @@ async function uniqueSlug(tx, slug, { auto, excludeId }) {
   throw new EventError('Could not find a free slug; please choose one.', 'slug');
 }
 
+// Resolves /<series>/<edition>: finds or creates the series and checks the edition is free.
+async function seriesFields(tx, series, title, excludeId) {
+  if (!series) return { seriesId: null, edition: null };
+  let row = await tx.eventSeries.findUnique({ where: { slug: series.slug } });
+  if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: title.replace(/s*(19|20)dds*/g, ' ').trim() || title } });
+  const taken = await tx.contest.findFirst({ where: { seriesId: row.id, edition: series.edition, NOT: excludeId ? { id: excludeId } : undefined }, select: { id: true } });
+  if (taken) throw new EventError(`/${series.slug}/${series.edition} is already used by another event.`, 'edition');
+  return { seriesId: row.id, edition: series.edition };
+}
+
 // Events made by demo users are demo data too, so re-seeding removes them.
 async function create({ actorId, type, parsed, autoSlug, isDemo = false }) {
   return prisma.$transaction(async (tx) => {
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug });
+    const series = await seriesFields(tx, parsed.series, parsed.contest.title);
     const contest = await tx.contest.create({
       data: {
         ...parsed.contest,
+        ...series,
         slug,
         type,
         isDemo,
@@ -39,6 +52,7 @@ async function create({ actorId, type, parsed, autoSlug, isDemo = false }) {
         createdById: actorId,
         settings: { create: { ...defaultSettings(type), ...parsed.settings } },
         memberships: { create: { userId: actorId, role: 'organizer', assignedById: actorId } },
+        wikis: { create: { wiki: parsed.contest.primaryWiki, code: await defaultCode(parsed.contest.primaryWiki, tx) } },
       },
     });
     await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, type } }, tx);
@@ -57,7 +71,7 @@ function changedKeys(before, after) {
 async function update({ actorId, contest, settings, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id });
-    const data = { ...parsed.contest, slug };
+    const data = { ...parsed.contest, ...(await seriesFields(tx, parsed.series, parsed.contest.title, contest.id)), slug };
     const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).map((k) => `settings.${k}`)];
     if (!changed.length) return contest;
 
@@ -72,6 +86,10 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
         settings: { upsert: { create: { ...defaultSettings(contest.type), ...parsed.settings }, update: parsed.settings } },
       },
     });
+    if (data.primaryWiki !== contest.primaryWiki) {
+      const exists = await tx.contestWiki.findUnique({ where: { contestId_wiki: { contestId: contest.id, wiki: data.primaryWiki } } });
+      if (!exists) await tx.contestWiki.create({ data: { contestId: contest.id, wiki: data.primaryWiki, code: await defaultCode(data.primaryWiki, tx) } });
+    }
     await audit.record({ actorId, contestId: contest.id, action: 'contest.updated', entityType: 'Contest', entityId: contest.id, details: { changed } }, tx);
     if (data.status && data.status !== contest.status) {
       await audit.record(

@@ -61,7 +61,7 @@
           <div class="card-header"><h3 class="card-title">Actions</h3></div>
           <div class="card-body">
             <% if (can('manageEvent')) { %>
-              <form method="post" action="/contest/<%= contest.id %>/submissions/<%= submission.id %>/status" class="mb-3">
+              <form method="post" action="<%= base %>/submissions/<%= submission.id %>/status" class="mb-3">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <label class="form-label" for="status">Set status</label>
                 <select class="form-select mb-2" id="status" name="status">
@@ -70,13 +70,13 @@
                 <input class="form-control mb-2" name="note" maxlength="500" placeholder="Note (optional, shown in history)">
                 <button class="btn btn-primary w-100" type="submit">Update status</button>
               </form>
-              <form method="post" action="/contest/<%= contest.id %>/submissions/<%= submission.id %>/revalidate" class="mb-2">
+              <form method="post" action="<%= base %>/submissions/<%= submission.id %>/revalidate" class="mb-2">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button class="btn btn-outline-secondary w-100" type="submit"><i class="ti ti-refresh me-1"></i>Check again on the wiki</button>
               </form>
             <% } %>
             <% if (canWithdraw) { %>
-              <form method="post" action="/contest/<%= contest.id %>/submissions/<%= submission.id %>/withdraw">
+              <form method="post" action="<%= base %>/submissions/<%= submission.id %>/withdraw">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button class="btn btn-outline-danger w-100" type="submit"><i class="ti ti-arrow-back-up me-1"></i>Withdraw my entry</button>
               </form>

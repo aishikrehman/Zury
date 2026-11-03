@@ -4,15 +4,23 @@ const userDirectory = require('../services/userDirectoryService');
 const { submissionWindow } = require('../services/submissionRules');
 const { WikiApiError } = require('../wiki/wikiApi');
 const { readTypeConfig, EVENT_TYPES } = require('../events/eventTypes');
+const { effectiveFor } = require('../events/effective');
 
 const { SubmissionError } = submissionService;
 const can = (req) => (p) => req.permissions.has(p);
+
+// A multi-wiki event takes entries while any of its wikis does; each entry is then checked against its own wiki.
+function eventWindow(req) {
+  if (req.contextWiki || req.eventWikis.length < 2) return submissionWindow(req.effective.contest);
+  const windows = req.eventWikis.map((w) => submissionWindow(effectiveFor(req.contest, req.eventSettings, w).contest));
+  return windows.find((w) => w.open) || windows[0];
+}
 
 // Decides whose entries these are and whether they may be submitted now.
 async function resolveSubmitter(req) {
   const { contest, settings, user } = req;
   const canOthers = req.permissions.has('submitOthersEntry');
-  const window = submissionWindow(contest);
+  const window = eventWindow(req);
   if (!window.open && !canOthers) throw new SubmissionError(window.reason);
 
   const onBehalfName = typeof req.body.participant === 'string' ? req.body.participant.trim() : '';
@@ -54,7 +62,7 @@ function renderForm(req, res, { text = '', participant = '', items = null, error
     error,
     mass: massAllowed(req),
     canOthers: req.permissions.has('submitOthersEntry'),
-    window: submissionWindow(req.contest),
+    window: eventWindow(req),
     typeDef: EVENT_TYPES[req.contest.type],
     typeConfig: readTypeConfig(req.contest.type, req.settings.typeConfig),
     maxBatch: submissionService.MAX_BATCH,
@@ -73,7 +81,15 @@ async function handleSubmit(req, res, next, { confirm }) {
       throw new SubmissionError('This event accepts one entry at a time.');
     }
     const who = await resolveSubmitter(req);
-    const items = await submissionService.prepare({ contest: req.contest, settings: req.settings, participantId: who.participant.id, text });
+    const items = await submissionService.prepare({
+      contest: req.contest,
+      settings: req.eventSettings,
+      participantId: who.participant.id,
+      text,
+      eventWikis: req.eventWikis,
+      defaultWiki: req.contextWiki?.wiki,
+      lateAllowed: req.permissions.has('submitOthersEntry'),
+    });
     if (!confirm) return renderForm(req, res, { text, participant: participantName, items });
 
     const created = await submissionService.save({
@@ -89,7 +105,7 @@ async function handleSubmit(req, res, next, { confirm }) {
       'success',
       `${created.length} entr${created.length === 1 ? 'y' : 'ies'} submitted${skipped ? `; ${skipped} skipped` : ''}${who.joinsNow ? '. You are now a participant' : ''}.`,
     );
-    res.redirect(`/contest/${req.contest.id}/submissions${who.participant.id === req.user.id ? '?mine=1' : ''}`);
+    res.redirect(`${req.base}/submissions${who.participant.id === req.user.id ? '?mine=1' : ''}`);
   } catch (err) {
     if (err instanceof SubmissionError || err instanceof WikiApiError) {
       return renderForm(req, res, { text, participant: participantName, error: err.message, status: err.status === 403 ? 403 : 422 });
@@ -109,7 +125,7 @@ async function index(req, res, next) {
       mine: req.query.mine === '1',
     };
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), page, ...filters });
+    const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki, page, ...filters });
     res.render('pages/contest/submissions', {
       title: `Submissions — ${req.contest.title}`,
       result,
@@ -124,7 +140,7 @@ async function index(req, res, next) {
 
 async function load(req) {
   const id = Number(req.params.submissionId);
-  return submissionService.findVisible({ contestId: req.contest.id, id, user: req.user, can: can(req) });
+  return submissionService.findVisible({ contestId: req.contest.id, id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki });
 }
 
 async function show(req, res, next) {
@@ -159,7 +175,7 @@ function action(fn, successMessage) {
       if (err.status === 403) return next(err);
       req.flash('danger', err.message);
     }
-    res.redirect(`/contest/${req.contest.id}/submissions/${req.params.submissionId}`);
+    res.redirect(`${req.base}/submissions/${req.params.submissionId}`);
   };
 }
 
@@ -169,7 +185,7 @@ const setStatus = action(
   'Status updated.',
 );
 const revalidate = action(
-  (req, s) => submissionService.revalidate({ actor: req.user, submission: s, contest: req.contest, settings: req.settings }),
+  (req, s) => submissionService.revalidate({ actor: req.user, submission: s, contest: req.contest, settings: req.eventSettings, eventWikis: req.eventWikis }),
   'Entry checked again.',
 );
 

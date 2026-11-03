@@ -1,0 +1,29 @@
+<%- include('../../partials/pageHeader', { pretitle: 'Event series', heading: series.title }) %>
+<div class="page-body">
+  <div class="container-xl">
+    <% if (series.description) { %><p class="text-secondary fs-3 mb-4"><%= series.description %></p><% } %>
+    <% if (!editions.length) { %>
+      <div class="card"><%- include('../../partials/emptyArt', { title: 'No editions yet' }) %></div>
+    <% } else { %>
+      <div class="row row-cards">
+        <% editions.forEach((c) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
+          <div class="col-md-6 col-lg-4">
+            <a href="<%= eventPath(c) %>" class="card card-link card-link-pop h-100">
+              <div class="card-status-top bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>"></div>
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                  <div class="h1 m-0"><%= c.edition %></div>
+                  <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt ms-auto"><%= st.label %></span>
+                </div>
+                <div class="text-secondary mb-2"><%= c.title %></div>
+                <div class="d-flex flex-wrap gap-1">
+                  <% (c.wikis || []).forEach((w) => { %><span class="badge bg-blue-lt"><%= w.code %></span><% }) %>
+                </div>
+              </div>
+            </a>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>

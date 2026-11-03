@@ -88,10 +88,11 @@ app.use('/', require('./routes'));
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/users'));
 app.use('/', require('./routes/account'));
-app.use('/', require('./routes/events'));
 app.use('/', require('./routes/api'));
 app.use('/', require('./routes/admin'));
 if (env.demoMode) app.use('/', require('./routes/demo'));
+// Last: event series addresses (/wam/2026) must not shadow other pages.
+app.use('/', require('./routes/events'));
 
 app.use(notFound);
 app.use(errorHandler);

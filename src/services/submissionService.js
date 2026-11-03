@@ -3,8 +3,8 @@ const audit = require('./auditService');
 const { parseEntry } = require('../wiki/wikiUrls');
 const { fetchEntryMetadata } = require('../wiki/entryMetadata');
 const { WikiApiError } = require('../wiki/wikiApi');
-const { readTypeConfig } = require('../events/eventTypes');
-const { checkEntry, pageKeyFor } = require('./submissionRules');
+const { checkEntry, pageKeyFor, submissionWindow } = require('./submissionRules');
+const { effectiveFor } = require('../events/effective');
 
 const MAX_BATCH = 50;
 const STATUSES = ['pending', 'validated', 'invalid', 'under_review', 'approved', 'rejected', 'disqualified', 'withdrawn', 'appealed'];
@@ -53,16 +53,23 @@ function activeCount(contestId, participantId, client = prisma) {
  * Parses, looks up and checks each line. Saves nothing.
  * Every item gets ok=true/false, the reasons, and the status it would be saved with.
  */
-async function prepare({ contest, settings, participantId, text }) {
+/**
+ * Parses, looks up and checks each line. Saves nothing.
+ * Each entry is checked with the settings of its own wiki (event defaults plus
+ * that wiki's overrides) and that wiki's submission window.
+ * eventWikis: the event's active wikis; defaultWiki: used for plain titles.
+ */
+async function prepare({ contest, settings, participantId, text, eventWikis, defaultWiki, lateAllowed = false }) {
   const lines = splitLines(text);
   if (!lines.length) throw new SubmissionError('Enter at least one URL or title.');
   if (lines.length > MAX_BATCH) throw new SubmissionError(`At most ${MAX_BATCH} entries at a time.`);
 
-  const typeConfig = readTypeConfig(contest.type, settings.typeConfig);
+  const wikis = eventWikis && eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki, overrides: '{}', status: 'active' }];
+  const byWiki = new Map(wikis.map((w) => [w.wiki, w]));
   const [existing, count] = await Promise.all([activeKeys(contest.id), activeCount(contest.id, participantId)]);
 
   const looked = await mapLimit(lines, 4, async (input) => {
-    const ref = parseEntry(input, contest.primaryWiki);
+    const ref = parseEntry(input, defaultWiki || contest.primaryWiki);
     if (ref.error) return { input, error: ref.error };
     try {
       return { input, meta: await fetchEntryMetadata(ref, { language: contest.language }) };
@@ -76,15 +83,31 @@ async function prepare({ contest, settings, participantId, text }) {
   let accepted = count;
   return looked.map((item) => {
     if (item.error) return { ...item, ok: false, reasons: [item.error], warnings: [] };
-    const result = checkEntry({ meta: item.meta, contest, settings, typeConfig, existingKeys: seen, entriesByParticipant: accepted });
-    const blocking = settings.autoValidationEnabled ? [...result.hard, ...result.rules] : result.hard;
-    const warnings = settings.autoValidationEnabled ? result.warnings : [...result.rules, ...result.warnings];
+    const eventWiki = byWiki.get(item.meta.wiki);
+    if (!eventWiki) {
+      return { ...item, ok: false, reasons: [`${item.meta.wiki} is not part of this event.`], warnings: [] };
+    }
+    const eff = effectiveFor(contest, settings, eventWiki);
+    const window = submissionWindow(eff.contest);
+    const result = checkEntry({
+      meta: item.meta,
+      contest: eff.contest,
+      settings: eff.settings,
+      typeConfig: eff.typeConfig,
+      existingKeys: seen,
+      entriesByParticipant: accepted,
+      allowedWikis: [eventWiki.wiki],
+    });
+    if (!window.open && !lateAllowed) result.hard.unshift(`${eventWiki.code}: ${window.reason}`);
+    const auto = eff.settings.autoValidationEnabled;
+    const blocking = auto ? [...result.hard, ...result.rules] : result.hard;
+    const warnings = auto ? result.warnings : [...result.rules, ...result.warnings];
     const ok = blocking.length === 0;
     if (ok) {
       seen.add(pageKeyFor(item.meta));
       accepted += 1;
     }
-    return { ...item, ok, reasons: blocking, warnings, status: settings.autoValidationEnabled ? 'validated' : 'pending' };
+    return { ...item, ok, reasons: blocking, warnings, status: auto ? 'validated' : 'pending' };
   });
 }
 
@@ -151,9 +174,11 @@ function visibilityWhere({ contestId, user, can }) {
   return null;
 }
 
-async function list({ contestId, user, can, status, q, mine, page = 1, perPage = 25 }) {
-  const base = visibilityWhere({ contestId, user, can });
+// wiki: limit to one wiki of a multi-wiki event.
+async function list({ contestId, user, can, status, q, mine, wiki, page = 1, perPage = 25 }) {
+  let base = visibilityWhere({ contestId, user, can });
   if (!base) return { items: [], total: 0, page, perPage, counts: {} };
+  if (wiki) base = { AND: [base, { wiki }] };
   const where = { AND: [base] };
   if (STATUSES.includes(status)) where.AND.push({ status });
   if (q) where.AND.push({ title: { contains: q } });
@@ -172,11 +197,11 @@ async function list({ contestId, user, can, status, q, mine, page = 1, perPage =
   return { items, total, page, perPage, counts: Object.fromEntries(grouped.map((g) => [g.status, g._count])) };
 }
 
-async function findVisible({ contestId, id, user, can }) {
+async function findVisible({ contestId, id, user, can, wiki }) {
   const base = visibilityWhere({ contestId, user, can });
   if (!base) return null;
   return prisma.submission.findFirst({
-    where: { AND: [base, { id }] },
+    where: { AND: [base, { id }, ...(wiki ? [{ wiki }] : [])] },
     include: {
       participant: { select: { id: true, username: true } },
       submittedBy: { select: { username: true } },
@@ -212,15 +237,24 @@ function withdraw({ actor, submission, contestId }) {
 
 // Fetches fresh metadata and re-runs the rules. Decided outcomes
 // (approved, rejected, …) are never changed automatically.
-async function revalidate({ actor, submission, contest, settings }) {
+async function revalidate({ actor, submission, contest, settings, eventWikis = [] }) {
   const meta = await fetchEntryMetadata({ wiki: submission.wiki, title: submission.title }, { language: contest.language });
-  const typeConfig = readTypeConfig(contest.type, settings.typeConfig);
+  const eventWiki = eventWikis.find((w) => w.wiki === submission.wiki);
+  const eff = effectiveFor(contest, settings, eventWiki);
   const others = await activeKeys(contest.id);
   others.delete(submission.pageKey);
-  const result = checkEntry({ meta, contest, settings, typeConfig, existingKeys: others, entriesByParticipant: 0 });
+  const result = checkEntry({
+    meta,
+    contest: eff.contest,
+    settings: eff.settings,
+    typeConfig: eff.typeConfig,
+    existingKeys: others,
+    entriesByParticipant: 0,
+    allowedWikis: eventWikis.length ? eventWikis.map((w) => w.wiki) : undefined,
+  });
   const errors = [...result.hard, ...result.rules];
   let status = submission.status;
-  if (settings.autoValidationEnabled && ['pending', 'validated', 'invalid'].includes(status)) status = errors.length ? 'invalid' : 'validated';
+  if (eff.settings.autoValidationEnabled && ['pending', 'validated', 'invalid'].includes(status)) status = errors.length ? 'invalid' : 'validated';
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.submission.update({

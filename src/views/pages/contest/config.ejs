@@ -14,7 +14,7 @@
 <div class="page-body"><div class="container-xl">
   <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 
-  <% if (can('manageEvent')) { %>
+  <% if (can('manageEvent') && !wikiMode) { %>
     <div class="card mb-4">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-progress me-2"></i>Status</h3></div>
       <div class="card-body">
@@ -30,7 +30,7 @@
           <div class="col-md-auto">
             <div class="btn-list">
               <% actions.forEach((a) => { %>
-                <form method="post" action="/contest/<%= contest.id %>/status">
+                <form method="post" action="<%= base %>/status">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <input type="hidden" name="action" value="<%= a.name %>">
                   <button type="submit" class="btn btn-<%= a.cls %>"><i class="ti ti-<%= a.icon %> me-1"></i><%= a.label %></button>
@@ -42,7 +42,7 @@
       </div>
       <% if (!sticky) { %>
         <div class="card-footer">
-          <form method="post" action="/contest/<%= contest.id %>/status" class="row g-2 align-items-center">
+          <form method="post" action="<%= base %>/status" class="row g-2 align-items-center">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="action" value="set_status">
             <div class="col-auto"><label class="form-label m-0" for="pinStatus">Pin status to</label></div>
@@ -58,18 +58,64 @@
     </div>
   <% } %>
 
-  <% if (can('editEvent')) { %>
-    <%- include('../../partials/contestForm', { action: `/contest/${contest.id}/config`, submitLabel: 'Save settings' }) %>
-  <% } else { %>
-    
+  <% if (canManageWikis) { const wikiActions = { pending: [['approve', 'Approve', 'primary']], active: [['pause', 'Pause', 'outline-secondary'], ['remove', 'Remove', 'ghost-danger']], paused: [['resume', 'Resume', 'outline-primary'], ['remove', 'Remove', 'ghost-danger']] }; %>
+    <div class="card mb-4" id="wikis">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i>Wikis</h3></div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead><tr><th>Address</th><th>Wiki</th><th>Status</th><th class="w-1"></th></tr></thead>
+          <tbody>
+            <% allWikis.forEach((w) => { %>
+              <tr>
+                <td><a href="<%= eventBase %>/<%= w.code %>"><%= eventBase %>/<%= w.code %></a></td>
+                <td><%= w.wiki %></td>
+                <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= w.status %></span></td>
+                <td class="text-nowrap">
+                  <% (wikiActions[w.status] || []).forEach(([action, label, cls]) => { %>
+                    <form method="post" action="<%= eventBase %>/wikis/<%= w.id %>/<%= action %>" class="d-inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button>
+                    </form>
+                  <% }) %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <form method="post" action="<%= eventBase %>/wikis" class="row g-2 align-items-center">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col"><select class="form-select" name="wiki" data-picker="wiki" placeholder="Add a wiki…" required></select></div>
+          <div class="col-auto"><button class="btn btn-primary" type="submit"><i class="ti ti-plus me-1"></i>Add wiki</button></div>
+        </form>
+      </div>
+    </div>
   <% } %>
 
-  <% if (can('deleteEvent')) { %>
+  <% if (wikiMode && can('editEvent')) { %>
+    <div class="alert alert-info d-flex align-items-center">
+      <div class="flex-fill">Settings for <strong><%= wikiScope.wiki %></strong>. Anything you change here applies to this wiki only; everything else follows the event. <% if (overridden.size) { %><span class="badge bg-orange-lt ms-1"><%= overridden.size %> own</span><% } %></div>
+      <% if (overridden.size) { %>
+        <form method="post" action="<%= base %>/config" class="ms-3">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="reset" value="1">
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Follow the event again</button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+
+  <% if (can('editEvent')) { %>
+    <%- include('../../partials/contestForm', { action: `${base}/config`, submitLabel: 'Save settings', wikiMode }) %>
+  <% } %>
+
+  <% if (can('deleteEvent') && !wikiMode) { %>
     <div class="card card-borderless mt-4">
       <div class="card-status-start bg-danger"></div>
       <div class="card-header"><h3 class="card-title text-danger"><i class="ti ti-alert-triangle me-2"></i>Danger zone</h3></div>
       <div class="card-body">
-        <form method="post" action="/contest/<%= contest.id %>/delete" class="row g-2 align-items-end">
+        <form method="post" action="<%= base %>/delete" class="row g-2 align-items-end">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="col-sm-6 col-md-4">
             <label class="form-label" for="confirmation">Type <code><%= contest.slug %></code> to confirm</label>

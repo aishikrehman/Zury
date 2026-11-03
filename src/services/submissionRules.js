@@ -26,7 +26,7 @@ const within = (iso, start, end) => {
  * rules: event-rule problems; block when automatic validation is on.
  * warnings: worth a reviewer's attention but never block.
  */
-function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Set(), entriesByParticipant = 0 }) {
+function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Set(), entriesByParticipant = 0, allowedWikis }) {
   const hard = [];
   const rules = [];
   const warnings = [];
@@ -39,7 +39,7 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
   const limit = typeConfig.maxEntriesPerParticipant;
   if (limit > 0 && entriesByParticipant >= limit) hard.push(`Limit of ${limit} entries per participant reached.`);
 
-  const wikis = [contest.primaryWiki, ...JSON.parse(contest.additionalWikis || '[]')];
+  const wikis = allowedWikis || [contest.primaryWiki, ...JSON.parse(contest.additionalWikis || '[]')];
   if (!wikis.includes(meta.wiki)) rules.push(`Entries must come from ${wikis.join(' or ')}.`);
   const namespaces = eligibleNamespaces(contest, settings, typeConfig);
   if (!namespaces.includes(meta.ns)) rules.push(`Pages in namespace ${meta.ns} are not eligible (allowed: ${namespaces.join(', ')}).`);

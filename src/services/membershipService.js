@@ -65,27 +65,31 @@ function checkEligibility({ user, contest, settings, roles, participants, now = 
   return { eligible: reasons.length === 0, reasons };
 }
 
-async function upsertActive(tx, { contestId, userId, role, actorId }) {
+// Participants always join event-wide; staff roles may be limited to one wiki ("" = whole event).
+async function upsertActive(tx, { contestId, userId, role, actorId, wiki = '' }) {
+  if (role === 'participant') wiki = '';
   return tx.contestMembership.upsert({
-    where: { contestId_userId_role: { contestId, userId, role } },
+    where: { contestId_userId_role_wiki: { contestId, userId, role, wiki } },
     update: { status: 'active', assignedAt: new Date(), assignedById: actorId },
-    create: { contestId, userId, role, assignedById: actorId },
+    create: { contestId, userId, role, wiki, assignedById: actorId },
   });
 }
 
-async function addMember({ actorId, contest, settings, user, role }) {
+async function addMember({ actorId, contest, settings, user, role, wiki = '' }) {
   if (!EVENT_ROLES[role]) throw new MembershipError('Unknown role.');
+  if (role === 'participant') wiki = '';
   return prisma.$transaction(async (tx) => {
     const roles = await activeRoles(contest.id, user.id, tx);
-    if (roles.includes(role)) throw new MembershipError(`${user.username} is already ${EVENT_ROLES[role].label.toLowerCase()} here.`);
+    const same = await tx.contestMembership.count({ where: { contestId: contest.id, userId: user.id, role, wiki: { in: ['', wiki] }, status: 'active' } });
+    if (same) throw new MembershipError(`${user.username} is already ${EVENT_ROLES[role].label.toLowerCase()} here.`);
     const conflict = roleConflict(role, roles, settings);
     if (conflict) throw new MembershipError(conflict);
     if (role === 'participant' && settings.participantLimit != null && (await participantCount(contest.id, tx)) >= settings.participantLimit) {
       throw new MembershipError('The event has reached its participant limit.');
     }
-    const membership = await upsertActive(tx, { contestId: contest.id, userId: user.id, role, actorId });
+    const membership = await upsertActive(tx, { contestId: contest.id, userId: user.id, role, actorId, wiki });
     await audit.record(
-      { actorId, contestId: contest.id, action: 'membership.added', entityType: 'User', entityId: user.id, details: { username: user.username, role } },
+      { actorId, contestId: contest.id, action: 'membership.added', entityType: 'User', entityId: user.id, details: { username: user.username, role, wiki: wiki || undefined } },
       tx,
     );
     return membership;
@@ -100,13 +104,13 @@ async function removeMember({ actorId, contest, membershipId, allowed }) {
       include: { user: { select: { username: true } } },
     });
     if (!m) throw new MembershipError('That membership no longer exists.');
-    if (!allowed(ROLE_MANAGEMENT_PERMISSION[m.role])) {
+    if (!allowed(ROLE_MANAGEMENT_PERMISSION[m.role], m.wiki)) {
       const err = new Error("You don't have permission to do that.");
       err.status = 403;
       throw err;
     }
-    if (m.role === 'organizer') {
-      const organizers = await tx.contestMembership.count({ where: { contestId: contest.id, role: 'organizer', status: 'active' } });
+    if (m.role === 'organizer' && !m.wiki) {
+      const organizers = await tx.contestMembership.count({ where: { contestId: contest.id, role: 'organizer', wiki: '', status: 'active' } });
       if (organizers <= 1) throw new MembershipError('An event needs at least one organizer.');
     }
     await tx.contestMembership.update({ where: { id: m.id }, data: { status: 'removed' } });

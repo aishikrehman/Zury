@@ -42,7 +42,7 @@
         <div class="empty-icon"><i class="ti ti-files-off icon"></i></div>
         <p class="empty-title">No submissions<%= filters.status || filters.q || filters.mine ? ' match these filters' : ' yet' %></p>
         <% if (!currentUser) { %><p class="empty-subtitle text-secondary">Log in to see your own entries.</p><% } %>
-        <% if (currentUser && contest.status === 'active') { %><div class="empty-action"><a href="/contest/<%= contest.id %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i>Submit entries</a></div><% } %>
+        <% if (currentUser && contest.status === 'active') { %><div class="empty-action"><a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i>Submit entries</a></div><% } %>
       </div>
     <% } else { %>
       <div class="table-responsive">
@@ -59,7 +59,7 @@
                       <span class="avatar avatar-sm me-2 bg-primary-lt"><i class="ti ti-<%= { article: 'file-text', file: 'photo', item: 'database', lexeme: 'language', property: 'tag' }[s.entryType] || 'file' %>"></i></span>
                     <% } %>
                     <div>
-                      <a href="/contest/<%= contest.id %>/submissions/<%= s.id %>"><%= s.title %></a>
+                      <a href="<%= base %>/submissions/<%= s.id %>"><%= s.title %></a>
                       <div class="text-secondary small"><%= s.wiki %></div>
                     </div>
                   </div>

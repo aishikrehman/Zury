@@ -19,6 +19,28 @@
       <% if (contest.description) { %>
         <div class="card mb-3"><div class="card-body"><p class="mb-0" style="white-space: pre-line"><%= contest.description %></p></div></div>
       <% } %>
+      <% if (wikiParts.length) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i>Wikis</h3><div class="card-actions text-secondary small"><%= wikiParts.filter((w) => w.status !== 'pending').length %> taking part</div></div>
+          <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+              <thead><tr><th>Wiki</th><th>Status</th><th class="text-end">Entries</th><th class="text-end">Organizers</th><th class="text-end">Jury</th><th class="text-end">Own settings</th></tr></thead>
+              <tbody>
+                <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: w.status.charAt(0).toUpperCase() + w.status.slice(1), badge: 'secondary' }; %>
+                  <tr>
+                    <td><a href="<%= eventBase %>/<%= w.code %>" class="fw-bold">/<%= w.code %></a> <span class="text-secondary small"><%= w.wiki %></span></td>
+                    <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
+                    <td class="text-end"><%= w.entries %></td>
+                    <td class="text-end"><%= w.organizers %></td>
+                    <td class="text-end"><%= w.jury %></td>
+                    <td class="text-end text-secondary"><%= w.overridden || '—' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
       <div class="row row-cards mb-3">
         <div class="col-md-6">
           <div class="card h-100">
@@ -40,7 +62,7 @@
             <div class="card-body">
               <div class="datagrid">
                 <% if (contest.organizingCommunity) { %><div class="datagrid-item"><div class="datagrid-title">Organized by</div><div class="datagrid-content"><%= contest.organizingCommunity %></div></div><% } %>
-                <div class="datagrid-item"><div class="datagrid-title">Wikis</div><div class="datagrid-content"><%= [contest.primaryWiki, ...additionalWikis].join(', ') %></div></div>
+                <div class="datagrid-item"><div class="datagrid-title">Wikis</div><div class="datagrid-content"><%= wikiScope ? wikiScope.wiki : eventWikis.map((w) => w.wiki).join(', ') || contest.primaryWiki %></div></div>
                 <div class="datagrid-item"><div class="datagrid-title">Language</div><div class="datagrid-content"><%= contest.language %></div></div>
                 <div class="datagrid-item"><div class="datagrid-title">Participants</div><div class="datagrid-content"><%= participantCount %><%= settings.participantLimit ? ' / ' + settings.participantLimit : '' %></div></div>
                 <% if (settings.juryReviewEnabled) { %><div class="datagrid-item"><div class="datagrid-title">Jury</div><div class="datagrid-content"><%= jury.length %> member<%= jury.length === 1 ? '' : 's' %></div></div><% } %>
@@ -81,7 +103,7 @@
           <% if (isParticipant) { %>
             <p class="small text-success mb-2">You're a participant.</p>
             <% if (!['completed', 'archived'].includes(contest.status)) { %>
-              <form method="post" action="/contest/<%= contest.id %>/leave">
+              <form method="post" action="<%= base %>/leave">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button class="btn btn-sm btn-outline-secondary" type="submit">Leave event</button>
               </form>
@@ -89,7 +111,7 @@
           <% } else if (!currentUser) { %>
             <a class="btn btn-sm btn-primary" href="/login">Log in to join</a>
           <% } else if (eligibility.eligible) { %>
-            <form method="post" action="/contest/<%= contest.id %>/join">
+            <form method="post" action="<%= base %>/join">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button class="btn btn-sm btn-primary" type="submit">Join this event</button>
             </form>
@@ -101,6 +123,18 @@
         </div>
       </div>
 
+      <% if (requestableWikis && series && !wikiScope) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-world-plus me-2"></i>Bring your wiki</h3></div>
+          <div class="card-body">
+            <form method="post" action="<%= eventBase %>/wikis/request" class="row g-2">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <div class="col-12"><select class="form-select" name="wiki" data-picker="wiki" placeholder="Search wikis…" required></select></div>
+              <div class="col-12"><button class="btn btn-outline-primary w-100" type="submit">Ask to join as organizer</button></div>
+            </form>
+          </div>
+        </div>
+      <% } %>
       <div class="card">
         <div class="card-header"><h3 class="card-title">Your access</h3></div>
         <div class="card-body">

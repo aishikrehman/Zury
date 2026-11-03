@@ -4,6 +4,13 @@
 const { computeAutoStatus } = require('../src/services/lifecycleService');
 const { defaultSettings } = require('../src/services/contestFormService');
 const { readTypeConfig } = require('../src/events/eventTypes');
+const { defaultCode } = require('../src/services/eventWikiService');
+
+// Recurring events: /<slug> lists every edition.
+const DEMO_SERIES = [
+  { slug: 'wam', title: 'Wikipedia Asian Month', description: 'Every November, Wikipedians around the world write articles about Asia in their own languages.' },
+  { slug: 'wlm', title: 'Wiki Loves Monuments', description: 'The yearly photo contest for built heritage on Wikimedia Commons.' },
+];
 
 const DEMO_USERS = [
   { key: 'steward', username: 'Mahbub Alam', label: 'Steward', homeWiki: 'metawiki', registered: '2009-02-14', edits: 85210, rights: [['*', 'steward']] },
@@ -21,7 +28,44 @@ const d = (s) => new Date(s.length === 10 ? `${s}T00:00:00+06:00` : s);
 
 const DEMO_CONTESTS = [
   {
+    slug: 'demo-wam-2026',
+    series: 'wam',
+    edition: '2026',
+    title: 'Wikipedia Asian Month 2026',
+    description: 'Write or expand articles about Asia — its people, places, history and culture — in your language during November.',
+    type: 'writing',
+    primaryWiki: 'bnwiki',
+    organizingCommunity: 'Wikipedia Asian Month team',
+    contactInfo: 'meta:Wikipedia Asian Month 2026 (talk page)',
+    language: 'en',
+    timezone: 'UTC',
+    dates: {
+      registrationOpensAt: '2026-10-15T00:00:00Z', startDate: '2026-11-01T00:00:00Z', endDate: '2026-11-30T23:59:00Z',
+      submissionOpensAt: '2026-11-01T00:00:00Z', submissionDeadline: '2026-11-30T23:59:00Z',
+      reviewOpensAt: '2026-12-01T00:00:00Z', reviewDeadline: '2026-12-20T00:00:00Z',
+    },
+    settings: { allowJuryParticipation: false, badgesEnabled: true },
+    typeConfig: { minWordCount: 300, minBytes: 3000, createdDuringEventOnly: true },
+    // [wiki, status, overrides, requested by]: each wiki may set its own rules, dates and contact.
+    wikis: [
+      ['bnwiki', 'active', { contest: { timezone: 'Asia/Dhaka', contactInfo: 'উইকিপিডিয়া:উইকিপিডিয়া এশীয় মাস ২০২৬' }, typeConfig: { minWordCount: 350, allowExpansions: true } }],
+      ['hiwiki', 'active', { contest: { timezone: 'Asia/Kolkata' }, typeConfig: { minWordCount: 250 } }],
+      ['enwiki', 'active', { settings: { minAccountAgeDays: 30 } }],
+      ['jawiki', 'paused', { contest: { timezone: 'Asia/Tokyo' } }],
+      ['tawiki', 'pending', {}, 'participant'],
+    ],
+    createdBy: 'organizer',
+    // [user, role, wiki]: no wiki means the whole event.
+    members: [
+      ['organizer', 'organizer'], ['gsysop', 'organizer'],
+      ['bnadmin', 'organizer', 'bnwiki'], ['bnadmin', 'jury', 'bnwiki'], ['juror', 'jury', 'enwiki'],
+      ['participant', 'participant'], ['newcomer', 'participant'],
+    ],
+  },
+  {
     slug: 'demo-wlm-bangladesh-2026',
+    series: 'wlm',
+    edition: '2026',
     title: 'Wiki Loves Monuments 2026 in Bangladesh',
     description: 'Photograph the built heritage of Bangladesh and upload it to Wikimedia Commons. Mosques, temples, forts, colonial buildings and archaeological sites all count.',
     type: 'photo',
@@ -150,6 +194,11 @@ const DEMO_CONTESTS = [
 ];
 
 async function clearDemoData(prisma) {
+  await clearDemoContests(prisma);
+  await prisma.eventSeries.deleteMany({ where: { isDemo: true } });
+}
+
+async function clearDemoContests(prisma) {
   const [users, contests] = await Promise.all([
     prisma.user.findMany({ where: { isDemo: true }, select: { id: true } }),
     prisma.contest.findMany({ where: { isDemo: true }, select: { id: true } }),
@@ -188,8 +237,13 @@ async function seedDemoData(prisma, now = new Date()) {
     }
   }
 
+  const series = {};
+  for (const sr of DEMO_SERIES) series[sr.slug] = await prisma.eventSeries.create({ data: { ...sr, isDemo: true } });
+
   for (const c of DEMO_CONTESTS) {
     const creator = users[c.createdBy];
+    const wikis = c.wikis || [[c.primaryWiki, 'active', {}], ...(c.additionalWikis || []).map((w) => [w, 'active', {}])];
+    const codes = await Promise.all(wikis.map(([wiki]) => defaultCode(wiki, prisma)));
     const dates = Object.fromEntries(Object.entries(c.dates).map(([k, v]) => [k, d(v)]));
     const settings = {
       ...defaultSettings(c.type),
@@ -209,7 +263,17 @@ async function seedDemoData(prisma, now = new Date()) {
         visibility: c.visibility || 'public',
         organizingCommunity: c.organizingCommunity || '',
         primaryWiki: c.primaryWiki,
-        additionalWikis: JSON.stringify(c.additionalWikis || []),
+        additionalWikis: '[]',
+        ...(c.series && { seriesId: series[c.series].id, edition: c.edition }),
+        wikis: {
+          create: wikis.map(([wiki, wikiStatus, overrides, requestedBy], i) => ({
+            wiki,
+            code: codes[i],
+            status: wikiStatus,
+            overrides: JSON.stringify(overrides || {}),
+            requestedById: requestedBy ? users[requestedBy].id : null,
+          })),
+        },
         contactInfo: c.contactInfo || '',
         language: c.language,
         timezone: c.timezone,
@@ -217,7 +281,7 @@ async function seedDemoData(prisma, now = new Date()) {
         isDemo: true,
         createdById: creator.id,
         settings: { create: settings },
-        memberships: { create: c.members.map(([userKey, role]) => ({ userId: users[userKey].id, role, assignedById: creator.id })) },
+        memberships: { create: c.members.map(([userKey, role, wiki = '']) => ({ userId: users[userKey].id, role, wiki, assignedById: creator.id })) },
         permissionOverrides: {
           create: (c.overrides || []).map(([userKey, permission, allowed]) => ({ userId: users[userKey].id, permission, allowed })),
         },
@@ -226,9 +290,9 @@ async function seedDemoData(prisma, now = new Date()) {
 
     const base = { actorId: creator.id, contestId: contest.id };
     await log(prisma, { ...base, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: c.title, type: c.type } });
-    for (const [userKey, role] of c.members) {
-      if (users[userKey] === creator && role === 'organizer') continue;
-      await log(prisma, { ...base, action: 'membership.added', entityType: 'User', entityId: users[userKey].id, details: { username: users[userKey].username, role } });
+    for (const [userKey, role, wiki] of c.members) {
+      if (users[userKey] === creator && role === 'organizer' && !wiki) continue;
+      await log(prisma, { ...base, action: 'membership.added', entityType: 'User', entityId: users[userKey].id, details: { username: users[userKey].username, role, wiki } });
     }
     for (const [userKey, permission, allowed] of c.overrides || []) {
       await log(prisma, { ...base, action: 'contestPermission.set', entityType: 'User', entityId: users[userKey].id, details: { username: users[userKey].username, permission, allowed } });
@@ -245,6 +309,9 @@ async function seedDemoData(prisma, now = new Date()) {
 // Sample entries with stored metadata, so pages work without calling Wikimedia.
 const thumb = (path) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`;
 const DEMO_SUBMISSIONS = [
+  ['demo-wam-2026', 'participant', 'সিল্ক রোড', 'article', 'validated', { wiki: 'bnwiki', sizeBytes: 21400, wordCount: 1530, createdAt: '2026-11-01T09:00:00Z' }],
+  ['demo-wam-2026', 'participant', 'Bagan temples', 'article', 'validated', { wiki: 'enwiki', sizeBytes: 9800, wordCount: 1040, createdAt: '2026-11-02T04:00:00Z' }],
+  ['demo-wam-2026', 'newcomer', 'অঙ্কোর বাট', 'article', 'invalid', { wiki: 'bnwiki', sizeBytes: 2100, wordCount: 190, createdAt: '2026-11-02T15:30:00Z' }, ['190 words is below the 350-word minimum.']],
   ['demo-wlm-bangladesh-2026', 'participant', 'File:Shat Gombuj Mosque at dusk.jpg', 'file', 'approved', { file: { width: 6000, height: 4000, megapixels: 24, mime: 'image/jpeg', license: 'CC BY-SA 4.0', thumbUrl: thumb('a/a9/Example.jpg/500px-Example.jpg') }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Shat Gombuj Mosque'], createdAt: '2026-09-14T10:22:00Z' }],
   ['demo-wlm-bangladesh-2026', 'participant', 'File:Lalbagh Fort south gate.jpg', 'file', 'validated', { file: { width: 4608, height: 3456, megapixels: 15.9, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Lalbagh Fort'], createdAt: '2026-10-02T07:45:00Z' }],
   ['demo-wlm-bangladesh-2026', 'participant', 'File:Kantajew Temple terracotta detail.jpg', 'file', 'under_review', { file: { width: 5472, height: 3648, megapixels: 20, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh'], createdAt: '2026-10-19T12:10:00Z' }],
@@ -264,7 +331,7 @@ async function seedSubmissions(prisma, users) {
   let n = 0;
   for (const [slug, userKey, title, entryType, status, extra, errors = []] of DEMO_SUBMISSIONS) {
     const contest = await prisma.contest.findUnique({ where: { slug } });
-    const wiki = entryType === 'item' ? 'wikidatawiki' : contest.primaryWiki;
+    const wiki = extra.wiki || (entryType === 'item' ? 'wikidatawiki' : contest.primaryWiki);
     const pageId = 900000 + n;
     const meta = { exists: true, wiki, pageId, ns: entryType === 'file' ? 6 : 0, title, url: pageUrl(wiki, title), entryType, creator: users[userKey].username, categories: [], ...extra };
     const submittedAt = new Date(meta.createdAt ? new Date(meta.createdAt).getTime() + 3600000 : contest.startDate.getTime() + 86400000 * (n + 1));
@@ -309,6 +376,7 @@ function prng(seed) {
 
 // Volume for the charts: many entries spread over each event's dates.
 const BULK = [
+  { slug: 'demo-wam-2026', count: 40, wikis: ['bnwiki', 'bnwiki', 'hiwiki', 'enwiki'], who: ['participant', 'newcomer'], type: 'article', title: (i) => `Asian Month article ${i}`, from: '2026-11-01', mix: { validated: 75, pending: 15, invalid: 10 } },
   { slug: 'demo-wlm-bangladesh-2026', count: 72, who: ['participant', 'newcomer', 'participant'], type: 'file', title: (i) => `File:WLM Bangladesh 2026 heritage site ${String(i).padStart(3, '0')}.jpg`, from: '2026-09-01', mix: { validated: 45, under_review: 20, approved: 18, rejected: 9, invalid: 8 } },
   { slug: 'demo-liberation-war-editathon', count: 34, who: ['participant', 'juror', 'newcomer'], type: 'article', title: (i) => `মুক্তিযুদ্ধ নিবন্ধ ${i}`, from: '2026-10-15', mix: { validated: 70, pending: 20, withdrawn: 10 } },
   { slug: 'demo-wle-bangladesh-2026', count: 48, who: ['participant'], type: 'file', title: (i) => `File:WLE Bangladesh 2026 nature ${String(i).padStart(3, '0')}.jpg`, from: '2026-05-01', mix: { approved: 55, rejected: 35, disqualified: 10 } },
@@ -330,9 +398,9 @@ async function seedBulkSubmissions(prisma, users, now = new Date()) {
     const contest = await prisma.contest.findUnique({ where: { slug: spec.slug } });
     const from = new Date(`${spec.from}T00:00:00Z`).getTime();
     const to = Math.min(contest.endDate.getTime(), now.getTime());
-    const wiki = spec.type === 'item' ? 'wikidatawiki' : contest.primaryWiki;
     const rows = [];
     for (let i = 1; i <= spec.count; i++) {
+      const wiki = spec.wikis ? spec.wikis[i % spec.wikis.length] : spec.type === 'item' ? 'wikidatawiki' : contest.primaryWiki;
       // Skewed toward later days, like real contests that pick up near the deadline.
       const submittedAt = new Date(from + Math.pow(rand(), 0.7) * (to - from));
       const userKey = spec.who[Math.floor(rand() * spec.who.length)];
