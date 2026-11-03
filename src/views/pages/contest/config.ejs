@@ -110,6 +110,27 @@
     <%- include('../../partials/contestForm', { action: `${base}/config`, submitLabel: 'Save settings', wikiMode }) %>
   <% } %>
 
+  <% if (moveTargets.length) { %>
+    <div class="card mt-4" id="move">
+      <div class="card-status-start bg-warning"></div>
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-arrow-merge me-2"></i>Move into another event</h3></div>
+      <div class="card-body">
+        <p class="text-secondary">This event becomes one wiki of the event you choose. Its entries, participants, sessions and tracked edits move with it, its organizers and jury run that wiki, and this address will lead there. You'll see what moves before confirming.</p>
+        <form method="post" action="<%= base %>/move" class="row g-2 align-items-end">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-md-8">
+            <label class="form-label" for="moveTarget">Event</label>
+            <select class="form-select" id="moveTarget" name="target" required>
+              <option value="">Choose…</option>
+              <% moveTargets.forEach((t) => { %><option value="<%= t.id %>"><%= t.title %> (<%= t.path %>)</option><% }) %>
+            </select>
+          </div>
+          <div class="col-md-4"><button type="submit" class="btn btn-outline-warning w-100">Continue</button></div>
+        </form>
+      </div>
+    </div>
+  <% } %>
+
   <% if (can('deleteEvent') && !wikiMode) { %>
     <div class="card card-borderless mt-4">
       <div class="card-status-start bg-danger"></div>

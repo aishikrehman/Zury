@@ -8,6 +8,26 @@ const statsService = require('../services/statsService');
 const eventWikiService = require('../services/eventWikiService');
 const prisma = require('../config/prisma');
 const { effectiveFor, buildOverrides } = require('../events/effective');
+const mergeService = require('../services/eventMergeService');
+const permissionService = require('../services/permissionService');
+const { eventPath } = require('../utils/format');
+
+// Events this one could move into: same type, run by this person as a global controller.
+async function moveTargets(req) {
+  if (req.wikiScope || req.eventWikis.length !== 1 || !req.scope.global.has('deleteEvent')) return [];
+  const candidates = await prisma.contest.findMany({
+    where: { type: req.contest.type, deletedAt: null, id: { not: req.contest.id } },
+    include: { series: true, wikis: true },
+    orderBy: { startDate: 'desc' },
+    take: 100,
+  });
+  const allowed = [];
+  for (const c of candidates) {
+    const scope = await permissionService.contestScope(req.subject, c, { wikis: c.wikis.filter((w) => w.status !== 'pending').map((w) => w.wiki) });
+    if (scope.global.has('manageEvent')) allowed.push({ id: c.id, title: c.title, path: eventPath(c), wikis: c.wikis.length });
+  }
+  return allowed;
+}
 const catalogService = require('../wiki/catalogService');
 const { canUseWikiForEvents } = require('../services/permissionService');
 const { EVENT_TYPES, readTypeConfig } = require('../events/eventTypes');
@@ -104,8 +124,16 @@ function wikiAllowedForEdit(req) {
   return (wiki) => wiki === req.contest.primaryWiki || canUseWikiForEvents(req.subject, wiki);
 }
 
-function renderConfig(req, res, { form, errors = {}, status = 200 }) {
+// Never rejects: errors go to Express's error handler.
+async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
+  let targets;
+  try {
+    targets = await moveTargets(req);
+  } catch (err) {
+    return req.next(err);
+  }
   res.status(status).render('pages/contest/config', {
+    moveTargets: targets,
     wikiMode: !!req.wikiScope,
     canManageWikis: !req.wikiScope && req.scope.isGlobalController,
     title: `Configuration — ${req.contest.title}`,
@@ -118,7 +146,7 @@ function renderConfig(req, res, { form, errors = {}, status = 200 }) {
   });
 }
 
-function config(req, res) {
+async function config(req, res) {
   const shown = req.wikiScope ? req.effective.contest : req.contest;
   renderConfig(req, res, { form: contestForm.toForm({ ...shown, series: req.series }, req.settings) });
 }
@@ -191,6 +219,26 @@ async function changeStatus(req, res, next) {
     req.flash('danger', err.message);
   }
   res.redirect(back(req, '/config'));
+}
+
+// Move into another event: first a confirmation page with what will move, then the move.
+async function move(req, res, next) {
+  try {
+    const target = await prisma.contest.findFirst({ where: { id: Number(req.body.target), deletedAt: null }, include: { series: true, wikis: true } });
+    if (!target || !(await moveTargets(req)).some((t) => t.id === target.id)) throw new mergeService.MergeError('Choose an event you run.');
+    if (req.body.confirmation === undefined) {
+      const plan = await mergeService.preview({ source: req.contest, target });
+      return res.render('pages/contest/move', { title: `Move — ${req.contest.title}`, target, targetPath: eventPath(target), plan });
+    }
+    if (req.body.confirmation.trim() !== req.contest.slug) throw new mergeService.MergeError('Type the address exactly to confirm.');
+    const result = await mergeService.mergeInto({ actorId: req.user.id, source: req.contest, target });
+    req.flash('success', `Moved into “${target.title}”: ${result.submissions} entries, ${result.people} people, ${result.sessions} sessions. The old address now leads here.`);
+    res.redirect(`${eventPath(target)}/${result.code}`);
+  } catch (err) {
+    if (!(err instanceof mergeService.MergeError)) return next(err);
+    req.flash('danger', err.message);
+    res.redirect(back(req, '/config#move'));
+  }
 }
 
 async function destroy(req, res, next) {
@@ -368,6 +416,7 @@ module.exports = {
   config,
   updateConfig,
   changeStatus,
+  move,
   destroy,
   people,
   addMember,

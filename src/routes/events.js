@@ -37,6 +37,7 @@ contest.get('/config', requirePermission('editEvent', 'manageEvent'), contestCon
 contest.post('/config', requirePermission('editEvent'), contestController.updateConfig);
 contest.post('/status', requireEventWide('manageEvent'), contestController.changeStatus);
 contest.post('/delete', requireEventWide('deleteEvent'), contestController.destroy);
+contest.post('/move', requireEventWide('deleteEvent'), contestController.move);
 
 // Wikis taking part. Requests are open to logged-in users; the rest is for global controllers.
 contest.post('/wikis/request', requireAuth, wikiController.request);

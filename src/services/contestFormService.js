@@ -203,6 +203,26 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const categories = lines(body.trackCategories).map((c) => c.replace(/^Category:/i, '').trim());
   if (categories.some((c) => c.length > 200 || /[#<>[\]{}|]/.test(c))) errors.trackCategories = 'Enter category names without the "Category:" prefix.';
   else if (categories.length > 10) errors.trackCategories = 'At most 10 categories.';
+  // Marks the jury give (Fountain-style), e.g. "Accepted: Yes = 1, No = 0".
+  let marks = [];
+  try {
+    marks = JSON.parse(str(body.marks) || '[]');
+  } catch {
+    errors.marks = 'The marks could not be read.';
+  }
+  if (!Array.isArray(marks)) marks = [];
+  marks = marks
+    .map((m) => ({
+      name: String(m?.name || '').trim().slice(0, 60),
+      values: (Array.isArray(m?.values) ? m.values : [])
+        .map((v) => ({ label: String(v?.label || '').trim().slice(0, 40), points: Number(v?.points) }))
+        .filter((v) => v.label),
+    }))
+    .filter((m) => m.name);
+  if (marks.length > 10) errors.marks = 'At most 10 marks.';
+  else if (marks.some((m) => !m.values.length || m.values.length > 10)) errors.marks = 'Each mark needs 1 to 10 values.';
+  else if (marks.some((m) => m.values.some((v) => !Number.isInteger(v.points) || v.points < -100 || v.points > 100))) errors.marks = 'Points must be whole numbers from -100 to 100.';
+  settings.marks = JSON.stringify(marks);
   settings.trackHashtags = JSON.stringify([...new Set(hashtags)]);
   settings.trackCategories = JSON.stringify([...new Set(categories)]);
   for (const [key] of FEATURE_FIELDS) settings[key] = bool(body[key]);
@@ -274,6 +294,7 @@ function toForm(contest, settings) {
     allowOrganizerParticipation: s.allowOrganizerParticipation,
     anonymousParticipants: s.anonymousParticipants,
     eligibleNamespaces: JSON.parse(s.eligibleNamespaces || '[]').join(', '),
+    marks: s.marks || '[]',
     trackHashtags: JSON.parse(s.trackHashtags || '[]').join(', '),
     trackCategories: JSON.parse(s.trackCategories || '[]').join('\n'),
   });
@@ -306,6 +327,7 @@ function defaultSettings(type) {
     eligibleNamespaces: '[]',
     trackHashtags: '[]',
     trackCategories: '[]',
+    marks: '[]',
     typeConfig: JSON.stringify(readTypeConfig(type, '{}')),
   };
   return { ...base, ...EVENT_TYPES[type].defaults };

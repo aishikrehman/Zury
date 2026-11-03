@@ -104,6 +104,94 @@ Object.assign(EVENT_TYPES, {
   },
 });
 
+Object.assign(EVENT_TYPES, {
+  proofread: {
+    label: 'Proofread-a-thon',
+    description: 'Proofread and validate pages of scanned books on Wikisource.',
+    defaultWiki: null,
+    // The Page: namespace on most Wikisources.
+    defaultNamespaces: [104],
+    entries: true,
+    defaults: { juryReviewEnabled: false, massSubmissionEnabled: true, contributionDiscoveryEnabled: true },
+    fields: [
+      { key: 'indexPages', label: 'Books (Index pages)', type: 'list', maxItems: 100, maxLength: 255, default: [], help: 'One per line, e.g. "Index:Gitanjali.djvu". Leave empty to accept any book.' },
+      { key: 'minQualityLevel', label: 'Lowest accepted level', type: 'int', min: 1, max: 4, default: 3, help: '3 = proofread, 4 = validated.' },
+      { key: 'editedDuringEventOnly', label: 'Only pages last changed during the event', type: 'bool', default: true },
+      { key: 'pointsProofread', label: 'Points per proofread page', type: 'int', min: 0, max: 100, default: 1 },
+      { key: 'pointsValidated', label: 'Points per validated page', type: 'int', min: 0, max: 100, default: 1 },
+    ],
+  },
+  glam: {
+    label: 'GLAM partnership',
+    description: 'Upload and describe a collection from a gallery, library, archive or museum.',
+    defaultWiki: 'commonswiki',
+    defaultNamespaces: [6],
+    entries: true,
+    defaults: { juryReviewEnabled: false, massSubmissionEnabled: true },
+    fields: [
+      { key: 'partnerInstitution', label: 'Partner institution', type: 'string', maxLength: 200, default: '' },
+      { key: 'collectionName', label: 'Collection', type: 'string', maxLength: 200, default: '' },
+      { key: 'requiredCategory', label: 'Batch category', type: 'string', maxLength: 255, default: '', help: 'Without the "Category:" prefix. Every file must be in it.' },
+      { key: 'allowedLicenses', label: 'Accepted licences', type: 'choices', choices: { pd: 'Public domain', cc0: 'CC0', ccby: 'CC BY', ccbysa: 'CC BY-SA' }, default: ['pd', 'cc0', 'ccby', 'ccbysa'] },
+      { key: 'uploadedDuringEventOnly', label: 'Only files uploaded during the event', type: 'bool', default: false },
+    ],
+  },
+  digitization: {
+    label: 'Scanning and digitization',
+    description: 'Scan books and documents at a library or archive and upload them to Commons.',
+    defaultWiki: 'commonswiki',
+    defaultNamespaces: [6],
+    activity: true,
+    entries: true,
+    defaults: { juryReviewEnabled: false, massSubmissionEnabled: true, registrationRequired: true },
+    fields: [
+      { key: 'holdingInstitution', label: 'Library or archive', type: 'string', maxLength: 200, default: '' },
+      { key: 'targetPages', label: 'Target number of pages', type: 'int', min: 0, max: 10000000, default: 0, help: '0 means no target.' },
+      { key: 'fileFormats', label: 'Accepted formats', type: 'choices', choices: { pdf: 'PDF', djvu: 'DjVu', tiff: 'TIFF', jpeg: 'JPEG' }, default: ['pdf', 'djvu'] },
+      { key: 'requiredCategory', label: 'Upload category', type: 'string', maxLength: 255, default: '', help: 'Without the "Category:" prefix.' },
+      { key: 'uploadedDuringEventOnly', label: 'Only files uploaded during the event', type: 'bool', default: true },
+      CERTIFICATE,
+    ],
+  },
+});
+
+// A line for each wizard step, saying what that step means for this type of event.
+const GUIDES = {
+  photo: { rules: 'Set what a photo needs: resolution, the contest category and when it was uploaded.', judging: 'Jury rate photos, often in rounds; results list the winners per award.' },
+  writing: { rules: 'Set what an article needs: size, words, and whether it must be new or may be expanded.', judging: 'Jury mark each article; points from marks make the leaderboard.' },
+  data: { rules: 'Set which entities count and which properties or statements they need.', judging: 'Jury can approve or reject items; counts make the results.' },
+  editathon: { rules: "Participants register; their edits during the event are counted automatically.", judging: 'Usually no jury: results come from tracked edits and bytes.' },
+  proofread: { rules: 'Choose the books and the lowest proofreading level that counts. Pages are checked on Wikisource.', judging: 'No jury needed: proofread and validated pages earn points.' },
+  glam: { rules: 'Name the partner and collection, the batch category and the licences you accept.', judging: 'Optionally curate uploads; reports show where the files are used.' },
+  digitization: { rules: 'Set the formats and category for scans; plan scanning days in Sessions.', judging: 'Organizers check scan quality; progress counts pages against the target.' },
+  workshop: { rules: 'Participants register for sessions; their edits can be tracked.', judging: 'Attendance earns a certificate.' },
+  training: { rules: 'Participants register for the course sessions; their edits can be tracked.', judging: 'Attendance earns a certificate.' },
+  photowalk: { rules: 'Set the meeting point and the category for uploads from the walk.', judging: 'Uploads are checked like a photo contest; no jury needed.' },
+};
+for (const [type, guide] of Object.entries(GUIDES)) EVENT_TYPES[type].guide = guide;
+
+// Rules each type can be told to only warn about instead of blocking.
+const WARN_ONLY = {
+  photo: { resolution: 'Resolution', category: 'Category', uploadDate: 'Upload date' },
+  photowalk: { resolution: 'Resolution', category: 'Category', uploadDate: 'Upload date' },
+  writing: { size: 'Size', words: 'Word count', created: 'Created during the event' },
+  data: { properties: 'Required properties', statements: 'Number of statements' },
+  proofread: { level: 'Proofreading level', book: 'Book', edited: 'Changed during the event' },
+  glam: { category: 'Batch category', license: 'Licence', uploadDate: 'Upload date' },
+  digitization: { format: 'File format', category: 'Category', uploadDate: 'Upload date' },
+};
+for (const [type, choices] of Object.entries(WARN_ONLY)) {
+  EVENT_TYPES[type].fields.push({
+    key: 'warnOnly',
+    optional: true,
+    label: 'Only warn about',
+    type: 'choices',
+    choices,
+    default: [],
+    help: 'Entries that break these rules are still accepted, with a warning for reviewers.',
+  });
+}
+
 // Whether people submit entries to this type of event.
 const takesEntries = (type) => EVENT_TYPES[type].entries !== false;
 
@@ -142,7 +230,7 @@ function parseTypeConfig(type, input = {}) {
     } else if (f.type === 'choices') {
       const items = [...new Set(splitList(raw))];
       if (items.some((i) => !f.choices[i])) errors[f.key] = 'Unknown option.';
-      else if (!items.length) errors[f.key] = 'Choose at least one.';
+      else if (!items.length && !f.optional) errors[f.key] = 'Choose at least one.';
       values[f.key] = items;
     }
   }

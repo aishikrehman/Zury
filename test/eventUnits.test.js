@@ -76,7 +76,7 @@ test('type configs validate and fill in new defaults', () => {
   assert.ok(bad.errors.requiredProperties);
   const good = parseTypeConfig('data', { entityTypes: 'lexeme', requiredProperties: 'P17, P625', minStatements: '2' });
   assert.deepEqual(good.errors, {});
-  assert.deepEqual(good.values, { entityTypes: ['lexeme'], requiredProperties: ['P17', 'P625'], minStatements: 2 });
+  assert.deepEqual(good.values, { entityTypes: ['lexeme'], requiredProperties: ['P17', 'P625'], minStatements: 2, warnOnly: [] });
   assert.equal(readTypeConfig('writing', '{"minWordCount":50,"bogus":1}').minWordCount, 50);
   assert.equal(readTypeConfig('writing', '{"minWordCount":50}').minBytes, 3000);
   assert.equal(readTypeConfig('writing', 'not json').minWordCount, 300);
@@ -165,4 +165,30 @@ test('addresses: Bangla titles, new series names and hidden addresses in a serie
 
   assert.ok(run({ slug: 'Bad Slug!' }).errors.slug, 'a visible bad address is reported');
   assert.ok(run({ seriesSlug: 'wam' }).errors.edition, 'a series needs an edition');
+});
+
+test('marks, warn-only rules and the new event types', () => {
+  const { parse } = require('../src/services/contestFormService');
+  const { checkEntry } = require('../src/services/submissionRules');
+  const base = { title: 'Rules test', timezone: 'UTC', primaryWiki: 'bnwiki', language: 'bn', minAccountAgeDays: '0', minEditCount: '0' };
+
+  const marks = JSON.stringify([{ name: 'Accepted', values: [{ label: 'Yes', points: 1 }, { label: 'No', points: 0 }] }]);
+  const ok = parse({ ...base, type: 'writing', marks }, { type: 'writing', wikiAllowed: () => true });
+  assert.deepEqual(JSON.parse(ok.settings.marks), JSON.parse(marks));
+  assert.ok(parse({ ...base, type: 'writing', marks: '[{"name":"X","values":[{"label":"a","points":1.5}]}]' }, { type: 'writing', wikiAllowed: () => true }).errors.marks);
+
+  const contest = { type: 'writing', primaryWiki: 'bnwiki', additionalWikis: '[]', startDate: new Date('2026-01-01'), endDate: new Date('2026-12-31') };
+  const meta = { exists: true, wiki: 'bnwiki', pageId: 1, ns: 0, entryType: 'article', sizeBytes: 100, wordCount: 500, createdAt: '2026-05-01T00:00:00Z', categories: [] };
+  const strict = checkEntry({ meta, contest, settings: { eligibleNamespaces: '[]' }, typeConfig: { minBytes: 3000, minWordCount: 0 } });
+  assert.equal(strict.rules.length, 1);
+  const lenient = checkEntry({ meta, contest, settings: { eligibleNamespaces: '[]' }, typeConfig: { minBytes: 3000, minWordCount: 0, warnOnly: ['size'] } });
+  assert.deepEqual([lenient.rules.length, lenient.warnings.length], [0, 1], 'warn-only rules become warnings');
+
+  const page = { ...meta, wiki: 'bnwikisource', ns: 104, entryType: 'page', proofread: { level: 2, index: 'Index:Gitanjali.djvu', lastEditedAt: '2026-05-02T00:00:00Z' } };
+  const pr = checkEntry({ meta: page, contest: { ...contest, type: 'proofread', primaryWiki: 'bnwikisource' }, settings: { eligibleNamespaces: '[]' }, typeConfig: { minQualityLevel: 3, indexPages: ['Index:Other.djvu'], editedDuringEventOnly: true } });
+  assert.equal(pr.rules.length, 2, 'level too low and not one of the books');
+
+  const scan = { ...meta, wiki: 'commonswiki', ns: 6, entryType: 'file', categories: ['Scans'], file: { mime: 'image/jpeg' } };
+  const dz = checkEntry({ meta: scan, contest: { ...contest, type: 'digitization', primaryWiki: 'commonswiki' }, settings: { eligibleNamespaces: '[]' }, typeConfig: { fileFormats: ['pdf', 'djvu'], requiredCategory: 'Scans' } });
+  assert.match(dz.rules.join(), /image\/jpeg files are not accepted/);
 });

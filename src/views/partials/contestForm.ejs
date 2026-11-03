@@ -78,9 +78,10 @@
                   <select class="form-select<%= inv('type') %>" id="type" <%- creating ? 'name="type" required' : 'disabled' %> data-type-select>
                     <option value=""<%= type ? '' : ' selected' %>>Choose…</option>
                     <% Object.entries(EVENT_TYPES).forEach(([key, t]) => { %>
-                      <option value="<%= key %>"<%= type === key ? ' selected' : '' %> data-defaults="<%= JSON.stringify(FEATURE_DEFAULTS[key]) %>" data-namespaces="<%= t.defaultNamespaces.join(', ') %>"><%= t.label %></option>
+                      <option value="<%= key %>"<%= type === key ? ' selected' : '' %> data-defaults="<%= JSON.stringify(FEATURE_DEFAULTS[key]) %>" data-namespaces="<%= t.defaultNamespaces.join(', ') %>" data-description="<%= t.description %>" data-guide-rules="<%= (t.guide || {}).rules || '' %>" data-guide-judging="<%= (t.guide || {}).judging || '' %>"><%= t.label %></option>
                     <% }) %>
                   </select>
+                  <div class="form-hint" data-type-description><%= typeDef ? typeDef.description : '' %></div>
                   <%- err('type') %>
                 </div>
                 <div class="col-md-8">
@@ -200,7 +201,8 @@
 
           <%# ── 2. Submission rules ───────────────────────────────────── %>
           <section class="wizard-pane d-none" id="step-rules" data-step="1">
-            <h3 class="mb-4">Submission rules</h3>
+            <h3 class="mb-2">Submission rules</h3>
+            <p class="text-secondary mb-4" data-guide="rules"><%= typeDef && typeDef.guide ? typeDef.guide.rules : '' %></p>
             <div class="row g-3 mb-4">
               <% ['registrationOpensAt', 'registrationClosesAt', 'submissionOpensAt', 'submissionDeadline'].forEach((key) => { %>
                 <div class="col-sm-6 col-lg-3"><%- dateInput(key) %></div>
@@ -299,12 +301,26 @@
 
           <%# ── 3. Interaction and judging ────────────────────────────── %>
           <section class="wizard-pane d-none" id="step-judging" data-step="2">
-            <h3 class="mb-4">Interaction and judging</h3>
+            <h3 class="mb-2">Interaction and judging</h3>
+            <p class="text-secondary mb-4" data-guide="judging"><%= typeDef && typeDef.guide ? typeDef.guide.judging : '' %></p>
             <div class="row g-3 mb-4">
               <% ['reviewOpensAt', 'reviewDeadline', 'appealDeadline', 'resultsAnnouncedAt'].forEach((key) => { %>
                 <div class="col-sm-6 col-lg-3"><%- dateInput(key) %></div>
               <% }) %>
             </div>
+            <h4 class="mb-1">Marks</h4>
+            <p class="text-secondary small mb-3">What the jury give each entry, and the points each value is worth. Points add up to the leaderboard.</p>
+            <div class="mb-4" data-marks-editor>
+              <input type="hidden" name="marks" value="<%= v('marks') || '[]' %>" data-marks-input>
+              <div data-marks-rows></div>
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                <button type="button" class="btn btn-sm" data-marks-add><i class="ti ti-plus me-1"></i>Add a mark</button>
+                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="accept">Accepted or not</button>
+                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="quality">Quality 0–3</button>
+              </div>
+              <%- err('marks') %>
+            </div>
+
             <h4 class="mb-3">Features</h4>
             <div class="row g-2">
               <% FEATURE_FIELDS.forEach(([key, label, help]) => { %>

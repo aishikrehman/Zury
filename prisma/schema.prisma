@@ -127,6 +127,9 @@ model Contest {
   createdById Int?
   deletedAt   DateTime?
   deletedById Int?
+  // Set when the event was moved into another one; its address then redirects there.
+  mergedIntoId Int?
+  mergedWikiCode String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -213,6 +216,8 @@ model ContestSettings {
   // JSON arrays: hashtags without "#", categories without "Category:".
   trackHashtags               String  @default("[]")
   trackCategories             String  @default("[]")
+  // Jury marks (Fountain-style), JSON: [{ name, values: [{ label, points }] }].
+  marks                       String  @default("[]")
   trackedAt                   DateTime?
 
   updatedAt DateTime @updatedAt

@@ -53,6 +53,8 @@ async function fetchEntryMetadata(ref, { language = 'en' } = {}) {
   const { wiki } = ref;
   const props = ['info', 'revisions', 'categories', 'imageinfo'];
   if (isWikipedia(wiki)) props.push('extracts');
+  const wikisource = wiki.endsWith('wikisource');
+  if (wikisource) props.push('proofread');
   const data = await wikiApi.get(wiki, {
     action: 'query',
     prop: props.join('|'),
@@ -97,6 +99,18 @@ async function fetchEntryMetadata(ref, { language = 'en' } = {}) {
       mime: info.mime,
       thumbUrl: safeThumb(info.thumburl),
       license: info.extmetadata?.LicenseShortName?.value || null,
+    };
+  }
+  if (wikisource && page.proofread) {
+    // Who last changed the page, and when: that change set its current level.
+    const latest = await wikiApi.get(wiki, { action: 'query', prop: 'revisions', pageids: String(page.pageid), rvlimit: '1', rvprop: 'timestamp|user' });
+    const rev = latest.query?.pages?.[0]?.revisions?.[0];
+    meta.proofread = {
+      level: Number(page.proofread.quality),
+      label: page.proofread.quality_text || null,
+      index: page.title.includes('/') ? `Index:${page.title.replace(/^[^:]+:/, '').replace(/\/[^/]*$/, '')}` : null,
+      lastEditor: rev?.user || null,
+      lastEditedAt: rev?.timestamp || null,
     };
   }
   if (wiki === 'wikidatawiki' && WIKIDATA_NS[page.ns]) {

@@ -16,6 +16,12 @@
       fs.classList.toggle('d-none', !mine);
     });
     const option = typeSelect.selectedOptions[0];
+    const describe = form.querySelector('[data-type-description]');
+    if (describe) describe.textContent = option?.dataset.description || '';
+    for (const step of ['rules', 'judging']) {
+      const line = form.querySelector(`[data-guide="${step}"]`);
+      if (line) line.textContent = option?.dataset[`guide${step[0].toUpperCase()}${step.slice(1)}`] || '';
+    }
     const ns = $('eligibleNamespaces');
     if (ns?.tomselect && option?.dataset.namespaces) ns.tomselect.settings.placeholder = `Default: ${option.dataset.namespaces}`;
     if (fromUser && creating && option?.dataset.defaults) {
@@ -28,6 +34,52 @@
   if (typeSelect) {
     typeSelect.addEventListener('change', () => applyType(true));
     applyType(false);
+  }
+
+  // Marks: rows of "name" + "Label = points, …", kept as JSON in a hidden field.
+  const marksBox = form.querySelector('[data-marks-editor]');
+  if (marksBox) {
+    const input = marksBox.querySelector('[data-marks-input]');
+    const rows = marksBox.querySelector('[data-marks-rows]');
+    const PRESETS = {
+      accept: { name: 'Accepted', values: [{ label: 'Yes', points: 1 }, { label: 'No', points: 0 }] },
+      quality: { name: 'Quality', values: [0, 1, 2, 3].map((n) => ({ label: String(n), points: n })) },
+    };
+    const toText = (values) => values.map((v) => `${v.label} = ${v.points}`).join(', ');
+    const fromText = (text) =>
+      text.split(',').map((part) => {
+        const [label, points] = part.split('=').map((x) => (x || '').trim());
+        return { label, points: Number(points || 0) };
+      }).filter((v) => v.label);
+    const save = () => {
+      input.value = JSON.stringify(
+        [...rows.children].map((row) => ({ name: row.querySelector('[data-name]').value.trim(), values: fromText(row.querySelector('[data-values]').value) })).filter((m) => m.name),
+      );
+    };
+    const addRow = (mark = { name: '', values: [] }) => {
+      const row = document.createElement('div');
+      row.className = 'row g-2 mb-2 align-items-center';
+      row.innerHTML =
+        '<div class="col-md-4"><input class="form-control" data-name placeholder="Mark, e.g. Accepted" maxlength="60"></div>' +
+        '<div class="col"><input class="form-control" data-values placeholder="Values with points, e.g. Yes = 1, No = 0"></div>' +
+        '<div class="col-auto"><button type="button" class="btn btn-icon btn-ghost-danger" aria-label="Remove mark"><i class="ti ti-x"></i></button></div>';
+      row.querySelector('[data-name]').value = mark.name;
+      row.querySelector('[data-values]').value = toText(mark.values);
+      row.querySelector('button').addEventListener('click', () => {
+        row.remove();
+        save();
+      });
+      row.addEventListener('input', save);
+      rows.appendChild(row);
+      save();
+    };
+    try {
+      JSON.parse(input.value || '[]').forEach(addRow);
+    } catch {
+      /* the server reports unreadable marks */
+    }
+    marksBox.querySelector('[data-marks-add]').addEventListener('click', () => addRow());
+    marksBox.querySelectorAll('[data-marks-preset]').forEach((b) => b.addEventListener('click', () => addRow(PRESETS[b.dataset.marksPreset])));
   }
 
   // Address: from the title until changed by hand; /<series>/<edition> when part of a series.

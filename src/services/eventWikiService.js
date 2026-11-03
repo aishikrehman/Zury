@@ -102,4 +102,4 @@ async function saveOverrides({ actorId, contest, eventWiki, overrides }) {
   });
 }
 
-module.exports = { EventWikiError, defaultCode, addWiki, changeWiki, saveOverrides };
+module.exports = { EventWikiError, defaultCode, uniqueCode, addWiki, changeWiki, saveOverrides };

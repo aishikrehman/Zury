@@ -185,3 +185,39 @@ test('wiki pages list only their own entries; staff can be added for one wiki', 
   const m = await t.prisma.contestMembership.findFirst({ where: { userId: ids['Platform Admin'], role: 'jury' } });
   assert.equal(m?.wiki, 'hiwiki');
 });
+
+test('a single event moves into a multi-wiki event as one of its wikis, keeping its data and address', async () => {
+  const source = await t.prisma.contest.findUnique({ where: { slug: 'bnwiki-womens-history-2027' } });
+  const organizer = await session('Organizer');
+  const config = await organizer.get('/bnwiki-womens-history-2027/config');
+  assert.match(config.body, /Move into another event/);
+  const wamId = (await wam()).id;
+  assert.match(config.body, new RegExp(`<option value="${wamId}">`), 'events this person runs are offered');
+
+  // Juror isn't a global controller of WAM: can't move it there.
+  const juror = await session('Juror');
+  assert.equal((await juror.post('/bnwiki-womens-history-2027/move', { target: String(wamId) })).status, 403);
+
+  const plan = await organizer.post('/bnwiki-womens-history-2027/move', { target: String(wamId) });
+  assert.equal(plan.status, 200);
+  assert.match(plan.body, /Type <code>bnwiki-womens-history-2027<\/code> to confirm/);
+  const wrong = await organizer.post('/bnwiki-womens-history-2027/move', { target: String(wamId), confirmation: 'nope' });
+  assert.equal(wrong.status, 302);
+  assert.equal((await t.prisma.contest.findUnique({ where: { id: source.id } })).deletedAt, null);
+
+  const done = await organizer.post('/bnwiki-womens-history-2027/move', { target: String(wamId), confirmation: 'bnwiki-womens-history-2027' });
+  assert.equal(done.status, 302);
+  assert.equal(done.location, '/wam/2026/bn', 'bnwiki was already in WAM, so the two are joined');
+  const moved = await t.prisma.contest.findUnique({ where: { id: source.id } });
+  assert.ok(moved.deletedAt);
+  assert.equal(moved.mergedIntoId, wamId);
+  const bnRow = (await wam()).wikis.find((w) => w.wiki === 'bnwiki');
+  assert.equal(JSON.parse(bnRow.overrides).settings.participantLimit, 50, "the source's own rules become that wiki's settings");
+  const staff = await t.prisma.contestMembership.findFirst({ where: { contestId: wamId, userId: ids.Juror, role: 'jury', wiki: 'bnwiki' } });
+  assert.ok(staff, 'its jury now judges that wiki only');
+
+  const old = await t.request('/bnwiki-womens-history-2027/submissions');
+  assert.equal(old.status, 301);
+  assert.equal(old.location, '/wam/2026/bn/submissions');
+  assert.equal((await t.request(`/contest/${source.id}`)).location, '/wam/2026/bn');
+});

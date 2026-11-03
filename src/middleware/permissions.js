@@ -81,12 +81,27 @@ async function setupEvent(req, res, next, contest, code) {
 
 const EVENT_INCLUDE = { settings: true, wikis: { orderBy: [{ status: 'asc' }, { code: 'asc' }] }, series: true };
 
+// A moved event's old address leads to its wiki in the event it joined.
+async function redirectMerged(req, res, where, prefixLength) {
+  if (req.method !== 'GET') return false;
+  const old = await prisma.contest.findFirst({ where: { ...where, mergedIntoId: { not: null } }, select: { mergedIntoId: true, mergedWikiCode: true } });
+  if (!old) return false;
+  const target = await prisma.contest.findFirst({ where: { id: old.mergedIntoId, deletedAt: null }, include: { series: true } });
+  if (!target) return false;
+  const base = target.series && target.edition ? `/${target.series.slug}/${target.edition}` : `/${target.slug}`;
+  res.redirect(301, `${base}/${old.mergedWikiCode}${req.originalUrl.slice(prefixLength)}`);
+  return true;
+}
+
 // /contest/:contestId
 async function loadContest(req, res, next) {
   try {
     const id = Number(req.params.contestId);
     const contest = Number.isSafeInteger(id) && id > 0 ? await prisma.contest.findFirst({ where: { id, deletedAt: null }, include: EVENT_INCLUDE }) : null;
-    if (!contest) return notFound(res);
+    if (!contest) {
+      if (Number.isSafeInteger(id) && (await redirectMerged(req, res, { id }, `/contest/${id}`.length))) return;
+      return notFound(res);
+    }
     await setupEvent(req, res, next, contest, null);
   } catch (err) {
     next(err);
@@ -121,7 +136,10 @@ function loadSlugEvent({ withWiki }) {
       const { slug } = req.params;
       if (RESERVED.has(slug)) return next();
       const contest = await prisma.contest.findFirst({ where: { slug, deletedAt: null }, include: EVENT_INCLUDE });
-      if (!contest) return next();
+      if (!contest) {
+        if (!withWiki && (await redirectMerged(req, res, { slug }, slug.length + 1))) return;
+        return next();
+      }
       // An event that joined a series moved to /<series>/<edition>.
       if (contest.series && contest.edition) {
         if (req.method !== 'GET') return next();

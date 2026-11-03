@@ -30,6 +30,9 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
   const hard = [];
   const rules = [];
   const warnings = [];
+  // Rules organizers chose to only warn about (Fountain-style) go to warnings instead.
+  const warnOnly = new Set(typeConfig.warnOnly || []);
+  const rule = (key, message) => (warnOnly.has(key) ? warnings : rules).push(message);
 
   if (!meta.exists) {
     hard.push('This page does not exist.');
@@ -48,27 +51,63 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
     if (meta.entryType !== 'file') rules.push('Only files are accepted.');
     if (meta.file) {
       if (typeConfig.minResolutionMegapixels > 0 && (meta.file.megapixels ?? 0) < typeConfig.minResolutionMegapixels) {
-        rules.push(`Resolution ${meta.file.megapixels ?? '?'} MP is below the ${typeConfig.minResolutionMegapixels} MP minimum.`);
+        rule('resolution', `Resolution ${meta.file.megapixels ?? '?'} MP is below the ${typeConfig.minResolutionMegapixels} MP minimum.`);
       }
       if (meta.file.mime && !meta.file.mime.startsWith('image/')) rules.push('Only image files are accepted.');
     }
     const required = (typeConfig.requiredCategory || '').replace(/_/g, ' ').trim();
-    if (required && !meta.categories.some((c) => c.replace(/_/g, ' ') === required)) rules.push(`Missing the required category “${required}”.`);
+    if (required && !meta.categories.some((c) => c.replace(/_/g, ' ') === required)) rule('category', `Missing the required category “${required}”.`);
     if (typeConfig.uploadedDuringEventOnly && !within(meta.createdAt, contest.startDate, contest.endDate)) {
-      rules.push('The file was not uploaded during the event.');
+      rule('uploadDate', 'The file was not uploaded during the event.');
     }
   }
 
   if (contest.type === 'writing') {
-    if (typeConfig.minBytes > 0 && (meta.sizeBytes ?? 0) < typeConfig.minBytes) rules.push(`Article is ${meta.sizeBytes} bytes; at least ${typeConfig.minBytes} needed.`);
+    if (typeConfig.minBytes > 0 && (meta.sizeBytes ?? 0) < typeConfig.minBytes) rule('size', `Article is ${meta.sizeBytes} bytes; at least ${typeConfig.minBytes} needed.`);
     if (typeConfig.minWordCount > 0) {
       if (meta.wordCount == null) warnings.push("Word count couldn't be measured on this wiki; check it manually.");
-      else if (meta.wordCount < typeConfig.minWordCount) rules.push(`Article has ${meta.wordCount} words; at least ${typeConfig.minWordCount} needed.`);
+      else if (meta.wordCount < typeConfig.minWordCount) rule('words', `Article has ${meta.wordCount} words; at least ${typeConfig.minWordCount} needed.`);
     }
     if (typeConfig.createdDuringEventOnly && !within(meta.createdAt, contest.startDate, contest.endDate)) {
       if (typeConfig.allowExpansions) warnings.push('Article was created before the event; check that it was substantially expanded.');
-      else rules.push('The article was not created during the event.');
+      else rule('created', 'The article was not created during the event.');
     }
+  }
+
+  if (contest.type === 'proofread') {
+    const pr = meta.proofread;
+    if (!pr) rules.push('Not a Wikisource page with a proofreading level.');
+    else {
+      const LEVELS = { 0: 'without text', 1: 'not proofread', 2: 'problematic', 3: 'proofread', 4: 'validated' };
+      if (pr.level < typeConfig.minQualityLevel) rule('level', `The page is ${LEVELS[pr.level] || 'at level ' + pr.level}; at least ${LEVELS[typeConfig.minQualityLevel]} is needed.`);
+      const books = (typeConfig.indexPages || []).map((b) => b.replace(/_/g, ' ').replace(/^(Index:)?/i, 'Index:'));
+      if (books.length && !books.includes((pr.index || '').replace(/_/g, ' '))) rule('book', 'This page is not from one of the event\'s books.');
+      if (typeConfig.editedDuringEventOnly && !within(pr.lastEditedAt, contest.startDate, contest.endDate)) rule('edited', 'The page was not changed during the event.');
+    }
+  }
+
+  if (contest.type === 'glam') {
+    if (meta.entryType !== 'file') rules.push('Only files are accepted.');
+    const required = (typeConfig.requiredCategory || '').replace(/_/g, ' ').trim();
+    if (required && !meta.categories.some((c) => c.replace(/_/g, ' ') === required)) rule('category', `Missing the batch category “${required}”.`);
+    const license = meta.file?.license || '';
+    const LICENSES = { pd: /public domain|^pd/i, cc0: /cc0/i, ccbysa: /cc[- ]by[- ]sa/i, ccby: /cc[- ]by(?![- ]sa)/i };
+    const allowed = typeConfig.allowedLicenses || [];
+    if (!license) warnings.push("The licence couldn't be read; check it manually.");
+    else if (allowed.length && !allowed.some((k) => LICENSES[k]?.test(license))) rule('license', `The licence ${license} is not accepted.`);
+    if (typeConfig.uploadedDuringEventOnly && !within(meta.createdAt, contest.startDate, contest.endDate)) rule('uploadDate', 'The file was not uploaded during the event.');
+  }
+
+  if (contest.type === 'digitization') {
+    if (meta.entryType !== 'file') rules.push('Only files are accepted.');
+    const MIME = { pdf: 'application/pdf', djvu: 'image/vnd.djvu', tiff: 'image/tiff', jpeg: 'image/jpeg' };
+    const formats = typeConfig.fileFormats || [];
+    if (meta.file?.mime && formats.length && !formats.some((f) => MIME[f] === meta.file.mime)) {
+      rule('format', `${meta.file.mime} files are not accepted (accepted: ${formats.map((f) => f.toUpperCase()).join(', ')}).`);
+    }
+    const required = (typeConfig.requiredCategory || '').replace(/_/g, ' ').trim();
+    if (required && !meta.categories.some((c) => c.replace(/_/g, ' ') === required)) rule('category', `Missing the category “${required}”.`);
+    if (typeConfig.uploadedDuringEventOnly && !within(meta.createdAt, contest.startDate, contest.endDate)) rule('uploadDate', 'The file was not uploaded during the event.');
   }
 
   if (contest.type === 'data') {
@@ -76,9 +115,9 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
     else {
       if (!(typeConfig.entityTypes || []).includes(meta.entity.type)) rules.push(`${meta.entity.type} entities are not accepted.`);
       const missing = (typeConfig.requiredProperties || []).filter((p) => !meta.entity.properties.includes(p));
-      if (missing.length) rules.push(`Missing required properties: ${missing.join(', ')}.`);
+      if (missing.length) rule('properties', `Missing required properties: ${missing.join(', ')}.`);
       if (typeConfig.minStatements > 0 && meta.entity.statementCount < typeConfig.minStatements) {
-        rules.push(`Has ${meta.entity.statementCount} statements; at least ${typeConfig.minStatements} needed.`);
+        rule('statements', `Has ${meta.entity.statementCount} statements; at least ${typeConfig.minStatements} needed.`);
       }
     }
   }

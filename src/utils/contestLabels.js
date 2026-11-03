@@ -6,9 +6,12 @@ const CONTEST_TYPES = {
   workshop: 'Workshop',
   training: 'Training',
   photowalk: 'Photowalk',
+  proofread: 'Proofread-a-thon',
+  glam: 'GLAM partnership',
+  digitization: 'Scanning and digitization',
 };
-const TYPE_ICONS = { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group', workshop: 'presentation', training: 'school', photowalk: 'walk' };
-const TYPE_COLORS = { photo: 'blue', writing: 'green', data: 'purple', editathon: 'orange', workshop: 'teal', training: 'cyan', photowalk: 'pink' };
+const TYPE_ICONS = { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group', workshop: 'presentation', training: 'school', photowalk: 'walk', proofread: 'book', glam: 'building-museum', digitization: 'scan' };
+const TYPE_COLORS = { photo: 'blue', writing: 'green', data: 'purple', editathon: 'orange', workshop: 'teal', training: 'cyan', photowalk: 'pink', proofread: 'indigo', glam: 'yellow', digitization: 'lime' };
 // What an event is about, for browsing and reports.
 const PROJECT_CATEGORIES = {
   glam: 'GLAM (galleries, libraries, archives, museums)',
@@ -27,7 +30,7 @@ const PROJECT_CATEGORIES = {
   other: 'Other',
 };
 // Activities are run as sessions people attend, rather than as contests.
-const ACTIVITY_TYPES = ['workshop', 'training', 'photowalk'];
+const ACTIVITY_TYPES = ['workshop', 'training', 'photowalk', 'digitization'];
 
 const CONTEST_STATUSES = {
   draft: { label: 'Draft', badge: 'secondary' },
