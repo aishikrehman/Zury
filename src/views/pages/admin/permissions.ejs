@@ -1,0 +1,27 @@
+<div class="container-fluid py-5 px-4">
+  <%- include('../../partials/adminNav', { active: 'permissions' }) %>
+  <p class="text-muted small">
+    Defined in <code>src/permissions/registry.js</code>. ● granted directly, ○ granted through another permission,
+    G granted everywhere for a wiki-scoped role.
+  </p>
+  <div class="table-responsive">
+    <table class="table table-sm table-bordered small align-middle text-center">
+      <thead class="table-light">
+        <tr>
+          <th scope="col" class="text-start">Permission</th>
+          <% roles.forEach((r) => { %><th scope="col" title="<%= r.description %>"><%= r.label %><br><span class="fw-normal text-muted"><%= r.kind %><%= r.scope === 'wiki' ? ', own wikis' : '' %></span></th><% }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% Object.entries(PERMISSIONS).forEach(([key, label]) => { %>
+          <tr>
+            <th scope="row" class="text-start fw-normal"><code><%= key %></code><br><span class="text-muted"><%= label %></span></th>
+            <% roles.forEach((r) => { %>
+              <td><%= r.viaGlobal.has(key) ? 'G' : r.permissions.includes(key) ? '●' : r.effective.has(key) ? '○' : '' %></td>
+            <% }) %>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>

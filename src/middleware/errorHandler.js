@@ -1,3 +1,5 @@
+const TITLES = { 400: 'Bad Request', 403: 'Access Denied', 404: 'Not Found' };
+
 function notFound(req, res) {
   res.status(404).render('pages/404', { title: 'Page Not Found' });
 }
@@ -7,7 +9,7 @@ function errorHandler(err, req, res, next) {
   const status = err.status || 500;
   if (status >= 500) console.error(err);
   res.status(status).render('pages/error', {
-    title: 'Something Went Wrong',
+    title: TITLES[status] || 'Something Went Wrong',
     message: status >= 500 ? 'An unexpected error occurred.' : err.message,
   });
 }

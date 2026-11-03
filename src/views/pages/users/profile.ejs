@@ -1,6 +1,11 @@
 <%
   const wikiUserUrl = 'https://meta.wikimedia.org/wiki/Special:CentralAuth/' + encodeURIComponent(profileUser.username.replace(/ /g, '_'));
-  const fmt = (d) => d ? d.toISOString().slice(0, 10) : null;
+  const eventList = (items, empty) => ({ items, empty });
+  const groups = [
+    { heading: 'Organized', ...eventList(organized, 'No public events organized.') },
+    { heading: 'Jury member', ...eventList(judged, 'No public jury roles.') },
+    { heading: 'Participated', ...eventList(participated, 'No public event participation.') },
+  ];
 %>
 <div class="container py-5">
   <div class="d-flex align-items-center gap-3 mb-4">
@@ -8,25 +13,38 @@
       <%= profileUser.username.charAt(0).toUpperCase() %>
     </div>
     <div>
-      <h1 class="h3 mb-1"><%= profileUser.username %></h1>
-      <a href="<%= wikiUserUrl %>" rel="noopener" target="_blank">Wikimedia global account</a>
-      <% if (isOwnProfile) { %> &middot; <a href="/settings">Edit preferences</a><% } %>
+      <h1 class="h3 mb-1"><%= profileUser.username %>
+        <% if (profileUser.isDemo) { %><span class="badge text-bg-warning align-middle fs-6">Demo user</span><% } %>
+      </h1>
+      <% if (!profileUser.isDemo) { %><a href="<%= wikiUserUrl %>" rel="noopener" target="_blank">Wikimedia global account</a><% } %>
+      <% if (isOwnProfile) { %><% if (!profileUser.isDemo) { %> &middot; <% } %><a href="/settings">Edit preferences</a><% } %>
     </div>
   </div>
 
-  <dl class="row">
-    <% if (profileUser.homeWiki) { %>
-      <dt class="col-sm-3">Home wiki</dt>
-      <dd class="col-sm-9"><%= profileUser.homeWiki %></dd>
-    <% } %>
-    <% if (profileUser.wikimediaRegisteredAt) { %>
-      <dt class="col-sm-3">Wikimedia account since</dt>
-      <dd class="col-sm-9"><%= fmt(profileUser.wikimediaRegisteredAt) %></dd>
-    <% } %>
-    <dt class="col-sm-3">Joined Zury</dt>
-    <dd class="col-sm-9"><%= fmt(profileUser.createdAt) %></dd>
-  </dl>
-
-  <h2 class="h5 mt-5">Activity</h2>
-  <p class="text-muted">Events, submissions and badges will appear here once those features are available.</p>
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <dl>
+        <% if (profileUser.homeWiki) { %><dt>Home wiki</dt><dd><%= profileUser.homeWiki %></dd><% } %>
+        <% if (profileUser.wikimediaRegisteredAt) { %><dt>Wikimedia account since</dt><dd><%= formatDate(profileUser.wikimediaRegisteredAt) %></dd><% } %>
+        <dt>Joined Zury</dt><dd><%= formatDate(profileUser.createdAt) %></dd>
+        <dt>Roles</dt><dd><%- include('../../partials/accessSummary', { s: profileSubject }) %></dd>
+      </dl>
+    </div>
+    <div class="col-lg-8">
+      <% groups.forEach((g) => { %>
+        <h2 class="h5"><%= g.heading %></h2>
+        <% if (!g.items.length) { %>
+          <p class="text-muted small"><%= g.empty %></p>
+        <% } else { %>
+          <ul class="list-unstyled mb-4">
+            <% g.items.forEach(({ contest: c }) => { %>
+              <li class="mb-1"><a href="/contest/<%= c.id %>"><%= c.title %></a>
+                <span class="small text-muted">· <%= CONTEST_TYPES[c.type] %> · <%= (CONTEST_STATUSES[c.status] || {}).label %></span></li>
+            <% }) %>
+          </ul>
+        <% } %>
+      <% }) %>
+      <p class="text-muted small">Submissions and badges will appear here in later phases.</p>
+    </div>
+  </div>
 </div>

@@ -9,12 +9,16 @@ function tokensMatch(a, b) {
   return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
 }
 
+// For pages that show a form to signed-out visitors; this creates a session.
+function ensureCsrfToken(req, res) {
+  if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  res.locals.csrfToken = req.session.csrfToken;
+}
+
 function csrfProtection(req, res, next) {
-  // Only signed-in sessions get a token, so anonymous visitors don't create sessions.
-  if (!req.session.csrfToken && req.session.userId) {
-    req.session.csrfToken = crypto.randomBytes(32).toString('hex');
-  }
-  res.locals.csrfToken = req.session.csrfToken || '';
+  // Only signed-in sessions get a token by default, so anonymous visitors don't create sessions.
+  if (req.session.userId) ensureCsrfToken(req, res);
+  else res.locals.csrfToken = req.session.csrfToken || '';
 
   if (SAFE_METHODS.has(req.method)) return next();
 
@@ -26,4 +30,4 @@ function csrfProtection(req, res, next) {
   next(err);
 }
 
-module.exports = { csrfProtection };
+module.exports = { csrfProtection, ensureCsrfToken };

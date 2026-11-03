@@ -1,5 +1,7 @@
 const oauthService = require('../services/wikimediaOAuthService');
 const userService = require('../services/userService');
+const wikimediaApi = require('../services/wikimediaApiService');
+const rightsService = require('../services/rightsService');
 
 function safeReturnTo(value) {
   return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/dashboard';
@@ -38,11 +40,15 @@ async function callback(req, res, next) {
   try {
     const accessToken = await oauthService.getAccessToken(requestToken, verifier);
     const identity = await oauthService.identify(accessToken);
-    const homeWiki = await oauthService.fetchHomeWiki(identity.username);
-    const user = await userService.syncFromWikimedia({ ...identity, homeWiki });
+    const globalInfo = await wikimediaApi.fetchGlobalUserInfo(identity.wikimediaId);
+    const user = await userService.syncFromWikimedia({ ...identity, homeWiki: globalInfo?.home });
 
     if (user.status !== 'active') {
       return renderLoginError(res, 403, 'This Zury account is not active.');
+    }
+    // If the lookup failed, previously verified rights stay until they expire.
+    if (globalInfo) {
+      await rightsService.replaceVerifiedRights(user.id, rightsService.extractTrackedRights(globalInfo));
     }
 
     const returnTo = safeReturnTo(req.session.returnTo);

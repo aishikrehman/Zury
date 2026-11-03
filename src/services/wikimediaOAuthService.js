@@ -136,36 +136,12 @@ async function identify(accessToken) {
   return verifyIdentityToken(text, nonce);
 }
 
-// Best effort: the identify JWT has no home wiki, so ask CentralAuth.
-async function fetchHomeWiki(username) {
-  try {
-    const url = new URL(oauthBaseUrl.replace(/index\.php$/, 'api.php'));
-    url.search = new URLSearchParams({
-      action: 'query',
-      meta: 'globaluserinfo',
-      guiuser: username,
-      format: 'json',
-      formatversion: '2',
-    }).toString();
-    const response = await fetch(url, {
-      headers: { 'User-Agent': env.userAgent },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data?.query?.globaluserinfo?.home || null;
-  } catch {
-    return null;
-  }
-}
-
 module.exports = {
   WikimediaOAuthError,
   getRequestToken,
   getAuthorizeUrl,
   getAccessToken,
   identify,
-  fetchHomeWiki,
   verifyIdentityToken,
   parseMediaWikiTimestamp,
   buildCallbackUrl,

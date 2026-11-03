@@ -58,9 +58,22 @@ function createMockWikimedia({ consumerKey, consumerSecret, user }) {
     };
 
     if (url.pathname === '/w/api.php') {
-      log.push({ step: 'globaluserinfo', userAgent: req.headers['user-agent'] });
-      const found = url.searchParams.get('guiuser') === user.username;
-      return send(200, JSON.stringify({ query: { globaluserinfo: found ? { home: user.homeWiki } : { missing: true } } }), 'application/json');
+      log.push({ step: 'globaluserinfo', userAgent: req.headers['user-agent'], params: Object.fromEntries(url.searchParams) });
+      if (mock.apiDown) return send(503, 'Service Unavailable');
+      const found = url.searchParams.get('guiid') === String(user.wikimediaId);
+      const info = found
+        ? {
+            id: user.wikimediaId,
+            name: user.username,
+            home: user.homeWiki,
+            groups: user.globalGroups || [],
+            merged: [
+              { wiki: user.homeWiki, url: 'https://example.org' },
+              ...(user.localGroups || []).map((g) => ({ wiki: g.wiki, url: 'https://example.org', groups: g.groups })),
+            ],
+          }
+        : { missing: true };
+      return send(200, JSON.stringify({ batchcomplete: true, query: { globaluserinfo: info } }), 'application/json');
     }
 
     if (req.method === 'GET' && url.pathname === '/wiki/Special:OAuth/authorize') {
@@ -119,8 +132,9 @@ function createMockWikimedia({ consumerKey, consumerSecret, user }) {
     send(404, 'unknown special page');
   });
 
-  return {
+  const mock = {
     log,
+    apiDown: false,
     // Simulates the user clicking "Allow" on Special:OAuth/authorize.
     approve(requestKey) {
       const entry = requestTokens.get(requestKey);
@@ -135,6 +149,7 @@ function createMockWikimedia({ consumerKey, consumerSecret, user }) {
     },
     stop: () => new Promise((resolve) => server.close(resolve)),
   };
+  return mock;
 }
 
 module.exports = { createMockWikimedia };

@@ -1,9 +1,20 @@
 const userService = require('../services/userService');
+const contestService = require('../services/contestService');
 
 const TIMEZONES = ['UTC', ...Intl.supportedValuesOf('timeZone')];
 
-function dashboard(req, res) {
-  res.render('pages/account/dashboard', { title: 'Dashboard — Zury' });
+async function dashboard(req, res, next) {
+  try {
+    const myEvents = await contestService.listForUser(req.user.id);
+    res.render('pages/account/dashboard', {
+      title: 'Dashboard — Zury',
+      myEvents,
+      juryEvents: myEvents.filter((e) => e.roles.includes('jury')),
+      wikiRoles: req.subject.user.wikiRoles,
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 function renderSettings(res, { values, errors = {}, saved = false, status = 200 }) {

@@ -1,4 +1,6 @@
 // Zury database schema. Models are added incrementally per the project roadmap.
+// Role and permission definitions live in src/permissions/registry.js; the
+// database stores only who holds which role, and where.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,17 +12,137 @@ datasource db {
 }
 
 model User {
-  id                Int       @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   // Central (global) Wikimedia user ID from the OAuth identify `sub` claim.
+  // Demo users use negative IDs so they can never collide with real accounts.
   wikimediaId           Int       @unique
   username              String    @unique
   avatarUrl             String?
   homeWiki              String?
   wikimediaRegisteredAt DateTime?
-  preferredLanguage String?
-  timezone          String?
-  status            String    @default("active")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  lastLoginAt       DateTime?
+  preferredLanguage     String?
+  timezone              String?
+  status                String    @default("active")
+  isDemo                Boolean   @default(false)
+  rightsCheckedAt       DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  lastLoginAt           DateTime?
+
+  globalRoles          UserGlobalRole[]    @relation("GlobalRoleHolder")
+  globalRolesAssigned  UserGlobalRole[]    @relation("GlobalRoleAssigner")
+  wikiRoles            UserWikiRole[]
+  memberships          ContestMembership[] @relation("MembershipHolder")
+  membershipsAssigned  ContestMembership[] @relation("MembershipAssigner")
+  permissionOverrides  ContestPermission[]
+  contestsCreated      Contest[]
+  auditLogs            AuditLog[]
+}
+
+// Zury-assigned platform roles (e.g. platform-admin). Never derived from Wikimedia.
+model UserGlobalRole {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  role         String
+  assignedAt   DateTime @default(now())
+  assignedById Int?
+
+  user       User  @relation("GlobalRoleHolder", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User? @relation("GlobalRoleAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, role])
+}
+
+// Wikimedia user groups verified through the MediaWiki API.
+// `wiki` is a database name such as "bnwiki", or "*" for global groups.
+model UserWikiRole {
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  wiki               String
+  rightName          String
+  verifiedAt         DateTime @default(now())
+  verificationSource String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, wiki, rightName])
+  @@index([wiki, rightName])
+}
+
+model Contest {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  title       String
+  description String    @default("")
+  type        String
+  status      String    @default("draft")
+  visibility  String    @default("public")
+  primaryWiki String
+  language    String    @default("en")
+  timezone    String    @default("UTC")
+  startDate   DateTime?
+  endDate     DateTime?
+  isDemo      Boolean   @default(false)
+  createdById Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy           User?               @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  memberships         ContestMembership[]
+  permissionOverrides ContestPermission[]
+  auditLogs           AuditLog[]
+
+  @@index([status, visibility])
+  @@index([primaryWiki])
+}
+
+// Event-level roles: organizer, jury, participant, viewer. A user may hold several.
+model ContestMembership {
+  id           Int      @id @default(autoincrement())
+  contestId    Int
+  userId       Int
+  role         String
+  status       String   @default("active")
+  assignedAt   DateTime @default(now())
+  assignedById Int?
+
+  contest    Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user       User    @relation("MembershipHolder", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User?   @relation("MembershipAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([contestId, userId, role])
+  @@index([userId])
+}
+
+// Per-event permission overrides. They adjust event-role permissions only and
+// never reduce platform-level authority.
+model ContestPermission {
+  id         Int     @id @default(autoincrement())
+  contestId  Int
+  userId     Int
+  permission String
+  allowed    Boolean
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, userId, permission])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?
+  contestId  Int?
+  action     String
+  entityType String
+  entityId   String?
+  // JSON-encoded; SQLite has no native JSON column in Prisma 5.
+  details    String?
+  createdAt  DateTime @default(now())
+
+  actor   User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  contest Contest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([contestId])
 }

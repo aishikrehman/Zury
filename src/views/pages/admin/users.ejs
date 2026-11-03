@@ -1,0 +1,48 @@
+<div class="container py-5">
+  <%- include('../../partials/adminNav', { active: 'users' }) %>
+
+  <form class="row g-2 mb-3" method="get" action="/admin/users">
+    <div class="col-sm-6 col-md-4"><input class="form-control form-control-sm" type="search" name="q" value="<%= q %>" placeholder="Search usernames" aria-label="Search usernames"></div>
+    <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Search</button></div>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr><th scope="col">User</th><th scope="col">Roles</th><th scope="col">Last login</th><th scope="col">Zury roles</th></tr></thead>
+      <tbody>
+        <% if (!rows.length) { %><tr><td colspan="4" class="text-muted">No users found.</td></tr><% } %>
+        <% rows.forEach(({ user: u, subject: s }) => { %>
+          <tr>
+            <td><a href="<%= userPath(u.username) %>"><%= u.username %></a><% if (u.isDemo) { %> <span class="badge text-bg-warning">demo</span><% } %></td>
+            <td><%- include('../../partials/accessSummary', { s }) %></td>
+            <td class="small"><%= u.lastLoginAt ? formatDateTime(u.lastLoginAt) : '—' %></td>
+            <td>
+              <% if (can('managePlatformRoles')) { %>
+                <% assignableRoles.forEach(([key, role]) => { const has = u.globalRoles.some((g) => g.role === key); %>
+                  <form method="post" action="/admin/users/<%= u.id %>/roles<%= has ? '/revoke' : '' %>" class="d-inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="role" value="<%= key %>">
+                    <% if (has) { %>
+                      <button class="btn btn-sm btn-outline-danger" type="submit"<%= u.id === currentUser.id ? ' disabled title="You can\'t remove your own role"' : '' %>>Revoke <%= role.label %></button>
+                    <% } else { %>
+                      <button class="btn btn-sm btn-outline-primary" type="submit">Grant <%= role.label %></button>
+                    <% } %>
+                  </form>
+                <% }) %>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <p class="small text-muted">Steward, Global Sysop and Local Admin come from verified Wikimedia groups and can't be granted here.</p>
+
+  <% if (pages > 1) { %>
+    <ul class="pagination pagination-sm">
+      <% for (let i = 1; i <= pages; i++) { %>
+        <li class="page-item<%= i === page ? ' active' : '' %>"><a class="page-link" href="/admin/users?page=<%= i %><%= q ? '&q=' + encodeURIComponent(q) : '' %>"><%= i %></a></li>
+      <% } %>
+    </ul>
+  <% } %>
+</div>

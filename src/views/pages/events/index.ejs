@@ -1,0 +1,68 @@
+<%
+  const base = filters.group ? `/events/${filters.group}` : '/events';
+  const qs = (extra) => {
+    const p = new URLSearchParams();
+    if (filters.type) p.set('type', filters.type);
+    if (filters.wiki) p.set('wiki', filters.wiki);
+    Object.entries(extra).forEach(([k, v]) => p.set(k, v));
+    const s = p.toString();
+    return s ? `?${s}` : '';
+  };
+%>
+<div class="container py-5">
+  <h1 class="h3 mb-4"><%= heading %></h1>
+
+  <ul class="nav nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>">All</a></li>
+    <% groups.forEach((g) => { %>
+      <li class="nav-item"><a class="nav-link text-capitalize<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><%= g %></a></li>
+    <% }) %>
+  </ul>
+
+  <form class="row g-2 align-items-end mb-4" method="get" action="<%= base %>">
+    <div class="col-sm-4 col-md-3">
+      <label for="type" class="form-label small">Type</label>
+      <select id="type" name="type" class="form-select form-select-sm">
+        <option value="">All types</option>
+        <% Object.entries(CONTEST_TYPES).forEach(([key, label]) => { %>
+          <option value="<%= key %>"<%= filters.type === key ? ' selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-sm-4 col-md-3">
+      <label for="wiki" class="form-label small">Wiki</label>
+      <select id="wiki" name="wiki" class="form-select form-select-sm">
+        <option value="">All wikis</option>
+        <% result.wikis.forEach((w) => { %>
+          <option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= w %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-sm btn-primary" type="submit">Filter</button>
+      <% if (filters.type || filters.wiki) { %><a class="btn btn-sm btn-link" href="<%= base %>">Clear</a><% } %>
+    </div>
+  </form>
+
+  <p class="small text-muted"><%= result.total %> event<%= result.total === 1 ? '' : 's' %></p>
+
+  <% if (!result.items.length) { %>
+    <p class="text-muted">No events match these filters.</p>
+  <% } else { %>
+    <div class="row g-3">
+      <% result.items.forEach((c) => { %>
+        <div class="col-sm-6 col-lg-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (result.pages > 1) { %>
+    <nav class="mt-4" aria-label="Event pages">
+      <ul class="pagination pagination-sm">
+        <% for (let i = 1; i <= result.pages; i++) { %>
+          <li class="page-item<%= i === result.page ? ' active' : '' %>"><a class="page-link" href="<%= base %><%= qs({ page: i }) %>"><%= i %></a></li>
+        <% } %>
+      </ul>
+    </nav>
+  <% } %>
+</div>

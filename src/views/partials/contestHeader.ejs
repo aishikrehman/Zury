@@ -1,0 +1,23 @@
+<% const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' }; %>
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="/events">Events</a></li>
+    <li class="breadcrumb-item<%= active === 'overview' ? ' active' : '' %>"><% if (active === 'overview') { %><%= contest.title %><% } else { %><a href="/contest/<%= contest.id %>"><%= contest.title %></a><% } %></li>
+    <% if (active !== 'overview') { %><li class="breadcrumb-item active text-capitalize"><%= active %></li><% } %>
+  </ol>
+</nav>
+<div class="d-flex flex-wrap gap-1 mb-2">
+  <span class="badge text-bg-<%= st.badge %>"><%= st.label %></span>
+  <span class="badge text-bg-light border"><%= CONTEST_TYPES[contest.type] || contest.type %></span>
+  <% if (contest.visibility === 'private') { %><span class="badge text-bg-warning">Private</span><% } %>
+</div>
+<h1 class="h3"><%= contest.title %></h1>
+<ul class="nav nav-tabs my-4">
+  <li class="nav-item"><a class="nav-link<%= active === 'overview' ? ' active' : '' %>" href="/contest/<%= contest.id %>">Overview</a></li>
+  <% if (can('manageParticipants')) { %>
+    <li class="nav-item"><a class="nav-link<%= active === 'people' ? ' active' : '' %>" href="/contest/<%= contest.id %>/participants">People</a></li>
+  <% } %>
+  <% if (can('manageEvent')) { %>
+    <li class="nav-item"><a class="nav-link<%= active === 'configuration' ? ' active' : '' %>" href="/contest/<%= contest.id %>/config">Configuration</a></li>
+  <% } %>
+</ul>

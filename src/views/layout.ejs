@@ -8,6 +8,14 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="d-flex flex-column min-vh-100">
+  <% if (demoMode) { %>
+    <div class="bg-warning-subtle border-bottom border-warning small py-1">
+      <div class="container d-flex justify-content-between align-items-center">
+        <span><strong>Demo mode.</strong> Everything here is sample data.</span>
+        <a href="/demo">Switch demo user</a>
+      </div>
+    </div>
+  <% } %>
   <%- include('partials/nav') %>
 
   <main class="flex-grow-1">

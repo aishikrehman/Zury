@@ -1,0 +1,25 @@
+<div class="container py-5">
+  <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
+
+  <div class="alert alert-info small">Read-only for now. Editing event settings arrives with event management (Phase 4).</div>
+
+  <table class="table table-sm" style="max-width: 640px">
+    <tbody>
+      <tr><th scope="row">Slug</th><td><code><%= contest.slug %></code></td></tr>
+      <tr><th scope="row">Type</th><td><%= CONTEST_TYPES[contest.type] || contest.type %></td></tr>
+      <tr><th scope="row">Status</th><td><%= (CONTEST_STATUSES[contest.status] || {}).label || contest.status %></td></tr>
+      <tr><th scope="row">Visibility</th><td class="text-capitalize"><%= contest.visibility %></td></tr>
+      <tr><th scope="row">Primary wiki</th><td><%= contest.primaryWiki %></td></tr>
+      <tr><th scope="row">Language</th><td><%= contest.language %></td></tr>
+      <tr><th scope="row">Timezone</th><td><%= contest.timezone %></td></tr>
+      <tr><th scope="row">Starts</th><td><%= formatDateTime(contest.startDate, contest.timezone) || '—' %></td></tr>
+      <tr><th scope="row">Ends</th><td><%= formatDateTime(contest.endDate, contest.timezone) || '—' %></td></tr>
+      <tr><th scope="row">Created</th><td><%= formatDateTime(contest.createdAt) %> UTC</td></tr>
+    </tbody>
+  </table>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-primary btn-sm" disabled>Edit event<%= can('editEvent') ? '' : ' (not permitted)' %></button>
+    <% if (can('deleteEvent')) { %><button class="btn btn-outline-danger btn-sm" disabled>Delete event</button><% } %>
+  </div>
+</div>

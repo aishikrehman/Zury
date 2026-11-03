@@ -1,0 +1,28 @@
+<% const pages = Math.max(1, Math.ceil(result.total / result.perPage)); %>
+<div class="container py-5">
+  <%- include('../../partials/adminNav', { active: 'logs' }) %>
+  <div class="table-responsive">
+    <table class="table table-sm small align-middle">
+      <thead><tr><th scope="col">When (UTC)</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Event</th><th scope="col">Details</th></tr></thead>
+      <tbody>
+        <% if (!result.items.length) { %><tr><td colspan="5" class="text-muted">No entries yet.</td></tr><% } %>
+        <% result.items.forEach((e) => { %>
+          <tr>
+            <td class="text-nowrap"><%= formatDateTime(e.createdAt) %></td>
+            <td><%= e.actor ? e.actor.username : 'system' %></td>
+            <td><code><%= e.action %></code> <span class="text-muted"><%= e.entityType %><%= e.entityId ? ' #' + e.entityId : '' %></span></td>
+            <td><% if (e.contest) { %><a href="/contest/<%= e.contest.id %>"><%= e.contest.title %></a><% } %></td>
+            <td><code class="text-muted"><%= e.details || '' %></code></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% if (pages > 1) { %>
+    <ul class="pagination pagination-sm">
+      <% for (let i = 1; i <= pages; i++) { %>
+        <li class="page-item<%= i === result.page ? ' active' : '' %>"><a class="page-link" href="/admin/logs?page=<%= i %>"><%= i %></a></li>
+      <% } %>
+    </ul>
+  <% } %>
+</div>

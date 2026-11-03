@@ -1,0 +1,16 @@
+<div class="container py-5">
+  <%- include('../../partials/adminNav', { active: 'overview' }) %>
+  <p class="text-muted">Zury platform administration. This is separate from Wikimedia community administration: being a platform administrator gives no authority over events.</p>
+  <div class="row g-3">
+    <% [['Users', stats.users, '/admin/users'], ['Events', stats.contests, '/events'], ['Platform administrators', stats.admins, '/admin/users'], ['Audit log entries', stats.auditEntries, '/admin/logs']].forEach(([label, value, href]) => { %>
+      <div class="col-sm-6 col-lg-3">
+        <a href="<%= href %>" class="card text-decoration-none h-100">
+          <div class="card-body">
+            <div class="display-6"><%= value %></div>
+            <div class="small text-muted"><%= label %></div>
+          </div>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+</div>

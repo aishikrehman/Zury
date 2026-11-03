@@ -1,0 +1,14 @@
+<%# Expects `s`: a permission subject (platformRoles, adminWikis). %>
+<% if (!s.platformRoles.size) { %>
+  <span class="text-muted">No platform roles.</span>
+<% } else { %>
+  <ul class="list-unstyled mb-0">
+    <% [...s.platformRoles].forEach((key) => { const role = PLATFORM_ROLES[key]; %>
+      <li class="mb-1">
+        <span class="badge text-bg-<%= role.source === 'zury' ? 'dark' : 'primary' %>"><%= role.label %></span>
+        <% if (role.scope === 'wiki') { %><span class="small">on <%= [...s.adminWikis].join(', ') %></span><% } %>
+        <span class="small text-muted">· <%= s.user && s.user.isDemo ? 'demo data' : role.source === 'zury' ? 'assigned in Zury' : 'verified from Wikimedia' %></span>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>

@@ -9,6 +9,9 @@
         <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
         <li class="nav-item"><a class="nav-link" href="/events">Events</a></li>
         <li class="nav-item"><a class="nav-link" href="/about">About</a></li>
+        <% if (can('accessAdmin')) { %>
+          <li class="nav-item"><a class="nav-link" href="/admin">Admin</a></li>
+        <% } %>
       </ul>
       <ul class="navbar-nav">
         <% if (currentUser) { %>
@@ -30,6 +33,7 @@
             </ul>
           </li>
         <% } else { %>
+          <% if (demoMode) { %><li class="nav-item"><a class="nav-link" href="/demo">Try a demo user</a></li><% } %>
           <li class="nav-item"><a class="nav-link" href="/login">Log in with Wikimedia</a></li>
         <% } %>
       </ul>

@@ -1,43 +1,65 @@
 <div class="container py-5">
-  <h1 class="h3 mb-4">Welcome, <%= currentUser.username %></h1>
+  <div class="d-flex flex-wrap justify-content-between align-items-baseline mb-4">
+    <h1 class="h3 mb-0">Welcome, <%= currentUser.username %></h1>
+    <div class="small">
+      <a href="<%= userPath(currentUser.username) %>">Public profile</a> &middot; <a href="/settings">Preferences</a>
+    </div>
+  </div>
 
   <div class="row g-4">
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100">
+    <div class="col-lg-8">
+      <h2 class="h5">My events</h2>
+      <% if (!myEvents.length) { %>
+        <p class="text-muted">You haven't joined any events yet. <a href="/events">Browse events</a>.</p>
+      <% } else { %>
+        <div class="row g-3">
+          <% myEvents.forEach(({ contest: c, roles }) => { %>
+            <div class="col-md-6"><%- include('../../partials/contestCard', { c, roles }) %></div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <h2 class="h5 mt-5">Jury assignments</h2>
+      <% if (!juryEvents.length) { %>
+        <p class="text-muted">You're not on any jury.</p>
+      <% } else { %>
+        <p class="small text-muted mb-2">You're on the jury for <%= juryEvents.length %> event<%= juryEvents.length === 1 ? '' : 's' %>. Entry assignments arrive with jury review (Phase 6).</p>
+        <ul class="small">
+          <% juryEvents.forEach(({ contest: c }) => { %><li><a href="/contest/<%= c.id %>"><%= c.title %></a></li><% }) %>
+        </ul>
+      <% } %>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
         <div class="card-body">
-          <h2 class="h6 card-title">My events</h2>
-          <p class="card-text text-muted small">You haven't joined any events yet.</p>
+          <h2 class="h6">Platform roles</h2>
+          <%- include('../../partials/accessSummary', { s: subject }) %>
+          <% if (can('createEvent')) { %><p class="small mt-2 mb-0 text-success">You can create events.</p><% } %>
+          <% if (can('accessAdmin')) { %><a class="btn btn-sm btn-dark mt-2" href="/admin">Open administration</a><% } %>
         </div>
       </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100">
+      <div class="card mb-3">
         <div class="card-body">
-          <h2 class="h6 card-title">My submissions</h2>
-          <p class="card-text text-muted small">No submissions yet.</p>
+          <h2 class="h6">Verified Wikimedia groups</h2>
+          <% if (!wikiRoles.length) { %>
+            <p class="small text-muted mb-0">None that Zury tracks.</p>
+          <% } else { %>
+            <ul class="small mb-0 ps-3">
+              <% wikiRoles.forEach((r) => { %>
+                <li><%= r.rightName %> on <%= r.wiki === '*' ? 'all wikis (global)' : r.wiki %>
+                  <span class="text-muted">· <%= r.verificationSource === 'demo' ? 'demo data' : 'checked ' + formatDateTime(r.verifiedAt, currentUser.timezone || 'UTC') %></span></li>
+              <% }) %>
+            </ul>
+          <% } %>
         </div>
       </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100">
+      <div class="card">
         <div class="card-body">
-          <h2 class="h6 card-title">Jury assignments</h2>
-          <p class="card-text text-muted small">No assignments.</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100">
-        <div class="card-body">
-          <h2 class="h6 card-title">Notifications</h2>
-          <p class="card-text text-muted small">You're all caught up.</p>
+          <h2 class="h6">Notifications</h2>
+          <p class="small text-muted mb-0">Notifications arrive in Phase 8.</p>
         </div>
       </div>
     </div>
   </div>
-
-  <p class="mt-4">
-    <a href="/users/<%= encodeURIComponent(currentUser.username) %>">View public profile</a> &middot;
-    <a href="/settings">Preferences</a>
-  </p>
 </div>

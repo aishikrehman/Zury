@@ -31,14 +31,6 @@ async function syncFromWikimedia({ wikimediaId, username, homeWiki, registeredAt
   });
 }
 
-function findById(id) {
-  return prisma.user.findUnique({ where: { id } });
-}
-
-function findByUsername(username) {
-  return prisma.user.findUnique({ where: { username } });
-}
-
 function isValidTimezone(tz) {
   try {
     new Intl.DateTimeFormat('en', { timeZone: tz });
@@ -65,8 +57,6 @@ function updatePreferences(userId, values) {
 
 module.exports = {
   syncFromWikimedia,
-  findById,
-  findByUsername,
   validatePreferences,
   updatePreferences,
 };

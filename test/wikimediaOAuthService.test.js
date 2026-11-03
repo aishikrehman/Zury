@@ -5,7 +5,14 @@ const { createMockWikimedia } = require('./helpers/mockWikimedia');
 
 const CONSUMER_KEY = 'testconsumerkey';
 const CONSUMER_SECRET = 'testconsumersecret';
-const USER = { wikimediaId: 4242, username: 'Test User', homeWiki: 'bnwiki', registered: '20130503042305' };
+const USER = {
+  wikimediaId: 4242,
+  username: 'Test User',
+  homeWiki: 'bnwiki',
+  registered: '20130503042305',
+  globalGroups: ['steward', 'global-rollbacker'],
+  localGroups: [{ wiki: 'bnwiki', groups: ['sysop', 'bureaucrat'] }],
+};
 
 const mock = createMockWikimedia({ consumerKey: CONSUMER_KEY, consumerSecret: CONSUMER_SECRET, user: USER });
 let oauth;
@@ -47,9 +54,30 @@ test('full handshake: initiate, authorize, token, identify', async () => {
     username: 'Test User',
     registeredAt: new Date('2013-05-03T04:23:05Z'),
   });
+});
 
-  assert.equal(await oauth.fetchHomeWiki('Test User'), 'bnwiki');
-  assert.equal(await oauth.fetchHomeWiki('Nobody'), null);
+test('globaluserinfo lookup by central ID returns home wiki and groups', async () => {
+  const api = require('../src/services/wikimediaApiService');
+  const info = await api.fetchGlobalUserInfo(4242);
+  assert.deepEqual(info, {
+    home: 'bnwiki',
+    globalGroups: ['steward', 'global-rollbacker'],
+    localGroups: [{ wiki: 'bnwiki', groups: ['sysop', 'bureaucrat'] }],
+  });
+  const call = mock.log.findLast((e) => e.step === 'globaluserinfo');
+  assert.equal(call.params.guiprop, 'groups|merged');
+  assert.match(call.userAgent, /^Zury\//);
+
+  assert.equal(await api.fetchGlobalUserInfo(1), null, 'unknown account');
+  mock.apiDown = true;
+  assert.equal(await api.fetchGlobalUserInfo(4242), null, 'API outage');
+  mock.apiDown = false;
+
+  const { extractTrackedRights } = require('../src/services/rightsService');
+  assert.deepEqual(extractTrackedRights(info), [
+    { wiki: '*', rightName: 'steward' },
+    { wiki: 'bnwiki', rightName: 'sysop' },
+  ]);
 });
 
 test('token exchange fails with a wrong verifier', async () => {

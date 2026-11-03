@@ -1,0 +1,33 @@
+<div class="container py-5">
+  <%- include('../../partials/contestHeader', { active: 'people' }) %>
+
+  <h2 class="h5">Members</h2>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr><th scope="col">User</th><th scope="col">Role</th><th scope="col">Home wiki</th><th scope="col">Since</th></tr></thead>
+      <tbody>
+        <% if (!members.length) { %><tr><td colspan="4" class="text-muted">No members yet.</td></tr><% } %>
+        <% members.forEach((m) => { %>
+          <tr>
+            <td><a href="<%= userPath(m.user.username) %>"><%= m.user.username %></a></td>
+            <td><span class="badge rounded-pill text-bg-primary"><%= EVENT_ROLES[m.role] ? EVENT_ROLES[m.role].label : m.role %></span></td>
+            <td><%= m.user.homeWiki || '—' %></td>
+            <td><%= formatDate(m.assignedAt, contest.timezone) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="h5 mt-4">Permission overrides</h2>
+  <% if (!overrides.length) { %>
+    <p class="text-muted small">No overrides. Everyone has the standard permissions for their roles.</p>
+  <% } else { %>
+    <ul class="small">
+      <% overrides.forEach((o) => { %>
+        <li><%= o.user.username %>: <span class="badge text-bg-<%= o.allowed ? 'success' : 'danger' %>"><%= o.allowed ? 'allowed' : 'denied' %></span> <code><%= o.permission %></code></li>
+      <% }) %>
+    </ul>
+  <% } %>
+  <p class="text-muted small">Adding and removing members arrives with event management (Phase 4).</p>
+</div>
