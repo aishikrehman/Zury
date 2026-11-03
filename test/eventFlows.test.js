@@ -71,7 +71,7 @@ test('only people with createEvent can open the create pages', async () => {
   assert.equal((await newcomer.post('/events/create', eventBody())).status, 403);
 
   const organizer = await session('Organizer');
-  assert.match((await organizer.get('/events/create')).body, /Step 1 of 2/);
+  assert.match((await organizer.get('/events/create')).body, /step 1 of 2/i);
   assert.match((await organizer.get('/events/create?type=data')).body, /Required properties/);
 });
 

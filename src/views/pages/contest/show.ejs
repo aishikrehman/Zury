@@ -94,7 +94,7 @@
               <button class="btn btn-sm btn-primary" type="submit">Join this event</button>
             </form>
           <% } else { %>
-            <ul class="small text-muted mb-0 ps-3">
+            <ul class="text-secondary mb-0 ps-3">
               <% eligibility.reasons.forEach((r) => { %><li><%= r %></li><% }) %>
             </ul>
           <% } %>
@@ -105,26 +105,26 @@
         <div class="card-header"><h3 class="card-title">Your access</h3></div>
         <div class="card-body">
           <% if (!currentUser) { %>
-            <p class="small text-muted mb-0">Log in to see what you can do here.</p>
+            <p class="small text-secondary mb-0">Log in to see what you can do here.</p>
           <% } else { %>
             <p class="small mb-1"><strong>Event roles:</strong>
-              <% if (!scope.eventRoles.length) { %><span class="text-muted">none</span><% } %>
-              <% scope.eventRoles.forEach((r) => { %><span class="badge rounded-pill text-bg-primary me-1"><%= EVENT_ROLES[r].label %></span><% }) %>
+              <% if (!scope.eventRoles.length) { %><span class="text-secondary">none</span><% } %>
+              <% scope.eventRoles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r].label %></span><% }) %>
             </p>
             <p class="small mb-2"><strong>Platform authority here:</strong>
               <% const here = scope.platformRoles.filter((r) => r !== 'local-admin' || scope.isLocalAdminHere).filter((r) => PLATFORM_ROLES[r].source === 'wikimedia'); %>
-              <% if (!here.length) { %><span class="text-muted">none</span><% } %>
-              <% here.forEach((r) => { %><span class="badge text-bg-secondary me-1"><%= PLATFORM_ROLES[r].label %></span><% }) %>
+              <% if (!here.length) { %><span class="text-secondary">none</span><% } %>
+              <% here.forEach((r) => { %><span class="badge bg-orange-lt me-1"><%= PLATFORM_ROLES[r].label %></span><% }) %>
             </p>
             <% if (scope.overrides.length) { %>
               <p class="small mb-2"><strong>Overrides:</strong>
-                <% scope.overrides.forEach((o) => { %><span class="badge text-bg-<%= o.allowed ? 'success' : 'danger' %> me-1"><%= o.allowed ? '+' : '−' %> <%= o.permission %></span><% }) %>
+                <% scope.overrides.forEach((o) => { %><span class="badge bg-<%= o.allowed ? 'green' : 'red' %>-lt me-1"><%= o.allowed ? '+' : '−' %> <%= o.permission %></span><% }) %>
               </p>
             <% } %>
             <details class="small">
               <summary><%= permissionList.length %> permission<%= permissionList.length === 1 ? '' : 's' %></summary>
               <ul class="mt-2 mb-0 ps-3">
-                <% permissionList.forEach((p) => { %><li><%= permissionLabels[p] %> <code class="text-muted"><%= p %></code></li><% }) %>
+                <% permissionList.forEach((p) => { %><li><%= permissionLabels[p] %> <code class="text-secondary"><%= p %></code></li><% }) %>
               </ul>
             </details>
           <% } %>

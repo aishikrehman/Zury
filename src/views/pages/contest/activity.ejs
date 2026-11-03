@@ -20,18 +20,28 @@
 %>
 <div class="page-body"><div class="container-xl">
   <%- include('../../partials/contestHeader', { active: 'activity' }) %>
-  <% if (!entries.length) { %>
-    <p class="text-muted">No activity yet.</p>
-  <% } else { %>
-    <ul class="list-group list-group-flush">
-      <% entries.forEach((e) => { %>
-        <li class="list-group-item px-0 small">
-          <span class="text-muted text-nowrap me-2"><%= formatDateTime(e.createdAt, contest.timezone) %></span>
-          <strong><%= e.actor ? e.actor.username : 'Zury' %></strong> <%= describe(e) %>
-        </li>
-      <% }) %>
-    </ul>
-    <p class="small text-muted mt-2">Showing the latest <%= entries.length %> entries, in <%= contest.timezone %>.</p>
-  <% } %>
+  <% const iconFor = (a) => ({ 'contest.created': ['plus', 'green'], 'contest.updated': ['pencil', 'blue'], 'contest.statusChanged': ['progress', 'azure'], 'contest.deleted': ['trash', 'red'], 'membership.added': ['user-plus', 'green'], 'membership.removed': ['user-minus', 'orange'], 'membership.joined': ['login', 'teal'], 'membership.left': ['logout', 'secondary'], 'contestPermission.set': ['key', 'purple'], 'contestPermission.removed': ['key-off', 'purple'], 'submissions.created': ['upload', 'blue'] }[a] || ['point', 'secondary']); %>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">Activity</h3><div class="card-actions text-secondary">Latest <%= entries.length %> · <%= contest.timezone %></div></div>
+    <% if (!entries.length) { %>
+      <div class="empty"><div class="empty-icon"><i class="ti ti-history-off icon"></i></div><p class="empty-title">No activity yet</p></div>
+    <% } else { %>
+      <div class="card-body">
+        <div class="divide-y">
+          <% entries.forEach((e) => { const [icon, color] = iconFor(e.action); %>
+            <div>
+              <div class="row">
+                <div class="col-auto"><span class="avatar bg-<%= color %>-lt"><i class="ti ti-<%= icon %>"></i></span></div>
+                <div class="col">
+                  <div class="text-truncate"><strong><%= e.actor ? e.actor.username : 'Zury' %></strong> <%= describe(e) %></div>
+                  <div class="text-secondary"><%= formatDateTime(e.createdAt, contest.timezone) %></div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+  </div>
 </div>
 </div>

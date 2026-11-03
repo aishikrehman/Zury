@@ -1,14 +1,15 @@
 <%# Expects `s`: a permission subject (platformRoles, adminWikis). %>
+<% const roleColor = { steward: 'red', 'global-sysop': 'orange', 'local-admin': 'yellow', 'event-creator': 'green', 'platform-admin': 'purple' }; %>
 <% if (!s.platformRoles.size) { %>
-  <span class="text-muted">No platform roles.</span>
+  <span class="text-secondary">No platform roles</span>
 <% } else { %>
-  <ul class="list-unstyled mb-0">
+  <div class="d-flex flex-column gap-1">
     <% [...s.platformRoles].forEach((key) => { const role = PLATFORM_ROLES[key]; %>
-      <li class="mb-1">
-        <span class="badge text-bg-<%= role.source === 'zury' ? 'dark' : 'primary' %>"><%= role.label %></span>
+      <div>
+        <span class="badge bg-<%= roleColor[key] || 'blue' %>-lt"><i class="ti ti-<%= role.source === 'zury' ? 'shield' : 'world' %> me-1"></i><%= role.label %></span>
         <% if (role.scope === 'wiki') { %><span class="small">on <%= [...s.adminWikis].join(', ') %></span><% } %>
-        <span class="small text-muted">· <%= s.user && s.user.isDemo ? 'demo data' : role.source === 'zury' ? 'assigned in Zury' : 'verified from Wikimedia' %></span>
-      </li>
+        <span class="small text-secondary">· <%= s.user && s.user.isDemo ? 'demo data' : role.source === 'zury' ? 'assigned in Zury' : 'verified from Wikimedia' %></span>
+      </div>
     <% }) %>
-  </ul>
+  </div>
 <% } %>

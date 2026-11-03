@@ -1,49 +1,68 @@
-<div class="page-body"><div class="container-xl">
-  <%- include('../../partials/adminNav', { active: 'users' }) %>
-
-  <form class="row g-2 mb-3" method="get" action="/admin/users">
-    <div class="col-sm-6 col-md-4"><input class="form-control form-control-sm" type="search" name="q" value="<%= q %>" placeholder="Search usernames" aria-label="Search usernames"></div>
-    <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Search</button></div>
-  </form>
-
-  <div class="table-responsive">
-    <table class="table table-sm align-middle">
-      <thead><tr><th scope="col">User</th><th scope="col">Roles</th><th scope="col">Last login</th><th scope="col">Zury roles</th></tr></thead>
-      <tbody>
-        <% if (!rows.length) { %><tr><td colspan="4" class="text-muted">No users found.</td></tr><% } %>
-        <% rows.forEach(({ user: u, subject: s }) => { %>
-          <tr>
-            <td><a href="<%= userPath(u.username) %>"><%= u.username %></a><% if (u.isDemo) { %> <span class="badge text-bg-warning">demo</span><% } %></td>
-            <td><%- include('../../partials/accessSummary', { s }) %></td>
-            <td class="small"><%= u.lastLoginAt ? formatDateTime(u.lastLoginAt) : '—' %></td>
-            <td>
-              <% if (can('managePlatformRoles')) { %>
-                <% assignableRoles.forEach(([key, role]) => { const has = u.globalRoles.some((g) => g.role === key); %>
-                  <form method="post" action="/admin/users/<%= u.id %>/roles<%= has ? '/revoke' : '' %>" class="d-inline">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <input type="hidden" name="role" value="<%= key %>">
-                    <% if (has) { %>
-                      <button class="btn btn-sm btn-outline-danger" type="submit"<%= u.id === currentUser.id ? ' disabled title="You can\'t remove your own role"' : '' %>>Revoke <%= role.label %></button>
-                    <% } else { %>
-                      <button class="btn btn-sm btn-outline-primary" type="submit">Grant <%= role.label %></button>
-                    <% } %>
-                  </form>
-                <% }) %>
-              <% } %>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+<%- include('../../partials/pageHeader', { pretitle: 'Administration', heading: 'Users' }) %>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">All users</h3>
+        <div class="card-actions">
+          <form method="get" action="/admin/users">
+            <div class="input-icon">
+              <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+              <input class="form-control" type="search" name="q" value="<%= q %>" placeholder="Search usernames" aria-label="Search usernames">
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead><tr><th>User</th><th>Roles</th><th>Last login</th><th class="w-1">Zury roles</th></tr></thead>
+          <tbody>
+            <% if (!rows.length) { %><tr><td colspan="4" class="text-secondary">No users found.</td></tr><% } %>
+            <% rows.forEach(({ user: u, subject: s }) => { %>
+              <tr>
+                <td>
+                  <div class="d-flex py-1 align-items-center">
+                    <span class="avatar me-2"><%= u.username.charAt(0).toUpperCase() %></span>
+                    <div class="flex-fill">
+                      <div class="font-weight-medium"><a href="<%= userPath(u.username) %>" class="text-reset"><%= u.username %></a><% if (u.isDemo) { %> <span class="badge bg-yellow-lt">demo</span><% } %></div>
+                      <div class="text-secondary small"><%= u.homeWiki || '—' %></div>
+                    </div>
+                  </div>
+                </td>
+                <td><%- include('../../partials/accessSummary', { s }) %></td>
+                <td class="text-secondary text-nowrap"><%= u.lastLoginAt ? formatDateTime(u.lastLoginAt) : 'Never' %></td>
+                <td>
+                  <% if (can('managePlatformRoles')) { %>
+                    <div class="btn-list flex-nowrap">
+                      <% assignableRoles.forEach(([key, role]) => { const has = u.globalRoles.some((g) => g.role === key); %>
+                        <form method="post" action="/admin/users/<%= u.id %>/roles<%= has ? '/revoke' : '' %>">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <input type="hidden" name="role" value="<%= key %>">
+                          <% if (has) { %>
+                            <button class="btn btn-sm btn-outline-danger" type="submit"<%= u.id === currentUser.id ? ' disabled title="You can\'t remove your own role"' : '' %>><i class="ti ti-minus me-1"></i><%= role.label %></button>
+                          <% } else { %>
+                            <button class="btn btn-sm btn-outline-primary" type="submit"><i class="ti ti-plus me-1"></i><%= role.label %></button>
+                          <% } %>
+                        </form>
+                      <% }) %>
+                    </div>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer d-flex align-items-center">
+        <p class="m-0 text-secondary small"><i class="ti ti-info-circle me-1"></i>Steward, Global Sysop and Local Admin come from verified Wikimedia groups and can't be granted here.</p>
+        <% if (pages > 1) { %>
+          <ul class="pagination m-0 ms-auto">
+            <% for (let i = 1; i <= pages; i++) { %>
+              <li class="page-item<%= i === page ? ' active' : '' %>"><a class="page-link" href="/admin/users?page=<%= i %><%= q ? '&q=' + encodeURIComponent(q) : '' %>"><%= i %></a></li>
+            <% } %>
+          </ul>
+        <% } %>
+      </div>
+    </div>
   </div>
-  <p class="small text-muted">Steward, Global Sysop and Local Admin come from verified Wikimedia groups and can't be granted here.</p>
-
-  <% if (pages > 1) { %>
-    <ul class="pagination pagination-sm">
-      <% for (let i = 1; i <= pages; i++) { %>
-        <li class="page-item<%= i === page ? ' active' : '' %>"><a class="page-link" href="/admin/users?page=<%= i %><%= q ? '&q=' + encodeURIComponent(q) : '' %>"><%= i %></a></li>
-      <% } %>
-    </ul>
-  <% } %>
-</div>
 </div>

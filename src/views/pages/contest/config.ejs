@@ -1,70 +1,85 @@
-<% const statusLabel = (s) => (CONTEST_STATUSES[s] || { label: s }).label; const sticky = ['draft', 'cancelled', 'archived'].includes(contest.status); %>
+<%
+  const statusLabel = (s) => (CONTEST_STATUSES[s] || { label: s }).label;
+  const sticky = ['draft', 'cancelled', 'archived'].includes(contest.status);
+  const action = (name, label, cls, icon) => ({ name, label, cls, icon });
+  const actions = [
+    contest.status === 'draft' && action('publish', 'Publish', 'primary', 'rocket'),
+    ['published', 'upcoming'].includes(contest.status) && action('unpublish', 'Back to draft', 'outline-secondary', 'arrow-back-up'),
+    !sticky && contest.statusMode === 'manual' && action('resume_auto', 'Follow the dates again', 'outline-primary', 'calendar-time'),
+    ['completed', 'cancelled'].includes(contest.status) && action('archive', 'Archive', 'outline-secondary', 'archive'),
+    contest.status === 'cancelled' && action('reopen', 'Reopen as draft', 'outline-secondary', 'refresh'),
+    !['cancelled', 'archived'].includes(contest.status) && action('cancel', 'Cancel event', 'outline-danger', 'ban'),
+  ].filter(Boolean);
+%>
 <div class="page-body"><div class="container-xl">
   <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 
   <% if (can('manageEvent')) { %>
-    <section class="card mb-5">
+    <div class="card mb-4">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-progress me-2"></i>Status</h3></div>
       <div class="card-body">
-        <h2 class="h5">Status</h2>
-        <p class="mb-3">
-          Currently <strong><%= statusLabel(contest.status) %></strong>
-          <% if (!sticky) { %>
-            <% if (contest.statusMode === 'auto') { %>· follows the dates automatically.<% } else { %>· pinned by an organizer (by the dates it would be <%= statusLabel(autoStatus) %>).<% } %>
-          <% } %>
-        </p>
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-          <% const action = (name, label, cls = 'outline-primary') => ({ name, label, cls }); %>
-          <% [
-            contest.status === 'draft' && action('publish', 'Publish', 'primary'),
-            ['published', 'upcoming'].includes(contest.status) && action('unpublish', 'Back to draft', 'outline-secondary'),
-            !sticky && contest.statusMode === 'manual' && action('resume_auto', 'Follow the dates again'),
-            ['completed', 'cancelled'].includes(contest.status) && action('archive', 'Archive', 'outline-secondary'),
-            contest.status === 'cancelled' && action('reopen', 'Reopen as draft', 'outline-secondary'),
-            !['cancelled', 'archived'].includes(contest.status) && action('cancel', 'Cancel event', 'outline-danger'),
-          ].filter(Boolean).forEach((a) => { %>
-            <form method="post" action="/contest/<%= contest.id %>/status" class="d-inline">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <input type="hidden" name="action" value="<%= a.name %>">
-              <button type="submit" class="btn btn-sm btn-<%= a.cls %>"><%= a.label %></button>
-            </form>
-          <% }) %>
-          <% if (!sticky) { %>
-            <form method="post" action="/contest/<%= contest.id %>/status" class="d-inline-flex gap-1 align-items-center ms-md-3">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <input type="hidden" name="action" value="set_status">
-              <label class="small text-muted" for="pinStatus">Pin to</label>
-              <select id="pinStatus" name="status" class="form-select form-select-sm w-auto">
-                <% manualStatuses.forEach((s) => { %><option value="<%= s %>"<%= s === contest.status ? ' selected' : '' %>><%= statusLabel(s) %></option><% }) %>
-              </select>
-              <button type="submit" class="btn btn-sm btn-outline-primary">Set</button>
-            </form>
-          <% } %>
+        <div class="row align-items-center g-3">
+          <div class="col-md">
+            <div class="h3 mb-1"><%= statusLabel(contest.status) %></div>
+            <div class="text-secondary">
+              <% if (!sticky) { %>
+                <% if (contest.statusMode === 'auto') { %><i class="ti ti-calendar-time me-1"></i>Follows the dates automatically.<% } else { %><i class="ti ti-pin me-1"></i>Pinned by an organizer. By the dates it would be <%= statusLabel(autoStatus) %>.<% } %>
+              <% } else { %>Set by hand.<% } %>
+            </div>
+          </div>
+          <div class="col-md-auto">
+            <div class="btn-list">
+              <% actions.forEach((a) => { %>
+                <form method="post" action="/contest/<%= contest.id %>/status">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="action" value="<%= a.name %>">
+                  <button type="submit" class="btn btn-<%= a.cls %>"><i class="ti ti-<%= a.icon %> me-1"></i><%= a.label %></button>
+                </form>
+              <% }) %>
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+      <% if (!sticky) { %>
+        <div class="card-footer">
+          <form method="post" action="/contest/<%= contest.id %>/status" class="row g-2 align-items-center">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="action" value="set_status">
+            <div class="col-auto"><label class="form-label m-0" for="pinStatus">Pin status to</label></div>
+            <div class="col-auto">
+              <select id="pinStatus" name="status" class="form-select">
+                <% manualStatuses.forEach((s) => { %><option value="<%= s %>"<%= s === contest.status ? ' selected' : '' %>><%= statusLabel(s) %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-auto"><button type="submit" class="btn btn-outline-primary">Set</button></div>
+          </form>
+        </div>
+      <% } %>
+    </div>
   <% } %>
 
   <% if (can('editEvent')) { %>
     <%- include('../../partials/contestForm', { action: `/contest/${contest.id}/config`, submitLabel: 'Save settings' }) %>
   <% } else { %>
-    <p class="text-muted">You can change the event's status, but not its settings.</p>
+    <div class="alert alert-info"><i class="ti ti-info-circle me-1"></i>You can change the event's status, but not its settings.</div>
   <% } %>
 
   <% if (can('deleteEvent')) { %>
-    <section class="card border-danger mt-5">
+    <div class="card card-borderless mt-4">
+      <div class="card-status-start bg-danger"></div>
+      <div class="card-header"><h3 class="card-title text-danger"><i class="ti ti-alert-triangle me-2"></i>Danger zone</h3></div>
       <div class="card-body">
-        <h2 class="h5 text-danger">Delete event</h2>
-        <p class="small">The event disappears from Zury for everyone. It is kept in the database and logged, but there is no undo button yet.</p>
+        <p class="text-secondary">Deleting hides the event from Zury for everyone. It's kept in the database and logged, but there's no undo button yet.</p>
         <form method="post" action="/contest/<%= contest.id %>/delete" class="row g-2 align-items-end">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="col-sm-6 col-md-4">
-            <label class="form-label small" for="confirmation">Type <code><%= contest.slug %></code> to confirm</label>
-            <input class="form-control form-control-sm" id="confirmation" name="confirmation" autocomplete="off">
+            <label class="form-label" for="confirmation">Type <code><%= contest.slug %></code> to confirm</label>
+            <input class="form-control" id="confirmation" name="confirmation" autocomplete="off">
           </div>
-          <div class="col-auto"><button type="submit" class="btn btn-sm btn-danger">Delete</button></div>
+          <div class="col-auto"><button type="submit" class="btn btn-danger"><i class="ti ti-trash me-1"></i>Delete event</button></div>
         </form>
       </div>
-    </section>
+    </div>
   <% } %>
 </div>
 </div>

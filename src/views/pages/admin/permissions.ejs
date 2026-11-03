@@ -1,28 +1,42 @@
-<div class="page-body"><div class="container-xl">
-  <%- include('../../partials/adminNav', { active: 'permissions' }) %>
-  <p class="text-muted small">
-    Defined in <code>src/permissions/registry.js</code>. ● granted directly, ○ granted through another permission,
-    G granted everywhere for a wiki-scoped role.
-  </p>
-  <div class="table-responsive">
-    <table class="table table-sm table-bordered small align-middle text-center">
-      <thead class="table-light">
-        <tr>
-          <th scope="col" class="text-start">Permission</th>
-          <% roles.forEach((r) => { %><th scope="col" title="<%= r.description %>"><%= r.label %><br><span class="fw-normal text-muted"><%= r.kind %><%= r.scope === 'wiki' ? ', own wikis' : '' %></span></th><% }) %>
-        </tr>
-      </thead>
-      <tbody>
-        <% Object.entries(PERMISSIONS).forEach(([key, label]) => { %>
-          <tr>
-            <th scope="row" class="text-start fw-normal"><code><%= key %></code><br><span class="text-muted"><%= label %></span></th>
-            <% roles.forEach((r) => { %>
-              <td><%= r.viaGlobal.has(key) ? 'G' : r.permissions.includes(key) ? '●' : r.effective.has(key) ? '○' : '' %></td>
+<%- include('../../partials/pageHeader', { pretitle: 'Administration', heading: 'Permissions' }) %>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Role permission matrix</h3>
+          <div class="card-subtitle">Defined in <code>src/permissions/registry.js</code></div>
+        </div>
+        <div class="card-actions small text-secondary">
+          <span class="me-3"><i class="ti ti-circle-filled text-green"></i> granted</span>
+          <span class="me-3"><i class="ti ti-circle text-azure"></i> implied</span>
+          <span><span class="badge bg-purple-lt">G</span> everywhere (wiki-scoped role)</span>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table table-striped text-center">
+          <thead>
+            <tr>
+              <th class="text-start">Permission</th>
+              <% roles.forEach((r) => { %><th title="<%= r.description %>"><%= r.label %><div class="text-secondary fw-normal text-lowercase"><%= r.kind %><%= r.scope === 'wiki' ? ', own wikis' : '' %></div></th><% }) %>
+            </tr>
+          </thead>
+          <tbody>
+            <% Object.entries(PERMISSIONS).forEach(([key, label]) => { %>
+              <tr>
+                <td class="text-start"><div><%= label %></div><code class="small"><%= key %></code></td>
+                <% roles.forEach((r) => { %>
+                  <td>
+                    <% if (r.viaGlobal.has(key)) { %><span class="badge bg-purple-lt">G</span>
+                    <% } else if (r.permissions.includes(key)) { %><i class="ti ti-circle-filled text-green" aria-label="granted"></i>
+                    <% } else if (r.effective.has(key)) { %><i class="ti ti-circle text-azure" aria-label="implied"></i><% } %>
+                  </td>
+                <% }) %>
+              </tr>
             <% }) %>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
-</div>
 </div>

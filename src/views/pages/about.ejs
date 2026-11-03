@@ -1,13 +1,43 @@
+<% const features = [
+  ['photo', 'blue', 'Photo contests', 'Collect Commons uploads with resolution, category and date checks.'],
+  ['writing', 'green', 'Writing contests', 'Article submissions with size, word-count and creation-date rules.'],
+  ['database', 'purple', 'Data contests', 'Wikidata items, properties and lexemes with required statements.'],
+  ['users-group', 'orange', 'Edit-a-thons', 'Registration, eligibility rules and participant tracking.'],
+  ['gavel', 'red', 'Jury & review', 'Assign reviewers, score entries and handle appeals.'],
+  ['shield-lock', 'azure', 'Permissions', 'Wikimedia rights verified through the APIs, scoped per event.'],
+]; %>
 <%- include('../partials/pageHeader', { pretitle: 'About', heading: 'About Zury' }) %>
-<div class="page-body"><div class="container-xl"><div class="card"><div class="card-body">
-  <p class="lead text-muted">
-    Zury is an open-source, web-based platform for creating, organizing, managing, and
-    evaluating Wikimedia contests and community events across multiple Wikimedia projects
-    and languages.
-  </p>
-  <p>
-    It supports photo contests, writing contests, data contests, and edit-a-thons, with
-    configurable submission rules, jury workflows, appeals, and results.
-  </p>
-</div></div></div>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="card card-lg mb-4">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-auto"><img src="/images/zury-logo.svg" width="72" height="72" alt=""></div>
+          <div class="col">
+            <h2 class="mb-1">A unified platform for Wikimedia contests and community events</h2>
+            <p class="text-secondary mb-0">Zury is an open-source tool for creating, organizing, managing and evaluating Wikimedia contests and events across projects and languages.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row row-cards">
+      <% features.forEach(([icon, color, title, text]) => { %>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <span class="avatar bg-<%= color %>-lt mb-3"><i class="ti ti-<%= icon %>"></i></span>
+              <h3 class="card-title mb-1"><%= title %></h3>
+              <p class="text-secondary mb-0"><%= text %></p>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+    <div class="card mt-4">
+      <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+        <span class="text-secondary">Open source under the MIT license. Not affiliated with the Wikimedia Foundation.</span>
+        <a class="btn btn-outline-secondary ms-auto" href="https://github.com/aishikrehman/Zury" rel="noopener"><i class="ti ti-brand-github me-1"></i>Source code</a>
+      </div>
+    </div>
+  </div>
 </div>

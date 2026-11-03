@@ -1,29 +1,36 @@
 <% const pages = Math.max(1, Math.ceil(result.total / result.perPage)); %>
-<div class="page-body"><div class="container-xl">
-  <%- include('../../partials/adminNav', { active: 'logs' }) %>
-  <div class="table-responsive">
-    <table class="table table-sm small align-middle">
-      <thead><tr><th scope="col">When (UTC)</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Event</th><th scope="col">Details</th></tr></thead>
-      <tbody>
-        <% if (!result.items.length) { %><tr><td colspan="5" class="text-muted">No entries yet.</td></tr><% } %>
-        <% result.items.forEach((e) => { %>
-          <tr>
-            <td class="text-nowrap"><%= formatDateTime(e.createdAt) %></td>
-            <td><%= e.actor ? e.actor.username : 'system' %></td>
-            <td><code><%= e.action %></code> <span class="text-muted"><%= e.entityType %><%= e.entityId ? ' #' + e.entityId : '' %></span></td>
-            <td><% if (e.contest) { %><a href="/contest/<%= e.contest.id %>"><%= e.contest.title %></a><% } %></td>
-            <td><code class="text-muted"><%= e.details || '' %></code></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-  <% if (pages > 1) { %>
-    <ul class="pagination pagination-sm">
-      <% for (let i = 1; i <= pages; i++) { %>
-        <li class="page-item<%= i === result.page ? ' active' : '' %>"><a class="page-link" href="/admin/logs?page=<%= i %>"><%= i %></a></li>
+<%- include('../../partials/pageHeader', { pretitle: 'Administration', heading: 'Audit log' }) %>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Recent activity</h3><div class="card-actions text-secondary"><%= result.total %> entries · times in UTC</div></div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Event</th><th>Details</th></tr></thead>
+          <tbody>
+            <% if (!result.items.length) { %><tr><td colspan="5" class="text-secondary">No entries yet.</td></tr><% } %>
+            <% result.items.forEach((e) => { %>
+              <tr>
+                <td class="text-secondary text-nowrap"><%= formatDateTime(e.createdAt) %></td>
+                <td>
+                  <% if (e.actor) { %><span class="avatar avatar-xs me-1"><%= e.actor.username.charAt(0).toUpperCase() %></span><%= e.actor.username %><% } else { %><span class="text-secondary">system</span><% } %>
+                </td>
+                <td><span class="badge bg-blue-lt"><%= e.action %></span> <span class="text-secondary small"><%= e.entityType %><%= e.entityId ? ' #' + e.entityId : '' %></span></td>
+                <td><% if (e.contest) { %><a href="/contest/<%= e.contest.id %>"><%= e.contest.title %></a><% } %></td>
+                <td><code class="small text-secondary text-wrap"><%= e.details || '' %></code></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% if (pages > 1) { %>
+        <div class="card-footer d-flex align-items-center">
+          <p class="m-0 text-secondary">Page <%= result.page %> of <%= pages %></p>
+          <ul class="pagination m-0 ms-auto">
+            <% for (let i = 1; i <= pages; i++) { %><li class="page-item<%= i === result.page ? ' active' : '' %>"><a class="page-link" href="/admin/logs?page=<%= i %>"><%= i %></a></li><% } %>
+          </ul>
+        </div>
       <% } %>
-    </ul>
-  <% } %>
-</div>
+    </div>
+  </div>
 </div>

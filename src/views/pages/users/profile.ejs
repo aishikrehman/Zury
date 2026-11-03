@@ -1,10 +1,9 @@
 <%
   const wikiUserUrl = 'https://meta.wikimedia.org/wiki/Special:CentralAuth/' + encodeURIComponent(profileUser.username.replace(/ /g, '_'));
-  const eventList = (items, empty) => ({ items, empty });
   const groups = [
-    { heading: 'Organized', ...eventList(organized, 'No public events organized.') },
-    { heading: 'Jury member', ...eventList(judged, 'No public jury roles.') },
-    { heading: 'Participated', ...eventList(participated, 'No public event participation.') },
+    { heading: 'Organized', icon: 'briefcase', color: 'green', items: organized, empty: 'No public events organized.' },
+    { heading: 'Jury member', icon: 'gavel', color: 'orange', items: judged, empty: 'No public jury roles.' },
+    { heading: 'Participated', icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
   ];
 %>
 <div class="page-header d-print-none">
@@ -22,33 +21,51 @@
     </div>
   </div>
 </div>
-<div class="page-body"><div class="container-xl">
-
-  <div class="row g-4">
-    <div class="col-lg-4">
-      <dl>
-        <% if (profileUser.homeWiki) { %><dt>Home wiki</dt><dd><%= profileUser.homeWiki %></dd><% } %>
-        <% if (profileUser.wikimediaRegisteredAt) { %><dt>Wikimedia account since</dt><dd><%= formatDate(profileUser.wikimediaRegisteredAt) %></dd><% } %>
-        <dt>Joined Zury</dt><dd><%= formatDate(profileUser.createdAt) %></dd>
-        <dt>Roles</dt><dd><%- include('../../partials/accessSummary', { s: profileSubject }) %></dd>
-      </dl>
-    </div>
-    <div class="col-lg-8">
-      <% groups.forEach((g) => { %>
-        <h2 class="h5"><%= g.heading %></h2>
-        <% if (!g.items.length) { %>
-          <p class="text-muted small"><%= g.empty %></p>
-        <% } else { %>
-          <ul class="list-unstyled mb-4">
-            <% g.items.forEach(({ contest: c }) => { %>
-              <li class="mb-1"><a href="/contest/<%= c.id %>"><%= c.title %></a>
-                <span class="small text-muted">· <%= CONTEST_TYPES[c.type] %> · <%= (CONTEST_STATUSES[c.status] || {}).label %></span></li>
-            <% }) %>
-          </ul>
-        <% } %>
-      <% }) %>
-      <p class="text-muted small">Submissions and badges will appear here in later phases.</p>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-cards">
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-body p-4 text-center">
+            <span class="avatar avatar-xl mb-3 rounded"><%= profileUser.username.charAt(0).toUpperCase() %></span>
+            <h3 class="m-0 mb-1"><%= profileUser.username %></h3>
+            <div class="text-secondary"><%= profileUser.homeWiki || 'Wikimedia' %></div>
+          </div>
+          <div class="card-body">
+            <div class="datagrid">
+              <% if (profileUser.wikimediaRegisteredAt) { %><div class="datagrid-item"><div class="datagrid-title">Wikimedia account since</div><div class="datagrid-content"><%= formatDate(profileUser.wikimediaRegisteredAt) %></div></div><% } %>
+              <div class="datagrid-item"><div class="datagrid-title">Joined Zury</div><div class="datagrid-content"><%= formatDate(profileUser.createdAt) %></div></div>
+              <div class="datagrid-item"><div class="datagrid-title">Events</div><div class="datagrid-content"><%= organized.length + judged.length + participated.length %></div></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="subheader mb-2">Roles</div>
+            <%- include('../../partials/accessSummary', { s: profileSubject }) %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <% groups.forEach((g) => { %>
+          <div class="card mb-3">
+            <div class="card-header"><h3 class="card-title"><span class="avatar avatar-xs bg-<%= g.color %>-lt me-2"><i class="ti ti-<%= g.icon %>"></i></span><%= g.heading %></h3><div class="card-actions text-secondary"><%= g.items.length %></div></div>
+            <% if (!g.items.length) { %>
+              <div class="card-body text-secondary"><%= g.empty %></div>
+            <% } else { %>
+              <div class="list-group list-group-flush">
+                <% g.items.forEach(({ contest: c }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
+                  <a href="/contest/<%= c.id %>" class="list-group-item list-group-item-action d-flex align-items-center">
+                    <div class="flex-fill">
+                      <div><%= c.title %></div>
+                      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= c.primaryWiki %></div>
+                    </div>
+                    <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
+                  </a>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
     </div>
   </div>
-</div>
 </div>
