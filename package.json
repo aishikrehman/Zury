@@ -1,22 +1,25 @@
 {
   "name": "zury",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A unified platform for Wikimedia contests and community events.",
   "private": true,
   "license": "MIT",
   "type": "commonjs",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node scripts/prepare-db.js && node src/server.js",
     "dev": "node --watch src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "test": "node --test --test-timeout=60000 test/*.test.js",
     "seed": "node prisma/seed.js",
     "admin:grant": "node scripts/grant-platform-admin.js",
-    "wikis:sync": "node scripts/sync-wikis.js"
+    "wikis:sync": "node scripts/sync-wikis.js",
+    "start:server": "node src/server.js",
+    "demo:build": "node scripts/build-demo-db.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
@@ -30,10 +33,8 @@
     "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
     "oauth-1.0a": "^2.2.6",
+    "prisma": "^5.20.0",
     "tom-select": "^2.6.2"
-  },
-  "devDependencies": {
-    "prisma": "^5.20.0"
   },
   "allowScripts": {
     "@prisma/client@5.22.0": true,

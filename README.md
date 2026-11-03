@@ -130,6 +130,13 @@ One-time setup:
    ```
 
    Toolforge sets `PORT` itself. Demo login is always off in production.
+   Zury refuses to start in production if the secret is short, the OAuth
+   keys are missing or the callback isn't `https://`.
+
+   The first start creates the database from `prisma/demo.db`, so the site
+   opens with sample events (their accounts can't log in in production).
+   To start with an empty site instead, add `START_EMPTY=true` before the
+   first start. Either way, later starts only apply new migrations.
 
 Deploy or update:
 
@@ -140,8 +147,10 @@ git clone https://github.com/aishikrehman/Zury.git ~/www/js   # first time only
 ~/www/js/scripts/toolforge-deploy.sh
 ```
 
-The script pulls the latest code, installs dependencies and runs migrations
-inside the webservice image, then (re)starts the webservice. Make the first
+The script pulls the latest code, installs dependencies inside the webservice
+image, then (re)starts the webservice; `npm start` creates the database if
+needed and applies migrations before the server starts. Check it with
+`curl https://zury.toolforge.org/healthz`. Make the first
 platform administrator with
 `webservice node20 shell -- npm run admin:grant -- "Username"` after that
 person has logged in once.
@@ -166,25 +175,50 @@ Login flow: `/login` gets a request token from `Special:OAuth/initiate`,
 sends the user to `Special:OAuth/authorize`, and `/auth/callback` exchanges the
 verifier at `Special:OAuth/token`. Zury then calls `Special:OAuth/identify` and
 verifies the returned JWT (signature, audience, issuer, nonce, expiry) before
-trusting the username and central user ID. OAuth access tokens are not stored.
+trusting the username and central user ID. The access token is kept only in
+the server-side session, so organizers can send messages as themselves; it is
+never written anywhere else and is gone when they log out.
 
 Optional: `WIKIMEDIA_OAUTH_BASE_URL` overrides the OAuth wiki
 (default `https://meta.wikimedia.org/w/index.php`).
 
 ## Known limitations
 
-- Sessions use the in-memory store, so everyone is logged out when the server
-  restarts. Needs a persistent store before production.
 - Avatars aren't populated; Wikimedia OAuth doesn't provide one.
 - Teams are a setting only; team management comes with submissions.
 - Deleted events can only be restored in the database for now.
 - Registration checks use the global edit count and account age from
   CentralAuth, refreshed at login and daily.
 
+## Production
+
+- **Database:** SQLite through Prisma. `npm start` runs
+  `scripts/prepare-db.js` first: it creates the database from
+  `prisma/demo.db` if the file doesn't exist (skip with `START_EMPTY=true`)
+  and applies pending migrations. Back up the database file regularly.
+- **Sessions** are stored in the database and survive restarts; expired ones
+  are removed hourly.
+- **Security headers:** a strict Content-Security-Policy (scripts only from
+  this site, no inline JavaScript), HSTS, `X-Frame-Options: DENY`,
+  `nosniff`, and a referrer policy. Session cookies are `HttpOnly`,
+  `SameSite=Lax` and `Secure` in production; every form has a CSRF token.
+- **Rate limits** per IP: 600 requests a minute, 60 form submissions a
+  minute, 30 login attempts per 10 minutes, 120 API lookups a minute.
+- **Health check:** `GET /healthz` answers `{"status":"ok"}` when the
+  database responds.
+- **Logs:** one line per request (`GET /wam/2026 200 12ms`) on stdout.
+- **Shutdown:** on SIGTERM the server finishes open requests and closes the
+  database.
+- **Background jobs** (in the web process): event statuses every 10 minutes,
+  contribution tracking every hour, the wiki catalog when it is stale.
+
 ## Scripts
 
 - `npm run dev` — start the server with auto-reload
-- `npm start` — start the server
+- `npm start` — prepare the database, then start the server
+- `npm run start:server` — start the server only
+- `npm run demo:build` — rebuild `prisma/demo.db` from the seed
+  (add `-- --catalog` to include the wiki list from Wikimedia)
 - `npm run seed` — load (or reload) demo data
 - `npm run admin:grant -- "Username"` — make a user a platform administrator
 - `npm test` — run tests (throwaway SQLite databases and a mock MediaWiki

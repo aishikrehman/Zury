@@ -442,3 +442,12 @@ model Contribution {
   @@index([contestId, wiki])
   @@index([contestId, username])
 }
+
+// Login sessions, kept in the database so they survive restarts.
+model Session {
+  sid       String   @id
+  data      String
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}

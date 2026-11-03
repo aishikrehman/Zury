@@ -32,7 +32,7 @@ async function trackingSweep() {
   }
 }
 
-app.listen(env.port, () => {
+const server = app.listen(env.port, () => {
   console.log(`Zury is running at http://127.0.0.1:${env.port}`);
   ensureFresh()
     .then((r) => r && console.log(`Wiki catalog refreshed: ${r.wikis} wikis, ${r.languages} languages.`))
@@ -41,3 +41,15 @@ app.listen(env.port, () => {
   setInterval(sweep, STATUS_SWEEP_MS).unref();
   setInterval(trackingSweep, TRACKING_SWEEP_MS).unref();
 });
+
+// Hosts stop the app with SIGTERM: finish open requests, close the database, exit.
+function shutdown(signal) {
+  console.log(`${signal} received, shutting down.`);
+  server.close(() => {
+    prisma.$disconnect().finally(() => process.exit(0));
+  });
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', (err) => console.error('Unhandled rejection:', err));

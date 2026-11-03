@@ -21,9 +21,10 @@ chmod 600 .env
 
 git pull --ff-only
 
-# Install and migrate inside the same container image the webservice runs in,
-# so Prisma downloads the matching query engine.
-webservice "$IMAGE" shell -- bash -c 'npm ci && npx prisma generate && npx prisma migrate deploy'
+# Install inside the same container image the webservice runs in, so Prisma
+# downloads the matching query engine. `npm start` then creates or migrates the
+# database before the server starts.
+webservice "$IMAGE" shell -- bash -c 'npm ci --omit=dev'
 
 if webservice status | grep -q running; then
   webservice "$IMAGE" restart

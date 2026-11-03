@@ -26,7 +26,7 @@
         <% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
         <% if (currentUser) { %>
           <label class="form-check form-switch m-0 align-self-center">
-            <input class="form-check-input" type="checkbox" name="mine" value="1"<%= filters.mine ? ' checked' : '' %> onchange="this.form.submit()">
+            <input class="form-check-input" type="checkbox" name="mine" value="1"<%= filters.mine ? ' checked' : '' %> data-autosubmit>
             <span class="form-check-label">Only mine</span>
           </label>
         <% } %>

@@ -16,15 +16,45 @@ const { csrfProtection } = require('./middleware/csrf');
 const { flashMessages } = require('./middleware/flash');
 const { displayPreferences } = require('./middleware/display');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
+const { securityHeaders, rateLimit } = require('./middleware/security');
+const { PrismaSessionStore } = require('./config/sessionStore');
+const prisma = require('./config/prisma');
 
 const app = express();
+app.disable('x-powered-by');
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layout');
 
+// Toolforge (and most hosts) put one proxy in front of the app; needed for secure cookies and client IPs.
 if (env.nodeEnv === 'production') app.set('trust proxy', 1);
+
+app.use(securityHeaders);
+
+// One line per request in production (static files excluded), for the host's log.
+if (env.nodeEnv === 'production') {
+  app.use((req, res, next) => {
+    if (/^\/(vendor|css|js|images)\//.test(req.path)) return next();
+    const start = process.hrtime.bigint();
+    res.on('finish', () => {
+      const ms = Number(process.hrtime.bigint() - start) / 1e6;
+      console.log(`${req.method} ${req.originalUrl.split('?')[0]} ${res.statusCode} ${ms.toFixed(0)}ms`);
+    });
+    next();
+  });
+}
+
+// For uptime checks: the app is up and the database answers.
+app.get('/healthz', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok' });
+  } catch {
+    res.status(503).json({ status: 'database unavailable' });
+  }
+});
 
 Object.assign(app.locals, format, contestLabels, { EVENT_TYPES: require('./events/eventTypes').EVENT_TYPES }, {
   PLATFORM_ROLES,
@@ -39,7 +69,7 @@ Object.assign(app.locals, format, contestLabels, { EVENT_TYPES: require('./event
   demoMode: env.demoMode,
 });
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: env.nodeEnv === 'production' ? '1d' : 0 }));
 // Self-hosted: Toolforge forbids loading assets from third-party CDNs.
 const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules', pkg, 'dist'), { maxAge: '7d' });
 app.use('/vendor/tabler', vendor('@tabler/core'));
@@ -58,17 +88,24 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: false, limit: '200kb' }));
+app.use(express.json({ limit: '100kb' }));
 
-// Uses the default in-memory store: sessions survive for 30 days but not a
-// server restart. Swap in a persistent store before production.
+// Per-IP limits: generous for browsing, tighter for changes, login and lookups.
+app.use(rateLimit({ windowMs: 60 * 1000, max: 600 }));
+app.use(rateLimit({ windowMs: 60 * 1000, max: 60, methods: ['POST'] }));
+app.use(['/login', '/oauth'], rateLimit({ windowMs: 10 * 60 * 1000, max: 30 }));
+app.use('/api', rateLimit({ windowMs: 60 * 1000, max: 120 }));
+
+// Sessions live in the database so logins survive restarts.
 app.use(
   session({
     name: 'zury.sid',
     secret: env.sessionSecret,
+    store: new PrismaSessionStore({ prune: env.nodeEnv !== 'test' }),
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
       httpOnly: true,
       sameSite: 'lax',

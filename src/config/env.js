@@ -27,6 +27,24 @@ const env = {
 if (!env.sessionSecret) {
   throw new Error('SESSION_SECRET is not set. Copy .env.example to .env and fill it in.');
 }
+
+// Settings that must be right before real people use the site. Returns a list of problems.
+function productionProblems(vars = process.env) {
+  const problems = [];
+  const placeholder = (v) => !v || /^(your_|change|replace)/.test(v);
+  if ((vars.SESSION_SECRET || '').length < 32 || placeholder(vars.SESSION_SECRET)) problems.push('SESSION_SECRET must be a random string of at least 32 characters.');
+  if (placeholder(vars.WIKIMEDIA_CONSUMER_KEY) || placeholder(vars.WIKIMEDIA_CONSUMER_SECRET)) problems.push('WIKIMEDIA_CONSUMER_KEY and WIKIMEDIA_CONSUMER_SECRET must be set.');
+  if (!/^https:\/\//.test(vars.WIKIMEDIA_CALLBACK_URL || '')) problems.push('WIKIMEDIA_CALLBACK_URL must be an https:// address.');
+  if (!vars.DATABASE_URL) problems.push('DATABASE_URL must be set.');
+  if (vars.WIKIMEDIA_API_URL_TEMPLATE) problems.push('WIKIMEDIA_API_URL_TEMPLATE is for tests only; remove it.');
+  return problems;
+}
+env.productionProblems = productionProblems;
+
+if (nodeEnv === 'production') {
+  const problems = productionProblems();
+  if (problems.length) throw new Error(`Zury can't start in production:\n- ${problems.join('\n- ')}`);
+}
 if (process.env.DEMO_MODE === 'true' && !env.demoMode) {
   console.warn('DEMO_MODE is ignored in production.');
 }
