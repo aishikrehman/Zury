@@ -2,8 +2,12 @@
   const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' };
   const color = st.badge === 'dark' ? 'secondary' : st.badge;
   const tabs = [['overview', 'Overview', '', 'info-circle', true]];
-  tabs.push(['submissions', 'Submissions', '/submissions', 'files', true]);
+  const typeDef = EVENT_TYPES[contest.type];
+  if (typeDef.activity) tabs.push(['sessions', 'Sessions', '/sessions', 'calendar-event', true]);
+  if (typeDef.entries !== false) tabs.push(['submissions', typeDef.activity ? 'Uploads' : 'Submissions', '/submissions', 'files', true]);
   if (settings.publicStatisticsEnabled || can('viewStatistics')) tabs.push(['statistics', 'Statistics', '/statistics', 'chart-bar', true]);
+  const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
+  if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', 'Contributions', '/tracking', 'activity', true]);
   if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', 'People', '/participants', 'users', true]);
   if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', 'Configuration', '/config', 'adjustments', true]);
   if (can('manageEvent')) tabs.push(['activity', 'Activity', '/activity', 'history', true]);
@@ -17,7 +21,7 @@
       <% if (contest.logoUrl) { %>
         <span class="avatar avatar-lg" style="background-image: url('<%= contest.logoUrl %>'); background-size: contain"></span>
       <% } else { %>
-        <span class="avatar avatar-lg bg-primary-lt"><i class="ti ti-<%= { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group' }[contest.type] || 'calendar' %>"></i></span>
+        <span class="avatar avatar-lg bg-primary-lt"><i class="ti ti-<%= TYPE_ICONS[contest.type] || 'calendar' %>"></i></span>
       <% } %>
     </div>
     <div class="col">
@@ -43,7 +47,7 @@
         </div>
       </div>
     <% } %>
-    <% if (currentUser && contest.status === 'active' && active !== 'submit') { %>
+    <% if (currentUser && contest.status === 'active' && active !== 'submit' && typeDef.entries !== false) { %>
       <div class="col-auto ms-auto"><a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i>Submit entries</a></div>
     <% } %>
   </div>

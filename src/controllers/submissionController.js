@@ -5,6 +5,18 @@ const { submissionWindow } = require('../services/submissionRules');
 const { WikiApiError } = require('../wiki/wikiApi');
 const { readTypeConfig, EVENT_TYPES } = require('../events/eventTypes');
 const { effectiveFor } = require('../events/effective');
+const { wikimediaBans } = require('../wiki/banCheck');
+const prisma = require('../config/prisma');
+
+// Blocked from the event, or banned on Wikimedia (globally or on their wiki)?
+async function assertAllowed(req, person) {
+  if (await membershipService.isBlocked(req.contest.id, person.id)) {
+    throw new SubmissionError(person.id === req.user.id ? "You've been blocked from this event." : `${person.username} is blocked from this event.`);
+  }
+  const m = await prisma.contestMembership.findFirst({ where: { contestId: req.contest.id, userId: person.id, role: 'participant', status: 'active' } });
+  const bans = await wikimediaBans(person, m?.wiki || req.contextWiki?.wiki || req.contest.primaryWiki);
+  if (bans.length) throw new SubmissionError(bans.join(' '));
+}
 
 const { SubmissionError } = submissionService;
 const can = (req) => (p) => req.permissions.has(p);
@@ -29,9 +41,11 @@ async function resolveSubmitter(req) {
     if (!participant) throw new SubmissionError(`No Wikimedia user named “${onBehalfName}” was found.`);
     const roles = await membershipService.activeRoles(contest.id, participant.id);
     if (!roles.includes('participant')) throw new SubmissionError(`${participant.username} is not a participant in this event. Add them first.`);
+    await assertAllowed(req, participant);
     return { participant, ensureParticipant: null };
   }
 
+  await assertAllowed(req, user);
   const roles = await membershipService.activeRoles(contest.id, user.id);
   if (roles.includes('participant')) {
     if (!req.permissions.has('submitEntry')) throw new SubmissionError("You can't submit entries to this event.", 403);
@@ -46,7 +60,7 @@ async function resolveSubmitter(req) {
     participants: await membershipService.participantCount(contest.id),
   });
   if (!eligibility.eligible) throw new SubmissionError(eligibility.reasons.join(' '));
-  return { participant: user, ensureParticipant: (tx) => membershipService.joinInTx(tx, { user, contest }), joinsNow: true };
+  return { participant: user, ensureParticipant: (tx) => membershipService.joinInTx(tx, { user, contest, wiki: req.contextWiki?.wiki || '' }), joinsNow: true };
 }
 
 function massAllowed(req) {

@@ -1,0 +1,75 @@
+<div class="page-body"><div class="container-xl">
+  <%- include('../../partials/contestHeader', { active: 'people' }) %>
+
+  <div class="row row-cards">
+    <div class="col-lg-8">
+      <% if (error) { %><div class="alert alert-danger" role="alert"><%= error %></div><% } %>
+      <% if (result) { %>
+        <div class="alert alert-<%= result.failed.length ? 'warning' : 'success' %>" role="status">
+          Sent to <%= result.sent %> <%= result.sent === 1 ? 'person' : 'people' %>.
+          <% if (result.failed.length) { %>
+            Not sent to:
+            <ul class="mb-0"><% result.failed.forEach((f) => { %><li><%= f.username %> — <%= f.error %></li><% }) %></ul>
+          <% } %>
+        </div>
+      <% } %>
+      <% if (!hasToken) { %>
+        <div class="alert alert-warning" role="alert">Messages are sent with your Wikimedia account. Log out and log in with Wikimedia to send them.</div>
+      <% } %>
+      <form method="post" action="<%= base %>/message" class="card">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-mail me-2"></i>Message <%= wikiScope ? 'people on ' + wikiScope.wiki : 'people in this event' %></h3></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="audience">To</label>
+              <select class="form-select" id="audience" name="audience">
+                <% Object.entries(audiences).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.audience === k ? ' selected' : '' %>><%= label %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <span class="form-label d-block">Send as</span>
+              <% Object.entries(methods).forEach(([k, label]) => { %>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="method" id="method_<%= k %>" value="<%= k %>"<%= form.method === k ? ' checked' : '' %>>
+                  <label class="form-check-label" for="method_<%= k %>"><%= label %></label>
+                </div>
+              <% }) %>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="only">Only these people (optional)</label>
+              <textarea class="form-control" id="only" name="only" rows="2" placeholder="One username per line"><%= form.only || '' %></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="subject">Subject</label>
+              <input class="form-control" id="subject" name="subject" maxlength="200" value="<%= form.subject || '' %>">
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="body">Message</label>
+              <textarea class="form-control" id="body" name="body" rows="8" maxlength="10000"><%= form.body || '' %></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn" type="submit" name="step" value="preview"><i class="ti ti-users me-1"></i>Show recipients</button>
+          <button class="btn btn-primary" type="submit" name="step" value="send"<%= hasToken ? '' : ' disabled' %>><i class="ti ti-send me-1"></i>Send</button>
+        </div>
+      </form>
+    </div>
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Recipients</h3><div class="card-actions text-secondary small"><%= people ? people.length : '—' %> / <%= maxRecipients %> max</div></div>
+        <% if (people && people.length) { %>
+          <div class="list-group list-group-flush" style="max-height: 420px; overflow: auto">
+            <% people.forEach((u) => { %>
+              <div class="list-group-item py-2 d-flex justify-content-between"><a href="<%= userPath(u.username) %>"><%= u.username %></a><span class="text-secondary small"><%= u.wiki || '' %></span></div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="card-body text-secondary">Nobody yet.</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

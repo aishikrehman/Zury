@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/tabler.css">
+  <link rel="stylesheet" href="/vendor/tabler-icons/tabler-icons.min.css">
+  <style>
+    body { background: #f6f8fb; }
+    .certificate { max-width: 900px; margin: 3rem auto; border: 6px double var(--tblr-primary); }
+    @media print { .d-print-none { display: none !important; } body { background: #fff; } .certificate { margin: 0 auto; } }
+  </style>
+</head>
+<body>
+  <div class="card certificate">
+    <div class="card-body text-center p-5">
+      <img src="/images/zury-logo.svg" alt="Zury" height="48" class="mb-4">
+      <div class="text-uppercase text-secondary fw-bold mb-2" style="letter-spacing: .2em">Certificate of participation</div>
+      <div class="text-secondary mb-3">This certifies that</div>
+      <div class="display-6 fw-bold mb-3"><%= person.username %></div>
+      <div class="text-secondary mb-1">took part in</div>
+      <div class="h1 mb-3"><%= contest.title %></div>
+      <div class="text-secondary mb-4">attending <%= attended %> session<%= attended === 1 ? '' : 's' %><%= contest.organizingCommunity ? ', organized by ' + contest.organizingCommunity : '' %>.</div>
+      <div class="text-secondary small"><%= formatDate(new Date(), contest.timezone) %></div>
+    </div>
+  </div>
+  <div class="text-center d-print-none mb-5">
+    <button class="btn btn-primary" onclick="window.print()"><i class="ti ti-printer me-1"></i>Print or save as PDF</button>
+    <a class="btn ms-2" href="<%= base %>/sessions">Back</a>
+  </div>
+</body>
+</html>

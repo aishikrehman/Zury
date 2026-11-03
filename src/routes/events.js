@@ -3,10 +3,19 @@ const eventsController = require('../controllers/eventsController');
 const contestController = require('../controllers/contestController');
 const submissionController = require('../controllers/submissionController');
 const wikiController = require('../controllers/eventWikiController');
+const messageController = require('../controllers/messageController');
+const trackingController = require('../controllers/trackingController');
+const sessionController = require('../controllers/sessionController');
+const { takesEntries, EVENT_TYPES } = require('../events/eventTypes');
 const { loadContest, loadSeriesEvent, requirePermission, requireEventWide } = require('../middleware/permissions');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Some pages only exist for some event types.
+const notFound = (res) => res.status(404).render('pages/404', { title: 'Page Not Found' });
+const entriesOnly = (req, res, next) => (takesEntries(req.contest.type) ? next() : notFound(res));
+const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity ? next() : notFound(res));
 
 router.get('/events', eventsController.index);
 router.get('/events/create', requirePermission('createEvent'), eventsController.createForm);
@@ -38,16 +47,31 @@ contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume|remove)', requir
 contest.get('/participants', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.people);
 contest.post('/members', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.addMember);
 contest.post('/members/:membershipId(\\d+)/remove', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.removeMember);
+contest.get('/message', requirePermission('sendNotifications'), messageController.form);
+contest.post('/message', requirePermission('sendNotifications'), messageController.send);
+contest.post('/blocks',requireEventWide('manageParticipants'), contestController.blockUser);
+contest.post('/blocks/:blockId(\\d+)/lift', requireEventWide('manageParticipants'), contestController.unblockUser);
 contest.post('/overrides', requireEventWide('manageEvent'), contestController.setOverride);
 contest.post('/overrides/:overrideId(\\d+)/remove', requireEventWide('manageEvent'), contestController.removeOverride);
 
 contest.get('/activity', requirePermission('manageEvent'), contestController.activity);
 contest.get('/statistics', contestController.statistics);
+contest.get('/tracking', trackingController.show);
+contest.post('/tracking/refresh', requirePermission('manageEvent'), trackingController.refresh);
 
-contest.get('/submit', requireAuth, submissionController.submitForm);
-contest.post('/submit/preview', requireAuth, submissionController.preview);
-contest.post('/submit', requireAuth, submissionController.submit);
-contest.get('/submissions', submissionController.index);
+contest.get('/sessions', activityOnly, sessionController.index);
+contest.post('/sessions', activityOnly, requirePermission('manageEvent'), sessionController.create);
+contest.get('/sessions/certificate', activityOnly, requireAuth, sessionController.certificate);
+contest.get('/sessions/:sessionId(\\d+)', activityOnly, sessionController.show);
+contest.post('/sessions/:sessionId(\\d+)/register', activityOnly, requireAuth, sessionController.register);
+contest.post('/sessions/:sessionId(\\d+)/cancel', activityOnly, requireAuth, sessionController.cancel);
+contest.post('/sessions/:sessionId(\\d+)/attendance', activityOnly, requirePermission('manageEvent'), sessionController.attendance);
+contest.post('/sessions/:sessionId(\\d+)/update', activityOnly, requirePermission('manageEvent'), sessionController.update);
+
+contest.get('/submit', entriesOnly, requireAuth, submissionController.submitForm);
+contest.post('/submit/preview', entriesOnly, requireAuth, submissionController.preview);
+contest.post('/submit', entriesOnly, requireAuth, submissionController.submit);
+contest.get('/submissions', entriesOnly, submissionController.index);
 contest.get('/submissions/:submissionId(\\d+)', submissionController.show);
 contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissionController.withdraw);
 contest.post('/submissions/:submissionId(\\d+)/status', requirePermission('manageEvent'), submissionController.setStatus);

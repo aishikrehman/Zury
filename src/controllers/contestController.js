@@ -26,10 +26,11 @@ function handled(err) {
 
 async function show(req, res, next) {
   try {
-    const [members, roles, participants] = await Promise.all([
+    const [members, roles, participants, blocked] = await Promise.all([
       contestService.members(req.contest.id),
       req.user ? membershipService.activeRoles(req.contest.id, req.user.id) : [],
       membershipService.participantCount(req.contest.id),
+      req.user ? membershipService.isBlocked(req.contest.id, req.user.id) : false,
     ]);
     const inView = members.filter((m) => !m.wiki || !req.contextWiki || m.wiki === req.contextWiki.wiki);
     const byRole = (role) => [...new Map(inView.filter((m) => m.role === role).map((m) => [m.user.id, m.user])).values()];
@@ -39,8 +40,13 @@ async function show(req, res, next) {
       settings: req.settings,
       roles,
       participants,
+      blocked,
     });
+    const mine = req.user && members.find((m) => m.user.id === req.user.id && m.role === 'participant');
     res.render('pages/contest/show', {
+      joinWikis: req.eventWikis.length > 1 && !req.wikiScope ? req.eventWikis.filter((w) => w.status === 'active') : [],
+      defaultJoinWiki: defaultWikiFor(req),
+      myWiki: mine?.wiki || '',
       title: `${req.contest.title} — Zury`,
       organizers: byRole('organizer'),
       jury: byRole('jury'),
@@ -83,6 +89,15 @@ async function wikiParts(req, members) {
       overridden: effectiveFor(req.contest, req.eventSettings, w).overridden.size,
     };
   });
+}
+
+// The wiki someone joins from: the page they're on, else their home wiki if it takes part, else the event's only wiki.
+function defaultWikiFor(req, chosen) {
+  const open = req.eventWikis.filter((w) => w.status === 'active');
+  if (chosen && open.some((w) => w.wiki === chosen)) return chosen;
+  if (req.wikiScope) return req.wikiScope.wiki;
+  if (open.length === 1) return open[0].wiki;
+  return open.find((w) => w.wiki === req.user?.homeWiki)?.wiki || '';
 }
 
 function wikiAllowedForEdit(req) {
@@ -194,7 +209,10 @@ async function people(req, res, next) {
   try {
     const [members, overrides] = await Promise.all([contestService.members(req.contest.id), contestService.overrides(req.contest.id)]);
     const wiki = req.wikiScope?.wiki;
+    const blocks = await membershipService.activeBlocks(req.contest.id);
     res.render('pages/contest/participants', {
+      blocks,
+      canBlock: (req.wikiScope || req.eventWikis.length > 1 ? req.scope.global : req.permissions).has('manageParticipants'),
       title: `People — ${req.contest.title}`,
       members: wiki ? members.filter((m) => !m.wiki || m.wiki === wiki) : members,
       memberWikis: !req.wikiScope && req.eventWikis.length > 1 ? req.eventWikis : [],
@@ -275,8 +293,10 @@ async function removeOverride(req, res, next) {
 
 async function join(req, res, next) {
   try {
-    await membershipService.join({ user: req.user, contest: req.contest, settings: req.settings });
-    req.flash('success', "You've joined this event.");
+    const wiki = defaultWikiFor(req, req.body.wiki);
+    if (req.eventWikis.length > 1 && !wiki) throw new membershipService.MembershipError('Choose the wiki you will take part from.');
+    await membershipService.join({ user: req.user, contest: req.contest, settings: req.settings, wiki });
+    req.flash('success', wiki && req.eventWikis.length > 1 ? `You've joined this event on ${wiki}.` : "You've joined this event.");
   } catch (err) {
     if (!handled(err)) return next(err);
     req.flash('danger', err.message);
@@ -293,6 +313,29 @@ async function leave(req, res, next) {
     req.flash('danger', err.message);
   }
   res.redirect(back(req));
+}
+
+async function blockUser(req, res, next) {
+  try {
+    const user = await resolveUser(req);
+    await membershipService.block({ actorId: req.user.id, contest: req.contest, user, reason: String(req.body.reason || '').trim() });
+    req.flash('success', `${user.username} is blocked from this event.`);
+  } catch (err) {
+    if (!handled(err)) return next(err);
+    req.flash('danger', err.message);
+  }
+  res.redirect(back(req, '/participants#blocks'));
+}
+
+async function unblockUser(req, res, next) {
+  try {
+    await membershipService.unblock({ actorId: req.user.id, contest: req.contest, blockId: Number(req.params.blockId) });
+    req.flash('success', 'Block lifted.');
+  } catch (err) {
+    if (!handled(err)) return next(err);
+    req.flash('danger', err.message);
+  }
+  res.redirect(back(req, '/participants#blocks'));
 }
 
 async function statistics(req, res, next) {
@@ -333,6 +376,9 @@ module.exports = {
   removeOverride,
   join,
   leave,
+  blockUser,
+  unblockUser,
+  defaultWikiFor,
   activity,
   statistics,
 };

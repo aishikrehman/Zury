@@ -38,7 +38,7 @@ const FEATURE_FIELDS = [
   ['registrationEnabled', 'Self-registration', 'Logged-in users can join the event themselves.'],
   ['massSubmissionEnabled', 'Mass submission', 'Participants can submit many entries at once.'],
   ['autoValidationEnabled', 'Automatic validation', 'Entries are checked against the rules when submitted.'],
-  ['contributionDiscoveryEnabled', 'Contribution discovery', "Participants' edits during the event are found automatically."],
+  ['contributionDiscoveryEnabled', "Track participants' edits", "Participants' edits during the event are found automatically."],
   ['badgesEnabled', 'Badges', 'Award badges to participants and winners.'],
   ['publicStatisticsEnabled', 'Public statistics', 'Anyone can see the statistics page.'],
   ['participantNotificationsEnabled', 'Participant notifications', 'Participants are notified about their entries.'],
@@ -48,6 +48,8 @@ const PARTICIPATION_MODES = { individual: 'Individuals only', team: 'Teams only'
 
 const str = (v) => (typeof v === 'string' ? v.trim() : '');
 const bool = (v) => v === 'on' || v === 'true' || v === true;
+// One item per line (for values that contain spaces, such as category names).
+const lines = (v) => str(Array.isArray(v) ? v.join('\n') : v).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
 const listOf = (v) => [...new Set(str(Array.isArray(v) ? v.join('\n') : v).split(/[\s,]+/).filter(Boolean))];
 
 function slugify(title) {
@@ -170,6 +172,16 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const namespaces = listOf(body.eligibleNamespaces).map(Number);
   if (namespaces.some((n) => !Number.isInteger(n) || n < 0 || n > 9999)) errors.eligibleNamespaces = 'Use namespace numbers such as 0 or 6.';
   settings.eligibleNamespaces = JSON.stringify(namespaces.filter(Number.isInteger));
+
+  // Tracking: hashtags in edit summaries and categories pages are added to.
+  const hashtags = listOf(body.trackHashtags).map((h) => h.replace(/^#/, ''));
+  if (hashtags.some((h) => !/^[\p{L}\p{N}_-]{2,50}$/u.test(h))) errors.trackHashtags = 'Use hashtags of letters, numbers, - and _ such as wam2026.';
+  else if (hashtags.length > 10) errors.trackHashtags = 'At most 10 hashtags.';
+  const categories = lines(body.trackCategories).map((c) => c.replace(/^Category:/i, '').trim());
+  if (categories.some((c) => c.length > 200 || /[#<>[\]{}|]/.test(c))) errors.trackCategories = 'Enter category names without the "Category:" prefix.';
+  else if (categories.length > 10) errors.trackCategories = 'At most 10 categories.';
+  settings.trackHashtags = JSON.stringify([...new Set(hashtags)]);
+  settings.trackCategories = JSON.stringify([...new Set(categories)]);
   for (const [key] of FEATURE_FIELDS) settings[key] = bool(body[key]);
 
   const typeInput = Object.fromEntries(
@@ -232,6 +244,8 @@ function toForm(contest, settings) {
     allowOrganizerParticipation: s.allowOrganizerParticipation,
     anonymousParticipants: s.anonymousParticipants,
     eligibleNamespaces: JSON.parse(s.eligibleNamespaces || '[]').join(', '),
+    trackHashtags: JSON.parse(s.trackHashtags || '[]').join(', '),
+    trackCategories: JSON.parse(s.trackCategories || '[]').join('\n'),
   });
   for (const [key] of FEATURE_FIELDS) form[key] = s[key];
   const typeConfig = readTypeConfig(contest.type, s.typeConfig);
@@ -260,6 +274,8 @@ function defaultSettings(type) {
     allowOrganizerParticipation: false,
     anonymousParticipants: false,
     eligibleNamespaces: '[]',
+    trackHashtags: '[]',
+    trackCategories: '[]',
     typeConfig: JSON.stringify(readTypeConfig(type, '{}')),
   };
   return { ...base, ...EVENT_TYPES[type].defaults };

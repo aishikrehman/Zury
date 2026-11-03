@@ -143,8 +143,26 @@ async function identify(accessToken) {
   return verifyIdentityToken(text, nonce);
 }
 
+// Calls a wiki's Action API as the logged-in person (their OAuth access token).
+async function userApi(wiki, accessToken, params, { post = false } = {}) {
+  const { apiUrl } = require('../wiki/wikiApi');
+  const data = { format: 'json', formatversion: '2', ...params };
+  const url = apiUrl(wiki);
+  const request = post ? { url, method: 'POST', data } : { url: `${url}?${new URLSearchParams(data)}`, method: 'GET' };
+  const headers = { ...oauth.toHeader(oauth.authorize(request, accessToken)), 'User-Agent': env.userAgent };
+  const response = await fetch(request.url, {
+    method: request.method,
+    headers: post ? { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' } : headers,
+    body: post ? new URLSearchParams(data).toString() : undefined,
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!response.ok) throw new WikimediaOAuthError(`${wiki} returned HTTP ${response.status}.`);
+  return response.json();
+}
+
 module.exports = {
   WikimediaOAuthError,
+  userApi,
   getRequestToken,
   getAuthorizeUrl,
   getAccessToken,

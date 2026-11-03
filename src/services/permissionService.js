@@ -102,9 +102,11 @@ const uniq = (xs) => [...new Set(xs)];
 function computeContestScope(subject, contest, memberships = [], overrides = [], { wikis, wiki } = {}) {
   const eventWikis = wikis && wikis.length ? wikis : [contest.primaryWiki];
   const active = memberships.filter((m) => m.status === 'active' && EVENT_ROLES[m.role]);
-  const globalRoles = uniq(active.filter((m) => !m.wiki).map((m) => m.role));
+  // Participants take part in the whole event; their wiki only says who looks after them.
+  const eventWide = (m) => !m.wiki || m.role === 'participant';
+  const globalRoles = uniq(active.filter(eventWide).map((m) => m.role));
   const wikiRoles = {};
-  for (const m of active.filter((x) => x.wiki)) (wikiRoles[m.wiki] ||= new Set()).add(m.role);
+  for (const m of active.filter((x) => !eventWide(x))) (wikiRoles[m.wiki] ||= new Set()).add(m.role);
 
   const rolePermissions = (roles) => {
     const keys = roles.flatMap((role) => EVENT_ROLES[role].permissions);

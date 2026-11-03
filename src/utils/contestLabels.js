@@ -3,7 +3,14 @@ const CONTEST_TYPES = {
   writing: 'Writing contest',
   data: 'Data contest',
   editathon: 'Edit-a-thon',
+  workshop: 'Workshop',
+  training: 'Training',
+  photowalk: 'Photowalk',
 };
+const TYPE_ICONS = { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group', workshop: 'presentation', training: 'school', photowalk: 'walk' };
+const TYPE_COLORS = { photo: 'blue', writing: 'green', data: 'purple', editathon: 'orange', workshop: 'teal', training: 'cyan', photowalk: 'pink' };
+// Activities are run as sessions people attend, rather than as contests.
+const ACTIVITY_TYPES = ['workshop', 'training', 'photowalk'];
 
 const CONTEST_STATUSES = {
   draft: { label: 'Draft', badge: 'secondary' },
@@ -36,4 +43,4 @@ const SUBMISSION_STATUSES = {
   appealed: { label: 'Appealed', color: 'purple' },
 };
 
-module.exports = { CONTEST_TYPES, CONTEST_STATUSES, STATUS_GROUPS, SUBMISSION_STATUSES };
+module.exports = { CONTEST_TYPES, TYPE_ICONS, TYPE_COLORS, ACTIVITY_TYPES, CONTEST_STATUSES, STATUS_GROUPS, SUBMISSION_STATUSES };

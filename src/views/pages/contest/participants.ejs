@@ -5,7 +5,13 @@
   <div class="row row-cards">
     <div class="col-lg-8">
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Members</h3><div class="card-actions text-secondary small"><%= members.length %> active</div></div>
+        <div class="card-header">
+          <h3 class="card-title">Members</h3>
+          <div class="card-actions d-flex align-items-center gap-2">
+            <span class="text-secondary small"><%= members.length %> active</span>
+            <% if (can('sendNotifications')) { %><a href="<%= base %>/message" class="btn btn-sm btn-outline-primary"><i class="ti ti-mail me-1"></i>Message</a><% } %>
+          </div>
+        </div>
         <% if (roleOptions.length) { %>
           <div class="card-body border-bottom">
             <form method="post" action="<%= base %>/members" class="row g-2 align-items-end">
@@ -67,6 +73,48 @@
     </div>
 
     <div class="col-lg-4">
+      <div class="card mb-3" id="blocks">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-ban me-2"></i>Blocked</h3><div class="card-actions text-secondary small"><%= blocks.length %></div></div>
+        <div class="card-body<%= blocks.length ? ' pb-0' : '' %>">
+          <p class="text-secondary small mb-<%= blocks.length ? '2' : '0' %>">Blocked people can't join, submit or hold a role in this event. Accounts that are globally locked, globally blocked or blocked on their wiki are kept out automatically.</p>
+        </div>
+        <% if (blocks.length) { %>
+          <div class="list-group list-group-flush">
+            <% blocks.forEach((b) => { %>
+              <div class="list-group-item">
+                <div class="d-flex align-items-start">
+                  <div class="flex-fill">
+                    <a href="<%= userPath(b.user.username) %>" class="fw-bold"><%= b.user.username %></a>
+                    <div class="text-secondary small"><%= b.reason || 'No reason given' %> · <%= b.blockedBy ? b.blockedBy.username : '—' %>, <%= formatDate(b.createdAt, contest.timezone) %></div>
+                  </div>
+                  <% if (canBlock) { %>
+                    <form method="post" action="<%= base %>/blocks/<%= b.id %>/lift">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn-sm btn-ghost-secondary" type="submit">Unblock</button>
+                    </form>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+        <% if (canBlock) { %>
+          <div class="card-footer">
+            <form method="post" action="<%= base %>/blocks">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <div class="mb-2">
+                <label class="form-label" for="blockUser">Username</label>
+                <select class="form-select" id="blockUser" name="username" required data-picker="user" placeholder="Search Wikimedia users…"></select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="blockReason">Reason</label>
+                <input class="form-control" id="blockReason" name="reason" maxlength="500">
+              </div>
+              <button class="btn btn-outline-danger w-100" type="submit"><i class="ti ti-ban me-1"></i>Block from this event</button>
+            </form>
+          </div>
+        <% } %>
+      </div>
       <div class="card">
         <div class="card-header"><h3 class="card-title">Permission overrides</h3></div>
         <div class="card-body">

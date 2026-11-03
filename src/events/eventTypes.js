@@ -55,6 +55,58 @@ const EVENT_TYPES = {
   },
 };
 
+// Activities: people register for sessions and organizers record attendance.
+const CERTIFICATE = { key: 'minSessionsForCertificate', label: 'Sessions to attend for a certificate', type: 'int', min: 0, max: 100, default: 1, help: '0 means no certificate.' };
+
+Object.assign(EVENT_TYPES, {
+  workshop: {
+    label: 'Workshop',
+    description: 'Hands-on sessions, online or in person, with registration and attendance.',
+    defaultWiki: null,
+    defaultNamespaces: [0],
+    activity: true,
+    entries: false,
+    defaults: { juryReviewEnabled: false, registrationRequired: true, contributionDiscoveryEnabled: true },
+    fields: [
+      { key: 'topics', label: 'Topics', type: 'list', maxItems: 20, maxLength: 80, default: [], help: 'One per line, e.g. "Citing sources".' },
+      CERTIFICATE,
+    ],
+  },
+  training: {
+    label: 'Training',
+    description: 'A course of online or offline sessions for new or experienced editors.',
+    defaultWiki: null,
+    defaultNamespaces: [0],
+    activity: true,
+    entries: false,
+    defaults: { juryReviewEnabled: false, registrationRequired: true, contributionDiscoveryEnabled: true },
+    fields: [
+      { key: 'levels', label: 'Level', type: 'choices', choices: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' }, default: ['beginner'] },
+      { key: 'topics', label: 'Topics', type: 'list', maxItems: 20, maxLength: 80, default: [], help: 'One per line.' },
+      CERTIFICATE,
+    ],
+  },
+  photowalk: {
+    label: 'Photowalk',
+    description: 'Walk and photograph together, then upload to Wikimedia Commons.',
+    defaultWiki: 'commonswiki',
+    defaultNamespaces: [6],
+    activity: true,
+    entries: true,
+    defaults: { juryReviewEnabled: false, registrationRequired: true, massSubmissionEnabled: true },
+    fields: [
+      { key: 'meetingPoint', label: 'Meeting point', type: 'string', maxLength: 200, default: '' },
+      { key: 'requiredCategory', label: 'Upload category', type: 'string', maxLength: 255, default: '', help: 'Without the "Category:" prefix. Leave blank for none.' },
+      { key: 'minResolutionMegapixels', label: 'Minimum resolution (megapixels)', type: 'int', min: 0, max: 200, default: 0 },
+      { key: 'uploadedDuringEventOnly', label: 'Only files uploaded during the event', type: 'bool', default: true },
+      { key: 'maxEntriesPerParticipant', label: 'Maximum entries per participant', type: 'int', min: 0, max: 10000, default: 0, help: '0 means no limit.' },
+    ],
+  },
+});
+
+// Whether people submit entries to this type of event.
+const takesEntries = (type) => EVENT_TYPES[type].entries !== false;
+
 function typeDefaults(type) {
   return Object.fromEntries(EVENT_TYPES[type].fields.map((f) => [f.key, f.default]));
 }
@@ -108,4 +160,5 @@ function readTypeConfig(type, json) {
   return { ...typeDefaults(type), ...Object.fromEntries(EVENT_TYPES[type].fields.filter((f) => f.key in stored).map((f) => [f.key, stored[f.key]])) };
 }
 
-module.exports = { EVENT_TYPES, typeDefaults, parseTypeConfig, readTypeConfig };
+module.exports = {
+  takesEntries, EVENT_TYPES, typeDefaults, parseTypeConfig, readTypeConfig };

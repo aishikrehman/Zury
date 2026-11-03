@@ -44,8 +44,8 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
   const namespaces = eligibleNamespaces(contest, settings, typeConfig);
   if (!namespaces.includes(meta.ns)) rules.push(`Pages in namespace ${meta.ns} are not eligible (allowed: ${namespaces.join(', ')}).`);
 
-  if (contest.type === 'photo') {
-    if (meta.entryType !== 'file') rules.push('Photo contests accept files only.');
+  if (contest.type === 'photo' || contest.type === 'photowalk') {
+    if (meta.entryType !== 'file') rules.push('Only files are accepted.');
     if (meta.file) {
       if (typeConfig.minResolutionMegapixels > 0 && (meta.file.megapixels ?? 0) < typeConfig.minResolutionMegapixels) {
         rules.push(`Resolution ${meta.file.megapixels ?? '?'} MP is below the ${typeConfig.minResolutionMegapixels} MP minimum.`);

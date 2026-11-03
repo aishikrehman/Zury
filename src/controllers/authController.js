@@ -58,6 +58,8 @@ async function callback(req, res, next) {
     req.session.regenerate((err) => {
       if (err) return next(err);
       req.session.userId = user.id;
+      // Kept server-side only, so organizers can send messages as themselves.
+      req.session.wikimediaToken = accessToken;
       req.session.save((saveErr) => {
         if (saveErr) return next(saveErr);
         res.redirect(returnTo);

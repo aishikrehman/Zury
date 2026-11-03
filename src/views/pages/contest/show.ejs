@@ -101,7 +101,7 @@
         <div class="card-header"><h3 class="card-title">Take part</h3></div>
         <div class="card-body">
           <% if (isParticipant) { %>
-            <p class="small text-success mb-2">You're a participant.</p>
+            <p class="small text-success mb-2">You're a participant<%= myWiki && eventWikis.length > 1 ? ' on ' + myWiki : '' %>.</p>
             <% if (!['completed', 'archived'].includes(contest.status)) { %>
               <form method="post" action="<%= base %>/leave">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -113,6 +113,13 @@
           <% } else if (eligibility.eligible) { %>
             <form method="post" action="<%= base %>/join">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <% if (joinWikis.length) { %>
+                <label class="form-label" for="joinWiki">Your wiki</label>
+                <select class="form-select mb-2" id="joinWiki" name="wiki" required>
+                  <option value="">Choose…</option>
+                  <% joinWikis.forEach((w) => { %><option value="<%= w.wiki %>"<%= w.wiki === defaultJoinWiki ? ' selected' : '' %>><%= w.wiki %></option><% }) %>
+                </select>
+              <% } %>
               <button class="btn btn-sm btn-primary" type="submit">Join this event</button>
             </form>
           <% } else { %>

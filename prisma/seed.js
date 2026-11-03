@@ -21,6 +21,7 @@ const DEMO_USERS = [
   { key: 'juror', username: 'Farhan Ahmed', label: 'Juror', homeWiki: 'commonswiki', registered: '2014-07-30', edits: 9815 },
   { key: 'participant', username: 'Rakib Hasan', label: 'Participant', homeWiki: 'bnwiki', registered: '2019-11-02', edits: 2417 },
   { key: 'newcomer', username: 'Maliha Chowdhury', label: 'Newcomer', homeWiki: 'bnwiki', registered: '2026-08-15', edits: 12 },
+  { key: 'blocked', username: 'Quick Uploads 77', label: 'Blocked', homeWiki: 'commonswiki', registered: '2026-09-28', edits: 41 },
 ];
 
 // Dates are midnight in Dhaka unless a time is given.
@@ -44,8 +45,9 @@ const DEMO_CONTESTS = [
       submissionOpensAt: '2026-11-01T00:00:00Z', submissionDeadline: '2026-11-30T23:59:00Z',
       reviewOpensAt: '2026-12-01T00:00:00Z', reviewDeadline: '2026-12-20T00:00:00Z',
     },
-    settings: { allowJuryParticipation: false, badgesEnabled: true },
+    settings: { allowJuryParticipation: false, badgesEnabled: true, contributionDiscoveryEnabled: true, trackHashtags: '["wam2026"]' },
     typeConfig: { minWordCount: 300, minBytes: 3000, createdDuringEventOnly: true },
+    contributions: { count: 60, wikis: ['bnwiki', 'bnwiki', 'hiwiki', 'enwiki'], users: ['participant', 'newcomer'], hashtagUsers: ['Arif Rahman', 'Priya Sharma', 'Ken Watanabe'], from: '2026-11-01T00:00:00Z' },
     // [wiki, status, overrides, requested by]: each wiki may set its own rules, dates and contact.
     wikis: [
       ['bnwiki', 'active', { contest: { timezone: 'Asia/Dhaka', contactInfo: 'উইকিপিডিয়া:উইকিপিডিয়া এশীয় মাস ২০২৬' }, typeConfig: { minWordCount: 350, allowExpansions: true } }],
@@ -59,7 +61,7 @@ const DEMO_CONTESTS = [
     members: [
       ['organizer', 'organizer'], ['gsysop', 'organizer'],
       ['bnadmin', 'organizer', 'bnwiki'], ['bnadmin', 'jury', 'bnwiki'], ['juror', 'jury', 'enwiki'],
-      ['participant', 'participant'], ['newcomer', 'participant'],
+      ['participant', 'participant', 'bnwiki'], ['newcomer', 'participant', 'bnwiki'],
     ],
   },
   {
@@ -85,6 +87,7 @@ const DEMO_CONTESTS = [
     createdBy: 'organizer',
     members: [['organizer', 'organizer'], ['juror', 'jury'], ['bnadmin', 'jury'], ['participant', 'participant'], ['newcomer', 'participant']],
     overrides: [['juror', 'exportData', true]],
+    blocks: [['blocked', 'Uploaded other photographers’ work as their own.']],
   },
   {
     slug: 'demo-liberation-war-editathon',
@@ -162,6 +165,64 @@ const DEMO_CONTESTS = [
     typeConfig: { requiredCategory: 'Images from Wiki Loves Earth 2026 in Bangladesh', awardCategories: ['Best landscape', 'Best wildlife'] },
     createdBy: 'organizer',
     members: [['organizer', 'organizer'], ['juror', 'jury'], ['participant', 'participant']],
+  },
+  {
+    slug: 'demo-wikipedia-basics-training',
+    title: 'Bangla Wikipedia Basics Training',
+    description: 'A four-week course for new editors: creating an account, editing, citing sources and writing a first article.',
+    type: 'training',
+    primaryWiki: 'bnwiki',
+    organizingCommunity: 'Wikimedia Bangladesh',
+    contactInfo: 'training@wikimedia.org.bd',
+    language: 'bn',
+    timezone: 'Asia/Dhaka',
+    dates: { registrationOpensAt: '2026-10-01', startDate: '2026-10-17', endDate: '2026-11-21T20:00:00+06:00' },
+    settings: { contributionDiscoveryEnabled: true },
+    typeConfig: { levels: ['beginner'], topics: ['Editing basics', 'Citing sources', 'Your first article'], minSessionsForCertificate: 2 },
+    createdBy: 'organizer',
+    members: [['organizer', 'organizer'], ['bnadmin', 'organizer'], ['participant', 'participant', 'bnwiki'], ['newcomer', 'participant', 'bnwiki'], ['juror', 'participant', 'bnwiki']],
+    sessions: [
+      { title: 'Week 1: Your account and first edits', mode: 'offline', startsAt: '2026-10-17T15:00:00+06:00', endsAt: '2026-10-17T18:00:00+06:00', location: 'Bishwo Shahitto Kendro, Dhaka', capacity: 30, status: 'held', report: '24 people came; 19 made their first edit during the session.', attendance: [['participant', 'attended'], ['newcomer', 'attended'], ['juror', 'absent']] },
+      { title: 'Week 2: Citing sources', mode: 'online', startsAt: '2026-10-24T20:00:00+06:00', endsAt: '2026-10-24T21:30:00+06:00', meetingUrl: 'https://meet.jit.si/bnwiki-basics-week2', status: 'held', attendance: [['participant', 'attended'], ['newcomer', 'attended'], ['juror', 'attended']] },
+      { title: 'Week 3: Writing a new article', mode: 'hybrid', startsAt: '2026-11-14T15:00:00+06:00', endsAt: '2026-11-14T18:00:00+06:00', location: 'Bishwo Shahitto Kendro, Dhaka', meetingUrl: 'https://meet.jit.si/bnwiki-basics-week3', capacity: 3, status: 'open', attendance: [['participant', 'registered'], ['newcomer', 'registered']] },
+      { title: 'Week 4: Images and Wikimedia Commons', mode: 'online', startsAt: '2026-11-21T20:00:00+06:00', meetingUrl: 'https://meet.jit.si/bnwiki-basics-week4', status: 'planned', attendance: [] },
+    ],
+  },
+  {
+    slug: 'demo-old-dhaka-photowalk',
+    title: 'Old Dhaka Heritage Photowalk',
+    description: 'Walk through Puran Dhaka with fellow photographers and upload what you capture to Wikimedia Commons.',
+    type: 'photowalk',
+    primaryWiki: 'commonswiki',
+    organizingCommunity: 'Wikimedia Bangladesh',
+    language: 'bn',
+    timezone: 'Asia/Dhaka',
+    dates: { registrationOpensAt: '2026-10-15', startDate: '2026-10-31T07:00:00+06:00', endDate: '2026-11-15T23:59:00+06:00' },
+    settings: { trackCategories: '["Old Dhaka Heritage Photowalk 2026"]' },
+    typeConfig: { meetingPoint: 'Ahsan Manzil main gate', requiredCategory: 'Old Dhaka Heritage Photowalk 2026', uploadedDuringEventOnly: true },
+    createdBy: 'organizer',
+    members: [['organizer', 'organizer'], ['participant', 'participant', 'commonswiki'], ['newcomer', 'participant', 'commonswiki']],
+    sessions: [
+      { title: 'Morning walk: Ahsan Manzil to Lalbagh', mode: 'offline', startsAt: '2026-10-31T07:00:00+06:00', endsAt: '2026-10-31T11:00:00+06:00', location: 'Ahsan Manzil main gate', capacity: 25, status: 'held', report: '18 photographers; about 300 photos uploaded so far.', attendance: [['participant', 'attended'], ['newcomer', 'attended']] },
+      { title: 'Second walk: Armenian Church and Shankhari Bazar', mode: 'offline', startsAt: '2026-11-08T07:00:00+06:00', endsAt: '2026-11-08T11:00:00+06:00', location: 'Armenian Church, Armanitola', capacity: 25, status: 'open', attendance: [['participant', 'registered']] },
+    ],
+  },
+  {
+    slug: 'demo-citation-workshop',
+    title: 'Online Workshop: Finding Reliable Sources',
+    description: 'A one-evening workshop on finding and citing reliable sources in Bangla.',
+    type: 'workshop',
+    primaryWiki: 'bnwiki',
+    organizingCommunity: 'Bangla Wikipedia community',
+    language: 'bn',
+    timezone: 'Asia/Dhaka',
+    dates: { registrationOpensAt: '2026-11-01', startDate: '2026-11-20T20:00:00+06:00', endDate: '2026-11-20T22:00:00+06:00' },
+    typeConfig: { topics: ['Reliable sources', 'Citation templates'], minSessionsForCertificate: 1 },
+    createdBy: 'bnadmin',
+    members: [['bnadmin', 'organizer'], ['participant', 'participant', 'bnwiki']],
+    sessions: [
+      { title: 'Finding reliable sources', mode: 'online', startsAt: '2026-11-20T20:00:00+06:00', endsAt: '2026-11-20T22:00:00+06:00', meetingUrl: 'https://meet.jit.si/bnwiki-sources-workshop', capacity: 50, status: 'open', attendance: [['participant', 'registered']] },
+    ],
   },
   {
     slug: 'demo-folklore-meetup',
@@ -297,6 +358,30 @@ async function seedDemoData(prisma, now = new Date()) {
     for (const [userKey, permission, allowed] of c.overrides || []) {
       await log(prisma, { ...base, action: 'contestPermission.set', entityType: 'User', entityId: users[userKey].id, details: { username: users[userKey].username, permission, allowed } });
     }
+    for (const [userKey, reason] of c.blocks || []) {
+      await prisma.eventBlock.create({ data: { contestId: contest.id, userId: users[userKey].id, reason, blockedById: creator.id } });
+      await log(prisma, { ...base, action: 'eventBlock.added', entityType: 'User', entityId: users[userKey].id, details: { username: users[userKey].username, reason } });
+    }
+    for (const sess of c.sessions || []) {
+      await prisma.eventSession.create({
+        data: {
+          contestId: contest.id,
+          title: sess.title,
+          mode: sess.mode,
+          status: sess.status,
+          startsAt: d(sess.startsAt),
+          endsAt: sess.endsAt ? d(sess.endsAt) : null,
+          location: sess.location || '',
+          meetingUrl: sess.meetingUrl || '',
+          capacity: sess.capacity ?? null,
+          report: sess.report || '',
+          attendances: {
+            create: sess.attendance.map(([userKey, st]) => ({ userId: users[userKey].id, status: st, checkedInAt: st === 'attended' ? d(sess.startsAt) : null })),
+          },
+        },
+      });
+    }
+    if (c.contributions) await seedContributions(prisma, contest, c.contributions, users, now);
     if (status !== 'draft') {
       await log(prisma, { ...base, action: 'contest.statusChanged', entityType: 'Contest', entityId: contest.id, details: { from: 'draft', to: status, by: 'seed' } });
     }
@@ -361,6 +446,37 @@ async function seedSubmissions(prisma, users) {
     n += 1;
   }
   return n + (await seedBulkSubmissions(prisma, users));
+}
+
+// Tracked edits for an event: participants' edits and edits tagged with the hashtag.
+async function seedContributions(prisma, contest, spec, users, now) {
+  const rand = prng(77);
+  const from = new Date(spec.from).getTime();
+  const span = Math.max(3600000, now.getTime() - from);
+  const rows = [];
+  for (let i = 1; i <= spec.count; i++) {
+    const wiki = spec.wikis[i % spec.wikis.length];
+    const byParticipant = rand() < 0.6;
+    const username = byParticipant ? users[spec.users[i % spec.users.length]].username : spec.hashtagUsers[i % spec.hashtagUsers.length];
+    const isNew = rand() < 0.35;
+    rows.push({
+      contestId: contest.id,
+      wiki,
+      key: `${wiki}:rev:${70000000 + i}`,
+      source: byParticipant ? 'participant' : 'hashtag',
+      username,
+      userId: byParticipant ? users[spec.users[i % spec.users.length]].id : null,
+      pageTitle: `Asia topic ${i}`,
+      ns: 0,
+      revId: 70000000 + i,
+      isNew,
+      sizeDiff: Math.round((isNew ? 2500 : 80) + rand() * (isNew ? 12000 : 1500)),
+      comment: byParticipant ? 'expanded' : 'New article #wam2026',
+      timestamp: new Date(from + rand() * span),
+    });
+  }
+  await prisma.contribution.createMany({ data: rows });
+  await prisma.contestSettings.update({ where: { contestId: contest.id }, data: { trackedAt: now } });
 }
 
 // Deterministic pseudo-random numbers, so every re-seed produces the same data.

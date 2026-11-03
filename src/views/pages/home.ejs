@@ -1,7 +1,7 @@
 <%
   const now = Date.now();
-  const typeIcon = { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group' };
-  const typeColor = { photo: 'blue', writing: 'green', data: 'purple', editathon: 'orange' };
+  const typeIcon = TYPE_ICONS;
+  const typeColor = TYPE_COLORS;
   const daysLeft = (c) => (c.endDate ? Math.max(0, Math.ceil((new Date(c.endDate) - now) / 86400000)) : null);
   const elapsed = (c) => {
     if (!c.startDate || !c.endDate) return 0;

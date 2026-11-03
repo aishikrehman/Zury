@@ -26,7 +26,7 @@ app.set('layout', 'layout');
 
 if (env.nodeEnv === 'production') app.set('trust proxy', 1);
 
-Object.assign(app.locals, format, contestLabels, {
+Object.assign(app.locals, format, contestLabels, { EVENT_TYPES: require('./events/eventTypes').EVENT_TYPES }, {
   PLATFORM_ROLES,
   EVENT_ROLES,
   TIMEZONES,
