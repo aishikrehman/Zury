@@ -29,7 +29,8 @@ const d = (s) => new Date(s.length === 10 ? `${s}T00:00:00+06:00` : s);
 
 const DEMO_CONTESTS = [
   {
-    slug: 'demo-wam-2026',
+    slug: 'wam-2026',
+    category: 'culture', mainCategory: 'Wikipedia Asian Month 2026', previousEditionUrl: 'https://meta.wikimedia.org/wiki/Wikipedia_Asian_Month_2025',
     series: 'wam',
     edition: '2026',
     title: 'Wikipedia Asian Month 2026',
@@ -65,7 +66,8 @@ const DEMO_CONTESTS = [
     ],
   },
   {
-    slug: 'demo-wlm-bangladesh-2026',
+    slug: 'wlm-bangladesh-2026',
+    category: 'heritage', mainCategory: 'Images from Wiki Loves Monuments 2026 in Bangladesh', previousEditionUrl: 'https://commons.wikimedia.org/wiki/Commons:Wiki_Loves_Monuments_2025_in_Bangladesh',
     series: 'wlm',
     edition: '2026',
     title: 'Wiki Loves Monuments 2026 in Bangladesh',
@@ -90,7 +92,8 @@ const DEMO_CONTESTS = [
     blocks: [['blocked', 'Uploaded other photographers’ work as their own.']],
   },
   {
-    slug: 'demo-liberation-war-editathon',
+    slug: 'liberation-war-editathon',
+    category: 'history',
     title: 'Liberation War Archives Edit-a-thon',
     description: 'Improve Bangla Wikipedia coverage of the 1971 Liberation War using archival sources.',
     type: 'editathon',
@@ -106,7 +109,8 @@ const DEMO_CONTESTS = [
     overrides: [['organizer', 'sendMassMessage', false]],
   },
   {
-    slug: 'demo-bnwiki-womens-history-2027',
+    slug: 'bnwiki-womens-history-2027',
+    category: 'gender',
     title: "Bangla Wikipedia Women's History Month 2027",
     description: 'Write and expand biographies of women on Bangla Wikipedia.',
     type: 'writing',
@@ -124,7 +128,8 @@ const DEMO_CONTESTS = [
     members: [['organizer', 'organizer'], ['bnadmin', 'organizer'], ['juror', 'jury']],
   },
   {
-    slug: 'demo-wiki-loves-food-2027',
+    slug: 'wiki-loves-food-2027',
+    category: 'culture',
     title: 'Wiki Loves Food Bangladesh 2027',
     description: 'Document the cuisine of Bangladesh on Wikimedia Commons.',
     type: 'photo',
@@ -138,7 +143,8 @@ const DEMO_CONTESTS = [
     members: [['bnadmin', 'organizer']],
   },
   {
-    slug: 'demo-wikidata-heritage-sprint',
+    slug: 'wikidata-heritage-sprint',
+    category: 'heritage',
     title: 'Wikidata Bangladesh Heritage Sprint',
     description: 'Add coordinates, heritage designations and images to Wikidata items for protected sites.',
     type: 'data',
@@ -153,7 +159,8 @@ const DEMO_CONTESTS = [
     members: [['juror', 'organizer'], ['participant', 'participant'], ['organizer', 'participant']],
   },
   {
-    slug: 'demo-wle-bangladesh-2026',
+    slug: 'wle-bangladesh-2026',
+    category: 'nature', mainCategory: 'Images from Wiki Loves Earth 2026 in Bangladesh',
     title: 'Wiki Loves Earth 2026 in Bangladesh',
     description: 'Photograph protected natural areas of Bangladesh.',
     type: 'photo',
@@ -167,7 +174,8 @@ const DEMO_CONTESTS = [
     members: [['organizer', 'organizer'], ['juror', 'jury'], ['participant', 'participant']],
   },
   {
-    slug: 'demo-wikipedia-basics-training',
+    slug: 'wikipedia-basics-training',
+    category: 'education',
     title: 'Bangla Wikipedia Basics Training',
     description: 'A four-week course for new editors: creating an account, editing, citing sources and writing a first article.',
     type: 'training',
@@ -189,7 +197,8 @@ const DEMO_CONTESTS = [
     ],
   },
   {
-    slug: 'demo-old-dhaka-photowalk',
+    slug: 'old-dhaka-photowalk',
+    category: 'heritage', mainCategory: 'Old Dhaka Heritage Photowalk 2026',
     title: 'Old Dhaka Heritage Photowalk',
     description: 'Walk through Puran Dhaka with fellow photographers and upload what you capture to Wikimedia Commons.',
     type: 'photowalk',
@@ -208,7 +217,8 @@ const DEMO_CONTESTS = [
     ],
   },
   {
-    slug: 'demo-citation-workshop',
+    slug: 'citation-workshop',
+    category: 'education',
     title: 'Online Workshop: Finding Reliable Sources',
     description: 'A one-evening workshop on finding and citing reliable sources in Bangla.',
     type: 'workshop',
@@ -225,7 +235,8 @@ const DEMO_CONTESTS = [
     ],
   },
   {
-    slug: 'demo-folklore-meetup',
+    slug: 'folklore-meetup',
+    category: 'culture',
     title: 'Wiki Loves Folklore Dhaka Meetup',
     description: 'An in-person edit-a-thon that was called off.',
     type: 'editathon',
@@ -239,7 +250,8 @@ const DEMO_CONTESTS = [
     members: [['organizer', 'organizer']],
   },
   {
-    slug: 'demo-enwiki-jury-calibration',
+    slug: 'enwiki-jury-calibration',
+    category: 'other',
     title: 'Jury Calibration Round',
     description: 'A private dry run for training new jurors. Only members and platform-wide authorities can see it.',
     type: 'writing',
@@ -323,6 +335,9 @@ async function seedDemoData(prisma, now = new Date()) {
         statusMode: c.status === 'cancelled' ? 'manual' : 'auto',
         visibility: c.visibility || 'public',
         organizingCommunity: c.organizingCommunity || '',
+        category: c.category || '',
+        mainCategory: c.mainCategory || '',
+        previousEditionUrl: c.previousEditionUrl || '',
         primaryWiki: c.primaryWiki,
         additionalWikis: '[]',
         ...(c.series && { seriesId: series[c.series].id, edition: c.edition }),
@@ -394,21 +409,21 @@ async function seedDemoData(prisma, now = new Date()) {
 // Sample entries with stored metadata, so pages work without calling Wikimedia.
 const thumb = (path) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`;
 const DEMO_SUBMISSIONS = [
-  ['demo-wam-2026', 'participant', 'সিল্ক রোড', 'article', 'validated', { wiki: 'bnwiki', sizeBytes: 21400, wordCount: 1530, createdAt: '2026-11-01T09:00:00Z' }],
-  ['demo-wam-2026', 'participant', 'Bagan temples', 'article', 'validated', { wiki: 'enwiki', sizeBytes: 9800, wordCount: 1040, createdAt: '2026-11-02T04:00:00Z' }],
-  ['demo-wam-2026', 'newcomer', 'অঙ্কোর বাট', 'article', 'invalid', { wiki: 'bnwiki', sizeBytes: 2100, wordCount: 190, createdAt: '2026-11-02T15:30:00Z' }, ['190 words is below the 350-word minimum.']],
-  ['demo-wlm-bangladesh-2026', 'participant', 'File:Shat Gombuj Mosque at dusk.jpg', 'file', 'approved', { file: { width: 6000, height: 4000, megapixels: 24, mime: 'image/jpeg', license: 'CC BY-SA 4.0', thumbUrl: thumb('a/a9/Example.jpg/500px-Example.jpg') }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Shat Gombuj Mosque'], createdAt: '2026-09-14T10:22:00Z' }],
-  ['demo-wlm-bangladesh-2026', 'participant', 'File:Lalbagh Fort south gate.jpg', 'file', 'validated', { file: { width: 4608, height: 3456, megapixels: 15.9, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Lalbagh Fort'], createdAt: '2026-10-02T07:45:00Z' }],
-  ['demo-wlm-bangladesh-2026', 'participant', 'File:Kantajew Temple terracotta detail.jpg', 'file', 'under_review', { file: { width: 5472, height: 3648, megapixels: 20, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh'], createdAt: '2026-10-19T12:10:00Z' }],
-  ['demo-wlm-bangladesh-2026', 'newcomer', 'File:Ahsan Manzil from the river.jpg', 'file', 'validated', { file: { width: 4000, height: 3000, megapixels: 12, mime: 'image/jpeg', license: 'CC BY 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Ahsan Manzil'], createdAt: '2026-10-25T16:30:00Z' }],
-  ['demo-wlm-bangladesh-2026', 'newcomer', 'File:Old building phone photo.jpg', 'file', 'invalid', { file: { width: 1280, height: 960, megapixels: 1.2, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: [], createdAt: '2026-10-26T09:00:00Z' }, ['Resolution 1.2 MP is below the 2 MP minimum.', 'Missing the required category “Images from Wiki Loves Monuments 2026 in Bangladesh”.']],
-  ['demo-liberation-war-editathon', 'participant', 'অপারেশন জ্যাকপট', 'article', 'validated', { sizeBytes: 18432, wordCount: 1210, createdAt: '2026-10-18T05:12:00Z' }],
-  ['demo-liberation-war-editathon', 'juror', 'মুজিবনগর সরকার', 'article', 'pending', { sizeBytes: 26210, wordCount: 1874, createdAt: '2014-02-11T08:00:00Z' }],
-  ['demo-liberation-war-editathon', 'newcomer', 'কলারোয়া যুদ্ধ', 'article', 'withdrawn', { sizeBytes: 2300, wordCount: 160, createdAt: '2026-10-30T14:40:00Z' }],
-  ['demo-wikidata-heritage-sprint', 'participant', 'Q1068467', 'item', 'approved', { entity: { id: 'Q1068467', type: 'item', label: 'Shat Gambuj Mosque', description: 'mosque in Bagerhat, Bangladesh', properties: ['P31', 'P17', 'P625', 'P1435', 'P18'], statementCount: 14 } }],
-  ['demo-wikidata-heritage-sprint', 'organizer', 'Q2329733', 'item', 'approved', { entity: { id: 'Q2329733', type: 'item', label: 'Lalbagh Fort', description: 'Mughal fort in Dhaka', properties: ['P31', 'P17', 'P625', 'P1435'], statementCount: 9 } }],
-  ['demo-wle-bangladesh-2026', 'participant', 'File:Sundarbans mangrove at low tide.jpg', 'file', 'approved', { file: { width: 6720, height: 4480, megapixels: 30.1, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Earth 2026 in Bangladesh'], createdAt: '2026-06-08T03:20:00Z' }],
-  ['demo-wle-bangladesh-2026', 'participant', 'File:Lawachara forest canopy.jpg', 'file', 'rejected', { file: { width: 4000, height: 2250, megapixels: 9, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Earth 2026 in Bangladesh'], createdAt: '2026-07-02T06:00:00Z' }],
+  ['wam-2026', 'participant', 'সিল্ক রোড', 'article', 'validated', { wiki: 'bnwiki', sizeBytes: 21400, wordCount: 1530, createdAt: '2026-11-01T09:00:00Z' }],
+  ['wam-2026', 'participant', 'Bagan temples', 'article', 'validated', { wiki: 'enwiki', sizeBytes: 9800, wordCount: 1040, createdAt: '2026-11-02T04:00:00Z' }],
+  ['wam-2026', 'newcomer', 'অঙ্কোর বাট', 'article', 'invalid', { wiki: 'bnwiki', sizeBytes: 2100, wordCount: 190, createdAt: '2026-11-02T15:30:00Z' }, ['190 words is below the 350-word minimum.']],
+  ['wlm-bangladesh-2026', 'participant', 'File:Shat Gombuj Mosque at dusk.jpg', 'file', 'approved', { file: { width: 6000, height: 4000, megapixels: 24, mime: 'image/jpeg', license: 'CC BY-SA 4.0', thumbUrl: thumb('a/a9/Example.jpg/500px-Example.jpg') }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Shat Gombuj Mosque'], createdAt: '2026-09-14T10:22:00Z' }],
+  ['wlm-bangladesh-2026', 'participant', 'File:Lalbagh Fort south gate.jpg', 'file', 'validated', { file: { width: 4608, height: 3456, megapixels: 15.9, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Lalbagh Fort'], createdAt: '2026-10-02T07:45:00Z' }],
+  ['wlm-bangladesh-2026', 'participant', 'File:Kantajew Temple terracotta detail.jpg', 'file', 'under_review', { file: { width: 5472, height: 3648, megapixels: 20, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh'], createdAt: '2026-10-19T12:10:00Z' }],
+  ['wlm-bangladesh-2026', 'newcomer', 'File:Ahsan Manzil from the river.jpg', 'file', 'validated', { file: { width: 4000, height: 3000, megapixels: 12, mime: 'image/jpeg', license: 'CC BY 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Ahsan Manzil'], createdAt: '2026-10-25T16:30:00Z' }],
+  ['wlm-bangladesh-2026', 'newcomer', 'File:Old building phone photo.jpg', 'file', 'invalid', { file: { width: 1280, height: 960, megapixels: 1.2, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: [], createdAt: '2026-10-26T09:00:00Z' }, ['Resolution 1.2 MP is below the 2 MP minimum.', 'Missing the required category “Images from Wiki Loves Monuments 2026 in Bangladesh”.']],
+  ['liberation-war-editathon', 'participant', 'অপারেশন জ্যাকপট', 'article', 'validated', { sizeBytes: 18432, wordCount: 1210, createdAt: '2026-10-18T05:12:00Z' }],
+  ['liberation-war-editathon', 'juror', 'মুজিবনগর সরকার', 'article', 'pending', { sizeBytes: 26210, wordCount: 1874, createdAt: '2014-02-11T08:00:00Z' }],
+  ['liberation-war-editathon', 'newcomer', 'কলারোয়া যুদ্ধ', 'article', 'withdrawn', { sizeBytes: 2300, wordCount: 160, createdAt: '2026-10-30T14:40:00Z' }],
+  ['wikidata-heritage-sprint', 'participant', 'Q1068467', 'item', 'approved', { entity: { id: 'Q1068467', type: 'item', label: 'Shat Gambuj Mosque', description: 'mosque in Bagerhat, Bangladesh', properties: ['P31', 'P17', 'P625', 'P1435', 'P18'], statementCount: 14 } }],
+  ['wikidata-heritage-sprint', 'organizer', 'Q2329733', 'item', 'approved', { entity: { id: 'Q2329733', type: 'item', label: 'Lalbagh Fort', description: 'Mughal fort in Dhaka', properties: ['P31', 'P17', 'P625', 'P1435'], statementCount: 9 } }],
+  ['wle-bangladesh-2026', 'participant', 'File:Sundarbans mangrove at low tide.jpg', 'file', 'approved', { file: { width: 6720, height: 4480, megapixels: 30.1, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Earth 2026 in Bangladesh'], createdAt: '2026-06-08T03:20:00Z' }],
+  ['wle-bangladesh-2026', 'participant', 'File:Lawachara forest canopy.jpg', 'file', 'rejected', { file: { width: 4000, height: 2250, megapixels: 9, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Earth 2026 in Bangladesh'], createdAt: '2026-07-02T06:00:00Z' }],
 ];
 
 async function seedSubmissions(prisma, users) {
@@ -492,11 +507,11 @@ function prng(seed) {
 
 // Volume for the charts: many entries spread over each event's dates.
 const BULK = [
-  { slug: 'demo-wam-2026', count: 40, wikis: ['bnwiki', 'bnwiki', 'hiwiki', 'enwiki'], who: ['participant', 'newcomer'], type: 'article', title: (i) => `Asian Month article ${i}`, from: '2026-11-01', mix: { validated: 75, pending: 15, invalid: 10 } },
-  { slug: 'demo-wlm-bangladesh-2026', count: 72, who: ['participant', 'newcomer', 'participant'], type: 'file', title: (i) => `File:WLM Bangladesh 2026 heritage site ${String(i).padStart(3, '0')}.jpg`, from: '2026-09-01', mix: { validated: 45, under_review: 20, approved: 18, rejected: 9, invalid: 8 } },
-  { slug: 'demo-liberation-war-editathon', count: 34, who: ['participant', 'juror', 'newcomer'], type: 'article', title: (i) => `মুক্তিযুদ্ধ নিবন্ধ ${i}`, from: '2026-10-15', mix: { validated: 70, pending: 20, withdrawn: 10 } },
-  { slug: 'demo-wle-bangladesh-2026', count: 48, who: ['participant'], type: 'file', title: (i) => `File:WLE Bangladesh 2026 nature ${String(i).padStart(3, '0')}.jpg`, from: '2026-05-01', mix: { approved: 55, rejected: 35, disqualified: 10 } },
-  { slug: 'demo-wikidata-heritage-sprint', count: 28, who: ['participant', 'organizer'], type: 'item', title: (i) => `Q${7000000 + i * 37}`, from: '2026-05-01', mix: { approved: 80, rejected: 20 } },
+  { slug: 'wam-2026', count: 40, wikis: ['bnwiki', 'bnwiki', 'hiwiki', 'enwiki'], who: ['participant', 'newcomer'], type: 'article', title: (i) => `Asian Month article ${i}`, from: '2026-11-01', mix: { validated: 75, pending: 15, invalid: 10 } },
+  { slug: 'wlm-bangladesh-2026', count: 72, who: ['participant', 'newcomer', 'participant'], type: 'file', title: (i) => `File:WLM Bangladesh 2026 heritage site ${String(i).padStart(3, '0')}.jpg`, from: '2026-09-01', mix: { validated: 45, under_review: 20, approved: 18, rejected: 9, invalid: 8 } },
+  { slug: 'liberation-war-editathon', count: 34, who: ['participant', 'juror', 'newcomer'], type: 'article', title: (i) => `মুক্তিযুদ্ধ নিবন্ধ ${i}`, from: '2026-10-15', mix: { validated: 70, pending: 20, withdrawn: 10 } },
+  { slug: 'wle-bangladesh-2026', count: 48, who: ['participant'], type: 'file', title: (i) => `File:WLE Bangladesh 2026 nature ${String(i).padStart(3, '0')}.jpg`, from: '2026-05-01', mix: { approved: 55, rejected: 35, disqualified: 10 } },
+  { slug: 'wikidata-heritage-sprint', count: 28, who: ['participant', 'organizer'], type: 'item', title: (i) => `Q${7000000 + i * 37}`, from: '2026-05-01', mix: { approved: 80, rejected: 20 } },
 ];
 
 function pick(mix, r) {

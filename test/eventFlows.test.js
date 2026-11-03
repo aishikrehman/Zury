@@ -72,8 +72,14 @@ test('only people with createEvent can open the create pages', async () => {
   assert.equal((await newcomer.post('/events/create', eventBody())).status, 403);
 
   const organizer = await session('Organizer');
-  assert.match((await organizer.get('/events/create')).body, /What kind of event is it/);
-  assert.match((await organizer.get('/events/create?type=data')).body, /Required properties/);
+  const page = (await organizer.get('/events/create')).body;
+  assert.match(page, /Type of event/);
+  assert.match(page, /Submission rules/);
+  assert.match(page, /<select[^>]*id="type" name="type" required/, 'the type is sent with the form');
+  assert.match((await organizer.get('/events/create?type=data')).body, /<option value="data" selected/);
+  const noType = await organizer.post('/events/create', eventBody({ type: '' }));
+  assert.equal(noType.status, 422);
+  assert.match(noType.body, /Choose the type of event/);
 });
 
 test('local admins can only create events on their own wiki', async () => {
@@ -96,8 +102,9 @@ test('create, publish, edit, pin status and audit an event', async () => {
   const organizer = await session('Organizer');
   const created = await organizer.post('/events/create', eventBody({ title: 'Lifecycle Test', slug: 'lifecycle-test', type_awardCategories: 'Best\nRunner-up' }));
   assert.equal(created.status, 302);
-  const id = Number(created.location.match(/\/contest\/(\d+)\/config/)[1]);
-  const path = `/contest/${id}`;
+  assert.equal(created.location, '/lifecycle-test/config', 'events without a series live at /<slug>');
+  const id = (await t.prisma.contest.findUnique({ where: { slug: 'lifecycle-test' } })).id;
+  const path = '/lifecycle-test';
 
   assert.equal((await t.request(path)).status, 404, 'drafts are hidden from the public');
   const dup = await organizer.post('/events/create', eventBody({ title: 'Other', slug: 'lifecycle-test' }));
@@ -108,6 +115,11 @@ test('create, publish, edit, pin status and audit an event', async () => {
   let row = await t.prisma.contest.findUnique({ where: { id } });
   assert.equal(row.status, 'active');
   assert.equal((await t.request(path)).status, 200, 'published events are public');
+  assert.equal((await t.request(`/contest/${id}`)).status, 200, 'the numeric address keeps working');
+  const reserved = await organizer.post('/events/create', eventBody({ title: 'Reserved', slug: 'events' }));
+  assert.equal(reserved.status, 422, "Zury's own pages can't be an event address");
+  const seriesName = await organizer.post('/events/create', eventBody({ title: 'Clash', slug: 'wam' }));
+  assert.equal(seriesName.status, 422, 'a series address is taken');
 
   const edit = await organizer.post(`${path}/config`, eventBody({ title: 'Lifecycle Test Renamed', slug: 'lifecycle-test', startDate: '2029-01-01T00:00', timezone: 'Asia/Dhaka' }));
   assert.equal(edit.status, 302);
@@ -148,7 +160,7 @@ test('the status sweep moves auto events along and leaves pinned ones alone', as
 });
 
 test('members: add by Wikimedia lookup, role permissions, conflicts, last organizer', async () => {
-  const wlm = `/contest/${ids.contest['demo-wlm-bangladesh-2026']}`;
+  const wlm = `/contest/${ids.contest['wlm-bangladesh-2026']}`;
   const organizer = await session('Organizer');
 
   // MediaWiki normalization: underscores become spaces and only the first letter is case-insensitive.
@@ -162,7 +174,7 @@ test('members: add by Wikimedia lookup, role permissions, conflicts, last organi
   r = await organizer.flashAfter(`${wlm}/members`, { username: 'Nobody Here', role: 'jury' });
   assert.match(r.text, /No Wikimedia user named/);
 
-  const organizerMembership = await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['demo-wlm-bangladesh-2026'], role: 'organizer' } });
+  const organizerMembership = await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['wlm-bangladesh-2026'], role: 'organizer' } });
   r = await organizer.flashAfter(`${wlm}/members/${organizerMembership.id}/remove`);
   assert.match(r.text, /at least one organizer/);
 
@@ -178,7 +190,7 @@ test('members: add by Wikimedia lookup, role permissions, conflicts, last organi
   assert.doesNotMatch(people.body, /<option value="participant">/);
   r = await jurorAgain.flashAfter(`${wlm}/members`, { username: NAME.Newcomer, role: 'participant' });
   assert.match(r.text, /can't add people with that role|can&#39;t add/);
-  const participantRow = await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['demo-wlm-bangladesh-2026'], role: 'participant', status: 'active' } });
+  const participantRow = await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['wlm-bangladesh-2026'], role: 'participant', status: 'active' } });
   assert.equal((await jurorAgain.post(`${wlm}/members/${participantRow.id}/remove`)).status, 403);
   assert.equal((await t.prisma.contestMembership.findUnique({ where: { id: participantRow.id } })).status, 'active', 'jury managers cannot remove participants');
 
@@ -187,12 +199,12 @@ test('members: add by Wikimedia lookup, role permissions, conflicts, last organi
 });
 
 test('join and leave follow the eligibility rules', async () => {
-  const whm = `/contest/${ids.contest['demo-bnwiki-womens-history-2027']}`;
+  const whm = `/contest/${ids.contest['bnwiki-womens-history-2027']}`;
   const participant = await session('Participant');
   assert.match((await participant.get(whm)).body, /Join this event/);
   let r = await participant.flashAfter(`${whm}/join`);
   assert.match(r.text, /joined/);
-  assert.ok(await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['demo-bnwiki-womens-history-2027'], userId: ids.user.Participant, role: 'participant', status: 'active' } }));
+  assert.ok(await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['bnwiki-womens-history-2027'], userId: ids.user.Participant, role: 'participant', status: 'active' } }));
   r = await participant.flashAfter(`${whm}/leave`);
   assert.match(r.text, /left/);
 
@@ -207,14 +219,14 @@ test('join and leave follow the eligibility rules', async () => {
 });
 
 test('soft delete needs the slug, hides the event everywhere and is audited', async () => {
-  const food = ids.contest['demo-wiki-loves-food-2027'];
+  const food = ids.contest['wiki-loves-food-2027'];
   const organizer = await session('Organizer');
-  assert.equal((await organizer.post(`/contest/${food}/delete`, { confirmation: 'demo-wiki-loves-food-2027' })).status, 403, 'organizer of other events only');
+  assert.equal((await organizer.post(`/contest/${food}/delete`, { confirmation: 'wiki-loves-food-2027' })).status, 403, 'organizer of other events only');
 
   const bnAdmin = await session('Bn Admin');
   let r = await bnAdmin.flashAfter(`/contest/${food}/delete`, { confirmation: 'wrong' });
   assert.match(r.text, /Type the event slug/);
-  r = await bnAdmin.flashAfter(`/contest/${food}/delete`, { confirmation: 'demo-wiki-loves-food-2027' });
+  r = await bnAdmin.flashAfter(`/contest/${food}/delete`, { confirmation: 'wiki-loves-food-2027' });
   assert.match(r.text, /was deleted/);
 
   const row = await t.prisma.contest.findUnique({ where: { id: food } });

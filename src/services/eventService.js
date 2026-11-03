@@ -14,7 +14,10 @@ class EventError extends Error {
 
 async function uniqueSlug(tx, slug, { auto, excludeId }) {
   const taken = async (s) => {
-    const found = await tx.contest.findUnique({ where: { slug: s }, select: { id: true } });
+    const found =
+      (await tx.contest.findUnique({ where: { slug: s }, select: { id: true } })) ||
+      // Events without a series live at /<slug>, which must not be a series address.
+      (await tx.eventSeries.findUnique({ where: { slug: s }, select: { id: true } }));
     return found && found.id !== excludeId;
   };
   if (!(await taken(slug))) return slug;
@@ -30,7 +33,10 @@ async function uniqueSlug(tx, slug, { auto, excludeId }) {
 async function seriesFields(tx, series, title, excludeId) {
   if (!series) return { seriesId: null, edition: null };
   let row = await tx.eventSeries.findUnique({ where: { slug: series.slug } });
-  if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: title.replace(/s*(19|20)dds*/g, ' ').trim() || title } });
+  if (!row && (await tx.contest.findFirst({ where: { slug: series.slug, seriesId: null, id: excludeId ? { not: excludeId } : undefined }, select: { id: true } }))) {
+    throw new EventError(`/${series.slug} is already the address of another event.`, 'seriesSlug');
+  }
+  if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
   const taken = await tx.contest.findFirst({ where: { seriesId: row.id, edition: series.edition, NOT: excludeId ? { id: excludeId } : undefined }, select: { id: true } });
   if (taken) throw new EventError(`/${series.slug}/${series.edition} is already used by another event.`, 'edition');
   return { seriesId: row.id, edition: series.edition };

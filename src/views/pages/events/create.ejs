@@ -1,4 +1,4 @@
-<%- include('../../partials/pageHeader', { pretitle: 'Create an event', heading: 'New ' + typeDef.label.toLowerCase(), actions: '<a class="btn btn-outline-secondary" href="/events/create"><i class="ti ti-arrow-left me-1"></i>Change type</a>' }) %>
+<%- include('../../partials/pageHeader', { pretitle: 'Events', heading: 'Create an event' }) %>
 <div class="page-body">
   <div class="container-xl">
     <%- include('../../partials/contestForm', { action: '/events/create', submitLabel: 'Create draft' }) %>

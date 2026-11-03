@@ -99,6 +99,12 @@ model Contest {
   language            String    @default("en")
   timezone            String    @default("UTC")
   contactInfo         String    @default("")
+  // Kind of project, e.g. "glam", "education" (see PROJECT_CATEGORIES).
+  category            String    @default("")
+  // Link to the previous edition's page, for recurring events run elsewhere before.
+  previousEditionUrl  String    @default("")
+  // The event's main category on the wiki, without "Category:".
+  mainCategory        String    @default("")
   logoUrl             String?
   bannerUrl           String?
 

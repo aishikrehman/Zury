@@ -67,11 +67,11 @@ test('demo login requires a CSRF token and only accepts demo users', async () =>
 test('each demo user gets exactly the access their roles allow', async () => {
   const c = ids.contest;
   const paths = {
-    wlm: `/contest/${c['demo-wlm-bangladesh-2026']}`,
-    wlmConfig: `/contest/${c['demo-wlm-bangladesh-2026']}/config`,
-    wlmPeople: `/contest/${c['demo-wlm-bangladesh-2026']}/participants`,
-    bnConfig: `/contest/${c['demo-bnwiki-womens-history-2027']}/config`,
-    private: `/contest/${c['demo-enwiki-jury-calibration']}`,
+    wlm: `/contest/${c['wlm-bangladesh-2026']}`,
+    wlmConfig: `/contest/${c['wlm-bangladesh-2026']}/config`,
+    wlmPeople: `/contest/${c['wlm-bangladesh-2026']}/participants`,
+    bnConfig: `/contest/${c['bnwiki-womens-history-2027']}/config`,
+    private: `/contest/${c['enwiki-jury-calibration']}`,
     admin: '/admin',
     logs: '/admin/logs',
   };
@@ -94,10 +94,10 @@ test('each demo user gets exactly the access their roles allow', async () => {
 });
 
 test('overrides show up in the event access panel', async () => {
-  const wlm = `/contest/${ids.contest['demo-wlm-bangladesh-2026']}`;
+  const wlm = `/contest/${ids.contest['wlm-bangladesh-2026']}`;
   const juror = await t.request(wlm, { cookie: await loginAs(NAME.Juror) });
   assert.match(juror.body, /exportData/);
-  const editathon = `/contest/${ids.contest['demo-liberation-war-editathon']}`;
+  const editathon = `/contest/${ids.contest['liberation-war-editathon']}`;
   const organizer = await t.request(editathon, { cookie: await loginAs(NAME.Organizer) });
   assert.match(organizer.body, /− sendMassMessage/);
   assert.doesNotMatch(organizer.body, /Send MassMessage campaigns/, 'denied permission is not listed as held');

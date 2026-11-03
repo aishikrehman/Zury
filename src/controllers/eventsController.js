@@ -6,6 +6,9 @@ const { canUseWikiForEvents } = require('../services/permissionService');
 const { EVENT_TYPES } = require('../events/eventTypes');
 const catalogService = require('../wiki/catalogService');
 const { CONTEST_TYPES, STATUS_GROUPS } = require('../utils/contestLabels');
+const membershipService = require('../services/membershipService');
+const userDirectory = require('../services/userDirectoryService');
+const { eventPath } = require('../utils/format');
 
 const GROUP_TITLES = { active: 'Active events', upcoming: 'Upcoming events', completed: 'Completed events' };
 
@@ -33,27 +36,47 @@ async function index(req, res, next) {
   }
 }
 
+// The type is chosen on the first page; ?type= preselects it (from "Create" links per type).
 function renderForm(res, { type, form, errors = {}, status = 200 }) {
   res.status(status).render('pages/events/create', {
-    title: `New ${EVENT_TYPES[type].label.toLowerCase()} — Zury`,
-    type,
-    typeDef: EVENT_TYPES[type],
+    title: 'Create an event — Zury',
+    type: EVENT_TYPES[type] ? type : '',
+    typeDef: EVENT_TYPES[type] || null,
     form,
     errors,
   });
 }
 
 function createForm(req, res) {
-  const { type } = req.query;
-  if (!EVENT_TYPES[type]) {
-    return res.render('pages/events/chooseType', { title: 'Create an event — Zury', types: EVENT_TYPES });
+  const type = EVENT_TYPES[req.query.type] ? req.query.type : '';
+  const form = contestForm.newForm(type || 'writing');
+  if (!type) form.type = '';
+  renderForm(res, { type, form });
+}
+
+// Co-organizers and jury named on the form; people who can't be added are reported, not fatal.
+async function addStartingTeam(req, contest, settings) {
+  const problems = [];
+  for (const [field, role] of [['organizers', 'organizer'], ['jury', 'jury']]) {
+    for (const name of [].concat(req.body[field] || []).map((n) => String(n).trim()).filter(Boolean).slice(0, 20)) {
+      try {
+        const user = await userDirectory.findOrImport(name);
+        if (!user) throw new Error(`No Wikimedia user named “${name}”.`);
+        if (user.id === req.user.id && role === 'organizer') continue;
+        await membershipService.addMember({ actorId: req.user.id, contest, settings, user, role });
+      } catch (err) {
+        problems.push(err.message);
+      }
+    }
   }
-  renderForm(res, { type, form: contestForm.newForm(type) });
+  return problems;
 }
 
 async function create(req, res, next) {
   const { type } = req.body;
-  if (!EVENT_TYPES[type]) return res.redirect('/events/create');
+  if (!EVENT_TYPES[type]) {
+    return renderForm(res, { type: '', form: { ...contestForm.newForm('writing'), ...req.body, type: '' }, errors: { type: 'Choose the type of event.' }, status: 422 });
+  }
   let catalog;
   try {
     catalog = await catalogService.validators();
@@ -72,8 +95,11 @@ async function create(req, res, next) {
       autoSlug: !req.body.slug?.trim(),
       isDemo: req.user.isDemo,
     });
+    const problems = await addStartingTeam(req, contest, { ...contestForm.defaultSettings(type), ...parsed.settings });
     req.flash('success', 'Event created as a draft. Review the settings, then publish it when ready.');
-    res.redirect(`/contest/${contest.id}/config`);
+    if (problems.length) req.flash('warning', `Not added: ${problems.join(' ')}`);
+    const full = await prisma.contest.findUnique({ where: { id: contest.id }, include: { series: true } });
+    res.redirect(`${eventPath(full)}/config`);
   } catch (err) {
     if (err instanceof eventService.EventError) {
       return renderForm(res, { type, form: parsed.form, errors: { [err.field]: err.message }, status: 422 });

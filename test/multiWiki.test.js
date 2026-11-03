@@ -81,7 +81,7 @@ async function session(label) {
   };
 }
 
-const wam = () => t.prisma.contest.findFirst({ where: { slug: 'demo-wam-2026' }, include: { wikis: true } });
+const wam = () => t.prisma.contest.findFirst({ where: { slug: 'wam-2026' }, include: { wikis: true } });
 
 test('series, central dashboard and wiki pages share one address', async () => {
   const series = await t.request('/wam');

@@ -45,7 +45,7 @@ async function setupEvent(req, res, next, contest, code) {
   // A single-wiki event is managed as that wiki; its page is the event page.
   const contextWiki = wikiScope || (participating.length === 1 ? participating[0] : null);
   const eff = effectiveFor(rest, settings, contextWiki);
-  const eventBase = series && rest.edition ? `/${series.slug}/${rest.edition}` : `/contest/${rest.id}`;
+  const eventBase = series && rest.edition ? `/${series.slug}/${rest.edition}` : `/${rest.slug}`;
   const base = wikiScope ? `${eventBase}/${wikiScope.code}` : eventBase;
 
   req.contest = rest;
@@ -93,17 +93,40 @@ async function loadContest(req, res, next) {
   }
 }
 
-// /:series/:edition[/:code] — unknown series fall through to the normal 404.
+// Loaders below call next() without setting req.contest when the address isn't
+// theirs, so the next kind of address can try (see the routes).
+
+// /:series/:edition[/:code], e.g. /wam/2026/bn
 function loadSeriesEvent({ withWiki }) {
   return async (req, res, next) => {
     try {
       const { series, edition } = req.params;
-      if (RESERVED.has(series)) return next('router');
+      if (RESERVED.has(series)) return next();
       const contest = await prisma.contest.findFirst({
         where: { edition, deletedAt: null, series: { slug: series } },
         include: EVENT_INCLUDE,
       });
-      if (!contest) return next('router');
+      if (!contest) return next();
+      await setupEvent(req, res, next, contest, withWiki ? req.params.code : null);
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+// /:slug[/:code] for events that aren't part of a series, e.g. /dhaka-photowalk
+function loadSlugEvent({ withWiki }) {
+  return async (req, res, next) => {
+    try {
+      const { slug } = req.params;
+      if (RESERVED.has(slug)) return next();
+      const contest = await prisma.contest.findFirst({ where: { slug, deletedAt: null }, include: EVENT_INCLUDE });
+      if (!contest) return next();
+      // An event that joined a series moved to /<series>/<edition>.
+      if (contest.series && contest.edition) {
+        if (req.method !== 'GET') return next();
+        return res.redirect(301, `/${contest.series.slug}/${contest.edition}${req.originalUrl.slice(slug.length + 1)}`);
+      }
       await setupEvent(req, res, next, contest, withWiki ? req.params.code : null);
     } catch (err) {
       next(err);
@@ -131,4 +154,4 @@ function requireEventWide(permission) {
   };
 }
 
-module.exports = { loadContest, loadSeriesEvent, requirePermission, requireEventWide, forbidden, RESERVED };
+module.exports = { loadContest, loadSeriesEvent, loadSlugEvent, requirePermission, requireEventWide, forbidden, RESERVED };

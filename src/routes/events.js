@@ -7,7 +7,7 @@ const messageController = require('../controllers/messageController');
 const trackingController = require('../controllers/trackingController');
 const sessionController = require('../controllers/sessionController');
 const { takesEntries, EVENT_TYPES } = require('../events/eventTypes');
-const { loadContest, loadSeriesEvent, requirePermission, requireEventWide } = require('../middleware/permissions');
+const { loadContest, loadSeriesEvent, loadSlugEvent, requirePermission, requireEventWide } = require('../middleware/permissions');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -82,8 +82,21 @@ router.use('/contest/:contestId(\\d+)', loadContest, contest);
 // Series addresses go last so they never shadow app pages.
 // No '*' here: Express 4 turns it into a wildcard that would swallow the wiki code.
 const SLUG = '[a-z0-9][a-z0-9-]{0,79}';
+// Runs the event pages only when the loader found an event at this address;
+// otherwise the next kind of address gets a try.
+const mount = (loader) => (req, res, next) => {
+  req.contest = undefined;
+  loader(req, res, (err) => {
+    if (err) return next(err);
+    if (!req.contest) return next();
+    contest(req, res, next);
+  });
+};
+
 router.get(`/:series(${SLUG})`, eventsController.series);
-router.use(`/:series(${SLUG})/:edition(${SLUG})`, loadSeriesEvent({ withWiki: false }), contest);
-router.use(`/:series(${SLUG})/:edition(${SLUG})/:code(${SLUG})`, loadSeriesEvent({ withWiki: true }), contest);
+router.use(`/:series(${SLUG})/:edition(${SLUG})`, mount(loadSeriesEvent({ withWiki: false })));
+router.use(`/:series(${SLUG})/:edition(${SLUG})/:code(${SLUG})`, mount(loadSeriesEvent({ withWiki: true })));
+router.use(`/:slug(${SLUG})`, mount(loadSlugEvent({ withWiki: false })));
+router.use(`/:slug(${SLUG})/:code(${SLUG})`, mount(loadSlugEvent({ withWiki: true })));
 
 module.exports = router;

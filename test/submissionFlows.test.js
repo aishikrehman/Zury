@@ -51,7 +51,7 @@ async function session(name) {
   };
 }
 
-const wlm = () => `/contest/${ids.contest['demo-wlm-bangladesh-2026']}`;
+const wlm = () => `/contest/${ids.contest['wlm-bangladesh-2026']}`;
 
 test('preview checks every line without saving anything', async () => {
   const p = await session('Participant');
@@ -82,7 +82,7 @@ test('confirm re-checks on the server and saves only valid entries with history'
   // A tampered confirm that sneaks in a bad entry is re-checked and skipped.
   const res = await p.post(`${wlm()}/submit`, { entries: 'File:Good one.jpg\nFile:Tiny.jpg' });
   assert.equal(res.status, 302);
-  const rows = await t.prisma.submission.findMany({ where: { contestId: ids.contest['demo-wlm-bangladesh-2026'], title: { in: ['File:Good one.jpg', 'File:Tiny.jpg'] } }, include: { history: true } });
+  const rows = await t.prisma.submission.findMany({ where: { contestId: ids.contest['wlm-bangladesh-2026'], title: { in: ['File:Good one.jpg', 'File:Tiny.jpg'] } }, include: { history: true } });
   assert.deepEqual(rows.map((r) => [r.title, r.status, r.pageKey, r.history[0].action]), [['File:Good one.jpg', 'validated', 'commonswiki:101', 'submitted']]);
   assert.equal(JSON.parse(rows[0].metadata).file.megapixels, 24);
 
@@ -100,7 +100,7 @@ test('people outside the event: auto-join when allowed, blocked when not eligibl
   const steward = await session('Steward');
   const res = await steward.post(`${wlm()}/submit`, { entries: 'File:Good two.jpg' });
   assert.equal(res.status, 302);
-  assert.ok(await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['demo-wlm-bangladesh-2026'], userId: ids.user.Steward, role: 'participant' } }));
+  assert.ok(await t.prisma.contestMembership.findFirst({ where: { contestId: ids.contest['wlm-bangladesh-2026'], userId: ids.user.Steward, role: 'participant' } }));
 });
 
 test('organizers submit on behalf of participants; others cannot', async () => {
@@ -122,7 +122,7 @@ test('organizers submit on behalf of participants; others cannot', async () => {
 });
 
 test('submissions are closed outside the window except for organizers', async () => {
-  const whm = `/contest/${ids.contest['demo-bnwiki-womens-history-2027']}`;
+  const whm = `/contest/${ids.contest['bnwiki-womens-history-2027']}`;
   const p = await session('Participant');
   const res = await p.post(`${whm}/submit/preview`, { entries: 'Anything' });
   assert.equal(res.status, 422);

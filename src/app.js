@@ -9,7 +9,17 @@ const contestLabels = require('./utils/contestLabels');
 const { PLATFORM_ROLES, EVENT_ROLES } = require('./permissions/registry');
 const { TIMEZONES } = require('./utils/time');
 const layouts = require('./utils/layouts');
-const { FEATURE_FIELDS, DATE_FIELDS, PARTICIPATION_MODES } = require('./services/contestFormService');
+const { FEATURE_FIELDS, DATE_FIELDS, PARTICIPATION_MODES, defaultSettings } = require('./services/contestFormService');
+const { EVENT_TYPES } = require('./events/eventTypes');
+
+// Switches each event type starts with, so the form can follow a change of type.
+const FEATURE_DEFAULTS = Object.fromEntries(
+  Object.keys(EVENT_TYPES).map((t) => {
+    const d = defaultSettings(t);
+    const keys = [...FEATURE_FIELDS.map(([k]) => k), 'registrationRequired'];
+    return [t, Object.fromEntries(keys.map((k) => [k, !!d[k]]))];
+  }),
+);
 const { eventWikiScope } = require('./services/permissionService');
 const { attachUser } = require('./middleware/auth');
 const { csrfProtection } = require('./middleware/csrf');
@@ -56,7 +66,7 @@ app.get('/healthz', async (req, res) => {
   }
 });
 
-Object.assign(app.locals, format, contestLabels, { EVENT_TYPES: require('./events/eventTypes').EVENT_TYPES }, {
+Object.assign(app.locals, format, contestLabels, { EVENT_TYPES, FEATURE_DEFAULTS }, {
   PLATFORM_ROLES,
   EVENT_ROLES,
   TIMEZONES,

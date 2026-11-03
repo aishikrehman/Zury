@@ -1,5 +1,6 @@
 const { EVENT_TYPES, parseTypeConfig, readTypeConfig } = require('../events/eventTypes');
 const { zonedLocalToUtc, utcToZonedLocal, isValidTimezone } = require('../utils/time');
+const { PROJECT_CATEGORIES } = require('../utils/contestLabels');
 
 const WIKI_DBNAME = /^[a-z][a-z0-9_]*(wiki|wiktionary|wikibooks|wikinews|wikiquote|wikisource|wikiversity|wikivoyage)$/;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -107,6 +108,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
 
   const slug = str(body.slug).toLowerCase() || slugify(title);
   if (!SLUG.test(slug) || slug.length > 80) errors.slug = 'Use lowercase letters, numbers and single hyphens (max 80).';
+  else if (require('../middleware/permissions').RESERVED.has(slug)) errors.slug = 'This address is used by Zury itself; choose another.';
 
   // Optional recurring-event address: /<series>/<edition>, e.g. /wam/2026.
   const seriesSlug = str(body.seriesSlug).toLowerCase();
@@ -116,6 +118,12 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
     if (!SLUG.test(seriesSlug) || seriesSlug.length > 40 || RESERVED.has(seriesSlug)) errors.seriesSlug = 'Use lowercase letters, numbers and hyphens.';
     if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) errors.edition = 'Use a short edition name such as 2026.';
   }
+
+  const category = PROJECT_CATEGORIES[body.category] ? body.category : '';
+  const previousEditionUrl = str(body.previousEditionUrl);
+  if (previousEditionUrl && (!/^https?:\/\/\S+$/.test(previousEditionUrl) || previousEditionUrl.length > 500)) errors.previousEditionUrl = 'Enter a full link, e.g. https://…';
+  const mainCategory = str(body.mainCategory).replace(/^Category:/i, '').trim();
+  if (mainCategory.length > 200 || /[#<>[\]{}|]/.test(mainCategory)) errors.mainCategory = 'Enter a category name without the "Category:" prefix.';
 
   const description = str(body.description);
   if (description.length > 5000) errors.description = 'At most 5000 characters.';
@@ -135,9 +143,8 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   if (unknownWiki) errors.additionalWikis = `Unknown wiki: ${unknownWiki}`;
   else if (additionalWikis.length > 20) errors.additionalWikis = 'At most 20 additional wikis.';
 
-  const language = str(body.language);
-  if (!language) errors.language = 'Choose a language.';
-  else if (!LANGUAGE_CODE.test(language) || !catalog.language(language)) errors.language = 'Unknown language.';
+  const language = str(body.language) || (catalog.wikiLanguage && catalog.wikiLanguage(primaryWiki)) || 'en';
+  if (!LANGUAGE_CODE.test(language) || !catalog.language(language)) errors.language = 'Unknown language.';
   const timezone = str(body.timezone);
   if (!timezone) errors.timezone = 'Choose a time zone.';
   else if (!isValidTimezone(timezone)) errors.timezone = 'Unknown time zone.';
@@ -201,6 +208,9 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
       slug,
       description,
       organizingCommunity,
+      category,
+      previousEditionUrl,
+      mainCategory,
       primaryWiki,
       language,
       timezone,
@@ -225,6 +235,9 @@ function toForm(contest, settings) {
     edition: contest.edition || '',
     description: contest.description,
     organizingCommunity: contest.organizingCommunity,
+    category: contest.category || '',
+    previousEditionUrl: contest.previousEditionUrl || '',
+    mainCategory: contest.mainCategory || '',
     primaryWiki: contest.primaryWiki,
     additionalWikis: JSON.parse(contest.additionalWikis || '[]').join('\n'),
     language: contest.language,

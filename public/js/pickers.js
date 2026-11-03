@@ -3,7 +3,9 @@
 (function () {
   if (!window.TomSelect) return;
 
-  const ENDPOINT = { language: '/api/languages', user: '/api/users' };
+  const ENDPOINT = { language: '/api/languages', user: '/api/users', series: '/api/series', community: '/api/communities' };
+  // Pickers that also accept a new value typed in.
+  const CREATABLE = ['user', 'series', 'community'];
   const json = (url) => fetch(url, { headers: { Accept: 'application/json' } }).then((r) => (r.ok ? r.json() : []));
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -15,14 +17,21 @@
       maxOptions: 50,
       loadThrottle: 250,
       preload: kind !== 'user' ? 'focus' : false,
-      create: kind === 'user',
-      createOnBlur: kind === 'user',
+      create: CREATABLE.includes(kind),
+      createOnBlur: CREATABLE.includes(kind),
+      maxItems: el.multiple ? null : 1,
       plugins: el.multiple ? ['remove_button'] : [],
       load(query, callback) {
         json(`${ENDPOINT[kind]}?q=${encodeURIComponent(query)}`).then(callback).catch(() => callback());
       },
       render: {
         option(item) {
+          if (item.localName) {
+            return `<div>${esc(item.text)} <span class="text-secondary">${esc(item.localName)}</span></div>`;
+          }
+          if (kind === 'series' && item.latest) {
+            return `<div>${esc(item.text)} <span class="text-secondary small">latest: ${esc(item.latest)}</span></div>`;
+          }
           if (kind === 'language' && item.code) {
             return `<div>${esc(item.text)} <span class="text-secondary small">${esc(item.code)}</span></div>`;
           }
@@ -44,9 +53,12 @@
   function wiki(el) {
     const row = document.createElement('div');
     row.className = 'row g-2';
+    const required = el.required ? ' required' : '';
     row.innerHTML =
-      '<div class="col-sm-6"><div class="form-hint mt-0 mb-1">1. Language</div></div>' +
-      '<div class="col-sm-6"><div class="form-hint mt-0 mb-1">2. Wiki</div></div>';
+      `<div class="col-sm-6"><label class="form-label${required}"></label></div>` +
+      `<div class="col-sm-6"><label class="form-label${required}"></label></div>`;
+    row.querySelectorAll('label')[0].textContent = el.dataset.languageLabel || 'Language';
+    row.querySelectorAll('label')[1].textContent = el.dataset.siteLabel || 'Wiki';
     el.parentNode.insertBefore(row, el);
     const langSelect = document.createElement('select');
     langSelect.setAttribute('aria-label', 'Language of the wiki');
@@ -80,6 +92,9 @@
       maxOptions: 500,
       render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => '<div class="no-results">No matches</div>' },
       onChange: (code) => {
+        // The event's language follows the project language (not for Commons and the like).
+        const hidden = document.getElementById('language');
+        if (hidden) hidden.value = code && code !== 'special' ? code : '';
         loadWikis(code);
         el.dispatchEvent(new Event('change'));
       },

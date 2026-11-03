@@ -22,7 +22,8 @@ function userPath(username) {
 
 // Canonical address of an event: /<series>/<edition> when it has one.
 function eventPath(c) {
-  return c.series && c.edition ? `/${c.series.slug}/${c.edition}` : `/contest/${c.id}`;
+  if (c.series && c.edition) return `/${c.series.slug}/${c.edition}`;
+  return c.slug ? `/${c.slug}` : `/contest/${c.id}`;
 }
 
 module.exports = { formatDate, formatDateTime, userPath, eventPath };

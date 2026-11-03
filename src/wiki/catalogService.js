@@ -94,7 +94,7 @@ async function ensureFresh() {
 async function loadMemo() {
   if (memo.wikis && Date.now() - memo.at < MEMO_MS) return memo;
   const [wikis, languages] = await Promise.all([
-    prisma.wikiSite.findMany({ where: { private: false }, select: { dbname: true, closed: true, name: true, localName: true } }),
+    prisma.wikiSite.findMany({ where: { private: false }, select: { dbname: true, closed: true, name: true, localName: true, lang: true, family: true } }),
     prisma.language.findMany({ select: { code: true, name: true, localName: true } }),
   ]);
   memo = {
@@ -116,6 +116,11 @@ async function validators() {
     known: (db) => empty || m.wikis.has(db),
     open: (db) => empty || (m.wikis.has(db) && !m.wikis.get(db).closed),
     language: (code) => m.languages.size === 0 || m.languages.has(code) || m.languages.has(code.split('-')[0]),
+    // The language of a language project's wiki ("bn" for bnwikisource); null for Commons and the like.
+    wikiLanguage: (db) => {
+      const w = m.wikis.get(db);
+      return w && FAMILY_NAMES[w.family] && w.family !== 'wikimedia' && m.languages.has(w.lang) ? w.lang : null;
+    },
   };
 }
 

@@ -9,6 +9,23 @@ const CONTEST_TYPES = {
 };
 const TYPE_ICONS = { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group', workshop: 'presentation', training: 'school', photowalk: 'walk' };
 const TYPE_COLORS = { photo: 'blue', writing: 'green', data: 'purple', editathon: 'orange', workshop: 'teal', training: 'cyan', photowalk: 'pink' };
+// What an event is about, for browsing and reports.
+const PROJECT_CATEGORIES = {
+  glam: 'GLAM (galleries, libraries, archives, museums)',
+  education: 'Education',
+  heritage: 'Heritage and monuments',
+  nature: 'Nature and environment',
+  culture: 'Arts and culture',
+  gender: 'Gender gap and diversity',
+  science: 'Science and technology',
+  health: 'Health and medicine',
+  history: 'History',
+  geography: 'Places and geography',
+  language: 'Language and literature',
+  sports: 'Sports',
+  community: 'Community building',
+  other: 'Other',
+};
 // Activities are run as sessions people attend, rather than as contests.
 const ACTIVITY_TYPES = ['workshop', 'training', 'photowalk'];
 
@@ -43,4 +60,4 @@ const SUBMISSION_STATUSES = {
   appealed: { label: 'Appealed', color: 'purple' },
 };
 
-module.exports = { CONTEST_TYPES, TYPE_ICONS, TYPE_COLORS, ACTIVITY_TYPES, CONTEST_STATUSES, STATUS_GROUPS, SUBMISSION_STATUSES };
+module.exports = { PROJECT_CATEGORIES, CONTEST_TYPES, TYPE_ICONS, TYPE_COLORS, ACTIVITY_TYPES, CONTEST_STATUSES, STATUS_GROUPS, SUBMISSION_STATUSES };

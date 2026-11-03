@@ -42,11 +42,14 @@
         const rows = [];
         const seen = new Set();
         pane.querySelectorAll('input[name], select[name], textarea[name]').forEach((el) => {
-          if (el.type === 'hidden') return;
+          if (el.type === 'hidden' || el.disabled || el.closest('fieldset[disabled]')) return;
           let value = '';
           if (el.type === 'checkbox' || el.type === 'radio') {
             if (!el.checked) return;
-            const name = el.closest('label')?.textContent.trim() || el.value;
+            // The option's own words, without its description.
+            const label = el.closest('label');
+            const part = label && (label.querySelector('strong') || label.querySelector('.form-check-label, .form-selectgroup-label'));
+            const name = (part?.childNodes[0]?.textContent || label?.textContent || el.value).trim();
             if (el.type === 'radio' || el.classList.contains('form-selectgroup-input')) {
               const key = el.name;
               const prev = rows.find((r) => r.key === key);
@@ -97,10 +100,7 @@
       current = i;
       reached = Math.max(reached, i);
       panes.forEach((p, n) => p.classList.toggle('d-none', n !== i));
-      links.forEach((a, n) => {
-        a.classList.toggle('active', n === i);
-        a.classList.toggle('text-secondary', sequential && n > reached);
-      });
+      links.forEach((a, n) => (a.closest('.step-item') || a).classList.toggle('active', n === i));
       if (sequential) {
         const last = i === panes.length - 1;
         back.disabled = i === 0;

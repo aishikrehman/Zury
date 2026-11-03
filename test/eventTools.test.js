@@ -47,11 +47,11 @@ const eventPath = async (slug) => `/contest/${(await contest(slug)).id}`;
 // --- Blocks and bans ----------------------------------------------------------
 
 test('a blocked person cannot join, submit or be given a role until unblocked', async () => {
-  const base = await eventPath('demo-liberation-war-editathon');
+  const base = await eventPath('liberation-war-editathon');
   const organizer = await session('Organizer');
   const text = await organizer.flash(`${base}/blocks`, { username: NAME.Newcomer, reason: 'Vandalism' });
   assert.match(text, /blocked from this event/);
-  const c = await contest('demo-liberation-war-editathon');
+  const c = await contest('liberation-war-editathon');
   assert.equal(await t.prisma.contestMembership.count({ where: { contestId: c.id, userId: ids.Newcomer, status: 'active' } }), 0, 'roles end');
 
   const newcomer = await session('Newcomer');
@@ -105,12 +105,12 @@ test('participants choose their wiki and appear under that wiki', async () => {
   assert.match(await newcomer.flash('/wam/2026/join', { wiki: '' }), /joined this event on bnwiki/, 'home wiki by default');
   await newcomer.post('/wam/2026/leave');
   assert.match(await newcomer.flash('/wam/2026/join', { wiki: 'hiwiki' }), /joined this event on hiwiki/);
-  const m = await t.prisma.contestMembership.findFirst({ where: { userId: ids.Newcomer, role: 'participant', status: 'active', contest: { slug: 'demo-wam-2026' } } });
+  const m = await t.prisma.contestMembership.findFirst({ where: { userId: ids.Newcomer, role: 'participant', status: 'active', contest: { slug: 'wam-2026' } } });
   assert.equal(m.wiki, 'hiwiki');
   // Joining from a wiki's page picks that wiki; there is still one participation.
   await newcomer.post('/wam/2026/leave');
   await newcomer.post('/wam/2026/en/join');
-  const rows = await t.prisma.contestMembership.findMany({ where: { userId: ids.Newcomer, role: 'participant', status: 'active', contest: { slug: 'demo-wam-2026' } } });
+  const rows = await t.prisma.contestMembership.findMany({ where: { userId: ids.Newcomer, role: 'participant', status: 'active', contest: { slug: 'wam-2026' } } });
   assert.deepEqual(rows.map((r) => r.wiki), ['enwiki']);
 
   const organizer = await session('Organizer');
@@ -119,7 +119,7 @@ test('participants choose their wiki and appear under that wiki', async () => {
   // Still a participant of the whole event: may submit from the central page.
   const scope = await require('../src/services/permissionService').contestScope(
     { user: { id: ids.Newcomer }, platformRoles: new Set(), adminWikis: new Set() },
-    await contest('demo-wam-2026'),
+    await contest('wam-2026'),
     { wikis: ['bnwiki', 'enwiki', 'hiwiki'] },
   );
   assert.equal(scope.permissions.has('submitOwnEntry'), true);
@@ -129,7 +129,7 @@ test('participants choose their wiki and appear under that wiki', async () => {
 
 test('organizers message their wiki through Wikimedia; demo accounts are told to log in', async () => {
   const { recipients } = require('../src/services/messageService');
-  const c = await contest('demo-wam-2026');
+  const c = await contest('wam-2026');
   const bn = await recipients({ contestId: c.id, audience: 'participant', wiki: 'bnwiki' });
   const expected = await t.prisma.contestMembership.findMany({ where: { contestId: c.id, role: 'participant', status: 'active', wiki: 'bnwiki' }, include: { user: true } });
   assert.deepEqual(bn.map((u) => u.username), expected.map((m) => m.user.username).sort());
@@ -151,7 +151,7 @@ test('organizers message their wiki through Wikimedia; demo accounts are told to
 
 test('tracking finds participant edits, hashtag edits and category pages once each', async () => {
   const trackingService = require('../src/services/trackingService');
-  const c = await contest('demo-old-dhaka-photowalk');
+  const c = await contest('old-dhaka-photowalk');
   await t.prisma.user.update({ where: { id: ids.Participant }, data: { isDemo: false } });
   await t.prisma.contestSettings.update({ where: { contestId: c.id }, data: { contributionDiscoveryEnabled: true, trackHashtags: '["olddhaka"]' } });
   const calls = [];
@@ -168,7 +168,7 @@ test('tracking finds participant edits, hashtag edits and category pages once ea
     if (p.list === 'categorymembers') return { query: { categorymembers: [{ pageid: 501, title: 'File:D.jpg', ns: 6, timestamp: '2026-11-02T00:00:00Z' }] } };
     throw new Error(`unexpected ${p.list}`);
   };
-  const settings = (await contest('demo-old-dhaka-photowalk')).settings;
+  const settings = (await contest('old-dhaka-photowalk')).settings;
   const first = await trackingService.refresh({ contest: c, settings, eventWikis: c.wikis, now: new Date('2026-11-03T00:00:00Z') });
   assert.equal(first.added, 3);
   assert.deepEqual(first.errors, []);
@@ -187,7 +187,7 @@ test('tracking finds participant edits, hashtag edits and category pages once ea
 // --- Activities -------------------------------------------------------------------
 
 test('sessions: registration, waiting list, attendance and certificate', async () => {
-  const c = await contest('demo-wikipedia-basics-training');
+  const c = await contest('wikipedia-basics-training');
   const base = `/contest/${c.id}`;
   assert.equal((await t.request(`${base}/submissions`)).status, 404, 'trainings take no entries');
   assert.equal((await t.request(`${base}/sessions`)).status, 200);

@@ -2,10 +2,57 @@
 const express = require('express');
 const catalog = require('../wiki/catalogService');
 const wikiApi = require('../wiki/wikiApi');
+const prisma = require('../config/prisma');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 const q = (req) => (typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '');
+
+// "Part of": existing series, with their latest edition so the form can
+// suggest the next one and link the previous one.
+router.get('/api/series', async (req, res, next) => {
+  try {
+    const term = q(req).trim();
+    const rows = await prisma.eventSeries.findMany({
+      where: term ? { OR: [{ slug: { contains: term.toLowerCase() } }, { title: { contains: term } }] } : {},
+      orderBy: { title: 'asc' },
+      take: 30,
+      include: { editions: { where: { deletedAt: null }, orderBy: { edition: 'desc' }, take: 1, select: { edition: true } } },
+    });
+    res.json(rows.map((r) => ({ value: r.slug, text: r.title, latest: r.editions[0]?.edition || null })));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Organizing communities: ones used by earlier events, and Wikimedia affiliates
+// that have their own wiki (chapters and user groups).
+router.get('/api/communities', async (req, res, next) => {
+  try {
+    const term = q(req).trim();
+    const [used, affiliates] = await Promise.all([
+      prisma.contest.findMany({
+        where: { organizingCommunity: term ? { contains: term } : { not: '' }, deletedAt: null },
+        distinct: ['organizingCommunity'],
+        select: { organizingCommunity: true },
+        take: 30,
+      }),
+      prisma.wikiSite.findMany({
+        where: { dbname: { endsWith: 'wikimedia' }, private: false, closed: false, ...(term && { OR: [{ name: { contains: term } }, { localName: { contains: term } }] }) },
+        select: { name: true, localName: true },
+        take: 30,
+      }),
+    ]);
+    const names = new Map();
+    for (const u of used) names.set(u.organizingCommunity, { value: u.organizingCommunity, text: u.organizingCommunity });
+    for (const a of affiliates) {
+      if (!names.has(a.name)) names.set(a.name, { value: a.name, text: a.name, localName: a.localName && a.localName !== a.name ? a.localName : '' });
+    }
+    res.json([...names.values()].sort((x, y) => x.text.localeCompare(y.text)));
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Wiki picker, step 1: languages with wikis (and "special" for Commons, Wikidata…).
 router.get('/api/wiki-languages', async (req, res, next) => {
