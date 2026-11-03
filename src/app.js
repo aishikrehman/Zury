@@ -8,6 +8,7 @@ const format = require('./utils/format');
 const contestLabels = require('./utils/contestLabels');
 const { PLATFORM_ROLES, EVENT_ROLES } = require('./permissions/registry');
 const { TIMEZONES } = require('./utils/time');
+const layouts = require('./utils/layouts');
 const { FEATURE_FIELDS, DATE_FIELDS, PARTICIPATION_MODES } = require('./services/contestFormService');
 const { eventWikiScope } = require('./services/permissionService');
 const { attachUser } = require('./middleware/auth');
@@ -32,6 +33,8 @@ Object.assign(app.locals, format, contestLabels, {
   DATE_FIELDS,
   PARTICIPATION_MODES,
   eventWikiScope,
+  LAYOUTS: layouts.LAYOUTS,
+  layoutHtmlAttributes: layouts.htmlAttributes,
   demoMode: env.demoMode,
 });
 
@@ -47,6 +50,7 @@ app.use((req, res, next) => {
   res.locals.csrfToken = '';
   res.locals.can = () => false;
   res.locals.currentPath = req.path;
+  res.locals.layoutKey = layouts.readLayoutCookie(req.headers.cookie) || layouts.DEFAULT_LAYOUT;
   next();
 });
 
@@ -73,6 +77,15 @@ app.use(
 app.use(attachUser);
 app.use(csrfProtection);
 app.use(flashMessages);
+
+// A display preference only; switching it changes nothing else.
+app.get('/layout/:name', (req, res) => {
+  const next = typeof req.query.next === 'string' && req.query.next.startsWith('/') && !req.query.next.startsWith('//') ? req.query.next : '/dashboard';
+  if (layouts.LAYOUTS[req.params.name]) {
+    res.cookie(layouts.COOKIE, req.params.name, { maxAge: 365 * 24 * 3600 * 1000, sameSite: 'lax', httpOnly: true, secure: env.nodeEnv === 'production' });
+  }
+  res.redirect(next);
+});
 
 app.use('/', require('./routes'));
 app.use('/', require('./routes/auth'));

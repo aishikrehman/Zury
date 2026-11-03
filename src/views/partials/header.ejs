@@ -1,0 +1,107 @@
+<%#
+  Top navbar, as in Tabler's layout-navbar-*.html / layout-horizontal.html.
+  Tabler's CSS hides it in vertical layouts.
+%>
+<%
+  const menu = navItems.filter((i) => !i.section);
+%>
+<% const menuList = () => { %>
+  <nav aria-label="Primary" class="nav-overflow" data-bs-toggle="nav-overflow">
+    <ul class="navbar-nav">
+      <% menu.forEach((item) => { %>
+        <% if (item.children) { %>
+          <li class="nav-item dropdown<%= item.active ? ' active' : '' %>">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon"><i class="ti ti-<%= item.icon %> icon"></i></span>
+              <span class="nav-link-title"><%= item.label %></span>
+            </a>
+            <div class="dropdown-menu">
+              <% item.children.forEach((c) => { %><a class="dropdown-item<%= c.active ? ' active' : '' %>" href="<%= c.href %>"><%= c.label %></a><% }) %>
+            </div>
+          </li>
+        <% } else { %>
+          <li class="nav-item<%= item.active ? ' active' : '' %>">
+            <a class="nav-link" href="<%= item.href %>">
+              <span class="nav-link-icon"><i class="ti ti-<%= item.icon %> icon"></i></span>
+              <span class="nav-link-title"><%= item.label %></span>
+            </a>
+          </li>
+        <% } %>
+      <% }) %>
+    </ul>
+  </nav>
+<% } %>
+<header class="navbar navbar-expand-md d-print-none">
+  <div class="container-xl">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle primary navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="navbar-brand pe-0 pe-md-3">
+      <a href="/" aria-label="Zury" class="d-flex align-items-center gap-2 text-reset text-decoration-none">
+        <img src="/images/zury-logo.svg" width="32" height="32" alt="" class="navbar-brand-image">
+        <span>Zury</span>
+      </a>
+    </div>
+    <div class="navbar-nav flex-row order-md-last align-items-center">
+      <% if (!currentUser && demoMode) { %>
+        <div class="nav-item d-none d-md-flex me-3"><a href="/demo" class="btn"><i class="ti ti-users-group me-1"></i>Try a demo user</a></div>
+      <% } %>
+      <div class="nav-item d-none d-md-flex me-3">
+        <a href="#" class="nav-link px-0" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-settings" aria-controls="offcanvas-settings" title="Customize layout">
+          <i class="ti ti-layout icon"></i><span class="visually-hidden">Customize layout</span>
+        </a>
+      </div>
+      <% if (currentUser) { %>
+        <div class="nav-item dropdown">
+          <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Open user menu">
+            <span class="avatar avatar-sm"><%= currentUser.username.charAt(0).toUpperCase() %></span>
+            <div class="d-none d-xl-block ps-2">
+              <div><%= currentUser.username %></div>
+              <div class="mt-1 small text-secondary"><%= currentUser.homeWiki || 'Wikimedia' %></div>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+            <a href="/dashboard" class="dropdown-item">Dashboard</a>
+            <a href="<%= userPath(currentUser.username) %>" class="dropdown-item">Profile</a>
+            <a href="/settings" class="dropdown-item">Preferences</a>
+            <div class="dropdown-divider"></div>
+            <form action="/logout" method="post" class="m-0">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="dropdown-item">Log out</button>
+            </form>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="nav-item"><a href="/login" class="btn btn-primary"><i class="ti ti-brand-wikipedia me-1"></i>Log in</a></div>
+      <% } %>
+    </div>
+    <% if (layout.menuInHeader) { %>
+      <div class="collapse navbar-collapse" id="navbar-menu">
+        <% menuList() %>
+      </div>
+    <% } %>
+  </div>
+</header>
+<% if (!layout.menuInHeader) { %>
+  <div class="navbar-expand-md">
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <div class="navbar">
+        <div class="container-xl">
+          <div class="row flex-column flex-md-row flex-fill align-items-center">
+            <div class="col">
+              <% menuList() %>
+            </div>
+            <div class="col col-md-auto">
+              <form action="/events" method="get" role="search" class="my-2 my-md-0">
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+                  <input type="search" name="q" class="form-control" placeholder="Search events…" aria-label="Search events">
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>

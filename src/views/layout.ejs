@@ -1,20 +1,54 @@
+<%
+  const layout = LAYOUTS[layoutKey] || LAYOUTS['vertical-floating'];
+  const isActive = (prefix, exact = false) => (exact ? currentPath === prefix : currentPath === prefix || currentPath.startsWith(prefix + '/'));
+  const navItems = [
+    { section: 'Overview' },
+    { href: '/', icon: 'home', label: 'Home', active: isActive('/', true) },
+    { href: '/events', icon: 'calendar-event', label: 'Events', active: (isActive('/events') && !isActive('/events/create')) || isActive('/contest') },
+  ];
+  if (currentUser) {
+    navItems.push({ href: '/dashboard', icon: 'layout-dashboard', label: 'Dashboard', active: isActive('/dashboard') });
+    navItems.push({ href: '/submissions', icon: 'files', label: 'My submissions', active: isActive('/submissions') });
+  }
+  if (can('createEvent')) navItems.push({ href: '/events/create', icon: 'circle-plus', label: 'Create event', active: isActive('/events/create') });
+  if (can('accessAdmin')) {
+    navItems.push({ section: 'Administration' });
+    navItems.push({
+      icon: 'shield-lock', label: 'Administration', active: isActive('/admin'),
+      children: [
+        { href: '/admin', label: 'Overview', active: isActive('/admin', true) },
+        { href: '/admin/users', label: 'Users', active: isActive('/admin/users') },
+        { href: '/admin/permissions', label: 'Permissions', active: isActive('/admin/permissions') },
+        ...(can('viewAuditLog') ? [{ href: '/admin/logs', label: 'Audit log', active: isActive('/admin/logs') }] : []),
+      ],
+    });
+  }
+  navItems.push({ section: 'Zury' });
+  if (demoMode) navItems.push({ href: '/demo', icon: 'users-group', label: 'Demo users', active: isActive('/demo') });
+  navItems.push({ href: '/about', icon: 'info-circle', label: 'About', active: isActive('/about') });
+%>
 <!DOCTYPE html>
-<html lang="en" data-bs-navbar-position="vertical" data-bs-navbar-style="floating">
+<html lang="en" <%- layoutHtmlAttributes(layout) %>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title><%= typeof title !== 'undefined' ? title : 'Zury' %></title>
   <link rel="icon" type="image/svg+xml" href="/images/zury-logo.svg">
-  <link rel="stylesheet" href="/css/tabler.css">
+  <% if (layout.rtl) { %>
+    <link rel="stylesheet" href="/vendor/tabler/css/tabler.rtl.min.css">
+  <% } else { %>
+    <link rel="stylesheet" href="/css/tabler.css">
+  <% } %>
   <link rel="stylesheet" href="/vendor/tabler-icons/tabler-icons.min.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+  <a href="#content" class="visually-hidden-focusable skip-link">Skip to main content</a>
   <div class="page">
-    <%- include('partials/sidebar') %>
+    <%- include('partials/sidebar', { layout, navItems }) %>
+    <%- include('partials/header', { layout, navItems }) %>
 
     <div class="page-wrapper">
-      <%- include('partials/topbar') %>
       <main id="content" class="d-flex flex-column flex-fill">
         <% if (demoMode || (typeof flash !== 'undefined' && flash)) { %>
           <div class="container-xl pt-3">
@@ -38,6 +72,7 @@
       <%- include('partials/footer') %>
     </div>
   </div>
+  <%- include('partials/customize', { layout }) %>
   <script src="/vendor/tabler/js/tabler.min.js"></script>
 </body>
 </html>

@@ -23,6 +23,8 @@ before(async () => {
     WIKIMEDIA_CONSUMER_KEY: CONSUMER_KEY,
     WIKIMEDIA_CONSUMER_SECRET: CONSUMER_SECRET,
     WIKIMEDIA_OAUTH_BASE_URL: baseUrl,
+    // Behave like production regardless of the developer's .env.
+    DEMO_MODE: 'false',
   });
 });
 

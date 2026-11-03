@@ -1,38 +1,89 @@
-<%- include('../partials/pageHeader', {
-  pretitle: 'Wikimedia contests & community events',
-  heading: 'Welcome to Zury',
-  actions: '<a href="/events" class="btn btn-primary"><i class="ti ti-calendar-event me-1"></i>Browse events</a>' + (!currentUser && demoMode ? '<a href="/demo" class="btn btn-outline-secondary"><i class="ti ti-users-group me-1"></i>Try a demo user</a>' : ''),
-}) %>
+<% const step = currentUser ? 2 : 1; %>
 <div class="page-body">
   <div class="container-xl">
-    <div class="row row-deck row-cards mb-4">
-      <% const counts = { active: 'success', upcoming: 'azure', completed: 'secondary' }; %>
-      <% sections.forEach((section) => { %>
-        <div class="col-sm-4">
-          <a class="card card-sm card-link" href="/events/<%= section.key %>">
-            <div class="card-body">
-              <div class="row align-items-center">
-                <div class="col-auto"><span class="bg-<%= counts[section.key] %> text-white avatar"><i class="ti ti-<%= section.key === 'active' ? 'player-play' : section.key === 'upcoming' ? 'clock' : 'flag-check' %>"></i></span></div>
-                <div class="col">
-                  <div class="font-weight-medium"><%= section.items.length %><%= section.items.length === 6 ? '+' : '' %> <%= section.heading.toLowerCase() %></div>
-                  <div class="text-secondary">See all</div>
-                </div>
+    <div class="row g-4 align-items-center py-4">
+      <div class="col-lg-6">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <img src="/images/zury-logo.svg" width="56" height="56" alt="">
+          <span class="badge bg-blue-lt">Open source · for Wikimedia communities</span>
+        </div>
+        <h1 class="display-6 fw-bold mb-3">Run Wikimedia contests and events in one place</h1>
+        <p class="fs-3 text-secondary mb-4">
+          Photo contests, writing contests, Wikidata drives and edit-a-thons, with submissions checked live against Wikipedia, Commons and Wikidata.
+        </p>
+        <div class="btn-list mb-4">
+          <a href="/events" class="btn btn-primary btn-lg"><i class="ti ti-calendar-event me-1"></i>Browse events</a>
+          <a href="/about" class="btn btn-lg">How it works</a>
+        </div>
+        <div class="row g-3">
+          <% [['calendar-event', 'blue', stats.events, 'public events'], ['files', 'green', stats.submissions, 'submissions'], ['users', 'orange', stats.users, 'people']].forEach(([icon, color, value, label]) => { %>
+            <div class="col-4">
+              <div class="d-flex align-items-center">
+                <span class="avatar bg-<%= color %>-lt me-2"><i class="ti ti-<%= icon %>"></i></span>
+                <div><div class="h3 m-0"><%= value %></div><div class="text-secondary small"><%= label %></div></div>
               </div>
             </div>
-          </a>
+          <% }) %>
         </div>
-      <% }) %>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card card-md">
+          <div class="card-body">
+            <h2 class="h2 text-center mb-2">Get started</h2>
+            <p class="text-secondary text-center mb-4">Three steps to your first entry.</p>
+            <ul class="steps steps-counter steps-green my-4">
+              <li class="step-item<%= step === 1 ? ' active' : '' %>">Log in</li>
+              <li class="step-item<%= step === 2 ? ' active' : '' %>">Pick an event</li>
+              <li class="step-item">Submit entries</li>
+            </ul>
+
+            <% if (!currentUser) { %>
+              <div class="mb-3">
+                <a href="/login" class="btn btn-primary w-100 btn-lg">
+                  <i class="ti ti-brand-wikipedia me-2"></i>Log in with your Wikimedia account
+                </a>
+                <div class="form-hint text-center mt-2">One account for Wikipedia, Commons, Wikidata and all other Wikimedia projects. Zury only reads your username and groups.</div>
+              </div>
+              <% if (demoUsers.length) { %>
+                <div class="hr-text">or explore with a demo account</div>
+                <form method="post" action="/demo/login">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <div class="row g-2">
+                    <div class="col">
+                      <select name="userId" class="form-select" aria-label="Demo account">
+                        <% demoUsers.forEach((u) => { %><option value="<%= u.id %>"<%= u.username.startsWith('Participant') ? ' selected' : '' %>><%= u.username.replace(' (demo)', '') %></option><% }) %>
+                      </select>
+                    </div>
+                    <div class="col-auto"><button type="submit" class="btn"><i class="ti ti-login me-1"></i>Continue</button></div>
+                  </div>
+                </form>
+              <% } %>
+            <% } else { %>
+              <div class="text-center">
+                <span class="avatar avatar-lg mb-3"><%= currentUser.username.charAt(0).toUpperCase() %></span>
+                <h3 class="mb-1">You're logged in as <%= currentUser.username %></h3>
+                <p class="text-secondary">Next, pick an active event and submit your entries.</p>
+                <div class="btn-list justify-content-center">
+                  <a href="/events/active" class="btn btn-primary"><i class="ti ti-player-play me-1"></i>Active events</a>
+                  <a href="/dashboard" class="btn"><i class="ti ti-layout-dashboard me-1"></i>Dashboard</a>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
     </div>
 
     <% sections.forEach((section) => { %>
-      <div class="d-flex justify-content-between align-items-baseline mb-3 mt-2">
-        <h3 class="mb-0"><%= section.heading %></h3>
-        <a href="/events/<%= section.key %>" class="small">See all <i class="ti ti-arrow-right"></i></a>
+      <div class="d-flex justify-content-between align-items-baseline mb-3 mt-4">
+        <h2 class="mb-0"><%= section.heading %></h2>
+        <a href="/events/<%= section.key %>">See all <i class="ti ti-arrow-right"></i></a>
       </div>
       <% if (!section.items.length) { %>
-        <div class="empty py-4"><p class="empty-subtitle text-secondary"><%= section.empty %></p></div>
+        <div class="card"><div class="empty py-4"><p class="empty-subtitle text-secondary"><%= section.empty %></p></div></div>
       <% } else { %>
-        <div class="row row-cards mb-4">
+        <div class="row row-cards">
           <% section.items.forEach((c) => { %>
             <div class="col-sm-6 col-lg-4"><%- include('../partials/contestCard', { c, roles: [] }) %></div>
           <% }) %>
