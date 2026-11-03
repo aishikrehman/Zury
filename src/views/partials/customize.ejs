@@ -6,8 +6,8 @@
 ]; %>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas-settings" aria-labelledby="offcanvas-settings-title">
   <div class="offcanvas-header">
-    <h2 class="offcanvas-title" id="offcanvas-settings-title">Layout</h2>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    <h2 class="offcanvas-title" id="offcanvas-settings-title"><%= t("Layout") %></h2>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="<%= t("Close") %>"></button>
   </div>
   <div class="offcanvas-body">
     <% groups.forEach(([title, keys]) => { %>
@@ -19,7 +19,7 @@
               <span class="form-selectgroup-label d-flex align-items-center p-3<%= selected ? ' border-primary' : '' %>">
                 <span class="me-3"><span class="form-selectgroup-check<%= selected ? ' bg-primary border-primary' : '' %>"></span></span>
                 <span class="form-selectgroup-label-content"><span class="font-weight-medium"><%= LAYOUTS[key].label %></span></span>
-                <% if (selected) { %><span class="badge bg-primary-lt ms-auto">Current</span><% } %>
+                <% if (selected) { %><span class="badge bg-primary-lt ms-auto"><%= t("Current") %></span><% } %>
               </span>
             </a>
           <% }) %>
@@ -28,6 +28,6 @@
     <% }) %>
   </div>
   <div class="offcanvas-footer border-top p-3">
-    <a href="/layout/horizontal?next=<%= encodeURIComponent(currentPath === '/' ? '/dashboard' : currentPath) %>" class="btn w-100"><i class="ti ti-rotate me-1"></i>Reset to default</a>
+    <a href="/layout/horizontal?next=<%= encodeURIComponent(currentPath === '/' ? '/dashboard' : currentPath) %>" class="btn w-100"><i class="ti ti-rotate me-1"></i><%= t("Reset to default") %></a>
   </div>
 </div>

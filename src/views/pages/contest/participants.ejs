@@ -6,10 +6,10 @@
     <div class="col-lg-8">
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Members</h3>
+          <h3 class="card-title"><%= t("Members") %></h3>
           <div class="card-actions d-flex align-items-center gap-2">
-            <span class="text-secondary small"><%= members.length %> active</span>
-            <% if (can('sendNotifications')) { %><a href="<%= base %>/message" class="btn btn-sm btn-outline-primary"><i class="ti ti-mail me-1"></i>Message</a><% } %>
+            <span class="text-secondary small"><%= t('{n} active', { n: members.length }) %></span>
+            <% if (can('sendNotifications')) { %><a href="<%= base %>/message" class="btn btn-sm btn-outline-primary"><i class="ti ti-mail me-1"></i><%= t("Message") %></a><% } %>
           </div>
         </div>
         <% if (roleOptions.length) { %>
@@ -17,33 +17,33 @@
             <form method="post" action="<%= base %>/members" class="row g-2 align-items-end">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <div class="<%= memberWikis.length ? 'col-sm-4' : 'col-sm-6' %>">
-                <label class="form-label" for="memberUsername">Wikimedia username</label>
-                <select class="form-select" id="memberUsername" name="username" required data-picker="user" placeholder="Search Wikimedia users…"></select>
+                <label class="form-label" for="memberUsername"><%= t("Wikimedia username") %></label>
+                <select class="form-select" id="memberUsername" name="username" required data-picker="user" placeholder="<%= t("Search Wikimedia users…") %>"></select>
               </div>
               <div class="<%= memberWikis.length ? 'col-sm-3' : 'col-sm-4' %>">
-                <label class="form-label" for="memberRole">Role</label>
+                <label class="form-label" for="memberRole"><%= t("Role") %></label>
                 <select class="form-select" id="memberRole" name="role">
                   <% roleOptions.forEach(([key, role]) => { %><option value="<%= key %>"><%= role.label %></option><% }) %>
                 </select>
               </div>
               <% if (memberWikis.length) { %>
                 <div class="col-sm-3">
-                  <label class="form-label" for="memberWiki">For</label>
+                  <label class="form-label" for="memberWiki"><%= t("For") %></label>
                   <select class="form-select" id="memberWiki" name="wiki">
-                    <option value="">Whole event</option>
+                    <option value=""><%= t("Whole event") %></option>
                     <% memberWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= wikiText(w.wiki) %></option><% }) %>
                   </select>
                 </div>
               <% } %>
-              <div class="col-sm-2"><button class="btn btn-primary w-100" type="submit"><i class="ti ti-user-plus me-1"></i>Add</button></div>
+              <div class="col-sm-2"><button class="btn btn-primary w-100" type="submit"><i class="ti ti-user-plus me-1"></i><%= t("Add") %></button></div>
             </form>
           </div>
         <% } %>
         <div class="table-responsive">
           <table class="table table-vcenter card-table">
-            <thead><tr><th>User</th><th>Role</th><th>Scope</th><th>Home wiki</th><th>Since</th><th class="w-1"></th></tr></thead>
+            <thead><tr><th><%= t("User") %></th><th><%= t("Role") %></th><th><%= t("Scope") %></th><th><%= t("Home wiki") %></th><th><%= t("Since") %></th><th class="w-1"></th></tr></thead>
             <tbody>
-              <% if (!members.length) { %><tr><td colspan="6" class="text-secondary">No members yet.</td></tr><% } %>
+              <% if (!members.length) { %><tr><td colspan="6" class="text-secondary"><%= t("No members yet.") %></td></tr><% } %>
               <% roleOrder.forEach((role) => members.filter((m) => m.role === role).forEach((m) => { %>
                 <tr>
                   <td>
@@ -53,14 +53,14 @@
                     </div>
                   </td>
                   <td><span class="badge bg-<%= { organizer: 'green', jury: 'orange', participant: 'blue', viewer: 'secondary' }[role] %>-lt"><%= EVENT_ROLES[role].label %></span></td>
-                  <td><% if (m.wiki) { %><span class="badge bg-azure-lt" title="<%= wikiText(m.wiki) %>"><%= wikiName(m.wiki) %></span><% } else { %><span class="text-secondary">Event</span><% } %></td>
+                  <td><% if (m.wiki) { %><span class="badge bg-azure-lt" title="<%= wikiText(m.wiki) %>"><%= wikiName(m.wiki) %></span><% } else { %><span class="text-secondary"><%= t("Event") %></span><% } %></td>
                   <td class="text-secondary"><%= m.user.homeWiki ? wikiName(m.user.homeWiki) : '—' %></td>
                   <td class="text-secondary text-nowrap"><%= formatDate(m.assignedAt, contest.timezone) %></td>
                   <td>
                     <% if ((m.wiki ? scope.forWiki(m.wiki) : (wikiScope && m.role !== 'participant' ? scope.global : scope.permissions)).has(ROLE_MANAGEMENT_PERMISSION[m.role])) { %>
                       <form method="post" action="<%= base %>/members/<%= m.id %>/remove" class="d-inline">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button class="btn btn-sm btn-ghost-danger" type="submit" title="Remove <%= m.user.username %>"><i class="ti ti-trash"></i><span class="visually-hidden">Remove</span></button>
+                        <button class="btn btn-sm btn-ghost-danger" type="submit" title="Remove <%= m.user.username %>"><i class="ti ti-trash"></i><span class="visually-hidden"><%= t("Remove") %></span></button>
                       </form>
                     <% } %>
                   </td>
@@ -74,9 +74,9 @@
 
     <div class="col-lg-4">
       <div class="card mb-3" id="blocks">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-ban me-2"></i>Blocked</h3><div class="card-actions text-secondary small"><%= blocks.length %></div></div>
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-ban me-2"></i><%= t("Blocked") %></h3><div class="card-actions text-secondary small"><%= blocks.length %></div></div>
         <div class="card-body<%= blocks.length ? ' pb-0' : '' %>">
-          <p class="text-secondary small mb-<%= blocks.length ? '2' : '0' %>">Blocked people can't join, submit or hold a role in this event. Accounts that are globally locked, globally blocked or blocked on their wiki are kept out automatically.</p>
+          <p class="text-secondary small mb-<%= blocks.length ? '2' : '0' %>"><%= t("Blocked people can't join, submit or hold a role in this event. Accounts that are globally locked, globally blocked or blocked on their wiki are kept out automatically.") %></p>
         </div>
         <% if (blocks.length) { %>
           <div class="list-group list-group-flush">
@@ -90,7 +90,7 @@
                   <% if (canBlock) { %>
                     <form method="post" action="<%= base %>/blocks/<%= b.id %>/lift">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                      <button class="btn btn-sm btn-ghost-secondary" type="submit">Unblock</button>
+                      <button class="btn btn-sm btn-ghost-secondary" type="submit"><%= t("Unblock") %></button>
                     </form>
                   <% } %>
                 </div>
@@ -103,23 +103,23 @@
             <form method="post" action="<%= base %>/blocks">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <div class="mb-2">
-                <label class="form-label" for="blockUser">Username</label>
-                <select class="form-select" id="blockUser" name="username" required data-picker="user" placeholder="Search Wikimedia users…"></select>
+                <label class="form-label" for="blockUser"><%= t("Username") %></label>
+                <select class="form-select" id="blockUser" name="username" required data-picker="user" placeholder="<%= t("Search Wikimedia users…") %>"></select>
               </div>
               <div class="mb-3">
-                <label class="form-label" for="blockReason">Reason</label>
+                <label class="form-label" for="blockReason"><%= t("Reason") %></label>
                 <input class="form-control" id="blockReason" name="reason" maxlength="500">
               </div>
-              <button class="btn btn-outline-danger w-100" type="submit"><i class="ti ti-ban me-1"></i>Block from this event</button>
+              <button class="btn btn-outline-danger w-100" type="submit"><i class="ti ti-ban me-1"></i><%= t("Block from this event") %></button>
             </form>
           </div>
         <% } %>
       </div>
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Permission overrides</h3></div>
+        <div class="card-header"><h3 class="card-title"><%= t("Permission overrides") %></h3></div>
         <div class="card-body">
-          <p class="text-secondary small">Give or take away one permission for one person in this event. Overrides never reduce the authority of stewards, global sysops or local admins.</p>
-          <% if (!overrides.length) { %><p class="text-secondary small mb-0">No overrides.</p><% } %>
+          <p class="text-secondary small"><%= t("Give or take away one permission for one person in this event. Overrides never reduce the authority of stewards, global sysops or local admins.") %></p>
+          <% if (!overrides.length) { %><p class="text-secondary small mb-0"><%= t("No overrides.") %></p><% } %>
         </div>
         <% if (overrides.length) { %>
           <div class="list-group list-group-flush">
@@ -133,7 +133,7 @@
                   <% if (can('manageEvent')) { %>
                     <form method="post" action="<%= base %>/overrides/<%= o.id %>/remove">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                      <button class="btn btn-sm btn-ghost-danger" type="submit" title="Remove override"><i class="ti ti-x"></i><span class="visually-hidden">Remove</span></button>
+                      <button class="btn btn-sm btn-ghost-danger" type="submit" title="<%= t("Remove override") %>"><i class="ti ti-x"></i><span class="visually-hidden"><%= t("Remove") %></span></button>
                     </form>
                   <% } %>
                 </div>
@@ -146,23 +146,23 @@
             <form method="post" action="<%= base %>/overrides">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <div class="mb-2">
-                <label class="form-label" for="ovUser">Username</label>
-                <select class="form-select" id="ovUser" name="username" required data-picker="user" placeholder="Search Wikimedia users…"></select>
+                <label class="form-label" for="ovUser"><%= t("Username") %></label>
+                <select class="form-select" id="ovUser" name="username" required data-picker="user" placeholder="<%= t("Search Wikimedia users…") %>"></select>
               </div>
               <div class="mb-2">
-                <label class="form-label" for="ovPermission">Permission</label>
+                <label class="form-label" for="ovPermission"><%= t("Permission") %></label>
                 <select class="form-select" id="ovPermission" name="permission">
                   <% overridable.forEach((p) => { %><option value="<%= p %>"><%= permissionLabels[p] %> (<%= p %>)</option><% }) %>
                 </select>
               </div>
               <div class="mb-3">
-                <label class="form-label" for="ovAllowed">Effect</label>
+                <label class="form-label" for="ovAllowed"><%= t("Effect") %></label>
                 <select class="form-select" id="ovAllowed" name="allowed">
-                  <option value="true">Allow</option>
-                  <option value="false">Deny</option>
+                  <option value="true"><%= t("Allow") %></option>
+                  <option value="false"><%= t("Deny") %></option>
                 </select>
               </div>
-              <button class="btn btn-outline-primary w-100" type="submit">Save override</button>
+              <button class="btn btn-outline-primary w-100" type="submit"><%= t("Save override") %></button>
             </form>
           </div>
         <% } %>

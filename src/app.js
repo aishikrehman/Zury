@@ -25,6 +25,7 @@ const { attachUser } = require('./middleware/auth');
 const { csrfProtection } = require('./middleware/csrf');
 const { flashMessages } = require('./middleware/flash');
 const { displayPreferences } = require('./middleware/display');
+const { i18n } = require('./middleware/i18n');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { securityHeaders, rateLimit } = require('./middleware/security');
 const { PrismaSessionStore } = require('./config/sessionStore');
@@ -90,6 +91,8 @@ app.use('/vendor/tom-select', vendor('tom-select'));
 // Defaults so the layout can always render, even for early errors.
 app.use((req, res, next) => {
   res.locals.currentUser = null;
+  // English until the language is known (errors can happen before that).
+  Object.assign(res.locals, { t: require('./i18n').translator('en'), lang: require('./i18n').LANGUAGES.en, LANGUAGES: require('./i18n').LANGUAGES, formatNumber: (n) => String(n), clientStrings: '{}', th: (text) => text, h: (v) => String(v), tn: (one, other, n) => (n === 1 ? one : other).replace('{n}', n) });
   res.locals.csrfToken = '';
   res.locals.can = () => false;
   res.locals.currentPath = req.path;
@@ -126,6 +129,7 @@ app.use(
 );
 
 app.use(attachUser);
+app.use(i18n);
 // Wiki and language names (English and the language's own) for the views.
 app.use(async (req, res, next) => {
   try {

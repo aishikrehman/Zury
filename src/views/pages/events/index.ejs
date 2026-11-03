@@ -12,29 +12,29 @@
   };
   const groupIcons = { active: 'player-play', upcoming: 'clock', completed: 'flag-check' };
 %>
-<%- include('../../partials/pageHeader', { pretitle: 'Events', heading, actions: can('createEvent') ? '<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>Create event</a>' : '' }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Events'), heading, actions: can('createEvent') ? '<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>Create event</a>' : '' }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="row g-4">
       <div class="col-lg-3">
         <form method="get" action="<%= base %>">
-          <div class="subheader mb-2">Status</div>
+          <div class="subheader mb-2"><%= t("Status") %></div>
           <div class="list-group list-group-transparent mb-3">
-            <a class="list-group-item list-group-item-action d-flex align-items-center<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>"><i class="ti ti-calendar me-2"></i>All events</a>
+            <a class="list-group-item list-group-item-action d-flex align-items-center<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>"><i class="ti ti-calendar me-2"></i><%= t("All events") %></a>
             <% groups.forEach((g) => { %>
               <a class="list-group-item list-group-item-action d-flex align-items-center text-capitalize<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><i class="ti ti-<%= groupIcons[g] %> me-2"></i><%= g %></a>
             <% }) %>
           </div>
-          <div class="subheader mb-2">Search</div>
+          <div class="subheader mb-2"><%= t("Search") %></div>
           <div class="input-icon mb-3">
             <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-            <input id="q" name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="Title or community" aria-label="Search events">
+            <input id="q" name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t("Title or community") %>" aria-label="<%= t("Search events") %>">
           </div>
-          <div class="subheader mb-2">Type</div>
+          <div class="subheader mb-2"><%= t("Type") %></div>
           <div class="mb-3">
             <label class="form-check">
               <input class="form-check-input" type="radio" name="type" value=""<%= !filters.type ? ' checked' : '' %>>
-              <span class="form-check-label">All types</span>
+              <span class="form-check-label"><%= t("All types") %></span>
             </label>
             <% Object.entries(CONTEST_TYPES).forEach(([key, label]) => { %>
               <label class="form-check">
@@ -43,31 +43,31 @@
               </label>
             <% }) %>
           </div>
-          <div class="subheader mb-2">Wiki</div>
-          <select id="wiki" name="wiki" class="form-select mb-3" aria-label="Wiki">
-            <option value="">All wikis</option>
+          <div class="subheader mb-2"><%= t("Wiki") %></div>
+          <select id="wiki" name="wiki" class="form-select mb-3" aria-label="<%= t("Wiki") %>">
+            <option value=""><%= t("All wikis") %></option>
             <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiText(w) %></option><% }) %>
           </select>
-          <div class="subheader mb-2">Sort</div>
-          <select id="sort" name="sort" class="form-select mb-4" aria-label="Sort">
+          <div class="subheader mb-2"><%= t("Sort") %></div>
+          <select id="sort" name="sort" class="form-select mb-4" aria-label="<%= t("Sort") %>">
             <% [['newest', 'Newest first'], ['soonest', 'Oldest first'], ['title', 'Title']].forEach(([key, label]) => { %>
               <option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= label %></option>
             <% }) %>
           </select>
-          <button class="btn btn-primary w-100" type="submit"><i class="ti ti-filter me-1"></i>Apply filters</button>
-          <% if (filters.type || filters.wiki || filters.q) { %><a class="btn btn-link w-100 mt-1" href="<%= base %>">Reset</a><% } %>
+          <button class="btn btn-primary w-100" type="submit"><i class="ti ti-filter me-1"></i><%= t("Apply filters") %></button>
+          <% if (filters.type || filters.wiki || filters.q) { %><a class="btn btn-link w-100 mt-1" href="<%= base %>"><%= t("Reset") %></a><% } %>
         </form>
       </div>
 
       <div class="col-lg-9">
-        <div class="text-secondary mb-3"><%= result.total %> event<%= result.total === 1 ? '' : 's' %></div>
+        <div class="text-secondary mb-3"><%= tn('{n} event', '{n} events', result.total) %></div>
         <% if (!result.items.length) { %>
           <div class="card">
             <div class="empty">
               <div class="empty-icon"><i class="ti ti-calendar-off icon"></i></div>
-              <p class="empty-title">No events found</p>
-              <p class="empty-subtitle text-secondary">Try a different search or remove some filters.</p>
-              <div class="empty-action"><a href="/events" class="btn btn-primary">Show all events</a></div>
+              <p class="empty-title"><%= t("No events found") %></p>
+              <p class="empty-subtitle text-secondary"><%= t("Try a different search or remove some filters.") %></p>
+              <div class="empty-action"><a href="/events" class="btn btn-primary"><%= t("Show all events") %></a></div>
             </div>
           </div>
         <% } else { %>
@@ -80,11 +80,11 @@
         <% if (result.pages > 1) { %>
           <div class="d-flex mt-4">
             <ul class="pagination ms-auto">
-              <li class="page-item<%= result.page === 1 ? ' disabled' : '' %>"><a class="page-link" href="<%= base %><%= qs({ page: result.page - 1 }) %>"><i class="ti ti-chevron-left"></i>prev</a></li>
+              <li class="page-item<%= result.page === 1 ? ' disabled' : '' %>"><a class="page-link" href="<%= base %><%= qs({ page: result.page - 1 }) %>"><i class="ti ti-chevron-left"></i><%= t("prev") %></a></li>
               <% for (let i = 1; i <= result.pages; i++) { %>
                 <li class="page-item<%= i === result.page ? ' active' : '' %>"><a class="page-link" href="<%= base %><%= qs({ page: i }) %>"><%= i %></a></li>
               <% } %>
-              <li class="page-item<%= result.page === result.pages ? ' disabled' : '' %>"><a class="page-link" href="<%= base %><%= qs({ page: result.page + 1 }) %>">next<i class="ti ti-chevron-right"></i></a></li>
+              <li class="page-item<%= result.page === result.pages ? ' disabled' : '' %>"><a class="page-link" href="<%= base %><%= qs({ page: result.page + 1 }) %>"><%= t("next") %><i class="ti ti-chevron-right"></i></a></li>
             </ul>
           </div>
         <% } %>

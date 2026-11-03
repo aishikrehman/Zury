@@ -30,15 +30,15 @@
             return `<div>${esc(item.text)} <span class="text-secondary">${esc(item.localName)}</span></div>`;
           }
           if (kind === 'series' && item.latest) {
-            return `<div>${esc(item.text)} <span class="text-secondary small">latest: ${esc(item.latest)}</span></div>`;
+            return `<div>${esc(item.text)} <span class="text-secondary small">${esc(zt('latest: {edition}', { edition: item.latest }))}</span></div>`;
           }
           if (kind === 'language' && item.code) {
             return `<div>${esc(item.text)} <span class="text-secondary small">${esc(item.code)}</span></div>`;
           }
           return `<div>${esc(item.text)}</div>`;
         },
-        no_results: () => '<div class="no-results">No matches</div>',
-        option_create: (data) => `<div class="create">Use “${esc(data.input)}”</div>`,
+        no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>`,
+        option_create: (data) => `<div class="create">${esc(zt('Use “{text}”', { text: data.input }))}</div>`,
       },
     });
   }
@@ -57,14 +57,14 @@
     row.innerHTML =
       `<div class="col-sm-6"><label class="form-label${required}"></label></div>` +
       `<div class="col-sm-6"><label class="form-label${required}"></label></div>`;
-    row.querySelectorAll('label')[0].textContent = el.dataset.languageLabel || 'Language';
-    row.querySelectorAll('label')[1].textContent = el.dataset.siteLabel || 'Wiki';
+    row.querySelectorAll('label')[0].textContent = el.dataset.languageLabel || zt('Language');
+    row.querySelectorAll('label')[1].textContent = el.dataset.siteLabel || zt('Wiki');
     el.parentNode.insertBefore(row, el);
     const langSelect = document.createElement('select');
     langSelect.setAttribute('aria-label', 'Language of the wiki');
-    langSelect.setAttribute('placeholder', 'Choose a language…');
+    langSelect.setAttribute('placeholder', zt('Choose a language…'));
     row.children[0].appendChild(langSelect);
-    el.setAttribute('placeholder', 'Then choose the wiki…');
+    el.setAttribute('placeholder', zt('Then choose the wiki…'));
     row.children[1].appendChild(el);
 
     const wikis = new window.TomSelect(el, {
@@ -72,7 +72,7 @@
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
       maxOptions: 500,
-      render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => '<div class="no-results">No matches</div>' },
+      render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>` },
     });
     const loadWikis = (code, keep) => {
       wikis.clear(true);
@@ -90,7 +90,7 @@
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
       maxOptions: 500,
-      render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => '<div class="no-results">No matches</div>' },
+      render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>` },
       onChange: (code) => {
         // The event's language follows the project language (not for Commons and the like).
         const hidden = document.getElementById('language');

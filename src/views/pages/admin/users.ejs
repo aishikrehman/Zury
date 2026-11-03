@@ -1,23 +1,23 @@
-<%- include('../../partials/pageHeader', { pretitle: 'Administration', heading: 'Users' }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Users') }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">All users</h3>
+        <h3 class="card-title"><%= t("All users") %></h3>
         <div class="card-actions">
           <form method="get" action="/admin/users">
             <div class="input-icon">
               <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-              <input class="form-control" type="search" name="q" value="<%= q %>" placeholder="Search usernames" aria-label="Search usernames">
+              <input class="form-control" type="search" name="q" value="<%= q %>" placeholder="<%= t("Search usernames") %>" aria-label="<%= t("Search usernames") %>">
             </div>
           </form>
         </div>
       </div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th>User</th><th>Roles</th><th>Last login</th><th class="w-1">Zury roles</th></tr></thead>
+          <thead><tr><th><%= t("User") %></th><th><%= t("Roles") %></th><th><%= t("Last login") %></th><th class="w-1"><%= t("Zury roles") %></th></tr></thead>
           <tbody>
-            <% if (!rows.length) { %><tr><td colspan="4" class="text-secondary">No users found.</td></tr><% } %>
+            <% if (!rows.length) { %><tr><td colspan="4" class="text-secondary"><%= t("No users found.") %></td></tr><% } %>
             <% rows.forEach(({ user: u, subject: s }) => { %>
               <tr>
                 <td>
@@ -54,7 +54,7 @@
         </table>
       </div>
       <div class="card-footer d-flex align-items-center">
-        <p class="m-0 text-secondary small"><i class="ti ti-info-circle me-1"></i>Steward, Global Sysop and Local Admin come from verified Wikimedia groups and can't be granted here.</p>
+        <p class="m-0 text-secondary small"><i class="ti ti-info-circle me-1"></i><%= t("Steward, Global Sysop and Local Admin come from verified Wikimedia groups and can't be granted here.") %></p>
         <% if (pages > 1) { %>
           <ul class="pagination m-0 ms-auto">
             <% for (let i = 1; i <= pages; i++) { %>

@@ -7,7 +7,7 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const v = (k) => (form[k] == null ? '' : Array.isArray(form[k]) ? form[k].join('\n') : form[k]);
   const inv = (k) => (errors[k] ? ' is-invalid' : '');
-  const err = (k) => (errors[k] ? `<div class="invalid-feedback d-block">${esc(errors[k])}</div>` : '');
+  const err = (k) => (errors[k] ? `<div class="invalid-feedback d-block">${esc(t(errors[k]))}</div>` : '');
   const on = (k) => form[k] === true || form[k] === 'on' || form[k] === 'true';
   const wikiScope = eventWikiScope(subject);
   const errorCount = Object.keys(errors).length;
@@ -37,7 +37,7 @@
     </label>`;
 %>
 <% if (errorCount) { %>
-  <div class="alert alert-danger" role="alert">Please fix the <%= errorCount %> highlighted field<%= errorCount === 1 ? '' : 's' %>.</div>
+  <div class="alert alert-danger" role="alert"><%= tn('Please fix the {n} highlighted field.', 'Please fix the {n} highlighted fields.', errorCount) %></div>
 <% } %>
 
 <form method="post" action="<%= action %>" novalidate data-wizard="<%= creating ? 'steps' : 'tabs' %>" data-event-form>
@@ -70,15 +70,15 @@
 
           <%# ── 1. Basic info ─────────────────────────────────────────── %>
           <section class="wizard-pane" id="step-basics" data-step="0">
-            <h3 class="mb-4">Basic info</h3>
+            <h3 class="mb-4"><%= t("Basic info") %></h3>
             <% if (!wikiMode) { %>
               <div class="row g-3 mb-4">
                 <div class="col-md-4">
-                  <label class="form-label required" for="type">Type of event</label>
+                  <label class="form-label required" for="type"><%= t("Type of event") %></label>
                   <select class="form-select<%= inv('type') %>" id="type" <%- creating ? 'name="type" required' : 'disabled' %> data-type-select>
-                    <option value=""<%= type ? '' : ' selected' %>>Choose…</option>
-                    <% Object.entries(EVENT_TYPES).forEach(([key, t]) => { %>
-                      <option value="<%= key %>"<%= type === key ? ' selected' : '' %> data-defaults="<%= JSON.stringify(FEATURE_DEFAULTS[key]) %>" data-namespaces="<%= t.defaultNamespaces.join(', ') %>" data-description="<%= t.description %>" data-guide-rules="<%= (t.guide || {}).rules || '' %>" data-guide-judging="<%= (t.guide || {}).judging || '' %>"><%= t.label %></option>
+                    <option value=""<%= type ? '' : ' selected' %>><%= t("Choose…") %></option>
+                    <% Object.entries(EVENT_TYPES).forEach(([key, td]) => { %>
+                      <option value="<%= key %>"<%= type === key ? ' selected' : '' %> data-defaults="<%= JSON.stringify(FEATURE_DEFAULTS[key]) %>" data-namespaces="<%= td.defaultNamespaces.join(', ') %>" data-description="<%= td.description %>" data-guide-rules="<%= (td.guide || {}).rules || '' %>" data-guide-judging="<%= (td.guide || {}).judging || '' %>"><%= td.label %></option>
                     <% }) %>
                   </select>
                   <div class="form-hint" data-type-description><%= typeDef ? typeDef.description : '' %></div>
@@ -86,7 +86,7 @@
                 </div>
                 <div class="col-md-8">
                   <select class="form-select<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" data-picker="wiki" required
-                    data-language-label="Project language" data-site-label="Project site">
+                    data-language-label="<%= t('Project language') %>" data-site-label="<%= t('Project site') %>">
                     <% if (v('primaryWiki')) { %><option value="<%= v('primaryWiki') %>" selected><%= wikiText(v('primaryWiki')) %></option><% } %>
                   </select>
                   <input type="hidden" name="language" id="language" value="<%= v('language') %>">
@@ -99,34 +99,34 @@
 
               <div class="row g-3 mb-4">
                 <div class="col-md-4">
-                  <label class="form-label" for="seriesSlug">Part of</label>
-                  <select class="form-select<%= inv('seriesSlug') %>" id="seriesSlug" name="seriesSlug" data-picker="series" placeholder="e.g. Wiki Loves Monuments">
+                  <label class="form-label" for="seriesSlug"><%= t("Part of") %></label>
+                  <select class="form-select<%= inv('seriesSlug') %>" id="seriesSlug" name="seriesSlug" data-picker="series" placeholder="<%= t("e.g. Wiki Loves Monuments") %>">
                     <% if (v('seriesSlug')) { %><option value="<%= v('seriesSlug') %>" selected><%= v('seriesSlug') %></option><% } %>
                   </select>
                   <%- err('seriesSlug') %>
                 </div>
                 <div class="col-md-2">
-                  <label class="form-label" for="edition">Edition</label>
+                  <label class="form-label" for="edition"><%= t("Edition") %></label>
                   <input class="form-control<%= inv('edition') %>" id="edition" name="edition" maxlength="20" value="<%= v('edition') %>" placeholder="2026">
                   <%- err('edition') %>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="previousEditionUrl">Previous edition</label>
-                  <input class="form-control<%= inv('previousEditionUrl') %>" id="previousEditionUrl" name="previousEditionUrl" value="<%= v('previousEditionUrl') %>" placeholder="https://…">
+                  <label class="form-label" for="previousEditionUrl"><%= t("Previous edition") %></label>
+                  <input class="form-control<%= inv('previousEditionUrl') %>" id="previousEditionUrl" name="previousEditionUrl" value="<%= v('previousEditionUrl') %>" placeholder="<%= t("https://…") %>">
                   <%- err('previousEditionUrl') %>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="mainCategory">Main category</label>
+                  <label class="form-label" for="mainCategory"><%= t("Main category") %></label>
                   <div class="input-group">
-                    <span class="input-group-text">Category:</span>
-                    <input class="form-control<%= inv('mainCategory') %>" id="mainCategory" name="mainCategory" maxlength="200" value="<%= v('mainCategory') %>" placeholder="Wiki Loves Monuments 2026 in Bangladesh">
+                    <span class="input-group-text"><%= t("Category:") %></span>
+                    <input class="form-control<%= inv('mainCategory') %>" id="mainCategory" name="mainCategory" maxlength="200" value="<%= v('mainCategory') %>" placeholder="<%= t("Wiki Loves Monuments 2026 in Bangladesh") %>">
                   </div>
                   <%- err('mainCategory') %>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="category">Project category</label>
+                  <label class="form-label" for="category"><%= t("Project category") %></label>
                   <select class="form-select" id="category" name="category">
-                    <option value="">Choose…</option>
+                    <option value=""><%= t("Choose…") %></option>
                     <% Object.entries(PROJECT_CATEGORIES).forEach(([key, label]) => { %><option value="<%= key %>"<%= v('category') === key ? ' selected' : '' %>><%= label %></option><% }) %>
                   </select>
                 </div>
@@ -134,18 +134,18 @@
 
               <div class="row g-3 mb-4">
                 <div class="col-12">
-                  <label class="form-label required" for="title">Title</label>
-                  <input class="form-control form-control-lg<%= inv('title') %>" id="title" name="title" maxlength="200" minlength="3" required value="<%= v('title') %>" placeholder="e.g. Wiki Loves Monuments 2026 in Bangladesh">
+                  <label class="form-label required" for="title"><%= t("Title") %></label>
+                  <input class="form-control form-control-lg<%= inv('title') %>" id="title" name="title" maxlength="200" minlength="3" required value="<%= v('title') %>" placeholder="<%= t("e.g. Wiki Loves Monuments 2026 in Bangladesh") %>">
                   <%- err('title') %>
                 </div>
                 <div class="col-12">
-                  <label class="form-label" for="slug">Address</label>
+                  <label class="form-label" for="slug"><%= t("Address") %></label>
                   <div class="input-group">
                     <span class="input-group-text"><%= origin %>/</span>
-                    <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="made-from-the-title" data-slug>
+                    <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="<%= t("made-from-the-title") %>" data-slug>
                     <span class="input-group-text d-none" data-series-address></span>
                   </div>
-                  <div class="form-hint" data-address-hint>Made from the title; you can change it.</div>
+                  <div class="form-hint" data-address-hint><%= t("Made from the title; you can change it.") %></div>
                   <%- err('slug') %>
                 </div>
               </div>
@@ -157,7 +157,7 @@
               <div class="col-md-4">
                 <label class="form-label required" for="timezone">Time zone<%- mark('contest.timezone') %></label>
                 <select class="form-select<%= inv('timezone') %>" id="timezone" name="timezone" required>
-                  <option value=""<%= v('timezone') ? '' : ' selected' %>>Choose…</option>
+                  <option value=""<%= v('timezone') ? '' : ' selected' %>><%= t("Choose…") %></option>
                   <% TIMEZONES.forEach((tz) => { %><option value="<%= tz %>"<%= v('timezone') === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
                 </select>
                 <%- err('timezone') %>
@@ -167,8 +167,8 @@
             <div class="row g-3">
               <% if (!wikiMode) { %>
                 <div class="col-md-6">
-                  <label class="form-label" for="organizingCommunity">Organizing community</label>
-                  <select class="form-select<%= inv('organizingCommunity') %>" id="organizingCommunity" name="organizingCommunity" data-picker="community" placeholder="Choose or type a name…">
+                  <label class="form-label" for="organizingCommunity"><%= t("Organizing community") %></label>
+                  <select class="form-select<%= inv('organizingCommunity') %>" id="organizingCommunity" name="organizingCommunity" data-picker="community" placeholder="<%= t("Choose or type a name…") %>">
                     <% if (v('organizingCommunity')) { %><option value="<%= v('organizingCommunity') %>" selected><%= v('organizingCommunity') %></option><% } %>
                   </select>
                   <%- err('organizingCommunity') %>
@@ -176,7 +176,7 @@
               <% } %>
               <div class="col-md-6">
                 <label class="form-label" for="contactInfo">Contact<%- mark('contest.contactInfo') %></label>
-                <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="Talk page, email list or similar">
+                <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="<%= t("Talk page, email list or similar") %>">
                 <%- err('contactInfo') %>
               </div>
               <div class="col-12">
@@ -186,13 +186,13 @@
               </div>
               <% if (!wikiMode) { %>
                 <div class="col-md-6">
-                  <label class="form-label" for="logoUrl">Logo</label>
-                  <input class="form-control<%= inv('logoUrl') %>" id="logoUrl" name="logoUrl" value="<%= v('logoUrl') %>" placeholder="https://upload.wikimedia.org/…">
+                  <label class="form-label" for="logoUrl"><%= t("Logo") %></label>
+                  <input class="form-control<%= inv('logoUrl') %>" id="logoUrl" name="logoUrl" value="<%= v('logoUrl') %>" placeholder="<%= t("https://upload.wikimedia.org/…") %>">
                   <%- err('logoUrl') %>
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label" for="bannerUrl">Banner</label>
-                  <input class="form-control<%= inv('bannerUrl') %>" id="bannerUrl" name="bannerUrl" value="<%= v('bannerUrl') %>" placeholder="https://upload.wikimedia.org/…">
+                  <label class="form-label" for="bannerUrl"><%= t("Banner") %></label>
+                  <input class="form-control<%= inv('bannerUrl') %>" id="bannerUrl" name="bannerUrl" value="<%= v('bannerUrl') %>" placeholder="<%= t("https://upload.wikimedia.org/…") %>">
                   <%- err('bannerUrl') %>
                 </div>
               <% } %>
@@ -201,14 +201,14 @@
 
           <%# ── 2. Submission rules ───────────────────────────────────── %>
           <section class="wizard-pane d-none" id="step-rules" data-step="1">
-            <h3 class="mb-2">Submission rules</h3>
+            <h3 class="mb-2"><%= t("Submission rules") %></h3>
             <p class="text-secondary mb-4" data-guide="rules"><%= typeDef && typeDef.guide ? typeDef.guide.rules : '' %></p>
             <div class="row g-3 mb-4">
               <% ['registrationOpensAt', 'registrationClosesAt', 'submissionOpensAt', 'submissionDeadline'].forEach((key) => { %>
                 <div class="col-sm-6 col-lg-3"><%- dateInput(key) %></div>
               <% }) %>
             </div>
-            <h4 class="mb-3">Who can take part</h4>
+            <h4 class="mb-3"><%= t("Who can take part") %></h4>
             <div class="row g-3 mb-4">
               <div class="col-sm-6 col-lg-3">
                 <label class="form-label" for="participationMode">Participants<%- mark('settings.participationMode') %></label>
@@ -228,7 +228,7 @@
               </div>
               <div class="col-sm-6 col-lg-3">
                 <label class="form-label" for="participantLimit">Participant limit<%- mark('settings.participantLimit') %></label>
-                <input type="number" min="1" class="form-control<%= inv('participantLimit') %>" id="participantLimit" name="participantLimit" value="<%= v('participantLimit') %>" placeholder="No limit">
+                <input type="number" min="1" class="form-control<%= inv('participantLimit') %>" id="participantLimit" name="participantLimit" value="<%= v('participantLimit') %>" placeholder="<%= t("No limit") %>">
                 <%- err('participantLimit') %>
               </div>
               <div class="col-md-6">
@@ -238,7 +238,7 @@
               </div>
             </div>
 
-            <h4 class="mb-3">What counts</h4>
+            <h4 class="mb-3"><%= t("What counts") %></h4>
             <div class="row g-3 mb-4">
               <div class="col-lg-6">
                 <label class="form-label" for="eligibleNamespaces">Namespaces<%- mark('settings.eligibleNamespaces') %></label>
@@ -248,9 +248,9 @@
                 <%- err('eligibleNamespaces') %>
               </div>
             </div>
-            <% Object.entries(EVENT_TYPES).filter(([, t]) => t.fields.length).forEach(([key, t]) => { const current = key === type; %>
+            <% Object.entries(EVENT_TYPES).filter(([, td]) => td.fields.length).forEach(([key, td]) => { const current = key === type; %>
               <fieldset class="row g-3 mb-4<%= current ? '' : ' d-none' %>" data-type-fields="<%= key %>"<%= current ? '' : ' disabled' %>>
-                <% t.fields.forEach((f) => { const name = 'type_' + f.key; const val = current ? form[name] : f.default; const isOn = val === true || val === 'on' || val === 'true'; %>
+                <% td.fields.forEach((f) => { const name = 'type_' + f.key; const val = current ? form[name] : f.default; const isOn = val === true || val === 'on' || val === 'true'; %>
                   <div class="<%= f.type === 'list' ? 'col-md-6' : 'col-sm-6 col-lg-4' %>">
                     <% if (f.type === 'bool') { %>
                       <label class="form-check form-switch mt-md-4">
@@ -270,7 +270,7 @@
                     <% } else { const shown = Array.isArray(val) ? val.join('\n') : (val ?? ''); %>
                       <label class="form-label"><%= f.label %><%- mark('type.' + f.key) %></label>
                       <% if (f.type === 'list') { %>
-                        <textarea class="form-control<%= current ? inv(name) : '' %>" name="<%= name %>" rows="3" placeholder="One per line"><%= shown %></textarea>
+                        <textarea class="form-control<%= current ? inv(name) : '' %>" name="<%= name %>" rows="3" placeholder="<%= t("One per line") %>"><%= shown %></textarea>
                       <% } else { %>
                         <input class="form-control<%= current ? inv(name) : '' %>" name="<%= name %>" <%= f.type === 'int' ? `type=number min=${f.min} max=${f.max}` : '' %> value="<%= shown %>">
                       <% } %>
@@ -282,18 +282,18 @@
               </fieldset>
             <% }) %>
 
-            <h4 class="mb-3">Tracking</h4>
+            <h4 class="mb-3"><%= t("Tracking") %></h4>
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label" for="trackHashtags">Hashtags<%- mark('settings.trackHashtags') %></label>
-                <input class="form-control<%= inv('trackHashtags') %>" id="trackHashtags" name="trackHashtags" value="<%= v('trackHashtags') %>" placeholder="wam2026, asianmonth">
-                <div class="form-hint">Edits with these hashtags in the summary are counted.</div>
+                <input class="form-control<%= inv('trackHashtags') %>" id="trackHashtags" name="trackHashtags" value="<%= v('trackHashtags') %>" placeholder="<%= t("wam2026, asianmonth") %>">
+                <div class="form-hint"><%= t("Edits with these hashtags in the summary are counted.") %></div>
                 <%- err('trackHashtags') %>
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="trackCategories">Categories<%- mark('settings.trackCategories') %></label>
-                <textarea class="form-control<%= inv('trackCategories') %>" id="trackCategories" name="trackCategories" rows="2" placeholder="One per line"><%= v('trackCategories') %></textarea>
-                <div class="form-hint">Pages and files added to these categories during the event are counted.</div>
+                <textarea class="form-control<%= inv('trackCategories') %>" id="trackCategories" name="trackCategories" rows="2" placeholder="<%= t("One per line") %>"><%= v('trackCategories') %></textarea>
+                <div class="form-hint"><%= t("Pages and files added to these categories during the event are counted.") %></div>
                 <%- err('trackCategories') %>
               </div>
             </div>
@@ -301,27 +301,27 @@
 
           <%# ── 3. Interaction and judging ────────────────────────────── %>
           <section class="wizard-pane d-none" id="step-judging" data-step="2">
-            <h3 class="mb-2">Interaction and judging</h3>
+            <h3 class="mb-2"><%= t("Interaction and judging") %></h3>
             <p class="text-secondary mb-4" data-guide="judging"><%= typeDef && typeDef.guide ? typeDef.guide.judging : '' %></p>
             <div class="row g-3 mb-4">
               <% ['reviewOpensAt', 'reviewDeadline', 'appealDeadline', 'resultsAnnouncedAt'].forEach((key) => { %>
                 <div class="col-sm-6 col-lg-3"><%- dateInput(key) %></div>
               <% }) %>
             </div>
-            <h4 class="mb-1">Marks</h4>
-            <p class="text-secondary small mb-3">What the jury give each entry, and the points each value is worth. Points add up to the leaderboard.</p>
+            <h4 class="mb-1"><%= t("Marks") %></h4>
+            <p class="text-secondary small mb-3"><%= t("What the jury give each entry, and the points each value is worth. Points add up to the leaderboard.") %></p>
             <div class="mb-4" data-marks-editor>
               <input type="hidden" name="marks" value="<%= v('marks') || '[]' %>" data-marks-input>
               <div data-marks-rows></div>
               <div class="d-flex flex-wrap gap-2 mt-2">
-                <button type="button" class="btn btn-sm" data-marks-add><i class="ti ti-plus me-1"></i>Add a mark</button>
-                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="accept">Accepted or not</button>
-                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="quality">Quality 0–3</button>
+                <button type="button" class="btn btn-sm" data-marks-add><i class="ti ti-plus me-1"></i><%= t("Add a mark") %></button>
+                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="accept"><%= t("Accepted or not") %></button>
+                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="quality"><%= t("Quality 0–3") %></button>
               </div>
               <%- err('marks') %>
             </div>
 
-            <h4 class="mb-3">Features</h4>
+            <h4 class="mb-3"><%= t("Features") %></h4>
             <div class="row g-2">
               <% FEATURE_FIELDS.forEach(([key, label, help]) => { %>
                 <div class="col-md-6">
@@ -338,23 +338,23 @@
           <%# ── 4. User access levels ─────────────────────────────────── %>
           <% if (!wikiMode) { %>
             <section class="wizard-pane d-none" id="step-access" data-step="3">
-              <h3 class="mb-4">User access levels</h3>
+              <h3 class="mb-4"><%= t("User access levels") %></h3>
               <div class="row g-3">
                 <div class="col-12">
-                  <span class="form-label d-block">Who can see the event</span>
+                  <span class="form-label d-block"><%= t("Who can see the event") %></span>
                   <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2">
                     <label class="form-selectgroup-item flex-fill">
                       <input type="radio" name="visibility" value="public" class="form-selectgroup-input"<%= v('visibility') !== 'private' ? ' checked' : '' %>>
                       <span class="form-selectgroup-label d-flex align-items-center p-3">
                         <span class="me-3"><span class="form-selectgroup-check"></span></span>
-                        <span><strong>Public</strong><span class="d-block text-secondary">Anyone can see it once published.</span></span>
+                        <span><strong><%= t("Public") %></strong><span class="d-block text-secondary"><%= t("Anyone can see it once published.") %></span></span>
                       </span>
                     </label>
                     <label class="form-selectgroup-item flex-fill">
                       <input type="radio" name="visibility" value="private" class="form-selectgroup-input"<%= v('visibility') === 'private' ? ' checked' : '' %>>
                       <span class="form-selectgroup-label d-flex align-items-center p-3">
                         <span class="me-3"><span class="form-selectgroup-check"></span></span>
-                        <span><strong>Members only</strong><span class="d-block text-secondary">Only people with a role in the event.</span></span>
+                        <span><strong><%= t("Members only") %></strong><span class="d-block text-secondary"><%= t("Only people with a role in the event.") %></span></span>
                       </span>
                     </label>
                   </div>
@@ -362,20 +362,20 @@
                 <div class="col-12"><%- toggle('anonymousParticipants', 'Hide participant names from the public') %></div>
                 <% if (creating) { %>
                   <div class="col-md-6">
-                    <label class="form-label" for="organizers">Co-organizers</label>
-                    <select class="form-select" id="organizers" name="organizers" multiple data-picker="user" placeholder="Search Wikimedia users…">
+                    <label class="form-label" for="organizers"><%= t("Co-organizers") %></label>
+                    <select class="form-select" id="organizers" name="organizers" multiple data-picker="user" placeholder="<%= t("Search Wikimedia users…") %>">
                       <% [].concat(form.organizers || []).filter(Boolean).forEach((u) => { %><option value="<%= u %>" selected><%= u %></option><% }) %>
                     </select>
-                    <div class="form-hint">You are an organizer already.</div>
+                    <div class="form-hint"><%= t("You are an organizer already.") %></div>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label" for="jury">Jury</label>
-                    <select class="form-select" id="jury" name="jury" multiple data-picker="user" placeholder="Search Wikimedia users…">
+                    <label class="form-label" for="jury"><%= t("Jury") %></label>
+                    <select class="form-select" id="jury" name="jury" multiple data-picker="user" placeholder="<%= t("Search Wikimedia users…") %>">
                       <% [].concat(form.jury || []).filter(Boolean).forEach((u) => { %><option value="<%= u %>" selected><%= u %></option><% }) %>
                     </select>
                   </div>
                 <% } else { %>
-                  <div class="col-12"><a class="btn btn-outline-primary" href="<%= base %>/participants"><i class="ti ti-users me-1"></i>Manage organizers, jury and participants</a></div>
+                  <div class="col-12"><a class="btn btn-outline-primary" href="<%= base %>/participants"><i class="ti ti-users me-1"></i><%= t("Manage organizers, jury and participants") %></a></div>
                 <% } %>
               </div>
             </section>
@@ -384,7 +384,7 @@
           <%# ── Review (new events only) ──────────────────────────────── %>
           <% if (creating) { %>
             <section class="wizard-pane d-none" id="step-review" data-step="<%= steps.length - 1 %>">
-              <h3 class="mb-4">Review</h3>
+              <h3 class="mb-4"><%= t("Review") %></h3>
               <div data-review></div>
             </section>
           <% } %>
@@ -392,9 +392,9 @@
 
         <div class="card-footer d-flex align-items-center">
           <% if (creating) { %>
-            <button type="button" class="btn" data-wizard-back disabled><i class="ti ti-arrow-left me-1"></i>Back</button>
+            <button type="button" class="btn" data-wizard-back disabled><i class="ti ti-arrow-left me-1"></i><%= t("Back") %></button>
             <span class="text-secondary small mx-auto" data-wizard-count></span>
-            <button type="button" class="btn btn-primary" data-wizard-next>Next<i class="ti ti-arrow-right ms-1"></i></button>
+            <button type="button" class="btn btn-primary" data-wizard-next><%= t("Next") %><i class="ti ti-arrow-right ms-1"></i></button>
             <button type="submit" class="btn btn-primary d-none" data-wizard-submit><i class="ti ti-check me-1"></i><%= submitLabel %></button>
           <% } else { %>
             <button type="submit" class="btn btn-primary ms-auto"><i class="ti ti-device-floppy me-1"></i><%= submitLabel %></button>

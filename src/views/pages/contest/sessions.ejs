@@ -1,7 +1,7 @@
 <%
   const tz = contest.timezone;
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const err = (k) => (errors[k] ? `<div class="invalid-feedback d-block">${esc(errors[k])}</div>` : '');
+  const err = (k) => (errors[k] ? `<div class="invalid-feedback d-block">${esc(t(errors[k]))}</div>` : '');
   const inv = (k) => (errors[k] ? ' is-invalid' : '');
   const v = (k) => (form[k] == null ? '' : form[k]);
   const statusColor = { planned: 'secondary', open: 'green', held: 'blue', cancelled: 'red' };
@@ -17,7 +17,7 @@
     <div class="col-lg-8">
       <% [['Upcoming', upcoming], ['Past', past]].forEach(([heading, list]) => { if (!list.length && heading === 'Past') return; %>
         <h3 class="mb-2 <%= heading === 'Past' ? 'mt-4' : '' %>"><%= heading %></h3>
-        <% if (!list.length) { %><div class="card"><div class="card-body text-secondary">No sessions scheduled yet.</div></div><% } %>
+        <% if (!list.length) { %><div class="card"><div class="card-body text-secondary"><%= t("No sessions scheduled yet.") %></div></div><% } %>
         <div class="row row-cards">
           <% list.forEach((s) => { %>
             <div class="col-md-6">
@@ -32,7 +32,7 @@
                   <div class="text-secondary small mb-2"><i class="ti ti-<%= s.mode === 'online' ? 'video' : 'map-pin' %> me-1"></i><%= modes[s.mode] %><%= s.location ? ' · ' + s.location : '' %></div>
                   <div class="d-flex flex-wrap gap-1">
                     <span class="badge bg-secondary-lt"><%= s.status === 'held' ? s.attended + ' attended' : s.taken + (s.capacity ? ' / ' + s.capacity : '') + ' registered' %></span>
-                    <% if (s.waitlisted) { %><span class="badge bg-yellow-lt"><%= s.waitlisted %> waiting</span><% } %>
+                    <% if (s.waitlisted) { %><span class="badge bg-yellow-lt"><%= t('{n} waiting', { n: s.waitlisted }) %></span><% } %>
                     <% if (s.wiki && !wikiScope) { %><span class="badge bg-azure-lt"><%= wikiName(s.wiki) %></span><% } %>
                     <% if (s.mine && mineLabel[s.mine]) { %><span class="badge bg-<%= mineLabel[s.mine][0] %>-lt"><%= mineLabel[s.mine][1] %></span><% } %>
                   </div>
@@ -48,11 +48,11 @@
       <% if (me) { %>
         <div class="card mb-3">
           <div class="card-body">
-            <div class="h3 mb-1">You attended <%= me.attended %> session<%= me.attended === 1 ? '' : 's' %></div>
+            <div class="h3 mb-1"><%= tn('You attended {n} session', 'You attended {n} sessions', me.attended) %></div>
             <% if (me.certified) { %>
-              <a class="btn btn-primary mt-2" href="<%= base %>/sessions/certificate"><i class="ti ti-certificate me-1"></i>Your certificate</a>
+              <a class="btn btn-primary mt-2" href="<%= base %>/sessions/certificate"><i class="ti ti-certificate me-1"></i><%= t("Your certificate") %></a>
             <% } else if (certificateAfter) { %>
-              <div class="text-secondary"><%= certificateAfter - me.attended %> more for a certificate.</div>
+              <div class="text-secondary"><%= t('{n} more for a certificate.', { n: certificateAfter - me.attended }) %></div>
             <% } %>
           </div>
         </div>
@@ -61,34 +61,34 @@
       <% if (canManage) { %>
         <form method="post" action="<%= base %>/sessions" class="card mb-3" novalidate>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-plus me-2"></i>Add a session</h3></div>
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-plus me-2"></i><%= t("Add a session") %></h3></div>
           <div class="card-body">
-            <div class="mb-2"><label class="form-label" for="sTitle">Title</label><input class="form-control<%= inv('title') %>" id="sTitle" name="title" value="<%= v('title') %>"><%- err('title') %></div>
+            <div class="mb-2"><label class="form-label" for="sTitle"><%= t("Title") %></label><input class="form-control<%= inv('title') %>" id="sTitle" name="title" value="<%= v('title') %>"><%- err('title') %></div>
             <div class="mb-2">
-              <label class="form-label" for="sMode">Format</label>
+              <label class="form-label" for="sMode"><%= t("Format") %></label>
               <select class="form-select" id="sMode" name="mode"><% Object.entries(modes).forEach(([k, l]) => { %><option value="<%= k %>"<%= v('mode') === k ? ' selected' : '' %>><%= l %></option><% }) %></select>
             </div>
             <div class="row g-2 mb-2">
-              <div class="col-6"><label class="form-label" for="sStart">Starts</label><input type="datetime-local" class="form-control<%= inv('startsAt') %>" id="sStart" name="startsAt" value="<%= v('startsAt') %>"><%- err('startsAt') %></div>
-              <div class="col-6"><label class="form-label" for="sEnd">Ends</label><input type="datetime-local" class="form-control<%= inv('endsAt') %>" id="sEnd" name="endsAt" value="<%= v('endsAt') %>"><%- err('endsAt') %></div>
+              <div class="col-6"><label class="form-label" for="sStart"><%= t("Starts") %></label><input type="datetime-local" class="form-control<%= inv('startsAt') %>" id="sStart" name="startsAt" value="<%= v('startsAt') %>"><%- err('startsAt') %></div>
+              <div class="col-6"><label class="form-label" for="sEnd"><%= t("Ends") %></label><input type="datetime-local" class="form-control<%= inv('endsAt') %>" id="sEnd" name="endsAt" value="<%= v('endsAt') %>"><%- err('endsAt') %></div>
             </div>
-            <div class="mb-2"><label class="form-label" for="sLoc">Place</label><input class="form-control<%= inv('location') %>" id="sLoc" name="location" value="<%= v('location') %>" placeholder="Address or venue"><%- err('location') %></div>
-            <div class="mb-2"><label class="form-label" for="sUrl">Meeting link</label><input class="form-control<%= inv('meetingUrl') %>" id="sUrl" name="meetingUrl" value="<%= v('meetingUrl') %>" placeholder="https://meet.jit.si/…"><%- err('meetingUrl') %></div>
-            <div class="mb-2"><label class="form-label" for="sCap">Places</label><input type="number" min="1" class="form-control<%= inv('capacity') %>" id="sCap" name="capacity" value="<%= v('capacity') %>" placeholder="No limit"><%- err('capacity') %></div>
-            <div class="mb-0"><label class="form-label" for="sAgenda">Agenda</label><textarea class="form-control" id="sAgenda" name="agenda" rows="3"><%= v('agenda') %></textarea></div>
+            <div class="mb-2"><label class="form-label" for="sLoc"><%= t("Place") %></label><input class="form-control<%= inv('location') %>" id="sLoc" name="location" value="<%= v('location') %>" placeholder="<%= t("Address or venue") %>"><%- err('location') %></div>
+            <div class="mb-2"><label class="form-label" for="sUrl"><%= t("Meeting link") %></label><input class="form-control<%= inv('meetingUrl') %>" id="sUrl" name="meetingUrl" value="<%= v('meetingUrl') %>" placeholder="<%= t("https://meet.jit.si/…") %>"><%- err('meetingUrl') %></div>
+            <div class="mb-2"><label class="form-label" for="sCap"><%= t("Places") %></label><input type="number" min="1" class="form-control<%= inv('capacity') %>" id="sCap" name="capacity" value="<%= v('capacity') %>" placeholder="<%= t("No limit") %>"><%- err('capacity') %></div>
+            <div class="mb-0"><label class="form-label" for="sAgenda"><%= t("Agenda") %></label><textarea class="form-control" id="sAgenda" name="agenda" rows="3"><%= v('agenda') %></textarea></div>
             <div class="form-hint mt-1">Times are in <%= tz %>.</div>
           </div>
-          <div class="card-footer text-end"><button class="btn btn-primary" type="submit">Add session</button></div>
+          <div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t("Add session") %></button></div>
         </form>
 
         <div class="card">
-          <div class="card-header"><h3 class="card-title">Attendance</h3><% if (certificateAfter) { %><div class="card-actions text-secondary small">certificate after <%= certificateAfter %></div><% } %></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Attendance") %></h3><% if (certificateAfter) { %><div class="card-actions text-secondary small">certificate after <%= certificateAfter %></div><% } %></div>
           <div class="list-group list-group-flush">
-            <% if (!summary.length) { %><div class="list-group-item text-secondary">No attendance recorded yet.</div><% } %>
+            <% if (!summary.length) { %><div class="list-group-item text-secondary"><%= t("No attendance recorded yet.") %></div><% } %>
             <% summary.forEach((s) => { %>
               <div class="list-group-item d-flex justify-content-between">
                 <a href="<%= userPath(s.username) %>"><%= s.username %></a>
-                <span><%= s.attended %><% if (s.certified) { %> <i class="ti ti-certificate text-green" title="Certificate earned"></i><% } %></span>
+                <span><%= s.attended %><% if (s.certified) { %> <i class="ti ti-certificate text-green" title="<%= t("Certificate earned") %>"></i><% } %></span>
               </div>
             <% }) %>
           </div>

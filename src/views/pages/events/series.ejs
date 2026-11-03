@@ -1,9 +1,9 @@
-<%- include('../../partials/pageHeader', { pretitle: 'Event series', heading: series.title }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Event series'), heading: series.title }) %>
 <div class="page-body">
   <div class="container-xl">
     <% if (series.description) { %><p class="text-secondary fs-3 mb-4"><%= series.description %></p><% } %>
     <% if (!editions.length) { %>
-      <div class="card"><%- include('../../partials/emptyArt', { title: 'No editions yet' }) %></div>
+      <div class="card"><%- include('../../partials/emptyArt', { title: t('No editions yet') }) %></div>
     <% } else { %>
       <div class="row row-cards">
         <% editions.forEach((c) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>

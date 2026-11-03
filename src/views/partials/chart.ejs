@@ -1,2 +1,2 @@
 <%# Expects `spec`: { type, series, labels?, colors?, height?, sparkline?, legend?, ... } and optional `label` for screen readers. %>
-<div class="position-relative" data-chart="<%= JSON.stringify(spec) %>" role="img" aria-label="<%= typeof label !== 'undefined' ? label : 'Chart' %>" style="min-height: <%= spec.height || 240 %>px"></div>
+<div class="position-relative" data-chart="<%= JSON.stringify(spec) %>" role="img" aria-label="<%= typeof label !== 'undefined' ? label: t('Chart') %>" style="min-height: <%= spec.height || 240 %>px"></div>

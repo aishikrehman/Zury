@@ -1,15 +1,15 @@
 <%# Vertical sidebar, as in Tabler's layout-vertical*.html. Hidden by Tabler's CSS in horizontal layouts. %>
 <aside class="navbar navbar-vertical navbar-expand-lg<%= layout.asideClass ? ' ' + layout.asideClass : '' %>">
   <div class="container-fluid">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle sidebar navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="<%= t("Toggle sidebar navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="navbar-brand">
-      <a href="/" aria-label="Zury" class="d-flex align-items-center gap-2 text-reset text-decoration-none">
+      <a href="/" aria-label="<%= t("Zury") %>" class="d-flex align-items-center gap-2 text-reset text-decoration-none">
         <img src="/images/zury-logo.svg" width="32" height="32" alt="" class="navbar-brand-image">
-        <span class="nav-link-title">Zury</span>
+        <span class="nav-link-title"><%= t("Zury") %></span>
       </a>
-      <button type="button" class="btn btn-action btn-sm d-none d-lg-inline-flex ms-auto" data-bs-toggle="sidebar-folded" aria-pressed="false" aria-label="Pin sidebar">
+      <button type="button" class="btn btn-action btn-sm d-none d-lg-inline-flex ms-auto" data-bs-toggle="sidebar-folded" aria-pressed="false" aria-label="<%= t("Pin sidebar") %>">
         <i class="ti ti-layout-sidebar-left-collapse"></i>
       </button>
     </div>
@@ -18,7 +18,7 @@
       <ul class="navbar-nav">
         <% if (currentUser) { %>
           <li class="nav-item dropup">
-            <a href="#" class="nav-link" data-bs-toggle="dropdown" aria-label="Open user menu">
+            <a href="#" class="nav-link" data-bs-toggle="dropdown" aria-label="<%= t("Open user menu") %>">
               <span class="avatar avatar-sm"><%= currentUser.username.charAt(0).toUpperCase() %></span>
               <div class="nav-link-title ms-2">
                 <%= currentUser.username %>
@@ -26,25 +26,25 @@
               </div>
             </a>
             <div class="dropdown-menu">
-              <a href="/dashboard" class="dropdown-item"><i class="ti ti-layout-dashboard me-2"></i>Dashboard</a>
-              <a href="<%= userPath(currentUser.username) %>" class="dropdown-item"><i class="ti ti-user me-2"></i>Profile</a>
-              <a href="/settings" class="dropdown-item"><i class="ti ti-settings me-2"></i>Preferences</a>
+              <a href="/dashboard" class="dropdown-item"><i class="ti ti-layout-dashboard me-2"></i><%= t("Dashboard") %></a>
+              <a href="<%= userPath(currentUser.username) %>" class="dropdown-item"><i class="ti ti-user me-2"></i><%= t("Profile") %></a>
+              <a href="/settings" class="dropdown-item"><i class="ti ti-settings me-2"></i><%= t("Preferences") %></a>
               <div class="dropdown-divider"></div>
               <form action="/logout" method="post" class="m-0">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button type="submit" class="dropdown-item"><i class="ti ti-logout me-2"></i>Log out</button>
+                <button type="submit" class="dropdown-item"><i class="ti ti-logout me-2"></i><%= t("Log out") %></button>
               </form>
             </div>
           </li>
         <% } else { %>
           <li class="nav-item">
-            <a href="/login" class="nav-link"><span class="nav-link-icon"><i class="ti ti-login icon"></i></span><span class="nav-link-title">Log in with Wikimedia</span></a>
+            <a href="/login" class="nav-link"><span class="nav-link-icon"><i class="ti ti-login icon"></i></span><span class="nav-link-title"><%= t("Log in with Wikimedia") %></span></a>
           </li>
         <% } %>
       </ul>
     </div>
 
-    <nav class="collapse navbar-collapse" id="sidebar-menu" aria-label="Sidebar">
+    <nav class="collapse navbar-collapse" id="sidebar-menu" aria-label="<%= t("Sidebar") %>">
       <ul class="navbar-nav pt-lg-3">
         <% navItems.forEach((item) => { %>
           <% if (item.section) { %>

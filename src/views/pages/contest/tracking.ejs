@@ -1,5 +1,5 @@
 <%
-  const n = (x) => Number(x).toLocaleString('en');
+  const n = formatNumber;
   const on = [tracking.participants && "participants' edits", ...tracking.hashtags.map((h) => '#' + h), ...tracking.categories.map((c) => 'Category:' + c)].filter(Boolean);
 %>
 <div class="page-body"><div class="container-xl">
@@ -9,17 +9,17 @@
     <div class="card-body d-flex flex-wrap align-items-center gap-2">
       <div class="flex-fill">
         <% if (on.length) { %>
-          <span class="text-secondary me-1">Counting</span>
+          <span class="text-secondary me-1"><%= t("Counting") %></span>
           <% on.forEach((x) => { %><span class="badge bg-azure-lt me-1"><%= x %></span><% }) %>
         <% } else { %>
-          <span class="text-secondary">Tracking is off. Turn it on in the configuration: participants' edits, hashtags or categories.</span>
+          <span class="text-secondary"><%= t("Tracking is off. Turn it on in the configuration: participants' edits, hashtags or categories.") %></span>
         <% } %>
         <div class="text-secondary small mt-1">Last checked: <%= trackedAt ? formatDateTime(trackedAt, contest.timezone) : 'never' %> · checked again every hour while the event runs</div>
       </div>
       <% if (can('manageEvent') && on.length) { %>
         <form method="post" action="<%= base %>/tracking/refresh">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <button class="btn btn-primary" type="submit"><i class="ti ti-refresh me-1"></i>Check now</button>
+          <button class="btn btn-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t("Check now") %></button>
         </form>
       <% } %>
     </div>
@@ -39,7 +39,7 @@
   <div class="row row-cards mb-3">
     <div class="col-lg-4">
       <div class="card h-100">
-        <div class="card-header"><h3 class="card-title">Found by</h3></div>
+        <div class="card-header"><h3 class="card-title"><%= t("Found by") %></h3></div>
         <div class="list-group list-group-flush">
           <% Object.entries(sources).forEach(([k, label]) => { %>
             <div class="list-group-item d-flex justify-content-between"><span><%= label %></span><strong><%= n(summary.bySource[k] || 0) %></strong></div>
@@ -49,20 +49,20 @@
     </div>
     <div class="col-lg-4">
       <div class="card h-100">
-        <div class="card-header"><h3 class="card-title">By wiki</h3></div>
+        <div class="card-header"><h3 class="card-title"><%= t("By wiki") %></h3></div>
         <div class="list-group list-group-flush">
-          <% if (!summary.byWiki.length) { %><div class="list-group-item text-secondary">Nothing yet.</div><% } %>
+          <% if (!summary.byWiki.length) { %><div class="list-group-item text-secondary"><%= t("Nothing yet.") %></div><% } %>
           <% summary.byWiki.forEach((w) => { %>
-            <div class="list-group-item d-flex justify-content-between"><span><%- wikiLabel(w.wiki) %></span><span><strong><%= n(w.count) %></strong> <span class="text-secondary small">· <%= n(w.bytes) %> bytes</span></span></div>
+            <div class="list-group-item d-flex justify-content-between"><span><%- wikiLabel(w.wiki) %></span><span><strong><%= n(w.count) %></strong> <span class="text-secondary small">· <%= t('{n} bytes', { n: w.bytes }) %></span></span></div>
           <% }) %>
         </div>
       </div>
     </div>
     <div class="col-lg-4">
       <div class="card h-100">
-        <div class="card-header"><h3 class="card-title">Top contributors</h3></div>
+        <div class="card-header"><h3 class="card-title"><%= t("Top contributors") %></h3></div>
         <div class="list-group list-group-flush">
-          <% if (!summary.byUser.length) { %><div class="list-group-item text-secondary">Nothing yet.</div><% } %>
+          <% if (!summary.byUser.length) { %><div class="list-group-item text-secondary"><%= t("Nothing yet.") %></div><% } %>
           <% summary.byUser.forEach((u) => { %>
             <div class="list-group-item d-flex justify-content-between"><a href="<%= userPath(u.username) %>"><%= u.username %></a><strong><%= n(u.count) %></strong></div>
           <% }) %>
@@ -72,15 +72,15 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><h3 class="card-title">Latest</h3></div>
+    <div class="card-header"><h3 class="card-title"><%= t("Latest") %></h3></div>
     <div class="table-responsive">
       <table class="table table-vcenter card-table">
-        <thead><tr><th>Page</th><th>User</th><th>Wiki</th><th>Found by</th><th class="text-end">Bytes</th><th>When</th></tr></thead>
+        <thead><tr><th><%= t("Page") %></th><th><%= t("User") %></th><th><%= t("Wiki") %></th><th><%= t("Found by") %></th><th class="text-end"><%= t("Bytes") %></th><th><%= t("When") %></th></tr></thead>
         <tbody>
-          <% if (!summary.recent.length) { %><tr><td colspan="6" class="text-secondary">No contributions found yet.</td></tr><% } %>
+          <% if (!summary.recent.length) { %><tr><td colspan="6" class="text-secondary"><%= t("No contributions found yet.") %></td></tr><% } %>
           <% summary.recent.forEach((c) => { %>
             <tr>
-              <td><%= c.pageTitle %><% if (c.isNew) { %> <span class="badge bg-green-lt">new</span><% } %></td>
+              <td><%= c.pageTitle %><% if (c.isNew) { %> <span class="badge bg-green-lt"><%= t("new") %></span><% } %></td>
               <td><%= c.username || '—' %></td>
               <td class="text-secondary"><%= wikiName(c.wiki) %></td>
               <td><span class="badge bg-secondary-lt"><%= sources[c.source] %></span></td>

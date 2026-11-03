@@ -43,11 +43,11 @@ test('unknown layouts are ignored and redirects stay on site', async () => {
   const bad = await t.request('/layout/evil?next=//evil.example');
   assert.equal(bad.location, '/dashboard');
   const page = await t.request('/events');
-  assert.equal(htmlTag(page.body), '<html lang="en" >', 'default layout');
+  assert.equal(htmlTag(page.body), '<html lang="en" dir="ltr" >', 'default layout');
 });
 
 test('the homepage always uses the two-row header', async () => {
   const set = await t.request('/layout/folded?next=/');
   const home = await t.request('/', { cookie: set.cookie });
-  assert.equal(htmlTag(home.body), '<html lang="en" >');
+  assert.equal(htmlTag(home.body), '<html lang="en" dir="ltr" >');
 });

@@ -21,7 +21,7 @@
     };
     const dateText = (v) => {
       const d = new Date(v);
-      return Number.isNaN(d.getTime()) ? v : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+      return Number.isNaN(d.getTime()) ? v : d.toLocaleString(window.zuryLocale, { dateStyle: 'medium', timeStyle: 'short' });
     };
 
     // Required fields in a step: marks the empty ones and returns whether all are filled.
@@ -57,7 +57,7 @@
               const group = fieldLabel(el);
               return rows.push({ key, label: group, value: name });
             }
-            return rows.push({ key: el.name, label: name, value: 'Yes' });
+            return rows.push({ key: el.name, label: name, value: zt('Yes') });
           }
           if (seen.has(el.name)) return;
           seen.add(el.name);
@@ -74,13 +74,15 @@
           card.className = 'mb-4';
           const head = document.createElement('div');
           head.className = 'd-flex align-items-center mb-2';
-          head.innerHTML = '<h4 class="m-0"></h4><button type="button" class="btn btn-sm btn-ghost-primary ms-auto">Edit</button>';
+          head.innerHTML = '<h4 class="m-0"></h4><button type="button" class="btn btn-sm btn-ghost-primary ms-auto"></button>';
           head.querySelector('h4').textContent = title;
+          head.querySelector('button').textContent = zt('Edit');
           head.querySelector('button').addEventListener('click', () => show(index));
           const grid = document.createElement('div');
           grid.className = 'datagrid';
           if (!rows.length) {
-            grid.innerHTML = '<div class="text-secondary">Nothing set.</div>';
+            grid.innerHTML = '<div class="text-secondary"></div>';
+            grid.firstChild.textContent = zt('Nothing set.');
           }
           for (const r of rows) {
             const item = document.createElement('div');
@@ -106,7 +108,7 @@
         back.disabled = i === 0;
         next.classList.toggle('d-none', last);
         submit.classList.toggle('d-none', !last);
-        count.textContent = `Step ${i + 1} of ${panes.length}`;
+        count.textContent = zt('Step {n} of {total}', { n: i + 1, total: panes.length });
         if (last) buildReview();
       }
       if (scroll) form.scrollIntoView({ block: 'start', behavior: 'smooth' });

@@ -2,30 +2,30 @@
   const layout = LAYOUTS[layoutKey] || LAYOUTS.horizontal;
   const isActive = (prefix, exact = false) => (exact ? currentPath === prefix : currentPath === prefix || currentPath.startsWith(prefix + '/'));
   const navItems = [
-    { section: 'Overview' },
-    { href: '/', icon: 'home', label: 'Home', active: isActive('/', true) },
-    { href: '/events', icon: 'calendar-event', label: 'Events', active: (isActive('/events') && !isActive('/events/create')) || isActive('/contest') },
+    { section: t('Overview') },
+    { href: '/', icon: 'home', label: t('Home'), active: isActive('/', true) },
+    { href: '/events', icon: 'calendar-event', label: t('Events'), active: (isActive('/events') && !isActive('/events/create')) || isActive('/contest') },
   ];
   if (currentUser) {
-    navItems.push({ href: '/dashboard', icon: 'layout-dashboard', label: 'Dashboard', active: isActive('/dashboard') });
-    navItems.push({ href: '/submissions', icon: 'files', label: 'My submissions', active: isActive('/submissions') });
+    navItems.push({ href: '/dashboard', icon: 'layout-dashboard', label: t('Dashboard'), active: isActive('/dashboard') });
+    navItems.push({ href: '/submissions', icon: 'files', label: t('My submissions'), active: isActive('/submissions') });
   }
-  if (can('createEvent')) navItems.push({ href: '/events/create', icon: 'circle-plus', label: 'Create event', active: isActive('/events/create') });
+  if (can('createEvent')) navItems.push({ href: '/events/create', icon: 'circle-plus', label: t('Create event'), active: isActive('/events/create') });
   if (can('accessAdmin')) {
-    navItems.push({ section: 'Administration' });
+    navItems.push({ section: t('Administration') });
     navItems.push({
-      icon: 'shield-lock', label: 'Administration', active: isActive('/admin'),
+      icon: 'shield-lock', label: t('Administration'), active: isActive('/admin'),
       children: [
-        { href: '/admin', label: 'Overview', active: isActive('/admin', true) },
-        { href: '/admin/users', label: 'Users', active: isActive('/admin/users') },
-        { href: '/admin/permissions', label: 'Permissions', active: isActive('/admin/permissions') },
-        ...(can('viewAuditLog') ? [{ href: '/admin/logs', label: 'Audit log', active: isActive('/admin/logs') }] : []),
+        { href: '/admin', label: t('Overview'), active: isActive('/admin', true) },
+        { href: '/admin/users', label: t('Users'), active: isActive('/admin/users') },
+        { href: '/admin/permissions', label: t('Permissions'), active: isActive('/admin/permissions') },
+        ...(can('viewAuditLog') ? [{ href: '/admin/logs', label: t('Audit log'), active: isActive('/admin/logs') }] : []),
       ],
     });
   }
-  navItems.push({ section: 'Zury' });
-  if (demoMode) navItems.push({ href: '/demo', icon: 'users-group', label: 'Demo users', active: isActive('/demo') });
-  navItems.push({ href: '/about', icon: 'info-circle', label: 'About', active: isActive('/about') });
+  navItems.push({ section: t('Zury') });
+  if (demoMode) navItems.push({ href: '/demo', icon: 'users-group', label: t('Demo users'), active: isActive('/demo') });
+  navItems.push({ href: '/about', icon: 'info-circle', label: t('About'), active: isActive('/about') });
 %>
 <!DOCTYPE html>
 <html lang="<%= lang.code %>" dir="<%= lang.dir %>" <%- layoutHtmlAttributes(layout) %><% const uiClasses = [ui.wide && 'zury-wide', ui.textLarge && 'zury-text-lg'].filter(Boolean).join(' '); %><% if (uiClasses) { %> class="<%= uiClasses %>"<% } %>>
@@ -45,7 +45,7 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <a href="#content" class="visually-hidden-focusable skip-link">Skip to main content</a>
+  <a href="#content" class="visually-hidden-focusable skip-link"><%= t("Skip to main content") %></a>
   <div class="page">
     <%- include('partials/sidebar', { layout, navItems }) %>
     <%- include('partials/header', { layout, navItems }) %>
@@ -56,13 +56,13 @@
           <div class="container-xl pt-3">
             <% if (demoMode) { %>
               <div class="alert alert-warning py-2 mb-2 d-flex align-items-center" role="note">
-                <i class="ti ti-flask me-2"></i><span><strong>Demo mode.</strong> Everything here is sample data.</span>
-                <a href="/demo" class="alert-link ms-auto">Switch demo user</a>
+                <i class="ti ti-flask me-2"></i><span><strong><%= t("Demo mode.") %></strong> <%= t("Everything here is sample data.") %></span>
+                <a href="/demo" class="alert-link ms-auto"><%= t("Switch demo user") %></a>
               </div>
             <% } %>
             <% if (typeof flash !== 'undefined' && flash) { %>
               <div class="alert alert-<%= flash.type === 'danger' ? 'danger' : 'success' %> mb-0" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
-                <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : 'circle-check' %> me-1"></i><%= flash.message %>
+                <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : 'circle-check' %> me-1"></i><%= t(flash.message) %>
               </div>
             <% } %>
           </div>
@@ -76,6 +76,8 @@
   </div>
   <%- include('partials/customize', { layout }) %>
   <%- include('partials/a11y', { layout }) %>
+  <script type="application/json" id="zury-i18n"><%- clientStrings %></script>
+  <script src="/js/i18n.js"></script>
   <script src="/vendor/tabler/js/tabler.min.js"></script>
   <script src="/vendor/tom-select/js/tom-select.complete.min.js" defer></script>
   <script src="/js/pickers.js" defer></script>

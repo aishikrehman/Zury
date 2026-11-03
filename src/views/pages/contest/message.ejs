@@ -14,7 +14,7 @@
         </div>
       <% } %>
       <% if (!hasToken) { %>
-        <div class="alert alert-warning" role="alert">Messages are sent with your Wikimedia account. Log out and log in with Wikimedia to send them.</div>
+        <div class="alert alert-warning" role="alert"><%= t("Messages are sent with your Wikimedia account. Log out and log in with Wikimedia to send them.") %></div>
       <% } %>
       <form method="post" action="<%= base %>/message" class="card">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -22,13 +22,13 @@
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label" for="audience">To</label>
+              <label class="form-label" for="audience"><%= t("To") %></label>
               <select class="form-select" id="audience" name="audience">
                 <% Object.entries(audiences).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.audience === k ? ' selected' : '' %>><%= label %></option><% }) %>
               </select>
             </div>
             <div class="col-md-6">
-              <span class="form-label d-block">Send as</span>
+              <span class="form-label d-block"><%= t("Send as") %></span>
               <% Object.entries(methods).forEach(([k, label]) => { %>
                 <div class="form-check form-check-inline">
                   <input class="form-check-input" type="radio" name="method" id="method_<%= k %>" value="<%= k %>"<%= form.method === k ? ' checked' : '' %>>
@@ -37,28 +37,28 @@
               <% }) %>
             </div>
             <div class="col-12">
-              <label class="form-label" for="only">Only these people (optional)</label>
-              <textarea class="form-control" id="only" name="only" rows="2" placeholder="One username per line"><%= form.only || '' %></textarea>
+              <label class="form-label" for="only"><%= t("Only these people (optional)") %></label>
+              <textarea class="form-control" id="only" name="only" rows="2" placeholder="<%= t("One username per line") %>"><%= form.only || '' %></textarea>
             </div>
             <div class="col-12">
-              <label class="form-label" for="subject">Subject</label>
+              <label class="form-label" for="subject"><%= t("Subject") %></label>
               <input class="form-control" id="subject" name="subject" maxlength="200" value="<%= form.subject || '' %>">
             </div>
             <div class="col-12">
-              <label class="form-label" for="body">Message</label>
+              <label class="form-label" for="body"><%= t("Message") %></label>
               <textarea class="form-control" id="body" name="body" rows="8" maxlength="10000"><%= form.body || '' %></textarea>
             </div>
           </div>
         </div>
         <div class="card-footer d-flex gap-2 justify-content-end">
-          <button class="btn" type="submit" name="step" value="preview"><i class="ti ti-users me-1"></i>Show recipients</button>
-          <button class="btn btn-primary" type="submit" name="step" value="send"<%= hasToken ? '' : ' disabled' %>><i class="ti ti-send me-1"></i>Send</button>
+          <button class="btn" type="submit" name="step" value="preview"><i class="ti ti-users me-1"></i><%= t("Show recipients") %></button>
+          <button class="btn btn-primary" type="submit" name="step" value="send"<%= hasToken ? '' : ' disabled' %>><i class="ti ti-send me-1"></i><%= t("Send") %></button>
         </div>
       </form>
     </div>
     <div class="col-lg-4">
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Recipients</h3><div class="card-actions text-secondary small"><%= people ? people.length : '—' %> / <%= maxRecipients %> max</div></div>
+        <div class="card-header"><h3 class="card-title"><%= t("Recipients") %></h3><div class="card-actions text-secondary small"><%= t('{n} / {max} max', { n: people ? people.length : 0, max: maxRecipients }) %></div></div>
         <% if (people && people.length) { %>
           <div class="list-group list-group-flush" style="max-height: 420px; overflow: auto">
             <% people.forEach((u) => { %>
@@ -66,7 +66,7 @@
             <% }) %>
           </div>
         <% } else { %>
-          <div class="card-body text-secondary">Nobody yet.</div>
+          <div class="card-body text-secondary"><%= t("Nobody yet.") %></div>
         <% } %>
       </div>
     </div>

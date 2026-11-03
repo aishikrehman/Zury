@@ -7,13 +7,13 @@
       <span class="avatar avatar-sm bg-primary-lt me-2"><i class="ti ti-<%= typeIcon %>"></i></span>
       <div class="text-secondary small"><%= CONTEST_TYPES[c.type] || c.type %> · <%= c.wikis && c.wikis.length > 1 ? c.wikis.length + ' wikis' : wikiName(c.primaryWiki) %></div>
       <div class="ms-auto d-flex gap-1">
-        <% if (c.visibility === 'private') { %><span class="badge bg-yellow-lt">Private</span><% } %>
+        <% if (c.visibility === 'private') { %><span class="badge bg-yellow-lt"><%= t("Private") %></span><% } %>
         <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
       </div>
     </div>
     <h3 class="card-title mb-2"><a href="<%= eventPath(c) %>" class="stretched-link text-reset"><%= c.title %></a></h3>
     <div class="text-secondary small mt-auto">
-      <i class="ti ti-calendar me-1"></i><% if (c.startDate) { %><%= formatDate(c.startDate, c.timezone) %> – <%= formatDate(c.endDate, c.timezone) %><% } else { %>Dates not set<% } %>
+      <i class="ti ti-calendar me-1"></i><% if (c.startDate) { %><%= formatDate(c.startDate, c.timezone) %> – <%= formatDate(c.endDate, c.timezone) %><% } else { %><%= t('Dates not set') %><% } %>
       <% if (c._count) { %><span class="ms-2"><i class="ti ti-users me-1"></i><%= c._count.memberships %></span><% } %>
     </div>
     <% if (typeof roles !== 'undefined' && roles.length) { %>

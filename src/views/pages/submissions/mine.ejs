@@ -1,17 +1,17 @@
-<%- include('../../partials/pageHeader', { pretitle: 'Account', heading: 'My submissions' }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Account'), heading: t('My submissions') }) %>
 <div class="page-body"><div class="container-xl">
   <div class="card">
     <% if (!submissions.length) { %>
       <div class="empty">
         <div class="empty-icon"><i class="ti ti-files-off icon"></i></div>
-        <p class="empty-title">No submissions yet</p>
-        <p class="empty-subtitle text-secondary">Find an active event and submit your first entry.</p>
-        <div class="empty-action"><a href="/events/active" class="btn btn-primary">Active events</a></div>
+        <p class="empty-title"><%= t("No submissions yet") %></p>
+        <p class="empty-subtitle text-secondary"><%= t("Find an active event and submit your first entry.") %></p>
+        <div class="empty-action"><a href="/events/active" class="btn btn-primary"><%= t("Active events") %></a></div>
       </div>
     <% } else { %>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th>Entry</th><th>Event</th><th>Status</th><th>Submitted</th></tr></thead>
+          <thead><tr><th><%= t("Entry") %></th><th><%= t("Event") %></th><th><%= t("Status") %></th><th><%= t("Submitted") %></th></tr></thead>
           <tbody>
             <% submissions.forEach((s) => { %>
               <tr>

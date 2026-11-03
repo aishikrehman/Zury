@@ -15,19 +15,19 @@
 <body>
   <div class="card certificate">
     <div class="card-body text-center p-5">
-      <img src="/images/zury-logo.svg" alt="Zury" height="48" class="mb-4">
-      <div class="text-uppercase text-secondary fw-bold mb-2" style="letter-spacing: .2em">Certificate of participation</div>
-      <div class="text-secondary mb-3">This certifies that</div>
+      <img src="/images/zury-logo.svg" alt="<%= t("Zury") %>" height="48" class="mb-4">
+      <div class="text-uppercase text-secondary fw-bold mb-2" style="letter-spacing: .2em"><%= t("Certificate of participation") %></div>
+      <div class="text-secondary mb-3"><%= t("This certifies that") %></div>
       <div class="display-6 fw-bold mb-3"><%= person.username %></div>
-      <div class="text-secondary mb-1">took part in</div>
+      <div class="text-secondary mb-1"><%= t("took part in the event") %></div>
       <div class="h1 mb-3"><%= contest.title %></div>
-      <div class="text-secondary mb-4">attending <%= attended %> session<%= attended === 1 ? '' : 's' %><%= contest.organizingCommunity ? ', organized by ' + contest.organizingCommunity : '' %>.</div>
+      <div class="text-secondary mb-4"><% if (contest.organizingCommunity) { %><%= tn('attending {n} session, organized by {community}.', 'attending {n} sessions, organized by {community}.', attended, { community: contest.organizingCommunity }) %><% } else { %><%= tn('attending {n} session.', 'attending {n} sessions.', attended) %><% } %></div>
       <div class="text-secondary small"><%= formatDate(new Date(), contest.timezone) %></div>
     </div>
   </div>
   <div class="text-center d-print-none mb-5">
-    <button class="btn btn-primary" data-print><i class="ti ti-printer me-1"></i>Print or save as PDF</button>
-    <a class="btn ms-2" href="<%= base %>/sessions">Back</a>
+    <button class="btn btn-primary" data-print><i class="ti ti-printer me-1"></i><%= t("Print or save as PDF") %></button>
+    <a class="btn ms-2" href="<%= base %>/sessions"><%= t("Back") %></a>
   </div>
   <script src="/js/ui.js"></script>
 </body>

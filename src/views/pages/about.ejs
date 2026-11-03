@@ -6,7 +6,7 @@
   ['gavel', 'red', 'Jury & review', 'Assign reviewers, score entries and handle appeals.'],
   ['shield-lock', 'azure', 'Permissions', 'Wikimedia rights verified through the APIs, scoped per event.'],
 ]; %>
-<%- include('../partials/pageHeader', { pretitle: 'About', heading: 'About Zury' }) %>
+<%- include('../partials/pageHeader', { pretitle: t('About'), heading: t('About Zury') }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="card card-lg mb-4">
@@ -14,8 +14,8 @@
         <div class="row align-items-center">
           <div class="col-auto"><img src="/images/zury-logo.svg" width="72" height="72" alt=""></div>
           <div class="col">
-            <h2 class="mb-1">A unified platform for Wikimedia contests and community events</h2>
-            <p class="text-secondary mb-0">Zury is an open-source tool for creating, organizing, managing and evaluating Wikimedia contests and events across projects and languages.</p>
+            <h2 class="mb-1"><%= t("A unified platform for Wikimedia contests and community events") %></h2>
+            <p class="text-secondary mb-0"><%= t("Zury is an open-source tool for creating, organizing, managing and evaluating Wikimedia contests and events across projects and languages.") %></p>
           </div>
         </div>
       </div>

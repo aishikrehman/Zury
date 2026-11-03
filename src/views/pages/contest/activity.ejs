@@ -22,9 +22,9 @@
   <%- include('../../partials/contestHeader', { active: 'activity' }) %>
   <% const iconFor = (a) => ({ 'contest.created': ['plus', 'green'], 'contest.updated': ['pencil', 'blue'], 'contest.statusChanged': ['progress', 'azure'], 'contest.deleted': ['trash', 'red'], 'membership.added': ['user-plus', 'green'], 'membership.removed': ['user-minus', 'orange'], 'membership.joined': ['login', 'teal'], 'membership.left': ['logout', 'secondary'], 'contestPermission.set': ['key', 'purple'], 'contestPermission.removed': ['key-off', 'purple'], 'submissions.created': ['upload', 'blue'] }[a] || ['point', 'secondary']); %>
   <div class="card">
-    <div class="card-header"><h3 class="card-title">Activity</h3><div class="card-actions text-secondary">Latest <%= entries.length %> · <%= contest.timezone %></div></div>
+    <div class="card-header"><h3 class="card-title"><%= t("Activity") %></h3><div class="card-actions text-secondary">Latest <%= entries.length %> · <%= contest.timezone %></div></div>
     <% if (!entries.length) { %>
-      <div class="empty"><div class="empty-icon"><i class="ti ti-history-off icon"></i></div><p class="empty-title">No activity yet</p></div>
+      <div class="empty"><div class="empty-icon"><i class="ti ti-history-off icon"></i></div><p class="empty-title"><%= t("No activity yet") %></p></div>
     <% } else { %>
       <div class="card-body">
         <div class="divide-y">

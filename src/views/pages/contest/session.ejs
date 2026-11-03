@@ -13,25 +13,25 @@
       <div class="card mb-3">
         <div class="card-header">
           <div>
-            <div class="text-secondary small"><a href="<%= base %>/sessions" class="text-reset">Sessions</a></div>
+            <div class="text-secondary small"><a href="<%= base %>/sessions" class="text-reset"><%= t("Sessions") %></a></div>
             <h3 class="card-title"><%= session.title %></h3>
           </div>
           <div class="card-actions"><span class="badge bg-<%= statusColor[session.status] %>-lt"><%= statuses[session.status] %></span></div>
         </div>
         <div class="card-body">
           <div class="datagrid mb-3">
-            <div class="datagrid-item"><div class="datagrid-title">Starts</div><div class="datagrid-content"><%= formatDateTime(session.startsAt, tz) %></div></div>
-            <% if (session.endsAt) { %><div class="datagrid-item"><div class="datagrid-title">Ends</div><div class="datagrid-content"><%= formatDateTime(session.endsAt, tz) %></div></div><% } %>
-            <div class="datagrid-item"><div class="datagrid-title">Format</div><div class="datagrid-content"><%= modes[session.mode] %></div></div>
-            <% if (session.location) { %><div class="datagrid-item"><div class="datagrid-title">Place</div><div class="datagrid-content"><%= session.location %></div></div><% } %>
-            <div class="datagrid-item"><div class="datagrid-title">Places</div><div class="datagrid-content"><%= session.capacity || 'No limit' %></div></div>
-            <% if (session.wiki) { %><div class="datagrid-item"><div class="datagrid-title">Wiki</div><div class="datagrid-content"><%- wikiLabel(session.wiki) %></div></div><% } %>
+            <div class="datagrid-item"><div class="datagrid-title"><%= t("Starts") %></div><div class="datagrid-content"><%= formatDateTime(session.startsAt, tz) %></div></div>
+            <% if (session.endsAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Ends") %></div><div class="datagrid-content"><%= formatDateTime(session.endsAt, tz) %></div></div><% } %>
+            <div class="datagrid-item"><div class="datagrid-title"><%= t("Format") %></div><div class="datagrid-content"><%= modes[session.mode] %></div></div>
+            <% if (session.location) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Place") %></div><div class="datagrid-content"><%= session.location %></div></div><% } %>
+            <div class="datagrid-item"><div class="datagrid-title"><%= t("Places") %></div><div class="datagrid-content"><%= session.capacity || 'No limit' %></div></div>
+            <% if (session.wiki) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Wiki") %></div><div class="datagrid-content"><%- wikiLabel(session.wiki) %></div></div><% } %>
           </div>
           <% if (session.meetingUrl && (mine === 'registered' || mine === 'attended' || canManage)) { %>
-            <p><a href="<%= session.meetingUrl %>" class="btn btn-outline-primary" rel="noopener" target="_blank"><i class="ti ti-video me-1"></i>Join the meeting</a></p>
+            <p><a href="<%= session.meetingUrl %>" class="btn btn-outline-primary" rel="noopener" target="_blank"><i class="ti ti-video me-1"></i><%= t("Join the meeting") %></a></p>
           <% } %>
-          <% if (session.agenda) { %><h4>Agenda</h4><p style="white-space: pre-line"><%= session.agenda %></p><% } %>
-          <% if (session.report) { %><h4>Report</h4><p class="mb-0" style="white-space: pre-line"><%= session.report %></p><% } %>
+          <% if (session.agenda) { %><h4><%= t("Agenda") %></h4><p style="white-space: pre-line"><%= session.agenda %></p><% } %>
+          <% if (session.report) { %><h4><%= t("Report") %></h4><p class="mb-0" style="white-space: pre-line"><%= session.report %></p><% } %>
         </div>
         <% if (currentUser) { %>
           <div class="card-footer d-flex align-items-center gap-2">
@@ -40,22 +40,22 @@
               <% if (canRegister) { %>
                 <form method="post" action="<%= base %>/sessions/<%= session.id %>/cancel">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <button class="btn btn-outline-secondary" type="submit">Cancel my place</button>
+                  <button class="btn btn-outline-secondary" type="submit"><%= t("Cancel my place") %></button>
                 </form>
               <% } %>
             <% } else if (mine === 'attended') { %>
-              <span class="text-primary">You attended this session.</span>
+              <span class="text-primary"><%= t("You attended this session.") %></span>
             <% } else if (canRegister) { %>
               <form method="post" action="<%= base %>/sessions/<%= session.id %>/register" class="ms-auto">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button class="btn btn-primary" type="submit"><i class="ti ti-user-check me-1"></i>Register</button>
+                <button class="btn btn-primary" type="submit"><i class="ti ti-user-check me-1"></i><%= t("Register") %></button>
               </form>
             <% } else { %>
-              <span class="text-secondary">Registration is closed.</span>
+              <span class="text-secondary"><%= t("Registration is closed.") %></span>
             <% } %>
           </div>
         <% } else if (canRegister) { %>
-          <div class="card-footer"><a class="btn btn-primary" href="/login">Log in to register</a></div>
+          <div class="card-footer"><a class="btn btn-primary" href="/login"><%= t("Log in to register") %></a></div>
         <% } %>
       </div>
     </div>
@@ -64,9 +64,9 @@
       <% if (canManage) { %>
         <form method="post" action="<%= base %>/sessions/<%= session.id %>/attendance" class="card mb-3">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="card-header"><h3 class="card-title">Who came</h3><div class="card-actions text-secondary small"><%= active.length %> signed up</div></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Who came") %></h3><div class="card-actions text-secondary small"><%= t('{n} signed up', { n: active.length }) %></div></div>
           <div class="list-group list-group-flush">
-            <% if (!active.length) { %><div class="list-group-item text-secondary">Nobody has registered yet.</div><% } %>
+            <% if (!active.length) { %><div class="list-group-item text-secondary"><%= t("Nobody has registered yet.") %></div><% } %>
             <% active.forEach((a) => { %>
               <label class="list-group-item d-flex align-items-center">
                 <% if (a.status !== 'waitlisted') { %><input class="form-check-input me-2 mt-0" type="checkbox" name="present" value="<%= a.userId %>"<%= a.status === 'attended' ? ' checked' : '' %>><% } %>
@@ -75,21 +75,21 @@
               </label>
             <% }) %>
           </div>
-          <% if (active.some((a) => a.status !== 'waitlisted')) { %><div class="card-footer text-end"><button class="btn btn-primary" type="submit">Save attendance</button></div><% } %>
+          <% if (active.some((a) => a.status !== 'waitlisted')) { %><div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t("Save attendance") %></button></div><% } %>
         </form>
 
         <form method="post" action="<%= base %>/sessions/<%= session.id %>/update" class="card">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="card-header"><h3 class="card-title">Status and report</h3></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Status and report") %></h3></div>
           <div class="card-body">
             <div class="mb-2">
-              <label class="form-label" for="sStatus">Status</label>
+              <label class="form-label" for="sStatus"><%= t("Status") %></label>
               <select class="form-select" id="sStatus" name="status"><% Object.entries(statuses).forEach(([k, l]) => { %><option value="<%= k %>"<%= session.status === k ? ' selected' : '' %>><%= l %></option><% }) %></select>
             </div>
-            <label class="form-label" for="sReport">Report</label>
-            <textarea class="form-control" id="sReport" name="report" rows="5" placeholder="What was covered, outcomes, photos uploaded…"><%= session.report %></textarea>
+            <label class="form-label" for="sReport"><%= t("Report") %></label>
+            <textarea class="form-control" id="sReport" name="report" rows="5" placeholder="<%= t("What was covered, outcomes, photos uploaded…") %>"><%= session.report %></textarea>
           </div>
-          <div class="card-footer text-end"><button class="btn btn-primary" type="submit">Save</button></div>
+          <div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t("Save") %></button></div>
         </form>
       <% } %>
     </div>

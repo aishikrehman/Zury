@@ -1,9 +1,9 @@
 <%
   const wikiUserUrl = 'https://meta.wikimedia.org/wiki/Special:CentralAuth/' + encodeURIComponent(profileUser.username.replace(/ /g, '_'));
   const groups = [
-    { heading: 'Organized', icon: 'briefcase', color: 'green', items: organized, empty: 'No public events organized.' },
-    { heading: 'Jury member', icon: 'gavel', color: 'orange', items: judged, empty: 'No public jury roles.' },
-    { heading: 'Participated', icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
+    { heading: t('Organized'), icon: 'briefcase', color: 'green', items: organized, empty: 'No public events organized.' },
+    { heading: t('Jury member'), icon: 'gavel', color: 'orange', items: judged, empty: 'No public jury roles.' },
+    { heading: t('Participated'), icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
   ];
 %>
 <div class="page-header d-print-none">
@@ -11,12 +11,12 @@
     <div class="row g-3 align-items-center">
       <div class="col-auto"><span class="avatar avatar-lg rounded"><%= profileUser.username.charAt(0).toUpperCase() %></span></div>
       <div class="col">
-        <div class="page-pretitle">Profile</div>
+        <div class="page-pretitle"><%= t("Profile") %></div>
         <h2 class="page-title"><%= profileUser.username %></h2>
       </div>
       <div class="col-auto ms-auto btn-list">
-        <% if (!profileUser.isDemo) { %><a class="btn btn-outline-secondary" href="<%= wikiUserUrl %>" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i>Wikimedia account</a><% } %>
-        <% if (isOwnProfile) { %><a class="btn btn-primary" href="/settings"><i class="ti ti-settings me-1"></i>Preferences</a><% } %>
+        <% if (!profileUser.isDemo) { %><a class="btn btn-outline-secondary" href="<%= wikiUserUrl %>" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i><%= t("Wikimedia account") %></a><% } %>
+        <% if (isOwnProfile) { %><a class="btn btn-primary" href="/settings"><i class="ti ti-settings me-1"></i><%= t("Preferences") %></a><% } %>
       </div>
     </div>
   </div>
@@ -33,13 +33,13 @@
           </div>
           <div class="card-body">
             <div class="datagrid">
-              <% if (profileUser.wikimediaRegisteredAt) { %><div class="datagrid-item"><div class="datagrid-title">Wikimedia account since</div><div class="datagrid-content"><%= formatDate(profileUser.wikimediaRegisteredAt) %></div></div><% } %>
-              <div class="datagrid-item"><div class="datagrid-title">Joined Zury</div><div class="datagrid-content"><%= formatDate(profileUser.createdAt) %></div></div>
-              <div class="datagrid-item"><div class="datagrid-title">Events</div><div class="datagrid-content"><%= organized.length + judged.length + participated.length %></div></div>
+              <% if (profileUser.wikimediaRegisteredAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Wikimedia account since") %></div><div class="datagrid-content"><%= formatDate(profileUser.wikimediaRegisteredAt) %></div></div><% } %>
+              <div class="datagrid-item"><div class="datagrid-title"><%= t("Joined Zury") %></div><div class="datagrid-content"><%= formatDate(profileUser.createdAt) %></div></div>
+              <div class="datagrid-item"><div class="datagrid-title"><%= t("Events") %></div><div class="datagrid-content"><%= organized.length + judged.length + participated.length %></div></div>
             </div>
           </div>
           <div class="card-footer">
-            <div class="subheader mb-2">Roles</div>
+            <div class="subheader mb-2"><%= t("Roles") %></div>
             <%- include('../../partials/accessSummary', { s: profileSubject }) %>
           </div>
         </div>

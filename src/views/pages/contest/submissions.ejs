@@ -17,7 +17,7 @@
   <div class="card">
     <div class="card-header flex-wrap gap-2">
       <ul class="nav nav-pills card-header-pills">
-        <li class="nav-item"><a class="nav-link<%= !filters.status ? ' active' : '' %>" href="<%= qs({ status: null, page: null }) %>">All <span class="badge bg-secondary-lt ms-1"><%= totalAll %></span></a></li>
+        <li class="nav-item"><a class="nav-link<%= !filters.status ? ' active' : '' %>" href="<%= qs({ status: null, page: null }) %>"><%= t("All") %> <span class="badge bg-secondary-lt ms-1"><%= totalAll %></span></a></li>
         <% statuses.filter((s) => result.counts[s]).forEach((s) => { %>
           <li class="nav-item"><a class="nav-link<%= filters.status === s ? ' active' : '' %>" href="<%= qs({ status: s, page: null }) %>"><%= SUBMISSION_STATUSES[s].label %> <span class="badge bg-<%= SUBMISSION_STATUSES[s].color %>-lt ms-1"><%= result.counts[s] %></span></a></li>
         <% }) %>
@@ -27,12 +27,12 @@
         <% if (currentUser) { %>
           <label class="form-check form-switch m-0 align-self-center">
             <input class="form-check-input" type="checkbox" name="mine" value="1"<%= filters.mine ? ' checked' : '' %> data-autosubmit>
-            <span class="form-check-label">Only mine</span>
+            <span class="form-check-label"><%= t("Only mine") %></span>
           </label>
         <% } %>
         <div class="input-icon">
           <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-          <input class="form-control" type="search" name="q" value="<%= filters.q %>" placeholder="Search titles" aria-label="Search titles">
+          <input class="form-control" type="search" name="q" value="<%= filters.q %>" placeholder="<%= t("Search titles") %>" aria-label="<%= t("Search titles") %>">
         </div>
       </form>
     </div>
@@ -41,13 +41,13 @@
       <div class="empty">
         <div class="empty-icon"><i class="ti ti-files-off icon"></i></div>
         <p class="empty-title">No submissions<%= filters.status || filters.q || filters.mine ? ' match these filters' : ' yet' %></p>
-        <% if (!currentUser) { %><p class="empty-subtitle text-secondary">Log in to see your own entries.</p><% } %>
-        <% if (currentUser && contest.status === 'active') { %><div class="empty-action"><a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i>Submit entries</a></div><% } %>
+        <% if (!currentUser) { %><p class="empty-subtitle text-secondary"><%= t("Log in to see your own entries.") %></p><% } %>
+        <% if (currentUser && contest.status === 'active') { %><div class="empty-action"><a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a></div><% } %>
       </div>
     <% } else { %>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th>Entry</th><th>Participant</th><th>Type</th><th>Status</th><th>Submitted</th></tr></thead>
+          <thead><tr><th><%= t("Entry") %></th><th><%= t("Participant") %></th><th><%= t("Type") %></th><th><%= t("Status") %></th><th><%= t("Submitted") %></th></tr></thead>
           <tbody>
             <% result.items.forEach((s) => { const meta = JSON.parse(s.metadata); %>
               <tr>
@@ -75,7 +75,7 @@
       </div>
       <% if (pages > 1) { %>
         <div class="card-footer d-flex align-items-center">
-          <p class="m-0 text-secondary">Page <%= result.page %> of <%= pages %> · <%= result.total %> entries</p>
+          <p class="m-0 text-secondary"><%= t('Page {page} of {pages}', { page: result.page, pages }) %> · <%= tn('{n} entry', '{n} entries', result.total) %></p>
           <ul class="pagination m-0 ms-auto">
             <% for (let i = 1; i <= pages; i++) { %><li class="page-item<%= i === result.page ? ' active' : '' %>"><a class="page-link" href="<%= qs({ page: i }) %>"><%= i %></a></li><% } %>
           </ul>

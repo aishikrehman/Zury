@@ -1,22 +1,22 @@
-<%- include('../../partials/pageHeader', { pretitle: 'Administration', heading: 'Permissions' }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Permissions') }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="card">
       <div class="card-header">
         <div>
-          <h3 class="card-title">Role permission matrix</h3>
+          <h3 class="card-title"><%= t("Role permission matrix") %></h3>
         </div>
         <div class="card-actions small text-secondary">
-          <span class="me-3"><i class="ti ti-circle-filled text-green"></i> granted</span>
-          <span class="me-3"><i class="ti ti-circle text-azure"></i> implied</span>
-          <span><span class="badge bg-purple-lt">G</span> everywhere (wiki-scoped role)</span>
+          <span class="me-3"><i class="ti ti-circle-filled text-green"></i> <%= t("granted") %></span>
+          <span class="me-3"><i class="ti ti-circle text-azure"></i> <%= t("implied") %></span>
+          <span><span class="badge bg-purple-lt">G</span> <%= t("everywhere (wiki-scoped role)") %></span>
         </div>
       </div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table table-striped text-center">
           <thead>
             <tr>
-              <th class="text-start">Permission</th>
+              <th class="text-start"><%= t("Permission") %></th>
               <% roles.forEach((r) => { %><th title="<%= r.description %>"><%= r.label %><div class="text-secondary fw-normal text-lowercase"><%= r.kind %><%= r.scope === 'wiki' ? ', own wikis' : '' %></div></th><% }) %>
             </tr>
           </thead>
@@ -27,8 +27,8 @@
                 <% roles.forEach((r) => { %>
                   <td>
                     <% if (r.viaGlobal.has(key)) { %><span class="badge bg-purple-lt">G</span>
-                    <% } else if (r.permissions.includes(key)) { %><i class="ti ti-circle-filled text-green" aria-label="granted"></i>
-                    <% } else if (r.effective.has(key)) { %><i class="ti ti-circle text-azure" aria-label="implied"></i><% } %>
+                    <% } else if (r.permissions.includes(key)) { %><i class="ti ti-circle-filled text-green" aria-label="<%= t("granted") %>"></i>
+                    <% } else if (r.effective.has(key)) { %><i class="ti ti-circle text-azure" aria-label="<%= t("implied") %>"></i><% } %>
                   </td>
                 <% }) %>
               </tr>

@@ -23,7 +23,7 @@
       if (line) line.textContent = option?.dataset[`guide${step[0].toUpperCase()}${step.slice(1)}`] || '';
     }
     const ns = $('eligibleNamespaces');
-    if (ns?.tomselect && option?.dataset.namespaces) ns.tomselect.settings.placeholder = `Default: ${option.dataset.namespaces}`;
+    if (ns?.tomselect && option?.dataset.namespaces) ns.tomselect.settings.placeholder = zt('Default: {list}', { list: option.dataset.namespaces });
     if (fromUser && creating && option?.dataset.defaults) {
       for (const [key, value] of Object.entries(JSON.parse(option.dataset.defaults))) {
         const box = $(key);
@@ -42,8 +42,8 @@
     const input = marksBox.querySelector('[data-marks-input]');
     const rows = marksBox.querySelector('[data-marks-rows]');
     const PRESETS = {
-      accept: { name: 'Accepted', values: [{ label: 'Yes', points: 1 }, { label: 'No', points: 0 }] },
-      quality: { name: 'Quality', values: [0, 1, 2, 3].map((n) => ({ label: String(n), points: n })) },
+      accept: { name: zt('Accepted'), values: [{ label: zt('Yes'), points: 1 }, { label: zt('No'), points: 0 }] },
+      quality: { name: zt('Quality'), values: [0, 1, 2, 3].map((n) => ({ label: String(n), points: n })) },
     };
     const toText = (values) => values.map((v) => `${v.label} = ${v.points}`).join(', ');
     const fromText = (text) =>
@@ -60,9 +60,12 @@
       const row = document.createElement('div');
       row.className = 'row g-2 mb-2 align-items-center';
       row.innerHTML =
-        '<div class="col-md-4"><input class="form-control" data-name placeholder="Mark, e.g. Accepted" maxlength="60"></div>' +
-        '<div class="col"><input class="form-control" data-values placeholder="Values with points, e.g. Yes = 1, No = 0"></div>' +
-        '<div class="col-auto"><button type="button" class="btn btn-icon btn-ghost-danger" aria-label="Remove mark"><i class="ti ti-x"></i></button></div>';
+        '<div class="col-md-4"><input class="form-control" data-name maxlength="60"></div>' +
+        '<div class="col"><input class="form-control" data-values></div>' +
+        '<div class="col-auto"><button type="button" class="btn btn-icon btn-ghost-danger"><i class="ti ti-x"></i></button></div>';
+      row.querySelector('[data-name]').placeholder = zt('Mark, e.g. Accepted');
+      row.querySelector('[data-values]').placeholder = zt('Values with points, e.g. Yes = 1, No = 0');
+      row.querySelector('button').setAttribute('aria-label', zt('Remove mark'));
       row.querySelector('[data-name]').value = mark.name;
       row.querySelector('[data-values]').value = toText(mark.values);
       row.querySelector('button').addEventListener('click', () => {
@@ -107,7 +110,7 @@
     seriesAddress.classList.toggle('d-none', !inSeries);
     seriesAddress.classList.toggle('flex-fill', inSeries);
     seriesAddress.textContent = `${slugify(s).slice(0, 40)}/${edition.value.trim().toLowerCase() || '…'}`;
-    hint.textContent = inSeries ? 'Part of a series: the address is the series and the edition.' : 'Made from the title; you can change it.';
+    hint.textContent = zt(inSeries ? 'Part of a series: the address is the series and the edition.' : 'Made from the title; you can change it.');
   }
   // Values filled in from a series; cleared again if the series changes or is removed.
   const prev = $('previousEditionUrl');

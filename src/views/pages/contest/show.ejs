@@ -4,10 +4,11 @@
   const showParticipants = !settings.anonymousParticipants || can('manageParticipants');
   const enabled = featureFields.filter(([key]) => settings[key]);
   const display = (f, value) => {
-    if (f.type === 'bool') return value ? 'Yes' : 'No';
+    if (f.type === 'bool') return t(value ? 'Yes' : 'No');
     if (f.type === 'choices') return [].concat(value).map((k) => f.choices[k] || k).join(', ');
     if (f.type === 'list') return value.length ? value.join(', ') : '—';
-    if (f.type === 'int' && value === 0 && /max/i.test(f.key)) return 'No limit';
+    if (f.type === 'int' && value === 0 && /max/i.test(f.key)) return t('No limit');
+    if (f.type === 'int') return formatNumber(value);
     return value === '' ? '—' : value;
   };
 %>
@@ -21,19 +22,19 @@
       <% } %>
       <% if (wikiParts.length) { %>
         <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i>Wikis</h3><div class="card-actions text-secondary small"><%= wikiParts.filter((w) => w.status !== 'pending').length %> taking part</div></div>
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3><div class="card-actions text-secondary small"><%= t('{n} taking part', { n: wikiParts.filter((w) => w.status !== 'pending').length }) %></div></div>
           <div class="table-responsive">
             <table class="table table-vcenter card-table">
-              <thead><tr><th>Wiki</th><th>Status</th><th class="text-end">Entries</th><th class="text-end">Organizers</th><th class="text-end">Jury</th><th class="text-end">Own settings</th></tr></thead>
+              <thead><tr><th><%= t("Wiki") %></th><th><%= t("Status") %></th><th class="text-end"><%= t("Entries") %></th><th class="text-end"><%= t("Organizers") %></th><th class="text-end"><%= t("Jury") %></th><th class="text-end"><%= t("Own settings") %></th></tr></thead>
               <tbody>
-                <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: w.status.charAt(0).toUpperCase() + w.status.slice(1), badge: 'secondary' }; %>
+                <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: t(w.status === 'paused' ? 'Paused' : 'Waiting for approval'), badge: 'secondary' }; %>
                   <tr>
                     <td><a href="<%= eventBase %>/<%= w.code %>" class="fw-bold">/<%= w.code %></a> <span class="small ms-1"><%- wikiLabel(w.wiki) %></span></td>
                     <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
-                    <td class="text-end"><%= w.entries %></td>
-                    <td class="text-end"><%= w.organizers %></td>
-                    <td class="text-end"><%= w.jury %></td>
-                    <td class="text-end text-secondary"><%= w.overridden || '—' %></td>
+                    <td class="text-end"><%= formatNumber(w.entries) %></td>
+                    <td class="text-end"><%= formatNumber(w.organizers) %></td>
+                    <td class="text-end"><%= formatNumber(w.jury) %></td>
+                    <td class="text-end text-secondary"><%= w.overridden ? formatNumber(w.overridden) : '—' %></td>
                   </tr>
                 <% }) %>
               </tbody>
@@ -44,13 +45,13 @@
       <div class="row row-cards mb-3">
         <div class="col-md-6">
           <div class="card h-100">
-            <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-time me-2"></i>Timeline</h3><div class="card-actions text-secondary small"><%= tz %></div></div>
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-time me-2"></i><%= t("Timeline") %></h3><div class="card-actions text-secondary small"><%= tz %></div></div>
             <% if (!timeline.length) { %>
-              <div class="card-body text-secondary">Dates haven't been set yet.</div>
+              <div class="card-body text-secondary"><%= t("Dates haven't been set yet.") %></div>
             <% } else { %>
               <div class="list-group list-group-flush">
-                <% timeline.forEach((t) => { %>
-                  <div class="list-group-item py-2 d-flex justify-content-between"><span><%= t.label %></span><span class="text-secondary"><%= formatDateTime(t.at, tz) %></span></div>
+                <% timeline.forEach((item) => { %>
+                  <div class="list-group-item py-2 d-flex justify-content-between"><span><%= item.label %></span><span class="text-secondary"><%= formatDateTime(item.at, tz) %></span></div>
                 <% }) %>
               </div>
             <% } %>
@@ -58,22 +59,22 @@
         </div>
         <div class="col-md-6">
           <div class="card h-100">
-            <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i>Details</h3></div>
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t("Details") %></h3></div>
             <div class="card-body">
               <div class="datagrid">
-                <% if (contest.organizingCommunity) { %><div class="datagrid-item"><div class="datagrid-title">Organized by</div><div class="datagrid-content"><%= contest.organizingCommunity %></div></div><% } %>
-                <div class="datagrid-item"><div class="datagrid-title">Wikis</div><div class="datagrid-content"><%- wikiScope ? wikiLabel(wikiScope.wiki) : (eventWikis.length ? eventWikis.map((w) => wikiLabel(w.wiki)).join('<br>') : wikiLabel(contest.primaryWiki)) %></div></div>
-                <div class="datagrid-item"><div class="datagrid-title">Language</div><div class="datagrid-content"><%- langLabel(contest.language) %></div></div>
-                <div class="datagrid-item"><div class="datagrid-title">Participants</div><div class="datagrid-content"><%= participantCount %><%= settings.participantLimit ? ' / ' + settings.participantLimit : '' %></div></div>
-                <% if (settings.juryReviewEnabled) { %><div class="datagrid-item"><div class="datagrid-title">Jury</div><div class="datagrid-content"><%= jury.length %> member<%= jury.length === 1 ? '' : 's' %></div></div><% } %>
-                <% if (contest.contactInfo) { %><div class="datagrid-item"><div class="datagrid-title">Contact</div><div class="datagrid-content"><%= contest.contactInfo %></div></div><% } %>
-                <div class="datagrid-item"><div class="datagrid-title">Organizers</div><div class="datagrid-content">
-                  <% if (!organizers.length) { %><span class="text-secondary">None listed</span><% } %>
+                <% if (contest.organizingCommunity) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Organized by") %></div><div class="datagrid-content"><%= contest.organizingCommunity %></div></div><% } %>
+                <div class="datagrid-item"><div class="datagrid-title"><%= t("Wikis") %></div><div class="datagrid-content"><%- wikiScope ? wikiLabel(wikiScope.wiki) : (eventWikis.length ? eventWikis.map((w) => wikiLabel(w.wiki)).join('<br>') : wikiLabel(contest.primaryWiki)) %></div></div>
+                <div class="datagrid-item"><div class="datagrid-title"><%= t("Language") %></div><div class="datagrid-content"><%- langLabel(contest.language) %></div></div>
+                <div class="datagrid-item"><div class="datagrid-title"><%= t("Participants") %></div><div class="datagrid-content"><%= formatNumber(participantCount) %><%= settings.participantLimit ? ' / ' + formatNumber(settings.participantLimit) : '' %></div></div>
+                <% if (settings.juryReviewEnabled) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Jury") %></div><div class="datagrid-content"><%= tn('{n} member', '{n} members', jury.length) %></div></div><% } %>
+                <% if (contest.contactInfo) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Contact") %></div><div class="datagrid-content"><%= contest.contactInfo %></div></div><% } %>
+                <div class="datagrid-item"><div class="datagrid-title"><%= t("Organizers") %></div><div class="datagrid-content">
+                  <% if (!organizers.length) { %><span class="text-secondary"><%= t("None listed") %></span><% } %>
                   <div class="avatar-list avatar-list-stacked"><% organizers.forEach((u) => { %><a href="<%= userPath(u.username) %>" class="avatar avatar-xs" title="<%= u.username %>"><%= u.username.charAt(0).toUpperCase() %></a><% }) %></div>
                 </div></div>
               </div>
               <% if (showParticipants && participants.length) { %>
-                <details class="small mt-3"><summary>Participant names</summary>
+                <details class="small mt-3"><summary><%= t("Participant names") %></summary>
                   <% participants.forEach((u, i) => { %><a href="<%= userPath(u.username) %>"><%= u.username %></a><%= i < participants.length - 1 ? ', ' : '' %><% }) %>
                 </details>
               <% } %>
@@ -82,12 +83,12 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i>Rules</h3></div>
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t("Rules") %></h3></div>
         <div class="list-group list-group-flush">
           <div class="list-group-item py-2"><%= PARTICIPATION_MODES[settings.participationMode] %></div>
-          <% if (settings.minAccountAgeDays) { %><div class="list-group-item py-2">Wikimedia account at least <%= settings.minAccountAgeDays %> days old</div><% } %>
-          <% if (settings.minEditCount) { %><div class="list-group-item py-2">At least <%= settings.minEditCount %> edits across Wikimedia projects</div><% } %>
-          <% if (settings.registrationRequired) { %><div class="list-group-item py-2">Register before submitting</div><% } %>
+          <% if (settings.minAccountAgeDays) { %><div class="list-group-item py-2"><%= t('Wikimedia account at least {n} days old', { n: settings.minAccountAgeDays }) %></div><% } %>
+          <% if (settings.minEditCount) { %><div class="list-group-item py-2"><%= t('At least {n} edits across Wikimedia projects', { n: settings.minEditCount }) %></div><% } %>
+          <% if (settings.registrationRequired) { %><div class="list-group-item py-2"><%= t("Register before submitting") %></div><% } %>
           <% typeDef.fields.forEach((f) => { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= f.label %></span><span class="text-secondary"><%= display(f, typeConfig[f.key]) %></span></div><% }) %>
         </div>
         <% if (enabled.length) { %>
@@ -98,29 +99,29 @@
 
     <div class="col-lg-4">
       <div class="card mb-3">
-        <div class="card-header"><h3 class="card-title">Take part</h3></div>
+        <div class="card-header"><h3 class="card-title"><%= t("Take part") %></h3></div>
         <div class="card-body">
           <% if (isParticipant) { %>
             <p class="small text-success mb-2">You're a participant<%= myWiki && eventWikis.length > 1 ? ' on ' + wikiName(myWiki) : '' %>.</p>
             <% if (!['completed', 'archived'].includes(contest.status)) { %>
               <form method="post" action="<%= base %>/leave">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button class="btn btn-sm btn-outline-secondary" type="submit">Leave event</button>
+                <button class="btn btn-sm btn-outline-secondary" type="submit"><%= t("Leave event") %></button>
               </form>
             <% } %>
           <% } else if (!currentUser) { %>
-            <a class="btn btn-sm btn-primary" href="/login">Log in to join</a>
+            <a class="btn btn-sm btn-primary" href="/login"><%= t("Log in to join") %></a>
           <% } else if (eligibility.eligible) { %>
             <form method="post" action="<%= base %>/join">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <% if (joinWikis.length) { %>
-                <label class="form-label" for="joinWiki">Your wiki</label>
+                <label class="form-label" for="joinWiki"><%= t("Your wiki") %></label>
                 <select class="form-select mb-2" id="joinWiki" name="wiki" required>
-                  <option value="">Choose…</option>
+                  <option value=""><%= t("Choose…") %></option>
                   <% joinWikis.forEach((w) => { %><option value="<%= w.wiki %>"<%= w.wiki === defaultJoinWiki ? ' selected' : '' %>><%= wikiText(w.wiki) %></option><% }) %>
                 </select>
               <% } %>
-              <button class="btn btn-sm btn-primary" type="submit">Join this event</button>
+              <button class="btn btn-sm btn-primary" type="submit"><%= t("Join this event") %></button>
             </form>
           <% } else { %>
             <ul class="text-secondary mb-0 ps-3">
@@ -132,38 +133,38 @@
 
       <% if (requestableWikis && series && !wikiScope) { %>
         <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-world-plus me-2"></i>Bring your wiki</h3></div>
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-world-plus me-2"></i><%= t("Bring your wiki") %></h3></div>
           <div class="card-body">
             <form method="post" action="<%= eventBase %>/wikis/request" class="row g-2">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <div class="col-12"><select class="form-select" name="wiki" data-picker="wiki" placeholder="Search wikis…" required></select></div>
-              <div class="col-12"><button class="btn btn-outline-primary w-100" type="submit">Ask to join as organizer</button></div>
+              <div class="col-12"><select class="form-select" name="wiki" data-picker="wiki" placeholder="<%= t("Search wikis…") %>" required></select></div>
+              <div class="col-12"><button class="btn btn-outline-primary w-100" type="submit"><%= t("Ask to join as organizer") %></button></div>
             </form>
           </div>
         </div>
       <% } %>
       <div class="card">
-        <div class="card-header"><h3 class="card-title">Your access</h3></div>
+        <div class="card-header"><h3 class="card-title"><%= t("Your access") %></h3></div>
         <div class="card-body">
           <% if (!currentUser) { %>
-            <p class="small text-secondary mb-0">Log in to see what you can do here.</p>
+            <p class="small text-secondary mb-0"><%= t("Log in to see what you can do here.") %></p>
           <% } else { %>
-            <p class="small mb-1"><strong>Event roles:</strong>
-              <% if (!scope.eventRoles.length) { %><span class="text-secondary">none</span><% } %>
+            <p class="small mb-1"><strong><%= t("Event roles:") %></strong>
+              <% if (!scope.eventRoles.length) { %><span class="text-secondary"><%= t("none") %></span><% } %>
               <% scope.eventRoles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r].label %></span><% }) %>
             </p>
-            <p class="small mb-2"><strong>Platform authority here:</strong>
+            <p class="small mb-2"><strong><%= t("Platform authority here:") %></strong>
               <% const here = scope.platformRoles.filter((r) => r !== 'local-admin' || scope.isLocalAdminHere).filter((r) => PLATFORM_ROLES[r].source === 'wikimedia'); %>
-              <% if (!here.length) { %><span class="text-secondary">none</span><% } %>
+              <% if (!here.length) { %><span class="text-secondary"><%= t("none") %></span><% } %>
               <% here.forEach((r) => { %><span class="badge bg-orange-lt me-1"><%= PLATFORM_ROLES[r].label %></span><% }) %>
             </p>
             <% if (scope.overrides.length) { %>
-              <p class="small mb-2"><strong>Overrides:</strong>
+              <p class="small mb-2"><strong><%= t("Overrides:") %></strong>
                 <% scope.overrides.forEach((o) => { %><span class="badge bg-<%= o.allowed ? 'green' : 'red' %>-lt me-1"><%= o.allowed ? '+' : '−' %> <%= o.permission %></span><% }) %>
               </p>
             <% } %>
             <details class="small">
-              <summary><%= permissionList.length %> permission<%= permissionList.length === 1 ? '' : 's' %></summary>
+              <summary><%= tn('{n} permission', '{n} permissions', permissionList.length) %></summary>
               <ul class="mt-2 mb-0 ps-3">
                 <% permissionList.forEach((p) => { %><li><%= permissionLabels[p] %> <code class="text-secondary"><%= p %></code></li><% }) %>
               </ul>

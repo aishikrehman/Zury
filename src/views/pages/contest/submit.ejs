@@ -27,30 +27,30 @@
             <% if (mass) { %>
               <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="https://commons.wikimedia.org/wiki/File:Example.jpg&#10;File:Another example.jpg"><%= text %></textarea>
             <% } else { %>
-              <input class="form-control" id="entries" name="entries" value="<%= text %>" placeholder="https://… or a page title">
+              <input class="form-control" id="entries" name="entries" value="<%= text %>" placeholder="<%= t("https://… or a page title") %>">
             <% } %>
           </div>
           <% if (canOthers) { %>
             <div class="mb-3">
-              <label class="form-label" for="participant">On behalf of <span class="text-secondary fw-normal">(optional)</span></label>
-              <select class="form-select" id="participant" name="participant" data-picker="user" placeholder="Search participants…"><% if (participant) { %><option value="<%= participant %>" selected><%= participant %></option><% } %></select>
+              <label class="form-label" for="participant"><%= t("On behalf of") %> <span class="text-secondary fw-normal"><%= t("(optional)") %></span></label>
+              <select class="form-select" id="participant" name="participant" data-picker="user" placeholder="<%= t("Search participants…") %>"><% if (participant) { %><option value="<%= participant %>" selected><%= participant %></option><% } %></select>
             </div>
           <% } %>
         </div>
         <div class="card-footer text-end">
-          <button class="btn btn-primary" type="submit"><i class="ti ti-search me-1"></i>Check entries</button>
+          <button class="btn btn-primary" type="submit"><i class="ti ti-search me-1"></i><%= t("Check entries") %></button>
         </div>
       </form>
 
       <% if (items) { %>
         <div class="card mt-3">
           <div class="card-header">
-            <h3 class="card-title">Preview</h3>
-            <div class="card-actions"><span class="badge bg-green-lt"><%= okCount %> ready</span> <span class="badge bg-red-lt"><%= items.length - okCount %> with problems</span></div>
+            <h3 class="card-title"><%= t("Preview") %></h3>
+            <div class="card-actions"><span class="badge bg-green-lt"><%= t('{n} ready', { n: okCount }) %></span> <span class="badge bg-red-lt"><%= t('{n} with problems', { n: items.length - okCount }) %></span></div>
           </div>
           <div class="table-responsive">
             <table class="table table-vcenter card-table">
-              <thead><tr><th class="w-1"></th><th>Entry</th><th>Details</th><th>Result</th></tr></thead>
+              <thead><tr><th class="w-1"></th><th><%= t("Entry") %></th><th><%= t("Details") %></th><th><%= t("Result") %></th></tr></thead>
               <tbody>
                 <% items.forEach((i) => { %>
                   <tr>
@@ -66,11 +66,11 @@
                     <td class="small text-secondary">
                       <% if (i.meta && i.meta.file && i.meta.file.thumbUrl) { %><span class="avatar avatar-md me-2" style="background-image: url('<%= i.meta.file.thumbUrl %>')"></span><% } %>
                       <% if (i.meta && i.meta.file) { %><%= i.meta.file.megapixels %> MP<% } %>
-                      <% if (i.meta && i.meta.wordCount != null) { %><%= i.meta.wordCount %> words<% } %>
-                      <% if (i.meta && i.meta.entity) { %><%= i.meta.entity.label || i.meta.entity.id %> · <%= i.meta.entity.statementCount %> statements<% } %>
+                      <% if (i.meta && i.meta.wordCount != null) { %><%= t('{n} words', { n: i.meta.wordCount }) %><% } %>
+                      <% if (i.meta && i.meta.entity) { %><%= i.meta.entity.label || i.meta.entity.id %> · <%= t('{n} statements', { n: i.meta.entity.statementCount }) %><% } %>
                     </td>
                     <td class="small">
-                      <% if (i.ok) { %><span class="text-green">Ready</span><% } %>
+                      <% if (i.ok) { %><span class="text-green"><%= t("Ready") %></span><% } %>
                       <% i.reasons.forEach((r) => { %><div class="text-red"><%= r %></div><% }) %>
                       <% i.warnings.forEach((w) => { %><div class="text-yellow"><i class="ti ti-alert-triangle"></i> <%= w %></div><% }) %>
                     </td>
@@ -84,7 +84,7 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="entries" value="<%= items.filter((i) => i.ok).map((i) => i.input).join('\n') %>">
               <input type="hidden" name="participant" value="<%= participant %>">
-              <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-check me-1"></i>Submit <%= okCount %> entr<%= okCount === 1 ? 'y' : 'ies' %></button>
+              <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-check me-1"></i><%= tn('Submit {n} entry', 'Submit {n} entries', okCount) %></button>
             </form>
           <% } %>
         </div>
@@ -93,9 +93,9 @@
 
     <div class="col-lg-4">
       <div class="card">
-        <div class="card-header"><h3 class="card-title">What's accepted</h3></div>
+        <div class="card-header"><h3 class="card-title"><%= t("What's accepted") %></h3></div>
         <div class="list-group list-group-flush">
-          <div class="list-group-item"><%= typeDef.label %> on <%= (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiName).join(', ') %></div>
+          <div class="list-group-item"><%= t('{type} on {wikis}', { type: EVENT_TYPES[contest.type].label, wikis: (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiName).join(', ') }) %></div>
           <% rules.forEach((r) => { %><div class="list-group-item"><i class="ti ti-check text-green me-1"></i><%= r %></div><% }) %>
         </div>
       </div>

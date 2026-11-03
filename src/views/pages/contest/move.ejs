@@ -2,33 +2,33 @@
   <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
   <div class="card">
     <div class="card-status-top bg-warning"></div>
-    <div class="card-header"><h3 class="card-title"><i class="ti ti-arrow-merge me-2"></i>Move into “<%= target.title %>”</h3></div>
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-arrow-merge me-2"></i><%= t('Move into “{event}”', { event: target.title }) %></h3></div>
     <div class="card-body">
       <p>
-        This event becomes <strong><%- wikiLabel(plan.wiki) %></strong> of <a href="<%= targetPath %>"><%= target.title %></a>
-        <% if (plan.existing) { %>(that wiki is already in it, so they will be joined)<% } %>.
+        <%- th('This event becomes {wiki} of {event}', { wiki: '<strong>' + wikiLabel(plan.wiki) + '</strong>', event: '<a href="' + h(targetPath) + '">' + h(target.title) + '</a>' }) %>
+        <% if (plan.existing) { %><%= t('(that wiki is already in it, so they will be joined)') %><% } %>
       </p>
       <div class="datagrid mb-4">
-        <div class="datagrid-item"><div class="datagrid-title">Entries</div><div class="datagrid-content"><%= plan.counts.submissions %></div></div>
-        <div class="datagrid-item"><div class="datagrid-title">People with a role</div><div class="datagrid-content"><%= plan.counts.members %></div></div>
-        <div class="datagrid-item"><div class="datagrid-title">Sessions</div><div class="datagrid-content"><%= plan.counts.sessions %></div></div>
-        <div class="datagrid-item"><div class="datagrid-title">Tracked edits</div><div class="datagrid-content"><%= plan.counts.contributions %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("Entries") %></div><div class="datagrid-content"><%= plan.counts.submissions %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("People with a role") %></div><div class="datagrid-content"><%= plan.counts.members %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("Sessions") %></div><div class="datagrid-content"><%= plan.counts.sessions %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("Tracked edits") %></div><div class="datagrid-content"><%= plan.counts.contributions %></div></div>
       </div>
       <ul class="text-secondary">
-        <li>Participants take part in “<%= target.title %>” from <%= wikiName(plan.wiki) %>; organizers and jury run that wiki.</li>
-        <li>This event's own dates, rules and type settings are kept as that wiki's settings.</li>
-        <li>This event closes, and <code><%= base %></code> will lead to its new place.</li>
-        <li>People blocked in “<%= target.title %>” are not moved.</li>
+        <li><%= t('Participants take part in “{event}” from {wiki}; organizers and jury run that wiki.', { event: target.title, wiki: wikiName(plan.wiki) }) %></li>
+        <li><%= t("This event's own dates, rules and type settings are kept as that wiki's settings.") %></li>
+        <li><%- th('This event closes, and {address} will lead to its new place.', { address: '<code>' + h(base) + '</code>' }) %></li>
+        <li><%= t('People blocked in “{event}” are not moved.', { event: target.title }) %></li>
       </ul>
       <form method="post" action="<%= base %>/move" class="row g-2 align-items-end mt-3">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="target" value="<%= target.id %>">
         <div class="col-md-6">
-          <label class="form-label" for="confirmation">Type <code><%= contest.slug %></code> to confirm</label>
+          <label class="form-label" for="confirmation"><%- th('Type {address} to confirm', { address: '<code>' + h(contest.slug) + '</code>' }) %></label>
           <input class="form-control" id="confirmation" name="confirmation" autocomplete="off" required>
         </div>
-        <div class="col-auto"><button type="submit" class="btn btn-warning">Move</button></div>
-        <div class="col-auto"><a class="btn" href="<%= base %>/config">Cancel</a></div>
+        <div class="col-auto"><button type="submit" class="btn btn-warning"><%= t("Move") %></button></div>
+        <div class="col-auto"><a class="btn" href="<%= base %>/config"><%= t("Cancel") %></a></div>
       </form>
     </div>
   </div>

@@ -12,7 +12,7 @@
     can('accessAdmin') ? '<a class="btn btn-dark" href="/admin"><i class="ti ti-shield-lock me-1"></i>Administration</a>' : '',
   ].join('');
 %>
-<%- include('../../partials/pageHeader', { pretitle: 'Overview', heading: 'Dashboard', actions }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Overview'), heading: t('Dashboard'), actions }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="row row-deck row-cards mb-4">
@@ -24,15 +24,15 @@
                 <h2 class="h2">Welcome back, <%= currentUser.username %></h2>
                 <p class="text-secondary">
                   <% const active = myEvents.filter((e) => e.contest.status === 'active').length; %>
-                  You're part of <%= myEvents.length %> event<%= myEvents.length === 1 ? '' : 's' %><%= active ? `, ${active} running now` : '' %>.
+                  <%= tn("You're part of {n} event.", "You're part of {n} events.", myEvents.length) %><% if (active) { %> <%= tn('{n} is running now.', '{n} are running now.', active) %><% } %>
                 </p>
                 <div class="row g-5 mt-auto">
                   <div class="col-auto">
-                    <div class="subheader">Submissions</div>
+                    <div class="subheader"><%= t("Submissions") %></div>
                     <div class="h3 mb-0"><%= typeof submissionCount !== 'undefined' ? submissionCount : 0 %></div>
                   </div>
                   <div class="col-auto">
-                    <div class="subheader">Jury roles</div>
+                    <div class="subheader"><%= t("Jury roles") %></div>
                     <div class="h3 mb-0"><%= juryEvents.length %></div>
                   </div>
                 </div>
@@ -70,22 +70,22 @@
       <div class="col-lg-8">
         <div class="card">
           <div class="card-header">
-            <h3 class="card-title">My submissions</h3>
-            <div class="card-actions"><span class="badge bg-primary-lt"><%= total30 %> in the last 30 days</span></div>
+            <h3 class="card-title"><%= t("My submissions") %></h3>
+            <div class="card-actions"><span class="badge bg-primary-lt"><%= t('{n} in the last 30 days', { n: total30 }) %></span></div>
           </div>
           <div class="card-body">
-            <%- include('../../partials/chart', { spec: { type: 'area', height: 220, series: [{ name: 'Submissions', data: activity.series.values }], labels: activity.series.labels, colors: ['primary'] }, label: 'My submissions per day, last 30 days' }) %>
+            <%- include('../../partials/chart', { spec: { type: 'area', height: 220, series: [{ name: 'Submissions', data: activity.series.values }], labels: activity.series.labels, colors: ['primary'] }, label: t('My submissions per day, last 30 days') }) %>
           </div>
         </div>
       </div>
       <div class="col-lg-4">
         <div class="card">
-          <div class="card-header"><h3 class="card-title">Entry status</h3></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Entry status") %></h3></div>
           <div class="card-body">
             <% if (!statusKeys.length) { %>
-              <%- include('../../partials/emptyArt', { title: 'Nothing submitted yet', text: 'Your entries will show up here.', action: '<a href="/events/active" class="btn btn-primary">Find an event</a>' }) %>
+              <%- include('../../partials/emptyArt', { title: t('Nothing submitted yet'), text: t('Your entries will show up here.'), action: '<a href="/events/active" class="btn btn-primary">Find an event</a>' }) %>
             <% } else { %>
-              <%- include('../../partials/chart', { spec: { type: 'donut', height: 220, series: statusKeys.map((k) => activity.status[k]), labels: statusKeys.map((k) => SUBMISSION_STATUSES[k].label), colors: statusKeys.map((k) => SUBMISSION_STATUSES[k].color), totalLabel: 'Entries' }, label: 'My entries by status' }) %>
+              <%- include('../../partials/chart', { spec: { type: 'donut', height: 220, series: statusKeys.map((k) => activity.status[k]), labels: statusKeys.map((k) => SUBMISSION_STATUSES[k].label), colors: statusKeys.map((k) => SUBMISSION_STATUSES[k].color), totalLabel: 'Entries' }, label: t('My entries by status') }) %>
             <% } %>
           </div>
         </div>
@@ -95,13 +95,13 @@
     <div class="row row-cards">
       <div class="col-lg-8">
         <div class="card">
-          <div class="card-header"><h3 class="card-title">My events</h3></div>
+          <div class="card-header"><h3 class="card-title"><%= t("My events") %></h3></div>
           <% if (!myEvents.length) { %>
-            <%- include('../../partials/emptyArt', { art: 'contest', title: 'No events yet', text: 'Join an event to see it here.', action: '<a href="/events" class="btn btn-primary">Browse events</a>' }) %>
+            <%- include('../../partials/emptyArt', { art: 'contest', title: t('No events yet'), text: t('Join an event to see it here.'), action: '<a href="/events" class="btn btn-primary">Browse events</a>' }) %>
           <% } else { %>
             <div class="table-responsive">
               <table class="table table-vcenter card-table">
-                <thead><tr><th>Event</th><th>Status</th><th>Your roles</th><th>Dates</th></tr></thead>
+                <thead><tr><th><%= t("Event") %></th><th><%= t("Status") %></th><th><%= t("Your roles") %></th><th><%= t("Dates") %></th></tr></thead>
                 <tbody>
                   <% myEvents.forEach(({ contest: c, roles }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
                     <tr>
@@ -120,13 +120,13 @@
 
       <div class="col-lg-4">
         <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title">Platform roles</h3></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Platform roles") %></h3></div>
           <div class="card-body"><%- include('../../partials/accessSummary', { s: subject }) %></div>
         </div>
         <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title">Verified Wikimedia groups</h3></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Verified Wikimedia groups") %></h3></div>
           <div class="list-group list-group-flush">
-            <% if (!wikiRoles.length) { %><div class="list-group-item text-secondary">None that Zury tracks.</div><% } %>
+            <% if (!wikiRoles.length) { %><div class="list-group-item text-secondary"><%= t("None that Zury tracks.") %></div><% } %>
             <% wikiRoles.forEach((r) => { %>
               <div class="list-group-item">
                 <div><span class="badge bg-purple-lt"><%= r.rightName %></span> on <%- r.wiki === '*' ? 'all wikis (global)' : wikiLabel(r.wiki) %></div>
@@ -136,10 +136,10 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-header"><h3 class="card-title">Profile</h3></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Profile") %></h3></div>
           <div class="list-group list-group-flush">
-            <a class="list-group-item list-group-item-action" href="<%= userPath(currentUser.username) %>"><i class="ti ti-user me-2"></i>Public profile</a>
-            <a class="list-group-item list-group-item-action" href="/settings"><i class="ti ti-settings me-2"></i>Preferences</a>
+            <a class="list-group-item list-group-item-action" href="<%= userPath(currentUser.username) %>"><i class="ti ti-user me-2"></i><%= t("Public profile") %></a>
+            <a class="list-group-item list-group-item-action" href="/settings"><i class="ti ti-settings me-2"></i><%= t("Preferences") %></a>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 const express = require('express');
 const prisma = require('../config/prisma');
 const { LAYOUTS } = require('../utils/layouts');
+const { LANGUAGES } = require('../i18n');
 
 const router = express.Router();
 
@@ -37,6 +38,20 @@ router.get('/preferences/display', async (req, res, next) => {
       if (req.query[key] === '1' || req.query[key] === '0') changes[key] = req.query[key] === '1';
     }
     await save(req, changes);
+    res.redirect(safeNext(req.query.next, '/'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Interface language: on the account when logged in, else in the session.
+router.get('/preferences/language/:code', async (req, res, next) => {
+  try {
+    const { code } = req.params;
+    if (LANGUAGES[code]) {
+      if (req.user) await prisma.user.update({ where: { id: req.user.id }, data: { preferredLanguage: code } });
+      else req.session.lang = code;
+    }
     res.redirect(safeNext(req.query.next, '/'));
   } catch (err) {
     next(err);

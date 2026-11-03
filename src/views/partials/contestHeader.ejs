@@ -1,16 +1,16 @@
 <%
   const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' };
   const color = st.badge === 'dark' ? 'secondary' : st.badge;
-  const tabs = [['overview', 'Overview', '', 'info-circle', true]];
+  const tabs = [['overview', t('Overview'), '', 'info-circle', true]];
   const typeDef = EVENT_TYPES[contest.type];
-  if (typeDef.activity) tabs.push(['sessions', 'Sessions', '/sessions', 'calendar-event', true]);
-  if (typeDef.entries !== false) tabs.push(['submissions', typeDef.activity ? 'Uploads' : 'Submissions', '/submissions', 'files', true]);
-  if (settings.publicStatisticsEnabled || can('viewStatistics')) tabs.push(['statistics', 'Statistics', '/statistics', 'chart-bar', true]);
+  if (typeDef.activity) tabs.push(['sessions', t('Sessions'), '/sessions', 'calendar-event', true]);
+  if (typeDef.entries !== false) tabs.push(['submissions', t(typeDef.activity ? 'Uploads' : 'Submissions'), '/submissions', 'files', true]);
+  if (settings.publicStatisticsEnabled || can('viewStatistics')) tabs.push(['statistics', t('Statistics'), '/statistics', 'chart-bar', true]);
   const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
-  if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', 'Contributions', '/tracking', 'activity', true]);
-  if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', 'People', '/participants', 'users', true]);
-  if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', 'Configuration', '/config', 'adjustments', true]);
-  if (can('manageEvent')) tabs.push(['activity', 'Activity', '/activity', 'history', true]);
+  if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', t('Contributions'), '/tracking', 'activity', true]);
+  if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', t('People'), '/participants', 'users', true]);
+  if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'adjustments', true]);
+  if (can('manageEvent')) tabs.push(['activity', t('Activity'), '/activity', 'history', true]);
 %>
 <% if (contest.bannerUrl && active === 'overview') { %>
   <img src="<%= contest.bannerUrl %>" alt="" class="w-100 rounded mb-3" style="max-height: 220px; object-fit: cover" referrerpolicy="no-referrer">
@@ -25,30 +25,30 @@
       <% } %>
     </div>
     <div class="col">
-      <div class="page-pretitle"><a href="/events" class="text-reset">Events</a><% if (series) { %> · <a href="/<%= series.slug %>" class="text-reset"><%= series.title %></a><% } %> · <%= CONTEST_TYPES[contest.type] || contest.type %> · <%= wikiScope ? wikiName(wikiScope.wiki) : eventWikis.length > 1 ? eventWikis.length + ' wikis' : wikiName(contest.primaryWiki) %></div>
+      <div class="page-pretitle"><a href="/events" class="text-reset"><%= t("Events") %></a><% if (series) { %> · <a href="/<%= series.slug %>" class="text-reset"><%= series.title %></a><% } %> · <%= CONTEST_TYPES[contest.type] || contest.type %> · <%= wikiScope ? wikiName(wikiScope.wiki) : eventWikis.length > 1 ? t('{n} wikis', { n: eventWikis.length }) : wikiName(contest.primaryWiki) %></div>
       <h2 class="page-title"><%= contest.title %></h2>
       <div class="mt-1 d-flex flex-wrap gap-1">
         <span class="badge bg-<%= color %> text-<%= color %>-fg"><%= st.label %></span>
-        <% if (contest.visibility === 'private') { %><span class="badge bg-yellow-lt">Private</span><% } %>
-        <% if (contest.statusMode === 'manual' && !['draft', 'cancelled', 'archived'].includes(contest.status)) { %><span class="badge bg-secondary-lt" title="Status set by an organizer">pinned</span><% } %>
+        <% if (contest.visibility === 'private') { %><span class="badge bg-yellow-lt"><%= t("Private") %></span><% } %>
+        <% if (contest.statusMode === 'manual' && !['draft', 'cancelled', 'archived'].includes(contest.status)) { %><span class="badge bg-secondary-lt" title="<%= t("Status set by an organizer") %>"><%= t("pinned") %></span><% } %>
       </div>
     </div>
     <% if (allWikis.length > 1) { %>
       <div class="col-auto">
         <div class="dropdown">
-          <button class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-world me-1"></i><%= wikiScope ? '/' + wikiScope.code : 'All wikis' %></button>
+          <button class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-world me-1"></i><%= wikiScope ? '/' + wikiScope.code : t('All wikis') %></button>
           <div class="dropdown-menu dropdown-menu-end">
-            <a class="dropdown-item<%= wikiScope ? '' : ' active' %>" href="<%= eventBase %>">All wikis</a>
+            <a class="dropdown-item<%= wikiScope ? '' : ' active' %>" href="<%= eventBase %>"><%= t("All wikis") %></a>
             <div class="dropdown-divider"></div>
             <% allWikis.filter((w) => w.status !== 'pending' || scope.isGlobalController).forEach((w) => { %>
-              <a class="dropdown-item<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= eventBase %>/<%= w.code %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? wikiName(w.wiki) : w.status %></span></a>
+              <a class="dropdown-item<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= eventBase %>/<%= w.code %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? wikiName(w.wiki) : t(w.status === 'paused' ? 'Paused' : 'Waiting for approval') %></span></a>
             <% }) %>
           </div>
         </div>
       </div>
     <% } %>
     <% if (currentUser && contest.status === 'active' && active !== 'submit' && typeDef.entries !== false) { %>
-      <div class="col-auto ms-auto"><a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i>Submit entries</a></div>
+      <div class="col-auto ms-auto"><a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a></div>
     <% } %>
   </div>
 </div>
