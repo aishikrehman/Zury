@@ -155,6 +155,55 @@ async function projects() {
   ];
 }
 
+// Picker step 1: languages that have open public wikis, plus "special" for
+// single wikis without a language (Commons, Wikidata, Meta-Wiki, chapters…).
+async function wikiLanguages() {
+  const rows = await prisma.wikiSite.groupBy({ by: ['lang', 'family'], where: { private: false, closed: false }, _count: { _all: true } });
+  const counts = new Map();
+  let special = 0;
+  for (const r of rows) {
+    if (LANGUAGE_FAMILIES.includes(r.family) && r.lang) counts.set(r.lang, (counts.get(r.lang) || 0) + r._count._all);
+    else special += r._count._all;
+  }
+  const langs = await prisma.language.findMany({ where: { code: { in: [...counts.keys()] } } });
+  return [
+    ...(special ? [{ value: 'special', text: 'Commons, Wikidata and other wikis', localName: '', count: special }] : []),
+    ...langs
+      .map((l) => ({ value: l.code, text: l.name, localName: l.localName && l.localName !== l.name ? l.localName : '', count: counts.get(l.code) }))
+      .sort((a, b) => a.text.localeCompare(b.text)),
+  ];
+}
+
+// Picker step 2: the wikis of one language, or the single wikis for "special".
+async function wikisForLanguage(code) {
+  const where = code === 'special' ? { family: { notIn: LANGUAGE_FAMILIES } } : { lang: code, family: { in: LANGUAGE_FAMILIES } };
+  const rows = await prisma.wikiSite.findMany({
+    where: { private: false, closed: false, ...where },
+    select: { dbname: true, family: true, sitename: true, name: true, localName: true, url: true },
+  });
+  if (code === 'special') {
+    const first = ['commonswiki', 'wikidatawiki', 'metawiki', 'specieswiki', 'mediawikiwiki', 'wikifunctionswiki', 'incubatorwiki', 'sourceswiki'];
+    const rank = (db) => (first.includes(db) ? first.indexOf(db) : first.length);
+    return rows
+      .sort((a, b) => rank(a.dbname) - rank(b.dbname) || a.name.localeCompare(b.name))
+      .map((w) => ({ value: w.dbname, text: w.name, localName: w.localName && !w.name.includes(w.localName) ? w.localName : '', url: w.url }));
+  }
+  // Project name in English, and the wiki's own name for itself ("উইকিসংকলন").
+  return rows
+    .sort((a, b) => LANGUAGE_FAMILIES.indexOf(a.family) - LANGUAGE_FAMILIES.indexOf(b.family))
+    .map((w) => {
+      const project = FAMILY_NAMES[w.family];
+      return { value: w.dbname, text: project, localName: w.sitename && w.sitename !== project ? w.sitename : '', url: w.url };
+    });
+}
+
+// The picker group a wiki belongs to: its language, or "special".
+async function languageOf(dbname) {
+  const w = await prisma.wikiSite.findUnique({ where: { dbname }, select: { family: true, lang: true } });
+  if (!w) return null;
+  return LANGUAGE_FAMILIES.includes(w.family) && w.lang ? w.lang : 'special';
+}
+
 // Which project a wiki belongs to ("special" for single wikis).
 async function projectOf(dbname) {
   const w = await prisma.wikiSite.findUnique({ where: { dbname }, select: { family: true } });
@@ -212,4 +261,4 @@ async function namespacesFor(dbname) {
   return rows.sort((a, b) => a.id - b.id);
 }
 
-module.exports = { FAMILY_NAMES, names, projects, projectOf, parseSitematrix, syncSitematrix, ensureFresh, validators, searchWikis, searchLanguages, namespacesFor };
+module.exports = { FAMILY_NAMES, names, projects, projectOf, wikiLanguages, wikisForLanguage, languageOf, parseSitematrix, syncSitematrix, ensureFresh, validators, searchWikis, searchLanguages, namespacesFor };

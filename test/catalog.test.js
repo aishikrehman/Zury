@@ -90,3 +90,17 @@ test('wikis carry English and local names; the picker lists projects, then langu
   const page = await (await fetch(`${t.baseUrl}/events`)).text();
   assert.equal(page.includes('undefined'), false);
 });
+
+test('wiki picker: language first (English and own name), then that language\'s wikis', async () => {
+  const langs = await (await fetch(`${t.baseUrl}/api/wiki-languages`)).json();
+  assert.deepEqual(langs.map((l) => [l.value, l.text, l.localName]), [
+    ['special', 'Commons, Wikidata and other wikis', ''],
+    ['bn', 'Bangla', 'বাংলা'],
+  ]);
+  const bn = await (await fetch(`${t.baseUrl}/api/wiki-languages/bn`)).json();
+  assert.deepEqual(bn.map((w) => [w.value, w.text, w.localName]), [['bnwiki', 'Wikipedia', 'উইকিপিডিয়া']], 'closed wikis are left out');
+  const special = await (await fetch(`${t.baseUrl}/api/wiki-languages/special`)).json();
+  assert.deepEqual(special.map((w) => w.value), ['commonswiki']);
+  assert.deepEqual(await (await fetch(`${t.baseUrl}/api/wiki-of?db=bnwiki`)).json(), { language: 'bn' });
+  assert.deepEqual(await (await fetch(`${t.baseUrl}/api/wiki-of?db=commonswiki`)).json(), { language: 'special' });
+});

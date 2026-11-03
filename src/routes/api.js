@@ -7,7 +7,34 @@ const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 const q = (req) => (typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '');
 
-// Step 1 of the wiki picker: the projects.
+// Wiki picker, step 1: languages with wikis (and "special" for Commons, Wikidata…).
+router.get('/api/wiki-languages', async (req, res, next) => {
+  try {
+    res.json(await catalog.wikiLanguages());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Step 2: that language's wikis ("Wikisource · উইকিসংকলন").
+// ?db=bnwiki answers which language group a wiki is in, for pre-filled forms.
+router.get('/api/wiki-languages/:code', async (req, res, next) => {
+  try {
+    res.json(await catalog.wikisForLanguage(req.params.code.slice(0, 30)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/api/wiki-of', async (req, res, next) => {
+  try {
+    res.json({ language: await catalog.languageOf(String(req.query.db || '').slice(0, 64)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Projects (Wikipedia, Wiktionary…) with their number of wikis.
 router.get('/api/projects', async (req, res, next) => {
   try {
     res.json(await catalog.projects());

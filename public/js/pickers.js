@@ -34,55 +34,64 @@
     });
   }
 
-  // Wiki: first the project (Wikipedia, Wiktionary… or Commons and other single
-  // wikis), then the wiki by language, shown in English and in its own script.
-  function wiki(el) {
-    const project = document.createElement('select');
-    project.className = 'form-select mb-2';
-    project.setAttribute('aria-label', 'Project');
-    project.innerHTML = '<option value="">Choose a project…</option>';
-    el.parentNode.insertBefore(project, el);
+  // Wiki: first the language (or "Commons, Wikidata and other wikis"), then that
+  // language's wikis. Both show the English name with the local one beside it.
+  const withLocal = (item) =>
+    `<div class="d-flex align-items-baseline gap-2"><span>${esc(item.text)}${item.localName ? ` <span class="text-secondary">${esc(item.localName)}</span>` : ''}</span>` +
+    `<span class="ms-auto text-secondary small">${esc(item.hint || '')}</span></div>`;
+  const label = (item) => (item.localName ? `${item.text} · ${item.localName}` : item.text);
 
-    let items = [];
-    const ts = new window.TomSelect(el, {
+  function wiki(el) {
+    const langSelect = document.createElement('select');
+    langSelect.setAttribute('aria-label', 'Language');
+    langSelect.setAttribute('placeholder', 'Choose a language…');
+    el.parentNode.insertBefore(langSelect, el);
+    const wrap = document.createElement('div');
+    wrap.className = 'mb-2';
+    langSelect.parentNode.insertBefore(wrap, langSelect);
+    wrap.appendChild(langSelect);
+
+    const wikis = new window.TomSelect(el, {
       valueField: 'value',
       labelField: 'label',
-      searchField: ['text', 'localName', 'value', 'lang'],
+      searchField: ['text', 'localName', 'value'],
       maxOptions: 500,
-      render: {
-        option: (item) => {
-          const local = item.localName ? ` <span class="text-secondary">${esc(item.localName)}</span>` : '';
-          return `<div class="d-flex align-items-baseline gap-2"><span>${esc(item.text)}${local}</span><span class="ms-auto text-secondary small">${esc(item.value)}</span></div>`;
-        },
-        item: (item) => `<div>${esc(item.label)}</div>`,
-        no_results: () => '<div class="no-results">No matches</div>',
-      },
+      placeholder: 'Then the wiki…',
+      render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => '<div class="no-results">No matches</div>' },
     });
-    const label = (w) => (w.localName ? `${w.text} · ${w.localName}` : w.text);
-    const load = (family, keep) => {
-      ts.clear(true);
-      ts.clearOptions();
-      if (!family) return ts.disable();
-      ts.enable();
-      json(`/api/wikis?project=${encodeURIComponent(family)}`).then((list) => {
-        items = list.map((w) => ({ ...w, label: label(w) }));
-        ts.addOptions(items);
-        if (keep && items.some((w) => w.value === keep)) ts.setValue(keep, true);
+    const loadWikis = (code, keep) => {
+      wikis.clear(true);
+      wikis.clearOptions();
+      if (!code) return wikis.disable();
+      wikis.enable();
+      json(`/api/wiki-languages/${encodeURIComponent(code)}`).then((list) => {
+        wikis.addOptions(list.map((w) => ({ ...w, label: label(w), hint: w.value })));
+        if (keep) wikis.setValue(keep, true);
+        else if (list.length === 1) wikis.setValue(list[0].value);
       });
     };
-    project.addEventListener('change', () => {
-      load(project.value);
-      el.dispatchEvent(new Event('change'));
+
+    const languages = new window.TomSelect(langSelect, {
+      valueField: 'value',
+      labelField: 'label',
+      searchField: ['text', 'localName', 'value'],
+      maxOptions: 500,
+      render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => '<div class="no-results">No matches</div>' },
+      onChange: (code) => {
+        loadWikis(code);
+        el.dispatchEvent(new Event('change'));
+      },
     });
 
     const initial = el.value;
-    json('/api/projects').then((list) => {
-      for (const p of list) project.add(new Option(`${p.text} (${p.count})`, p.value));
-      if (!initial) return load('');
-      json(`/api/wikis?db=${encodeURIComponent(initial)}`).then(({ project: family }) => {
-        if (!family) return;
-        project.value = family;
-        load(family, initial);
+    wikis.disable();
+    json('/api/wiki-languages').then((list) => {
+      languages.addOptions(list.map((l) => ({ ...l, label: label(l), hint: l.value === 'special' ? '' : `${l.value} · ${l.count}` })));
+      if (!initial) return;
+      json(`/api/wiki-of?db=${encodeURIComponent(initial)}`).then(({ language }) => {
+        if (!language) return;
+        languages.setValue(language, true);
+        loadWikis(language, initial);
       });
     });
   }
