@@ -7,10 +7,43 @@ const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 const q = (req) => (typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '');
 
+// Step 1 of the wiki picker: the projects.
+router.get('/api/projects', async (req, res, next) => {
+  try {
+    res.json(await catalog.projects());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Step 2: the wikis of a project, listed by language ("Bangla · বাংলা").
+// ?db=bnwiki answers which project a wiki belongs to, for pre-filled forms.
 router.get('/api/wikis', async (req, res, next) => {
   try {
-    const wikis = await catalog.searchWikis(q(req));
-    res.json(wikis.map((w) => ({ value: w.dbname, text: w.dbname, url: w.url, sitename: w.sitename, lang: w.lang })));
+    if (typeof req.query.db === 'string') return res.json({ project: await catalog.projectOf(req.query.db.slice(0, 64)) });
+    const family = typeof req.query.project === 'string' ? req.query.project.slice(0, 30) : '';
+    const [wikis, names] = await Promise.all([catalog.searchWikis(q(req), family ? 400 : 20, { family }), catalog.names()]);
+    // The best-known single wikis first.
+    if (family === 'special') {
+      const first = ['commonswiki', 'wikidatawiki', 'metawiki', 'specieswiki', 'mediawikiwiki', 'wikifunctionswiki', 'incubatorwiki', 'sourceswiki'];
+      const rank = (db) => (first.includes(db) ? first.indexOf(db) : first.length);
+      wikis.sort((a, b) => rank(a.dbname) - rank(b.dbname) || a.name.localeCompare(b.name));
+    }
+    res.json(
+      wikis.map((w) => {
+        const lang = w.lang && family && family !== 'special' ? names.language(w.lang) : null;
+        const local = names.wiki(w.dbname).localName;
+        return {
+          value: w.dbname,
+          // Within a project, the language is what tells wikis apart.
+          text: family && lang ? lang.name : w.name || w.dbname,
+          localName: family && lang ? lang.localName : local,
+          name: w.name,
+          url: w.url,
+          lang: w.lang,
+        };
+      }),
+    );
   } catch (err) {
     next(err);
   }
@@ -29,7 +62,7 @@ router.get('/api/wikis/:dbname/namespaces', async (req, res, next) => {
 router.get('/api/languages', async (req, res, next) => {
   try {
     const langs = await catalog.searchLanguages(q(req));
-    res.json(langs.map((l) => ({ value: l.code, text: `${l.code} · ${l.name}` })));
+    res.json(langs.map((l) => ({ value: l.code, text: l.localName && l.localName !== l.name ? `${l.name} · ${l.localName}` : l.name, code: l.code })));
   } catch (err) {
     next(err);
   }

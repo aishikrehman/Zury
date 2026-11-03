@@ -306,7 +306,12 @@ model WikiSite {
   url       String
   // Project family code, e.g. "wiki", "wiktionary", "commons".
   family    String
+  // The wiki's own name for itself, e.g. "উইকিপিডিয়া".
   sitename  String
+  // English name, e.g. "Bangla Wikipedia".
+  name      String   @default("")
+  // Name in the wiki's language, e.g. "বাংলা উইকিপিডিয়া".
+  localName String   @default("")
   lang      String?
   closed    Boolean  @default(false)
   private   Boolean  @default(false)
@@ -319,7 +324,9 @@ model WikiSite {
 
 model Language {
   code      String   @id
+  // English name, e.g. "Bangla".
   name      String
+  // The language's name for itself, e.g. "বাংলা".
   localName String?
   fetchedAt DateTime @default(now())
 }

@@ -29,7 +29,7 @@
           <div class="card-body p-4 text-center">
             <span class="avatar avatar-xl mb-3 rounded"><%= profileUser.username.charAt(0).toUpperCase() %></span>
             <h3 class="m-0 mb-1"><%= profileUser.username %></h3>
-            <div class="text-secondary"><%= profileUser.homeWiki || 'Wikimedia' %></div>
+            <div class="text-secondary"><%- profileUser.homeWiki ? wikiLabel(profileUser.homeWiki) : 'Wikimedia' %></div>
           </div>
           <div class="card-body">
             <div class="datagrid">
@@ -56,7 +56,7 @@
                   <a href="<%= eventPath(c) %>" class="list-group-item list-group-item-action d-flex align-items-center">
                     <div class="flex-fill">
                       <div><%= c.title %></div>
-                      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= c.primaryWiki %></div>
+                      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= wikiName(c.primaryWiki) %></div>
                     </div>
                     <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
                   </a>

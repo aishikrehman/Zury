@@ -25,7 +25,7 @@
             <div class="datagrid-item"><div class="datagrid-title">Format</div><div class="datagrid-content"><%= modes[session.mode] %></div></div>
             <% if (session.location) { %><div class="datagrid-item"><div class="datagrid-title">Place</div><div class="datagrid-content"><%= session.location %></div></div><% } %>
             <div class="datagrid-item"><div class="datagrid-title">Places</div><div class="datagrid-content"><%= session.capacity || 'No limit' %></div></div>
-            <% if (session.wiki) { %><div class="datagrid-item"><div class="datagrid-title">Wiki</div><div class="datagrid-content"><%= session.wiki %></div></div><% } %>
+            <% if (session.wiki) { %><div class="datagrid-item"><div class="datagrid-title">Wiki</div><div class="datagrid-content"><%- wikiLabel(session.wiki) %></div></div><% } %>
           </div>
           <% if (session.meetingUrl && (mine === 'registered' || mine === 'attended' || canManage)) { %>
             <p><a href="<%= session.meetingUrl %>" class="btn btn-outline-primary" rel="noopener" target="_blank"><i class="ti ti-video me-1"></i>Join the meeting</a></p>

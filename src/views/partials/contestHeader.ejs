@@ -25,7 +25,7 @@
       <% } %>
     </div>
     <div class="col">
-      <div class="page-pretitle"><a href="/events" class="text-reset">Events</a><% if (series) { %> · <a href="/<%= series.slug %>" class="text-reset"><%= series.title %></a><% } %> · <%= CONTEST_TYPES[contest.type] || contest.type %> · <%= wikiScope ? wikiScope.wiki : eventWikis.length > 1 ? eventWikis.length + ' wikis' : contest.primaryWiki %></div>
+      <div class="page-pretitle"><a href="/events" class="text-reset">Events</a><% if (series) { %> · <a href="/<%= series.slug %>" class="text-reset"><%= series.title %></a><% } %> · <%= CONTEST_TYPES[contest.type] || contest.type %> · <%= wikiScope ? wikiName(wikiScope.wiki) : eventWikis.length > 1 ? eventWikis.length + ' wikis' : wikiName(contest.primaryWiki) %></div>
       <h2 class="page-title"><%= contest.title %></h2>
       <div class="mt-1 d-flex flex-wrap gap-1">
         <span class="badge bg-<%= color %> text-<%= color %>-fg"><%= st.label %></span>
@@ -41,7 +41,7 @@
             <a class="dropdown-item<%= wikiScope ? '' : ' active' %>" href="<%= eventBase %>">All wikis</a>
             <div class="dropdown-divider"></div>
             <% allWikis.filter((w) => w.status !== 'pending' || scope.isGlobalController).forEach((w) => { %>
-              <a class="dropdown-item<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= eventBase %>/<%= w.code %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? w.wiki : w.status %></span></a>
+              <a class="dropdown-item<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= eventBase %>/<%= w.code %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? wikiName(w.wiki) : w.status %></span></a>
             <% }) %>
           </div>
         </div>

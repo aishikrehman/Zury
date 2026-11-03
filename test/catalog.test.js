@@ -70,3 +70,23 @@ test('user search needs a login', async () => {
   const res = await t.request('/api/users?q=Ex');
   assert.equal(res.status, 302);
 });
+
+test('wikis carry English and local names; the picker lists projects, then languages', async () => {
+  const { sites } = require('../src/wiki/catalogService').parseSitematrix(SITEMATRIX);
+  const bn = sites.find((s) => s.dbname === 'bnwiki');
+  assert.equal(bn.name, 'Bangla Wikipedia');
+  assert.equal(bn.localName, 'বাংলা উইকিপিডিয়া');
+  assert.equal(sites.find((s) => s.dbname === 'commonswiki').name, 'Wikimedia Commons');
+
+  const projects = await (await fetch(`${t.baseUrl}/api/projects`)).json();
+  assert.deepEqual(projects.map((p) => p.value), ['wiki', 'special'], 'only projects with open public wikis');
+  const wikipedias = await (await fetch(`${t.baseUrl}/api/wikis?project=wiki`)).json();
+  assert.deepEqual(wikipedias.map((w) => [w.value, w.text, w.localName]), [['bnwiki', 'Bangla', 'বাংলা']]);
+  const specials = await (await fetch(`${t.baseUrl}/api/wikis?project=special`)).json();
+  assert.deepEqual(specials.map((w) => w.value), ['commonswiki']);
+  assert.deepEqual(await (await fetch(`${t.baseUrl}/api/wikis?db=bnwiki`)).json(), { project: 'wiki' });
+  assert.deepEqual(await (await fetch(`${t.baseUrl}/api/wikis?db=commonswiki`)).json(), { project: 'special' });
+
+  const page = await (await fetch(`${t.baseUrl}/events`)).text();
+  assert.equal(page.includes('undefined'), false);
+});

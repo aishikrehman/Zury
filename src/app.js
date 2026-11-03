@@ -116,6 +116,35 @@ app.use(
 );
 
 app.use(attachUser);
+// Wiki and language names (English and the language's own) for the views.
+app.use(async (req, res, next) => {
+  try {
+    const names = await require('./wiki/catalogService').names();
+    const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const both = ({ name, localName }) => (localName ? `${name} · ${localName}` : name);
+    Object.assign(res.locals, {
+      wikiName: (db) => (db ? names.wiki(db).name : ''),
+      langName: (code) => (code ? names.language(code).name : ''),
+      // Plain text: "Bangla Wikipedia · বাংলা উইকিপিডিয়া".
+      wikiText: (db) => (db ? both(names.wiki(db)) : ''),
+      langText: (code) => (code ? both(names.language(code)) : ''),
+      // HTML: the English name with the local one beside it, muted.
+      wikiLabel: (db) => {
+        if (!db) return '';
+        const w = names.wiki(db);
+        return `<span title="${esc(db)}">${esc(w.name)}</span>${w.localName ? ` <span class="text-secondary">${esc(w.localName)}</span>` : ''}`;
+      },
+      langLabel: (code) => {
+        if (!code) return '';
+        const l = names.language(code);
+        return `<span title="${esc(code)}">${esc(l.name)}</span>${l.localName ? ` <span class="text-secondary">${esc(l.localName)}</span>` : ''}`;
+      },
+    });
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 app.use(displayPreferences);
 app.use(csrfProtection);
 app.use(flashMessages);

@@ -68,7 +68,7 @@
             <% allWikis.forEach((w) => { %>
               <tr>
                 <td><a href="<%= eventBase %>/<%= w.code %>"><%= eventBase %>/<%= w.code %></a></td>
-                <td><%= w.wiki %></td>
+                <td><%- wikiLabel(w.wiki) %></td>
                 <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= w.status %></span></td>
                 <td class="text-nowrap">
                   <% (wikiActions[w.status] || []).forEach(([action, label, cls]) => { %>
@@ -95,7 +95,7 @@
 
   <% if (wikiMode && can('editEvent')) { %>
     <div class="alert alert-info d-flex align-items-center">
-      <div class="flex-fill">Settings for <strong><%= wikiScope.wiki %></strong>. Anything you change here applies to this wiki only; everything else follows the event. <% if (overridden.size) { %><span class="badge bg-orange-lt ms-1"><%= overridden.size %> own</span><% } %></div>
+      <div class="flex-fill">Settings for <strong><%- wikiLabel(wikiScope.wiki) %></strong>. Anything you change here applies to this wiki only; everything else follows the event. <% if (overridden.size) { %><span class="badge bg-orange-lt ms-1"><%= overridden.size %> own</span><% } %></div>
       <% if (overridden.size) { %>
         <form method="post" action="<%= base %>/config" class="ms-3">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">

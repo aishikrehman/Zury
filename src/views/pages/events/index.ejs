@@ -46,7 +46,7 @@
           <div class="subheader mb-2">Wiki</div>
           <select id="wiki" name="wiki" class="form-select mb-3" aria-label="Wiki">
             <option value="">All wikis</option>
-            <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= w %></option><% }) %>
+            <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiText(w) %></option><% }) %>
           </select>
           <div class="subheader mb-2">Sort</div>
           <select id="sort" name="sort" class="form-select mb-4" aria-label="Sort">

@@ -64,10 +64,10 @@
       <div class="col-md-6">
         <label class="form-label" for="primaryWiki">Primary wiki</label>
         <select class="form-select<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" data-picker="wiki" placeholder="Search wikis…" aria-describedby="wikiHelp">
-          <% if (v('primaryWiki')) { %><option value="<%= v('primaryWiki') %>" selected><%= v('primaryWiki') %></option><% } %>
+          <% if (v('primaryWiki')) { %><option value="<%= v('primaryWiki') %>" selected><%= wikiText(v('primaryWiki')) %></option><% } %>
         </select>
         <div id="wikiHelp" class="form-text">
-          <% if (wikiScope) { %>You can use: <%= wikiScope.length ? wikiScope.join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.<% } %>
+          <% if (wikiScope) { %>You can use: <%= wikiScope.length ? wikiScope.map(wikiName).join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.<% } %>
         </div>
         <%- err('primaryWiki') %>
       </div>

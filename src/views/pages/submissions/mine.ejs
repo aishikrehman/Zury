@@ -15,7 +15,7 @@
           <tbody>
             <% submissions.forEach((s) => { %>
               <tr>
-                <td><a href="/contest/<%= s.contest.id %>/submissions/<%= s.id %>"><%= s.title %></a><div class="text-secondary small"><%= s.wiki %> · <%= s.entryType %></div></td>
+                <td><a href="/contest/<%= s.contest.id %>/submissions/<%= s.id %>"><%= s.title %></a><div class="text-secondary small"><%= wikiName(s.wiki) %> · <%= s.entryType %></div></td>
                 <td><a href="/contest/<%= s.contest.id %>" class="text-reset"><%= s.contest.title %></a></td>
                 <td><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
                 <td class="text-secondary text-nowrap"><%= formatDate(s.submittedAt) %></td>

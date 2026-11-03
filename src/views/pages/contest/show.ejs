@@ -28,7 +28,7 @@
               <tbody>
                 <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: w.status.charAt(0).toUpperCase() + w.status.slice(1), badge: 'secondary' }; %>
                   <tr>
-                    <td><a href="<%= eventBase %>/<%= w.code %>" class="fw-bold">/<%= w.code %></a> <span class="text-secondary small"><%= w.wiki %></span></td>
+                    <td><a href="<%= eventBase %>/<%= w.code %>" class="fw-bold">/<%= w.code %></a> <span class="small ms-1"><%- wikiLabel(w.wiki) %></span></td>
                     <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
                     <td class="text-end"><%= w.entries %></td>
                     <td class="text-end"><%= w.organizers %></td>
@@ -62,8 +62,8 @@
             <div class="card-body">
               <div class="datagrid">
                 <% if (contest.organizingCommunity) { %><div class="datagrid-item"><div class="datagrid-title">Organized by</div><div class="datagrid-content"><%= contest.organizingCommunity %></div></div><% } %>
-                <div class="datagrid-item"><div class="datagrid-title">Wikis</div><div class="datagrid-content"><%= wikiScope ? wikiScope.wiki : eventWikis.map((w) => w.wiki).join(', ') || contest.primaryWiki %></div></div>
-                <div class="datagrid-item"><div class="datagrid-title">Language</div><div class="datagrid-content"><%= contest.language %></div></div>
+                <div class="datagrid-item"><div class="datagrid-title">Wikis</div><div class="datagrid-content"><%- wikiScope ? wikiLabel(wikiScope.wiki) : (eventWikis.length ? eventWikis.map((w) => wikiLabel(w.wiki)).join('<br>') : wikiLabel(contest.primaryWiki)) %></div></div>
+                <div class="datagrid-item"><div class="datagrid-title">Language</div><div class="datagrid-content"><%- langLabel(contest.language) %></div></div>
                 <div class="datagrid-item"><div class="datagrid-title">Participants</div><div class="datagrid-content"><%= participantCount %><%= settings.participantLimit ? ' / ' + settings.participantLimit : '' %></div></div>
                 <% if (settings.juryReviewEnabled) { %><div class="datagrid-item"><div class="datagrid-title">Jury</div><div class="datagrid-content"><%= jury.length %> member<%= jury.length === 1 ? '' : 's' %></div></div><% } %>
                 <% if (contest.contactInfo) { %><div class="datagrid-item"><div class="datagrid-title">Contact</div><div class="datagrid-content"><%= contest.contactInfo %></div></div><% } %>
@@ -101,7 +101,7 @@
         <div class="card-header"><h3 class="card-title">Take part</h3></div>
         <div class="card-body">
           <% if (isParticipant) { %>
-            <p class="small text-success mb-2">You're a participant<%= myWiki && eventWikis.length > 1 ? ' on ' + myWiki : '' %>.</p>
+            <p class="small text-success mb-2">You're a participant<%= myWiki && eventWikis.length > 1 ? ' on ' + wikiName(myWiki) : '' %>.</p>
             <% if (!['completed', 'archived'].includes(contest.status)) { %>
               <form method="post" action="<%= base %>/leave">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -117,7 +117,7 @@
                 <label class="form-label" for="joinWiki">Your wiki</label>
                 <select class="form-select mb-2" id="joinWiki" name="wiki" required>
                   <option value="">Choose…</option>
-                  <% joinWikis.forEach((w) => { %><option value="<%= w.wiki %>"<%= w.wiki === defaultJoinWiki ? ' selected' : '' %>><%= w.wiki %></option><% }) %>
+                  <% joinWikis.forEach((w) => { %><option value="<%= w.wiki %>"<%= w.wiki === defaultJoinWiki ? ' selected' : '' %>><%= wikiText(w.wiki) %></option><% }) %>
                 </select>
               <% } %>
               <button class="btn btn-sm btn-primary" type="submit">Join this event</button>

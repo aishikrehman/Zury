@@ -53,7 +53,7 @@
         <div class="list-group list-group-flush">
           <% if (!summary.byWiki.length) { %><div class="list-group-item text-secondary">Nothing yet.</div><% } %>
           <% summary.byWiki.forEach((w) => { %>
-            <div class="list-group-item d-flex justify-content-between"><span><%= w.wiki %></span><span><strong><%= n(w.count) %></strong> <span class="text-secondary small">· <%= n(w.bytes) %> bytes</span></span></div>
+            <div class="list-group-item d-flex justify-content-between"><span><%- wikiLabel(w.wiki) %></span><span><strong><%= n(w.count) %></strong> <span class="text-secondary small">· <%= n(w.bytes) %> bytes</span></span></div>
           <% }) %>
         </div>
       </div>
@@ -82,7 +82,7 @@
             <tr>
               <td><%= c.pageTitle %><% if (c.isNew) { %> <span class="badge bg-green-lt">new</span><% } %></td>
               <td><%= c.username || '—' %></td>
-              <td class="text-secondary"><%= c.wiki %></td>
+              <td class="text-secondary"><%= wikiName(c.wiki) %></td>
               <td><span class="badge bg-secondary-lt"><%= sources[c.source] %></span></td>
               <td class="text-end <%= c.sizeDiff < 0 ? 'text-danger' : '' %>"><%= c.revId ? (c.sizeDiff > 0 ? '+' : '') + n(c.sizeDiff) : '—' %></td>
               <td class="text-secondary text-nowrap"><%= formatDateTime(c.timestamp, contest.timezone) %></td>

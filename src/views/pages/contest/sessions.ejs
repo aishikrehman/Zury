@@ -33,7 +33,7 @@
                   <div class="d-flex flex-wrap gap-1">
                     <span class="badge bg-secondary-lt"><%= s.status === 'held' ? s.attended + ' attended' : s.taken + (s.capacity ? ' / ' + s.capacity : '') + ' registered' %></span>
                     <% if (s.waitlisted) { %><span class="badge bg-yellow-lt"><%= s.waitlisted %> waiting</span><% } %>
-                    <% if (s.wiki && !wikiScope) { %><span class="badge bg-azure-lt"><%= s.wiki %></span><% } %>
+                    <% if (s.wiki && !wikiScope) { %><span class="badge bg-azure-lt"><%= wikiName(s.wiki) %></span><% } %>
                     <% if (s.mine && mineLabel[s.mine]) { %><span class="badge bg-<%= mineLabel[s.mine][0] %>-lt"><%= mineLabel[s.mine][1] %></span><% } %>
                   </div>
                 </div>

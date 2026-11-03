@@ -16,7 +16,7 @@
             <div class="card-body p-4 text-center">
               <span class="avatar avatar-xl mb-3 rounded"><%= u.username.charAt(0).toUpperCase() %></span>
               <h3 class="m-0 mb-1"><%= u.username.replace(' (demo)', '') %></h3>
-              <div class="text-secondary mb-2"><%= u.homeWiki %></div>
+              <div class="text-secondary mb-2"><%= wikiName(u.homeWiki) %></div>
               <div class="mb-2 d-flex justify-content-center"><%- include('../../partials/accessSummary', { s }) %></div>
               <div class="mt-2">
                 <% const entries = Object.entries(roleCounts); %>

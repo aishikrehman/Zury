@@ -24,7 +24,7 @@
                 <div class="col-auto"><span class="avatar avatar-xl"><%= currentUser.username.charAt(0).toUpperCase() %></span></div>
                 <div class="col">
                   <div class="fw-bold"><%= currentUser.username %></div>
-                  <div class="text-secondary">Home wiki: <%= currentUser.homeWiki || 'unknown' %></div>
+                  <div class="text-secondary">Home wiki: <%- currentUser.homeWiki ? wikiLabel(currentUser.homeWiki) : 'unknown' %></div>
                 </div>
               </div>
               <h3 class="card-title mt-4">Language and time</h3>

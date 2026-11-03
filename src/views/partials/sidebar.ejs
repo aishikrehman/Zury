@@ -22,7 +22,7 @@
               <span class="avatar avatar-sm"><%= currentUser.username.charAt(0).toUpperCase() %></span>
               <div class="nav-link-title ms-2">
                 <%= currentUser.username %>
-                <div class="small text-secondary"><%= currentUser.homeWiki || 'Wikimedia' %></div>
+                <div class="small text-secondary"><%= currentUser.homeWiki ? wikiName(currentUser.homeWiki) : 'Wikimedia' %></div>
               </div>
             </a>
             <div class="dropdown-menu">

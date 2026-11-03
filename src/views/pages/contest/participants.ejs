@@ -31,7 +31,7 @@
                   <label class="form-label" for="memberWiki">For</label>
                   <select class="form-select" id="memberWiki" name="wiki">
                     <option value="">Whole event</option>
-                    <% memberWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= w.code %> · <%= w.wiki %></option><% }) %>
+                    <% memberWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= wikiText(w.wiki) %></option><% }) %>
                   </select>
                 </div>
               <% } %>
@@ -53,8 +53,8 @@
                     </div>
                   </td>
                   <td><span class="badge bg-<%= { organizer: 'green', jury: 'orange', participant: 'blue', viewer: 'secondary' }[role] %>-lt"><%= EVENT_ROLES[role].label %></span></td>
-                  <td><% if (m.wiki) { %><span class="badge bg-azure-lt"><%= m.wiki %></span><% } else { %><span class="text-secondary">Event</span><% } %></td>
-                  <td class="text-secondary"><%= m.user.homeWiki || '—' %></td>
+                  <td><% if (m.wiki) { %><span class="badge bg-azure-lt" title="<%= wikiText(m.wiki) %>"><%= wikiName(m.wiki) %></span><% } else { %><span class="text-secondary">Event</span><% } %></td>
+                  <td class="text-secondary"><%= m.user.homeWiki ? wikiName(m.user.homeWiki) : '—' %></td>
                   <td class="text-secondary text-nowrap"><%= formatDate(m.assignedAt, contest.timezone) %></td>
                   <td>
                     <% if ((m.wiki ? scope.forWiki(m.wiki) : (wikiScope && m.role !== 'participant' ? scope.global : scope.permissions)).has(ROLE_MANAGEMENT_PERMISSION[m.role])) { %>

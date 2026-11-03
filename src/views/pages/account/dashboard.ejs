@@ -105,7 +105,7 @@
                 <tbody>
                   <% myEvents.forEach(({ contest: c, roles }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
                     <tr>
-                      <td><a href="<%= eventPath(c) %>"><%= c.title %></a><div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= c.primaryWiki %></div></td>
+                      <td><a href="<%= eventPath(c) %>"><%= c.title %></a><div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= wikiName(c.primaryWiki) %></div></td>
                       <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
                       <td><% roles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r].label %></span><% }) %></td>
                       <td class="text-secondary small text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) : '—' %></td>
@@ -129,7 +129,7 @@
             <% if (!wikiRoles.length) { %><div class="list-group-item text-secondary">None that Zury tracks.</div><% } %>
             <% wikiRoles.forEach((r) => { %>
               <div class="list-group-item">
-                <div><span class="badge bg-purple-lt"><%= r.rightName %></span> on <%= r.wiki === '*' ? 'all wikis (global)' : r.wiki %></div>
+                <div><span class="badge bg-purple-lt"><%= r.rightName %></span> on <%- r.wiki === '*' ? 'all wikis (global)' : wikiLabel(r.wiki) %></div>
                 <div class="text-secondary small">Checked <%= formatDateTime(r.verifiedAt, currentUser.timezone || 'UTC') %></div>
               </div>
             <% }) %>
