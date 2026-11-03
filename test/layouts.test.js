@@ -29,10 +29,10 @@ test('unknown layouts are ignored and redirects stay on site', async () => {
   const bad = await t.request('/layout/evil?next=//evil.example');
   assert.equal(bad.location, '/dashboard');
   const page = await t.request('/events', { cookie: 'zury_layout=evil"><script>' });
-  assert.match(htmlTag(page.body), /data-bs-navbar-style="floating"/, 'falls back to the default');
+  assert.equal(htmlTag(page.body), '<html lang="en" >', 'falls back to the default');
 });
 
-test('the homepage always uses the floating navbar without a sidebar layout', async () => {
+test('the homepage always uses the two-row header without a sidebar', async () => {
   const home = await t.request('/', { cookie: 'zury_layout=folded' });
-  assert.equal(htmlTag(home.body), '<html lang="en" data-bs-navbar-style="floating">');
+  assert.equal(htmlTag(home.body), '<html lang="en" >');
 });

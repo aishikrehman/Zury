@@ -147,45 +147,6 @@
   </div>
 </section>
 
-<!-- How it works -->
-<section class="page-body">
-  <div class="container-xl">
-    <div class="card card-lg">
-      <div class="card-body">
-        <div class="text-center mb-5">
-          <div class="subheader">How it works</div>
-          <h2 class="h1">Your first entry in three steps</h2>
-        </div>
-        <ul class="steps steps-counter steps-green mb-5">
-          <li class="step-item<%= step === 1 ? ' active' : '' %>">Log in</li>
-          <li class="step-item<%= step === 2 ? ' active' : '' %>">Join an event</li>
-          <li class="step-item">Submit entries</li>
-        </ul>
-        <div class="row g-4 text-center">
-          <% [
-            ['brand-wikipedia', 'blue', 'Log in with Wikipedia', 'Use the Wikimedia account you already have. There is no new password to remember.'],
-            ['calendar-plus', 'green', 'Join an event', 'Pick a contest or edit-a-thon. Zury checks that you meet its rules before you sign up.'],
-            ['upload', 'orange', 'Submit your work', 'Paste links to your photos, articles or Wikidata items. They are checked against the rules straight away.'],
-          ].forEach(([icon, color, title, text], i) => { %>
-            <div class="col-md-4">
-              <span class="avatar avatar-lg rounded bg-<%= color %>-lt mb-3"><i class="ti ti-<%= icon %>" style="font-size: 1.5rem"></i></span>
-              <h3 class="mb-2"><%= i + 1 %>. <%= title %></h3>
-              <p class="text-secondary mb-0"><%= text %></p>
-            </div>
-          <% }) %>
-        </div>
-        <div class="text-center mt-5">
-          <% if (currentUser) { %>
-            <a href="/events/active" class="btn btn-primary btn-lg">Find an event to join</a>
-          <% } else { %>
-            <a href="/login" class="btn btn-primary btn-lg"><i class="ti ti-brand-wikipedia me-1"></i>Log in to get started</a>
-          <% } %>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- Event types -->
 <section class="page-body">
   <div class="container-xl">

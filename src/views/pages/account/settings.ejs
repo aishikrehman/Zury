@@ -28,14 +28,12 @@
                 </div>
               </div>
               <h3 class="card-title mt-4">Language and time</h3>
-              <p class="card-subtitle">These apply to Zury only and don't change your Wikimedia account.</p>
               <div class="row g-3">
                 <div class="col-md">
                   <label for="preferredLanguage" class="form-label">Preferred language</label>
                   <input type="text" id="preferredLanguage" name="preferredLanguage" maxlength="35"
                          class="form-control<%= errors.preferredLanguage ? ' is-invalid' : '' %>"
-                         value="<%= values.preferredLanguage || '' %>" placeholder="e.g. en, bn, pt-br" aria-describedby="preferredLanguageHelp">
-                  <div id="preferredLanguageHelp" class="form-hint">A language code. Leave blank to use the default.</div>
+                         value="<%= values.preferredLanguage || '' %>" placeholder="e.g. en, bn, pt-br">
                   <% if (errors.preferredLanguage) { %><div class="invalid-feedback"><%= errors.preferredLanguage %></div><% } %>
                 </div>
                 <div class="col-md">

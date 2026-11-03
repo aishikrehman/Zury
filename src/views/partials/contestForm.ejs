@@ -29,8 +29,7 @@
       </div>
       <div class="col-md-4">
         <label class="form-label" for="slug">Slug</label>
-        <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" aria-describedby="slugHelp">
-        <div id="slugHelp" class="form-text">Short identifier. Leave blank to generate from the title.</div>
+        <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>">
         <%- err('slug') %>
       </div>
       <div class="col-12">
@@ -47,7 +46,6 @@
         <label class="form-label" for="primaryWiki">Primary wiki</label>
         <input class="form-control<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" maxlength="64" value="<%= v('primaryWiki') %>" placeholder="bnwiki" aria-describedby="wikiHelp">
         <div id="wikiHelp" class="form-text">
-          Database name, e.g. bnwiki, commonswiki, wikidatawiki.
           <% if (wikiScope) { %>You can use: <%= wikiScope.length ? wikiScope.join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.<% } %>
         </div>
         <%- err('primaryWiki') %>
@@ -100,9 +98,8 @@
   </fieldset>
 
   <fieldset class="card mb-4">
-    <div class="card-header"><h3 class="card-title">Dates</h3></div>
+    <div class="card-header"><h3 class="card-title">Dates</h3><div class="card-actions text-secondary"><%= v('timezone') || 'UTC' %></div></div>
     <div class="card-body">
-    <p class="form-text mt-0">In the event's timezone (<%= v('timezone') || 'UTC' %>). Start and end are needed before publishing; the rest are optional.</p>
     <div class="row g-3">
       <% DATE_FIELDS.forEach(([key, label]) => { %>
         <div class="col-sm-6 col-lg-4">
@@ -171,7 +168,6 @@
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="<%= key %>" name="<%= key %>"<%= on(key) ? ' checked' : '' %>>
             <label class="form-check-label" for="<%= key %>"><%= label %></label>
-            <div class="form-text mt-0"><%= help %></div>
           </div>
         </div>
       <% }) %>
@@ -205,7 +201,6 @@
             <label class="form-label" for="<%= name %>"><%= f.label %></label>
             <input class="form-control<%= inv(name) %>" id="<%= name %>" name="<%= name %>" <%= f.type === 'int' ? `type=number min=${f.min} max=${f.max}` : '' %> value="<%= v(name) %>">
           <% } %>
-          <% if (f.help) { %><div class="form-text"><%= f.help %></div><% } %>
           <%- err(name) %>
         </div>
       <% }) %>

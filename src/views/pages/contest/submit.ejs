@@ -26,7 +26,6 @@
             <label class="form-label" for="entries"><%= mass ? 'URLs or titles, one per line' : 'URL or title' %></label>
             <% if (mass) { %>
               <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="https://commons.wikimedia.org/wiki/File:Example.jpg&#10;File:Another example.jpg"><%= text %></textarea>
-              <div class="form-hint">Up to <%= maxBatch %> at a time. Plain titles are looked up on <%= contest.primaryWiki %>.</div>
             <% } else { %>
               <input class="form-control" id="entries" name="entries" value="<%= text %>" placeholder="https://… or a page title">
             <% } %>
@@ -35,7 +34,6 @@
             <div class="mb-3">
               <label class="form-label" for="participant">On behalf of <span class="text-secondary fw-normal">(optional)</span></label>
               <input class="form-control" id="participant" name="participant" value="<%= participant %>" placeholder="Participant's username">
-              <div class="form-hint">Leave blank to submit as yourself. The participant must already be in the event; this is logged.</div>
             </div>
           <% } %>
         </div>
@@ -86,7 +84,6 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="entries" value="<%= items.filter((i) => i.ok).map((i) => i.input).join('\n') %>">
               <input type="hidden" name="participant" value="<%= participant %>">
-              <span class="text-secondary small">Entries with problems will be left out. Everything is checked again when you confirm.</span>
               <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-check me-1"></i>Submit <%= okCount %> entr<%= okCount === 1 ? 'y' : 'ies' %></button>
             </form>
           <% } %>
@@ -100,9 +97,6 @@
         <div class="list-group list-group-flush">
           <div class="list-group-item"><%= typeDef.label %> on <%= [contest.primaryWiki, ...JSON.parse(contest.additionalWikis || '[]')].join(', ') %></div>
           <% rules.forEach((r) => { %><div class="list-group-item"><i class="ti ti-check text-green me-1"></i><%= r %></div><% }) %>
-          <div class="list-group-item text-secondary small">
-            <%= settings.autoValidationEnabled ? 'Entries are checked automatically against these rules.' : 'Organizers check entries by hand; rule problems are shown as warnings.' %>
-          </div>
         </div>
       </div>
     </div>

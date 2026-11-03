@@ -61,7 +61,7 @@
   <% if (can('editEvent')) { %>
     <%- include('../../partials/contestForm', { action: `/contest/${contest.id}/config`, submitLabel: 'Save settings' }) %>
   <% } else { %>
-    <div class="alert alert-info"><i class="ti ti-info-circle me-1"></i>You can change the event's status, but not its settings.</div>
+    
   <% } %>
 
   <% if (can('deleteEvent')) { %>
@@ -69,7 +69,6 @@
       <div class="card-status-start bg-danger"></div>
       <div class="card-header"><h3 class="card-title text-danger"><i class="ti ti-alert-triangle me-2"></i>Danger zone</h3></div>
       <div class="card-body">
-        <p class="text-secondary">Deleting hides the event from Zury for everyone. It's kept in the database and logged, but there's no undo button yet.</p>
         <form method="post" action="/contest/<%= contest.id %>/delete" class="row g-2 align-items-end">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="col-sm-6 col-md-4">

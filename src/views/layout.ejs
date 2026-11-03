@@ -1,5 +1,5 @@
 <%
-  const layout = LAYOUTS[layoutKey] || LAYOUTS['vertical-floating'];
+  const layout = LAYOUTS[layoutKey] || LAYOUTS.horizontal;
   const isActive = (prefix, exact = false) => (exact ? currentPath === prefix : currentPath === prefix || currentPath.startsWith(prefix + '/'));
   const navItems = [
     { section: 'Overview' },

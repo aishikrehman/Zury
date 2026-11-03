@@ -1,7 +1,7 @@
 <%# Layout picker, modelled on Tabler's theme-settings offcanvas. %>
 <% const groups = [
-  ['Sidebar', ['vertical', 'vertical-right', 'vertical-floating', 'vertical-transparent', 'fluid-vertical', 'folded', 'folded-hover']],
   ['Top navbar', ['horizontal', 'condensed', 'navbar-floating', 'navbar-sticky', 'navbar-dark', 'fluid']],
+  ['Sidebar', ['vertical', 'vertical-right', 'vertical-floating', 'vertical-transparent', 'fluid-vertical', 'folded', 'folded-hover']],
   ['Direction', ['rtl']],
 ]; %>
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas-settings" aria-labelledby="offcanvas-settings-title">
@@ -10,7 +10,6 @@
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body">
-    <p class="text-secondary">Choose how Zury's pages are laid out. Saved in this browser. The homepage always uses the floating navbar.</p>
     <% groups.forEach(([title, keys]) => { %>
       <div class="mb-4">
         <label class="form-label"><%= title %></label>
@@ -29,6 +28,6 @@
     <% }) %>
   </div>
   <div class="offcanvas-footer border-top p-3">
-    <a href="/layout/vertical-floating?next=<%= encodeURIComponent(currentPath === '/' ? '/dashboard' : currentPath) %>" class="btn w-100"><i class="ti ti-rotate me-1"></i>Reset to default</a>
+    <a href="/layout/horizontal?next=<%= encodeURIComponent(currentPath === '/' ? '/dashboard' : currentPath) %>" class="btn w-100"><i class="ti ti-rotate me-1"></i>Reset to default</a>
   </div>
 </div>

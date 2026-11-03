@@ -21,8 +21,8 @@ const LAYOUTS = {
   rtl: { label: 'RTL mode', html: { dir: 'rtl' }, rtl: true },
 };
 
-const DEFAULT_LAYOUT = 'vertical-floating';
-const PUBLIC_LAYOUT = 'navbar-floating';
+const DEFAULT_LAYOUT = 'horizontal';
+const PUBLIC_LAYOUT = 'horizontal';
 const COOKIE = 'zury_layout';
 
 function readLayoutCookie(header = '') {
