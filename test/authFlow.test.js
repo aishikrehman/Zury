@@ -67,7 +67,7 @@ test('login, session, profile, settings and logout', async () => {
 
   const dashboard = await t.request('/dashboard', { cookie });
   assert.equal(dashboard.status, 200);
-  assert.match(dashboard.body, /Welcome, Test User/);
+  assert.match(dashboard.body, /Welcome back, Test User/);
 
   assert.equal((await t.request('/dashboard', { cookie: preLoginCookie })).status, 302, 'old session id is not logged in');
 

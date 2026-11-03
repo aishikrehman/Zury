@@ -41,7 +41,7 @@ async function session(name) {
       const res = await this.post(path, form);
       assert.equal(res.status, 302, `${path} should redirect, got ${res.status}`);
       const page = await t.request(res.location, { cookie });
-      const alert = (page.body.match(/class="alert alert-\w+[^"]*" role="\w+">([\s\S]*?)<\/div>/) || [])[1] || '';
+      const alert = (page.body.match(/class="alert alert-\w+[^"]*" role="(?:status|alert)">([\s\S]*?)<\/div>/) || [])[1] || '';
       return { res, text: alert.replace(/<[^>]+>/g, '').trim() };
     },
   };

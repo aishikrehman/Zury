@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-navbar-position="vertical">
+<html lang="en" data-bs-navbar-position="vertical" data-bs-navbar-style="floating">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,21 +15,25 @@
 
     <div class="page-wrapper">
       <%- include('partials/topbar') %>
-      <% if (demoMode) { %>
-        <div class="alert alert-warning alert-important rounded-0 mb-0 py-2 small d-flex justify-content-between">
-          <span><i class="ti ti-flask me-1"></i><strong>Demo mode.</strong> Everything here is sample data.</span>
-          <a href="/demo" class="alert-link">Switch demo user</a>
-        </div>
-      <% } %>
-      <% if (typeof flash !== 'undefined' && flash) { %>
-        <div class="container-xl pt-3">
-          <div class="alert alert-<%= flash.type === 'danger' ? 'danger' : 'success' %> mb-0" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
-            <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : 'circle-check' %> me-1"></i><%= flash.message %>
+      <main id="content" class="d-flex flex-column flex-fill">
+        <% if (demoMode || (typeof flash !== 'undefined' && flash)) { %>
+          <div class="container-xl pt-3">
+            <% if (demoMode) { %>
+              <div class="alert alert-warning py-2 mb-2 d-flex align-items-center" role="note">
+                <i class="ti ti-flask me-2"></i><span><strong>Demo mode.</strong> Everything here is sample data.</span>
+                <a href="/demo" class="alert-link ms-auto">Switch demo user</a>
+              </div>
+            <% } %>
+            <% if (typeof flash !== 'undefined' && flash) { %>
+              <div class="alert alert-<%= flash.type === 'danger' ? 'danger' : 'success' %> mb-0" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
+                <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : 'circle-check' %> me-1"></i><%= flash.message %>
+              </div>
+            <% } %>
           </div>
-        </div>
-      <% } %>
+        <% } %>
 
-      <%- body %>
+        <%- body %>
+      </main>
 
       <%- include('partials/footer') %>
     </div>

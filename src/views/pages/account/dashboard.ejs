@@ -12,25 +12,57 @@
     can('accessAdmin') ? '<a class="btn btn-dark" href="/admin"><i class="ti ti-shield-lock me-1"></i>Administration</a>' : '',
   ].join('');
 %>
-<%- include('../../partials/pageHeader', { pretitle: 'Dashboard', heading: `Welcome, ${currentUser.username}`, actions }) %>
+<%- include('../../partials/pageHeader', { pretitle: 'Overview', heading: 'Dashboard', actions }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="row row-deck row-cards mb-4">
-      <% tiles.forEach(([icon, color, value, label]) => { %>
-        <div class="col-sm-6 col-lg-3">
-          <div class="card card-sm">
-            <div class="card-body">
-              <div class="row align-items-center">
-                <div class="col-auto"><span class="bg-<%= color %> text-white avatar"><i class="ti ti-<%= icon %>"></i></span></div>
-                <div class="col">
-                  <div class="h2 mb-0"><%= value %></div>
-                  <div class="text-secondary"><%= label %></div>
+      <div class="col-sm-12 col-lg-6">
+        <div class="card card-gradient">
+          <div class="card-body">
+            <div class="row gy-3">
+              <div class="col-12 col-sm-7 d-flex flex-column">
+                <h2 class="h2">Welcome back, <%= currentUser.username.replace(' (demo)', '') %></h2>
+                <p class="text-secondary">
+                  <% const active = myEvents.filter((e) => e.contest.status === 'active').length; %>
+                  You're part of <%= myEvents.length %> event<%= myEvents.length === 1 ? '' : 's' %><%= active ? `, ${active} running now` : '' %>.
+                </p>
+                <div class="row g-5 mt-auto">
+                  <div class="col-auto">
+                    <div class="subheader">Submissions</div>
+                    <div class="h3 mb-0"><%= typeof submissionCount !== 'undefined' ? submissionCount : 0 %></div>
+                  </div>
+                  <div class="col-auto">
+                    <div class="subheader">Jury roles</div>
+                    <div class="h3 mb-0"><%= juryEvents.length %></div>
+                  </div>
                 </div>
+              </div>
+              <div class="col-12 col-sm-5 d-flex align-items-center justify-content-center">
+                <img src="/images/zury-logo.svg" alt="" width="120" height="120" class="opacity-75">
               </div>
             </div>
           </div>
         </div>
-      <% }) %>
+      </div>
+      <div class="col-sm-12 col-lg-6">
+        <div class="row row-cards">
+          <% tiles.forEach(([icon, color, value, label]) => { %>
+            <div class="col-sm-6">
+              <div class="card card-sm">
+                <div class="card-body">
+                  <div class="row align-items-center">
+                    <div class="col-auto"><span class="bg-<%= color %> text-white avatar"><i class="ti ti-<%= icon %>"></i></span></div>
+                    <div class="col">
+                      <div class="font-weight-medium h2 mb-0"><%= value %></div>
+                      <div class="text-secondary"><%= label %></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
     </div>
 
     <div class="row row-cards">
