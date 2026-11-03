@@ -24,6 +24,14 @@
       createOnBlur: CREATABLE.includes(kind),
       maxItems: el.multiple ? null : 1,
       plugins: el.multiple ? ['remove_button'] : [],
+      // A picked name becomes a pill: don't offer it again, and start the next search clean.
+      hideSelected: true,
+      closeAfterSelect: true,
+      onItemAdd() {
+        this.setTextboxValue('');
+        this.clearOptions((option) => this.items.includes(option.value));
+        this.close();
+      },
       load(query, callback) {
         json(`${ENDPOINT[kind]}?q=${encodeURIComponent(query)}`).then(callback).catch(() => callback());
       },
@@ -64,6 +72,7 @@
     row.querySelectorAll('label')[1].textContent = el.dataset.siteLabel || zt('Wiki');
     el.parentNode.insertBefore(row, el);
     const langSelect = document.createElement('select');
+    langSelect.appendChild(new Option('', ''));
     langSelect.setAttribute('aria-label', 'Language of the wiki');
     langSelect.setAttribute('placeholder', zt('Choose a language…'));
     row.children[0].appendChild(langSelect);
@@ -107,7 +116,8 @@
     wikis.disable();
     json('/api/wiki-languages').then((list) => {
       languages.addOptions(list.map((l) => ({ ...l, label: label(l), hint: l.value === 'special' ? '' : `${l.value} · ${l.count}` })));
-      if (!initial) return;
+      // Nothing is chosen for the person: a plain <select> would otherwise take the first option.
+      if (!initial) return languages.clear(true);
       json(`/api/wiki-of?db=${encodeURIComponent(initial)}`).then(({ language }) => {
         if (!language) return;
         languages.setValue(language, true);
