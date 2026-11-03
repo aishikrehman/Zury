@@ -41,6 +41,13 @@
   <% } %>
   <link rel="stylesheet" href="/vendor/tabler-icons/tabler-icons.min.css">
   <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // Apply saved display preferences before first paint.
+    try {
+      if (localStorage.getItem('zury:wide') === '1') document.documentElement.classList.add('zury-wide');
+      if (localStorage.getItem('zury:textLarge') === '1') document.documentElement.classList.add('zury-text-lg');
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <a href="#content" class="visually-hidden-focusable skip-link">Skip to main content</a>
@@ -73,7 +80,9 @@
     </div>
   </div>
   <%- include('partials/customize', { layout }) %>
+  <%- include('partials/a11y', { layout }) %>
   <script src="/vendor/tabler/js/tabler.min.js"></script>
+  <script src="/js/prefs.js" defer></script>
   <script src="/js/charts.js" defer></script>
 </body>
 </html>

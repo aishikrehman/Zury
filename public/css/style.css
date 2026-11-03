@@ -1,2 +1,17 @@
 .ti.icon { font-size: 1.25rem; }
-.avatar-xl-initial { width: 4rem; height: 4rem; font-size: 1.5rem; }
+
+/* Comfortable reading width by default; "wide pages" restores Tabler's full width. */
+html:not(.zury-wide):not([data-bs-layout="fluid"]) .container-xl { max-width: 1140px; }
+
+/* Larger text option (Tabler sizes are rem-based). */
+html.zury-text-lg { font-size: 112.5%; }
+
+.zury-a11y {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1040;
+}
+[dir="rtl"] .zury-a11y { right: auto; left: 1.25rem; }
+.zury-a11y > .btn { width: 3rem; height: 3rem; border-radius: 50%; box-shadow: var(--tblr-box-shadow-dropdown, 0 .5rem 1rem rgba(0,0,0,.15)); }
+.zury-a11y .dropdown-menu { min-width: 16rem; }

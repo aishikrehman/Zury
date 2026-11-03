@@ -46,11 +46,6 @@
       <% if (!currentUser && demoMode) { %>
         <div class="nav-item d-none d-md-flex me-3"><a href="/demo" class="btn"><i class="ti ti-users-group me-1"></i>Try a demo user</a></div>
       <% } %>
-      <div class="nav-item d-none d-md-flex me-3">
-        <a href="#" class="nav-link px-0" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-settings" aria-controls="offcanvas-settings" title="Customize layout">
-          <i class="ti ti-layout icon"></i><span class="visually-hidden">Customize layout</span>
-        </a>
-      </div>
       <% if (currentUser) { %>
         <div class="nav-item dropdown">
           <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="Open user menu">
