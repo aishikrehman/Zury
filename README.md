@@ -103,6 +103,49 @@ are private drafts with the creator as organizer.
 Event Creator is a Zury role granted by platform administrators at
 `/admin/users`.
 
+## Deploying to Toolforge
+
+Zury runs as a Node.js webservice on the `zury` tool
+(<https://zury.toolforge.org>). All CSS, JavaScript and fonts are served by
+Zury itself because Toolforge doesn't allow loading assets from third-party
+CDNs.
+
+One-time setup:
+
+1. Be a maintainer of the `zury` tool (toolsadmin.wikimedia.org) and have SSH
+   access to `login.toolforge.org`.
+2. Register a separate OAuth 1.0a consumer on Meta-Wiki with callback
+   `https://zury.toolforge.org/` and "Allow consumer to specify a callback"
+   enabled. Don't reuse the local-development consumer.
+3. As the tool, create `~/www/js/.env`:
+
+   ```env
+   NODE_ENV=production
+   DATABASE_URL="file:/data/project/zury/zury.db"
+   SESSION_SECRET=<64+ random characters>
+   WIKIMEDIA_CONSUMER_KEY=<production key>
+   WIKIMEDIA_CONSUMER_SECRET=<production secret>
+   WIKIMEDIA_CALLBACK_URL=https://zury.toolforge.org/
+   DEMO_MODE=false
+   ```
+
+   Toolforge sets `PORT` itself. Demo login is always off in production.
+
+Deploy or update:
+
+```bash
+ssh <shell-username>@login.toolforge.org
+become zury
+git clone https://github.com/aishikrehman/Zury.git ~/www/js   # first time only
+~/www/js/scripts/toolforge-deploy.sh
+```
+
+The script pulls the latest code, installs dependencies and runs migrations
+inside the webservice image, then (re)starts the webservice. Make the first
+platform administrator with
+`webservice node20 shell -- npm run admin:grant -- "Username"` after that
+person has logged in once.
+
 ## Wikimedia OAuth
 
 Zury uses an OAuth 1.0a consumer registered on Meta-Wiki

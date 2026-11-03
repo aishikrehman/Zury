@@ -36,6 +36,10 @@ Object.assign(app.locals, format, contestLabels, {
 });
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
+// Self-hosted: Toolforge forbids loading assets from third-party CDNs.
+const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules', pkg, 'dist'), { maxAge: '7d' });
+app.use('/vendor/tabler', vendor('@tabler/core'));
+app.use('/vendor/tabler-icons', vendor('@tabler/icons-webfont'));
 
 // Defaults so the layout can always render, even for early errors.
 app.use((req, res, next) => {
