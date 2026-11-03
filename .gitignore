@@ -4,4 +4,4 @@ node_modules/
 *.db-journal
 npm-debug.log*
 .DS_Store
-!prisma/demo.db
+.claude/

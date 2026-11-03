@@ -74,22 +74,3 @@ test('rate limits answer 429 once the limit is passed', async () => {
   assert.equal(third.res.statusCode, 429);
   assert.ok(Number(third.res.headers['Retry-After']) > 0);
 });
-
-test('the bundled demo database has every migration and the sample events', async () => {
-  const fs = require('fs');
-  const path = require('path');
-  const { PrismaClient } = require('@prisma/client');
-  const file = path.join(__dirname, '..', 'prisma', 'demo.db');
-  assert.ok(fs.existsSync(file), 'prisma/demo.db exists (npm run demo:build)');
-  const migrations = fs.readdirSync(path.join(__dirname, '..', 'prisma', 'migrations')).filter((d) => /^\d+_/.test(d));
-  const db = new PrismaClient({ datasources: { db: { url: `file:${file.replace(/\\/g, '/')}` } } });
-  try {
-    const applied = await db.$queryRawUnsafe('SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL');
-    assert.deepEqual(applied.map((r) => r.migration_name).sort(), migrations.sort(), 'rebuild with npm run demo:build after adding a migration');
-    assert.ok((await db.contest.count()) >= 10);
-    assert.equal(await db.session.count(), 0, 'no sessions shipped');
-    assert.equal(await db.user.count({ where: { isDemo: false } }), 0, 'no real accounts shipped');
-  } finally {
-    await db.$disconnect();
-  }
-});

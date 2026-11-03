@@ -103,6 +103,34 @@ are private drafts with the creator as organizer.
 Event Creator is a Zury role granted by platform administrators at
 `/admin/users`.
 
+## Event types
+
+Every event is built from the same parts: entries people submit, edits Zury
+finds by itself (tracking), sessions people attend, automatic rules, jury
+marks with points, and results. ● built · ◐ partly · ○ planned · – not used.
+
+| Type | Entries | Tracking | Sessions | Rules | Jury and points |
+|---|---|---|---|---|---|
+| Writing contest | ● articles | ◐ | – | ● size, words, creation date | ◐ marks set up; jury screen planned |
+| Photo contest | ● files | ◐ category | – | ● resolution, category, upload date | ◐ |
+| Data contest | ● Wikidata items | ◐ | – | ● properties, statements | ◐ |
+| Edit-a-thon | – | ● participants, hashtags | ◐ | ◐ bytes per edit | – |
+| Proofread-a-thon | ● Wikisource pages | ● participants | – | ● proofreading level, books | ● points per level |
+| GLAM partnership | ● files | ● batch category | ◐ | ● category, licence | ◐ |
+| Scanning and digitization | ● scans | ● category | ● scanning days | ● formats, category | – |
+| Workshop, training | – | ● participants | ● with certificates | – | – |
+| Photowalk | ● files | ● category | ● walks | ● photo rules | – |
+
+Any rule can be set to only warn instead of blocking an entry.
+
+**Moving events.** A single event joins a series by changing "Part of" and
+"Edition" in its settings: nothing is copied, and the old address redirects.
+To make it one wiki of a multi-wiki event (a Bangla WAM becoming
+`/wam/2026/bn`), use "Move into another event" in its settings: entries,
+people, sessions and tracked edits move in one step, its settings become that
+wiki's, and the old address redirects. Events are never copied and deleted,
+which would split their history and break links.
+
 ## Deploying to Toolforge
 
 Zury runs as a Node.js webservice on the `zury` tool
@@ -133,8 +161,8 @@ One-time setup:
    Zury refuses to start in production if the secret is short, the OAuth
    keys are missing or the callback isn't `https://`.
 
-   The first start creates the database from `prisma/demo.db`, so the site
-   opens with sample events (their accounts can't log in in production).
+   The first start creates the database and fills it with sample events,
+   so the site opens with content (their accounts can't log in in production).
    To start with an empty site instead, add `START_EMPTY=true` before the
    first start. Either way, later starts only apply new migrations.
 
@@ -193,9 +221,8 @@ Optional: `WIKIMEDIA_OAUTH_BASE_URL` overrides the OAuth wiki
 ## Production
 
 - **Database:** SQLite through Prisma. `npm start` runs
-  `scripts/prepare-db.js` first: it creates the database from
-  `prisma/demo.db` if the file doesn't exist (skip with `START_EMPTY=true`)
-  and applies pending migrations. Back up the database file regularly.
+  `scripts/prepare-db.js` first: it applies pending migrations and, for a new
+  database, adds the sample events (skip with `START_EMPTY=true`). Back up the database file regularly.
 - **Sessions** are stored in the database and survive restarts; expired ones
   are removed hourly.
 - **Security headers:** a strict Content-Security-Policy (scripts only from
@@ -217,8 +244,6 @@ Optional: `WIKIMEDIA_OAUTH_BASE_URL` overrides the OAuth wiki
 - `npm run dev` — start the server with auto-reload
 - `npm start` — prepare the database, then start the server
 - `npm run start:server` — start the server only
-- `npm run demo:build` — rebuild `prisma/demo.db` from the seed
-  (add `-- --catalog` to include the wiki list from Wikimedia)
 - `npm run seed` — load (or reload) demo data
 - `npm run admin:grant -- "Username"` — make a user a platform administrator
 - `npm test` — run tests (throwaway SQLite databases and a mock MediaWiki

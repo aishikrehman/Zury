@@ -18,7 +18,6 @@
     "admin:grant": "node scripts/grant-platform-admin.js",
     "wikis:sync": "node scripts/sync-wikis.js",
     "start:server": "node src/server.js",
-    "demo:build": "node scripts/build-demo-db.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

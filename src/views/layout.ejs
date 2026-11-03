@@ -28,11 +28,11 @@
   navItems.push({ href: '/about', icon: 'info-circle', label: 'About', active: isActive('/about') });
 %>
 <!DOCTYPE html>
-<html lang="en" <%- layoutHtmlAttributes(layout) %><% const uiClasses = [ui.wide && 'zury-wide', ui.textLarge && 'zury-text-lg'].filter(Boolean).join(' '); %><% if (uiClasses) { %> class="<%= uiClasses %>"<% } %>>
+<html lang="<%= lang.code %>" dir="<%= lang.dir %>" <%- layoutHtmlAttributes(layout) %><% const uiClasses = [ui.wide && 'zury-wide', ui.textLarge && 'zury-text-lg'].filter(Boolean).join(' '); %><% if (uiClasses) { %> class="<%= uiClasses %>"<% } %>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title><%= typeof title !== 'undefined' ? title : 'Zury' %></title>
+  <title><%= typeof title !== 'undefined' ? t(title) : 'Zury' %></title>
   <link rel="icon" type="image/svg+xml" href="/images/zury-logo.svg">
   <% if (layout.rtl) { %>
     <link rel="stylesheet" href="/vendor/tabler/css/tabler.rtl.min.css">
