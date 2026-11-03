@@ -1,6 +1,7 @@
 const express = require('express');
 const eventsController = require('../controllers/eventsController');
 const contestController = require('../controllers/contestController');
+const submissionController = require('../controllers/submissionController');
 const { loadContest, requirePermission } = require('../middleware/permissions');
 const { requireAuth } = require('../middleware/auth');
 
@@ -10,6 +11,7 @@ router.get('/events', eventsController.index);
 router.get('/events/create', requirePermission('createEvent'), eventsController.createForm);
 router.post('/events/create', requirePermission('createEvent'), eventsController.create);
 router.get('/events/:group(active|upcoming|completed)', eventsController.index);
+router.get('/submissions', requireAuth, submissionController.mine);
 
 const contest = express.Router({ mergeParams: true });
 contest.use(loadContest);
@@ -31,6 +33,15 @@ contest.post('/overrides', requirePermission('manageEvent'), contestController.s
 contest.post('/overrides/:overrideId(\\d+)/remove', requirePermission('manageEvent'), contestController.removeOverride);
 
 contest.get('/activity', requirePermission('manageEvent'), contestController.activity);
+
+contest.get('/submit', requireAuth, submissionController.submitForm);
+contest.post('/submit/preview', requireAuth, submissionController.preview);
+contest.post('/submit', requireAuth, submissionController.submit);
+contest.get('/submissions', submissionController.index);
+contest.get('/submissions/:submissionId(\\d+)', submissionController.show);
+contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissionController.withdraw);
+contest.post('/submissions/:submissionId(\\d+)/status', requirePermission('manageEvent'), submissionController.setStatus);
+contest.post('/submissions/:submissionId(\\d+)/revalidate', requirePermission('manageEvent'), submissionController.revalidate);
 
 router.use('/contest/:contestId(\\d+)', contest);
 

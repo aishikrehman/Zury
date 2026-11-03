@@ -1,0 +1,107 @@
+<%
+  const tz = contest.timezone;
+  const actionLabel = { submitted: 'submitted the entry', status_changed: 'changed the status', revalidated: 'checked it again', withdrawn: 'withdrew the entry' };
+%>
+<div class="page-body"><div class="container-xl">
+  <%- include('../../partials/contestHeader', { active: 'submissions' }) %>
+
+  <div class="row row-cards">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title"><%= submission.title %></h3>
+            <div class="card-subtitle"><%= submission.wiki %> · <span class="text-capitalize"><%= submission.entryType %></span></div>
+          </div>
+          <div class="card-actions btn-list">
+            <%- include('../../partials/submissionStatus', { s: submission.status }) %>
+            <a class="btn btn-sm btn-outline-secondary" href="<%= submission.url %>" rel="noopener" target="_blank"><i class="ti ti-external-link me-1"></i>Open on wiki</a>
+          </div>
+        </div>
+        <% if (meta.file && meta.file.thumbUrl) { %>
+          <img src="<%= meta.file.thumbUrl %>" alt="<%= submission.title %>" class="card-img-top" style="max-height: 420px; object-fit: contain; background: var(--tblr-bg-surface-secondary)" referrerpolicy="no-referrer">
+        <% } %>
+        <div class="card-body">
+          <div class="datagrid">
+            <div class="datagrid-item"><div class="datagrid-title">Participant</div><div class="datagrid-content"><%= showName ? submission.participant.username : 'Anonymous' %></div></div>
+            <% if (showName && submission.submittedBy.username !== submission.participant.username) { %>
+              <div class="datagrid-item"><div class="datagrid-title">Submitted by</div><div class="datagrid-content"><%= submission.submittedBy.username %></div></div>
+            <% } %>
+            <div class="datagrid-item"><div class="datagrid-title">Submitted</div><div class="datagrid-content"><%= formatDateTime(submission.submittedAt, tz) %></div></div>
+            <% if (meta.createdAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= submission.entryType === 'file' ? 'Uploaded' : 'Created' %></div><div class="datagrid-content"><%= formatDateTime(new Date(meta.createdAt), tz) %><%= meta.creator ? ' by ' + meta.creator : '' %></div></div><% } %>
+            <% if (meta.sizeBytes != null) { %><div class="datagrid-item"><div class="datagrid-title">Size</div><div class="datagrid-content"><%= meta.sizeBytes.toLocaleString('en') %> bytes</div></div><% } %>
+            <% if (meta.wordCount != null) { %><div class="datagrid-item"><div class="datagrid-title">Words</div><div class="datagrid-content"><%= meta.wordCount.toLocaleString('en') %></div></div><% } %>
+            <% if (meta.file) { %>
+              <div class="datagrid-item"><div class="datagrid-title">Resolution</div><div class="datagrid-content"><%= meta.file.width %> × <%= meta.file.height %> (<%= meta.file.megapixels %> MP)</div></div>
+              <% if (meta.file.license) { %><div class="datagrid-item"><div class="datagrid-title">License</div><div class="datagrid-content"><%= meta.file.license %></div></div><% } %>
+            <% } %>
+            <% if (meta.entity) { %>
+              <div class="datagrid-item"><div class="datagrid-title">Label</div><div class="datagrid-content"><%= meta.entity.label || '—' %></div></div>
+              <div class="datagrid-item"><div class="datagrid-title">Statements</div><div class="datagrid-content"><%= meta.entity.statementCount %> (<%= meta.entity.properties.length %> properties)</div></div>
+            <% } %>
+            <% if (submission.checkedAt) { %><div class="datagrid-item"><div class="datagrid-title">Last checked</div><div class="datagrid-content"><%= formatDateTime(submission.checkedAt, tz) %></div></div><% } %>
+          </div>
+          <% if (meta.categories && meta.categories.length) { %>
+            <div class="mt-3"><% meta.categories.slice(0, 20).forEach((c) => { %><span class="badge bg-secondary-lt me-1 mb-1"><%= c %></span><% }) %></div>
+          <% } %>
+          <% if (meta.exists === false) { %><div class="alert alert-danger mt-3 mb-0">This page no longer exists on the wiki.</div><% } %>
+          <% if ((validation.errors || []).length || (validation.warnings || []).length) { %>
+            <div class="mt-3">
+              <% (validation.errors || []).forEach((e) => { %><div class="text-red"><i class="ti ti-circle-x me-1"></i><%= e %></div><% }) %>
+              <% (validation.warnings || []).forEach((w) => { %><div class="text-yellow"><i class="ti ti-alert-triangle me-1"></i><%= w %></div><% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <% if (canWithdraw || can('manageEvent')) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title">Actions</h3></div>
+          <div class="card-body">
+            <% if (can('manageEvent')) { %>
+              <form method="post" action="/contest/<%= contest.id %>/submissions/<%= submission.id %>/status" class="mb-3">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <label class="form-label" for="status">Set status</label>
+                <select class="form-select mb-2" id="status" name="status">
+                  <% statuses.forEach((s) => { %><option value="<%= s %>"<%= s === submission.status ? ' selected' : '' %>><%= SUBMISSION_STATUSES[s].label %></option><% }) %>
+                </select>
+                <input class="form-control mb-2" name="note" maxlength="500" placeholder="Note (optional, shown in history)">
+                <button class="btn btn-primary w-100" type="submit">Update status</button>
+              </form>
+              <form method="post" action="/contest/<%= contest.id %>/submissions/<%= submission.id %>/revalidate" class="mb-2">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-outline-secondary w-100" type="submit"><i class="ti ti-refresh me-1"></i>Check again on the wiki</button>
+              </form>
+            <% } %>
+            <% if (canWithdraw) { %>
+              <form method="post" action="/contest/<%= contest.id %>/submissions/<%= submission.id %>/withdraw">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-outline-danger w-100" type="submit"><i class="ti ti-arrow-back-up me-1"></i>Withdraw my entry</button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">History</h3></div>
+        <div class="card-body">
+          <ul class="steps steps-vertical">
+            <% submission.history.forEach((h, i) => { %>
+              <li class="step-item<%= i === 0 ? ' active' : '' %>">
+                <div class="h5 m-0"><%= h.actor ? h.actor.username : 'Zury' %> <span class="fw-normal"><%= actionLabel[h.action] || h.action %></span></div>
+                <div class="text-secondary small"><%= formatDateTime(h.createdAt, tz) %>
+                  <% if (h.previousValue && h.newValue && h.previousValue !== h.newValue) { %> · <%= (SUBMISSION_STATUSES[h.previousValue] || {}).label %> → <%= (SUBMISSION_STATUSES[h.newValue] || {}).label %><% } %>
+                </div>
+                <% if (h.note) { %><div class="small mt-1"><%= h.note %></div><% } %>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

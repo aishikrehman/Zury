@@ -40,6 +40,9 @@ model User {
   contestsCreated      Contest[]           @relation("ContestCreator")
   contestsDeleted      Contest[]           @relation("ContestDeleter")
   auditLogs            AuditLog[]
+  submissions          Submission[]        @relation("SubmissionParticipant")
+  submissionsMade      Submission[]        @relation("SubmissionSubmitter")
+  submissionHistory    SubmissionHistory[]
 }
 
 // Zury-assigned platform roles (e.g. platform-admin). Never derived from Wikimedia.
@@ -114,6 +117,7 @@ model Contest {
   createdBy           User?               @relation("ContestCreator", fields: [createdById], references: [id], onDelete: SetNull)
   deletedBy           User?               @relation("ContestDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
   settings            ContestSettings?
+  submissions         Submission[]
   memberships         ContestMembership[]
   permissionOverrides ContestPermission[]
   auditLogs           AuditLog[]
@@ -187,6 +191,57 @@ model ContestPermission {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([contestId, userId, permission])
+}
+
+// An entry (page, file or Wikidata entity) submitted to an event.
+model Submission {
+  id            Int      @id @default(autoincrement())
+  contestId     Int
+  participantId Int
+  submittedById Int
+  // Wiki database name, e.g. "commonswiki".
+  wiki          String
+  title         String
+  url           String
+  // Stable identity for duplicate checks: page ID, or entity ID on Wikidata.
+  pageKey       String
+  // article | file | item | property | lexeme | page
+  entryType     String
+  // pending | validated | invalid | under_review | approved | rejected | disqualified | withdrawn | appealed
+  status        String
+  // JSON: normalized metadata from the wiki at the last check.
+  metadata      String   @default("{}")
+  // JSON: { errors: [], warnings: [] } from the last rule check.
+  validation    String   @default("{}")
+  checkedAt     DateTime?
+  submittedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  contest     Contest             @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  participant User                @relation("SubmissionParticipant", fields: [participantId], references: [id], onDelete: Cascade)
+  submittedBy User                @relation("SubmissionSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
+  history     SubmissionHistory[]
+
+  @@index([contestId, pageKey])
+  @@index([contestId, status])
+  @@index([participantId])
+}
+
+model SubmissionHistory {
+  id            Int      @id @default(autoincrement())
+  submissionId  Int
+  actorId       Int?
+  // submitted | status_changed | revalidated | withdrawn
+  action        String
+  previousValue String?
+  newValue      String?
+  note          String?
+  createdAt     DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  actor      User?      @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([submissionId])
 }
 
 model AuditLog {

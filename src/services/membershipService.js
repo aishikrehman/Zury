@@ -130,6 +130,15 @@ async function join({ user, contest, settings }) {
   });
 }
 
+// Joins inside a caller's transaction (used when a first submission registers someone).
+async function joinInTx(tx, { user, contest }) {
+  await upsertActive(tx, { contestId: contest.id, userId: user.id, role: 'participant', actorId: user.id });
+  await audit.record(
+    { actorId: user.id, contestId: contest.id, action: 'membership.joined', entityType: 'User', entityId: user.id, details: { username: user.username, via: 'first submission' } },
+    tx,
+  );
+}
+
 async function leave({ user, contest }) {
   if (['completed', 'archived'].includes(contest.status)) throw new MembershipError('You can no longer leave this event.');
   return prisma.$transaction(async (tx) => {
@@ -181,6 +190,7 @@ module.exports = {
   addMember,
   removeMember,
   join,
+  joinInTx,
   leave,
   setOverride,
   removeOverride,

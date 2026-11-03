@@ -17,6 +17,8 @@ const env = {
     consumerSecret: process.env.WIKIMEDIA_CONSUMER_SECRET,
     callbackUrl: process.env.WIKIMEDIA_CALLBACK_URL,
     oauthBaseUrl: process.env.WIKIMEDIA_OAUTH_BASE_URL || 'https://meta.wikimedia.org/w/index.php',
+    // Testing only: e.g. "http://127.0.0.1:8080/{wiki}/api.php" to point every wiki at a mock.
+    apiUrlTemplate: process.env.WIKIMEDIA_API_URL_TEMPLATE || null,
   },
   userAgent: 'Zury/0.1 (https://github.com/aishikrehman/Zury)',
   isDemoModeEnabled,

@@ -237,7 +237,62 @@ async function seedDemoData(prisma, now = new Date()) {
     }
   }
 
-  return { users: DEMO_USERS.length, contests: DEMO_CONTESTS.length };
+  const submissions = await seedSubmissions(prisma, users);
+  return { users: DEMO_USERS.length, contests: DEMO_CONTESTS.length, submissions };
+}
+
+// Sample entries with stored metadata, so pages work without calling Wikimedia.
+const thumb = (path) => `https://upload.wikimedia.org/wikipedia/commons/thumb/${path}`;
+const DEMO_SUBMISSIONS = [
+  ['demo-wlm-bangladesh-2026', 'participant', 'File:Shat Gombuj Mosque at dusk.jpg', 'file', 'approved', { file: { width: 6000, height: 4000, megapixels: 24, mime: 'image/jpeg', license: 'CC BY-SA 4.0', thumbUrl: thumb('a/a9/Example.jpg/500px-Example.jpg') }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Shat Gombuj Mosque'], createdAt: '2026-09-14T10:22:00Z' }],
+  ['demo-wlm-bangladesh-2026', 'participant', 'File:Lalbagh Fort south gate.jpg', 'file', 'validated', { file: { width: 4608, height: 3456, megapixels: 15.9, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Lalbagh Fort'], createdAt: '2026-10-02T07:45:00Z' }],
+  ['demo-wlm-bangladesh-2026', 'participant', 'File:Kantajew Temple terracotta detail.jpg', 'file', 'under_review', { file: { width: 5472, height: 3648, megapixels: 20, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh'], createdAt: '2026-10-19T12:10:00Z' }],
+  ['demo-wlm-bangladesh-2026', 'newcomer', 'File:Ahsan Manzil from the river.jpg', 'file', 'validated', { file: { width: 4000, height: 3000, megapixels: 12, mime: 'image/jpeg', license: 'CC BY 4.0' }, categories: ['Images from Wiki Loves Monuments 2026 in Bangladesh', 'Ahsan Manzil'], createdAt: '2026-10-25T16:30:00Z' }],
+  ['demo-wlm-bangladesh-2026', 'newcomer', 'File:Old building phone photo.jpg', 'file', 'invalid', { file: { width: 1280, height: 960, megapixels: 1.2, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: [], createdAt: '2026-10-26T09:00:00Z' }, ['Resolution 1.2 MP is below the 2 MP minimum.', 'Missing the required category “Images from Wiki Loves Monuments 2026 in Bangladesh”.']],
+  ['demo-liberation-war-editathon', 'participant', 'অপারেশন জ্যাকপট', 'article', 'validated', { sizeBytes: 18432, wordCount: 1210, createdAt: '2026-10-18T05:12:00Z' }],
+  ['demo-liberation-war-editathon', 'juror', 'মুজিবনগর সরকার', 'article', 'pending', { sizeBytes: 26210, wordCount: 1874, createdAt: '2014-02-11T08:00:00Z' }],
+  ['demo-liberation-war-editathon', 'newcomer', 'কলারোয়া যুদ্ধ', 'article', 'withdrawn', { sizeBytes: 2300, wordCount: 160, createdAt: '2026-10-30T14:40:00Z' }],
+  ['demo-wikidata-heritage-sprint', 'participant', 'Q1068467', 'item', 'approved', { entity: { id: 'Q1068467', type: 'item', label: 'Shat Gambuj Mosque', description: 'mosque in Bagerhat, Bangladesh', properties: ['P31', 'P17', 'P625', 'P1435', 'P18'], statementCount: 14 } }],
+  ['demo-wikidata-heritage-sprint', 'organizer', 'Q2329733', 'item', 'approved', { entity: { id: 'Q2329733', type: 'item', label: 'Lalbagh Fort', description: 'Mughal fort in Dhaka', properties: ['P31', 'P17', 'P625', 'P1435'], statementCount: 9 } }],
+  ['demo-wle-bangladesh-2026', 'participant', 'File:Sundarbans mangrove at low tide.jpg', 'file', 'approved', { file: { width: 6720, height: 4480, megapixels: 30.1, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Earth 2026 in Bangladesh'], createdAt: '2026-06-08T03:20:00Z' }],
+  ['demo-wle-bangladesh-2026', 'participant', 'File:Lawachara forest canopy.jpg', 'file', 'rejected', { file: { width: 4000, height: 2250, megapixels: 9, mime: 'image/jpeg', license: 'CC BY-SA 4.0' }, categories: ['Images from Wiki Loves Earth 2026 in Bangladesh'], createdAt: '2026-07-02T06:00:00Z' }],
+];
+
+async function seedSubmissions(prisma, users) {
+  const { pageUrl } = require('../src/wiki/wikiUrls');
+  let n = 0;
+  for (const [slug, userKey, title, entryType, status, extra, errors = []] of DEMO_SUBMISSIONS) {
+    const contest = await prisma.contest.findUnique({ where: { slug } });
+    const wiki = entryType === 'item' ? 'wikidatawiki' : contest.primaryWiki;
+    const pageId = 900000 + n;
+    const meta = { exists: true, wiki, pageId, ns: entryType === 'file' ? 6 : 0, title, url: pageUrl(wiki, title), entryType, creator: users[userKey].username.replace(' (demo)', ''), categories: [], ...extra };
+    const submittedAt = new Date(meta.createdAt ? new Date(meta.createdAt).getTime() + 3600000 : contest.startDate.getTime() + 86400000 * (n + 1));
+    const history = [{ actorId: users[userKey].id, action: 'submitted', newValue: errors.length ? 'invalid' : 'validated', createdAt: submittedAt }];
+    if (!['validated', 'invalid'].includes(status)) {
+      const reviewer = status === 'withdrawn' ? users[userKey] : users[contest.createdById === users.juror.id ? 'juror' : 'organizer'];
+      history.push({ actorId: reviewer.id, action: status === 'withdrawn' ? 'withdrawn' : 'status_changed', previousValue: 'validated', newValue: status, createdAt: new Date(submittedAt.getTime() + 2 * 86400000) });
+    }
+    await prisma.submission.create({
+      data: {
+        contestId: contest.id,
+        participantId: users[userKey].id,
+        submittedById: users[userKey].id,
+        wiki,
+        title,
+        url: meta.url,
+        pageKey: entryType === 'item' ? `wikidata:${title}` : `${wiki}:${pageId}`,
+        entryType,
+        status,
+        metadata: JSON.stringify(meta),
+        validation: JSON.stringify({ errors, warnings: [] }),
+        checkedAt: submittedAt,
+        submittedAt,
+        history: { create: history },
+      },
+    });
+    n += 1;
+  }
+  return n;
 }
 
 module.exports = { seedDemoData, clearDemoData, DEMO_USERS, DEMO_CONTESTS };
@@ -246,7 +301,7 @@ if (require.main === module) {
   require('dotenv').config();
   const prisma = require('../src/config/prisma');
   seedDemoData(prisma)
-    .then(({ users, contests }) => console.log(`Seeded ${users} demo users and ${contests} demo events.`))
+    .then(({ users, contests, submissions }) => console.log(`Seeded ${users} demo users, ${contests} demo events and ${submissions} submissions.`))
     .catch((err) => {
       console.error(err);
       process.exitCode = 1;

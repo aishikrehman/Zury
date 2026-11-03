@@ -24,4 +24,16 @@ const STATUS_GROUPS = {
   completed: ['completed', 'archived'],
 };
 
-module.exports = { CONTEST_TYPES, CONTEST_STATUSES, STATUS_GROUPS };
+const SUBMISSION_STATUSES = {
+  pending: { label: 'Pending', color: 'secondary' },
+  validated: { label: 'Validated', color: 'azure' },
+  invalid: { label: 'Invalid', color: 'red' },
+  under_review: { label: 'Under review', color: 'yellow' },
+  approved: { label: 'Approved', color: 'green' },
+  rejected: { label: 'Rejected', color: 'orange' },
+  disqualified: { label: 'Disqualified', color: 'red' },
+  withdrawn: { label: 'Withdrawn', color: 'secondary' },
+  appealed: { label: 'Appealed', color: 'purple' },
+};
+
+module.exports = { CONTEST_TYPES, CONTEST_STATUSES, STATUS_GROUPS, SUBMISSION_STATUSES };

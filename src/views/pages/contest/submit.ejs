@@ -1,0 +1,111 @@
+<%
+  const okCount = items ? items.filter((i) => i.ok).length : 0;
+  const rules = [];
+  if (typeConfig.maxEntriesPerParticipant) rules.push(`At most ${typeConfig.maxEntriesPerParticipant} entries per participant`);
+  if (typeConfig.minResolutionMegapixels) rules.push(`At least ${typeConfig.minResolutionMegapixels} MP`);
+  if (typeConfig.requiredCategory) rules.push(`In “${typeConfig.requiredCategory}”`);
+  if (typeConfig.uploadedDuringEventOnly) rules.push('Uploaded during the event');
+  if (typeConfig.minWordCount) rules.push(`At least ${typeConfig.minWordCount} words`);
+  if (typeConfig.minBytes) rules.push(`At least ${typeConfig.minBytes} bytes`);
+  if (typeConfig.createdDuringEventOnly) rules.push(typeConfig.allowExpansions ? 'Created or expanded during the event' : 'Created during the event');
+  if (typeConfig.requiredProperties && typeConfig.requiredProperties.length) rules.push(`Required properties: ${typeConfig.requiredProperties.join(', ')}`);
+  if (typeConfig.minStatements) rules.push(`At least ${typeConfig.minStatements} statements`);
+%>
+<div class="page-body"><div class="container-xl">
+  <%- include('../../partials/contestHeader', { active: 'submit' }) %>
+
+  <div class="row row-cards">
+    <div class="col-lg-8">
+      <form method="post" action="/contest/<%= contest.id %>/submit/preview" class="card">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-upload me-2"></i>Submit <%= mass ? 'entries' : 'an entry' %></h3></div>
+        <div class="card-body">
+          <% if (error) { %><div class="alert alert-danger" role="alert"><i class="ti ti-alert-circle me-1"></i><%= error %></div><% } %>
+          <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= window.reason %><%= canOthers ? ' As an organizer you can still submit for participants.' : '' %></div><% } %>
+          <div class="mb-3">
+            <label class="form-label" for="entries"><%= mass ? 'URLs or titles, one per line' : 'URL or title' %></label>
+            <% if (mass) { %>
+              <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="https://commons.wikimedia.org/wiki/File:Example.jpg&#10;File:Another example.jpg"><%= text %></textarea>
+              <div class="form-hint">Up to <%= maxBatch %> at a time. Plain titles are looked up on <%= contest.primaryWiki %>.</div>
+            <% } else { %>
+              <input class="form-control" id="entries" name="entries" value="<%= text %>" placeholder="https://… or a page title">
+            <% } %>
+          </div>
+          <% if (canOthers) { %>
+            <div class="mb-3">
+              <label class="form-label" for="participant">On behalf of <span class="text-secondary fw-normal">(optional)</span></label>
+              <input class="form-control" id="participant" name="participant" value="<%= participant %>" placeholder="Participant's username">
+              <div class="form-hint">Leave blank to submit as yourself. The participant must already be in the event; this is logged.</div>
+            </div>
+          <% } %>
+        </div>
+        <div class="card-footer text-end">
+          <button class="btn btn-primary" type="submit"><i class="ti ti-search me-1"></i>Check entries</button>
+        </div>
+      </form>
+
+      <% if (items) { %>
+        <div class="card mt-3">
+          <div class="card-header">
+            <h3 class="card-title">Preview</h3>
+            <div class="card-actions"><span class="badge bg-green-lt"><%= okCount %> ready</span> <span class="badge bg-red-lt"><%= items.length - okCount %> with problems</span></div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+              <thead><tr><th class="w-1"></th><th>Entry</th><th>Details</th><th>Result</th></tr></thead>
+              <tbody>
+                <% items.forEach((i) => { %>
+                  <tr>
+                    <td><i class="ti ti-<%= i.ok ? 'circle-check text-green' : 'circle-x text-red' %> icon"></i></td>
+                    <td>
+                      <% if (i.meta && i.meta.exists) { %>
+                        <a href="<%= i.meta.url %>" rel="noopener" target="_blank"><%= i.meta.title %></a>
+                        <div class="text-secondary small"><%= i.meta.wiki %> · <%= i.meta.entryType %></div>
+                      <% } else { %>
+                        <span class="font-monospace small"><%= i.input %></span>
+                      <% } %>
+                    </td>
+                    <td class="small text-secondary">
+                      <% if (i.meta && i.meta.file && i.meta.file.thumbUrl) { %><span class="avatar avatar-md me-2" style="background-image: url('<%= i.meta.file.thumbUrl %>')"></span><% } %>
+                      <% if (i.meta && i.meta.file) { %><%= i.meta.file.megapixels %> MP<% } %>
+                      <% if (i.meta && i.meta.wordCount != null) { %><%= i.meta.wordCount %> words<% } %>
+                      <% if (i.meta && i.meta.entity) { %><%= i.meta.entity.label || i.meta.entity.id %> · <%= i.meta.entity.statementCount %> statements<% } %>
+                    </td>
+                    <td class="small">
+                      <% if (i.ok) { %><span class="text-green">Ready</span><% } %>
+                      <% i.reasons.forEach((r) => { %><div class="text-red"><%= r %></div><% }) %>
+                      <% i.warnings.forEach((w) => { %><div class="text-yellow"><i class="ti ti-alert-triangle"></i> <%= w %></div><% }) %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% if (okCount) { %>
+            <form method="post" action="/contest/<%= contest.id %>/submit" class="card-footer d-flex align-items-center">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="entries" value="<%= items.filter((i) => i.ok).map((i) => i.input).join('\n') %>">
+              <input type="hidden" name="participant" value="<%= participant %>">
+              <span class="text-secondary small">Entries with problems will be left out. Everything is checked again when you confirm.</span>
+              <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-check me-1"></i>Submit <%= okCount %> entr<%= okCount === 1 ? 'y' : 'ies' %></button>
+            </form>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">What's accepted</h3></div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item"><%= typeDef.label %> on <%= [contest.primaryWiki, ...JSON.parse(contest.additionalWikis || '[]')].join(', ') %></div>
+          <% rules.forEach((r) => { %><div class="list-group-item"><i class="ti ti-check text-green me-1"></i><%= r %></div><% }) %>
+          <div class="list-group-item text-secondary small">
+            <%= settings.autoValidationEnabled ? 'Entries are checked automatically against these rules.' : 'Organizers check entries by hand; rule problems are shown as warnings.' %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
