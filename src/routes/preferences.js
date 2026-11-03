@@ -1,0 +1,46 @@
+// Display preferences only; changing them affects nothing else, so plain links are fine.
+const express = require('express');
+const prisma = require('../config/prisma');
+const { LAYOUTS } = require('../utils/layouts');
+
+const router = express.Router();
+
+const safeNext = (value, fallback) =>
+  typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : fallback;
+
+async function save(req, changes) {
+  if (!Object.keys(changes).length) return;
+  if (req.user) {
+    const data = {};
+    if ('layout' in changes) data.uiLayout = changes.layout;
+    if ('wide' in changes) data.uiWide = changes.wide;
+    if ('textLarge' in changes) data.uiTextLarge = changes.textLarge;
+    await prisma.user.update({ where: { id: req.user.id }, data });
+  } else {
+    req.session.ui = { ...(req.session.ui || {}), ...changes };
+  }
+}
+
+router.get('/layout/:name', async (req, res, next) => {
+  try {
+    if (LAYOUTS[req.params.name]) await save(req, { layout: req.params.name });
+    res.redirect(safeNext(req.query.next, '/dashboard'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/preferences/display', async (req, res, next) => {
+  try {
+    const changes = {};
+    for (const key of ['wide', 'textLarge']) {
+      if (req.query[key] === '1' || req.query[key] === '0') changes[key] = req.query[key] === '1';
+    }
+    await save(req, changes);
+    res.redirect(safeNext(req.query.next, '/'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;

@@ -50,7 +50,7 @@ async function startTestApp(extraEnv = {}) {
     for (const f of [dbFile, `${dbFile}-journal`]) fs.rmSync(f, { force: true });
   }
 
-  return { prisma, request, stop };
+  return { prisma, request, stop, baseUrl };
 }
 
 const csrfFrom = (html) => html.match(/name="_csrf" value="([^"]+)"/)[1];

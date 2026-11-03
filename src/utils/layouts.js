@@ -23,18 +23,10 @@ const LAYOUTS = {
 
 const DEFAULT_LAYOUT = 'horizontal';
 const PUBLIC_LAYOUT = 'horizontal';
-const COOKIE = 'zury_layout';
-
-function readLayoutCookie(header = '') {
-  const match = header.split(';').map((c) => c.trim()).find((c) => c.startsWith(`${COOKIE}=`));
-  const value = match && decodeURIComponent(match.slice(COOKIE.length + 1));
-  return LAYOUTS[value] ? value : null;
-}
-
 function htmlAttributes(def) {
   return Object.entries(def.html)
     .map(([k, v]) => `${k}="${v}"`)
     .join(' ');
 }
 
-module.exports = { LAYOUTS, DEFAULT_LAYOUT, PUBLIC_LAYOUT, COOKIE, readLayoutCookie, htmlAttributes };
+module.exports = { LAYOUTS, DEFAULT_LAYOUT, PUBLIC_LAYOUT, htmlAttributes };

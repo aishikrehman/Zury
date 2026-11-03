@@ -15,7 +15,8 @@
     "prisma:migrate": "prisma migrate dev",
     "test": "node --test --test-timeout=60000 test/*.test.js",
     "seed": "node prisma/seed.js",
-    "admin:grant": "node scripts/grant-platform-admin.js"
+    "admin:grant": "node scripts/grant-platform-admin.js",
+    "wikis:sync": "node scripts/sync-wikis.js"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
@@ -28,7 +29,8 @@
     "express-ejs-layouts": "^2.5.1",
     "express-session": "^1.19.0",
     "jsonwebtoken": "^9.0.3",
-    "oauth-1.0a": "^2.2.6"
+    "oauth-1.0a": "^2.2.6",
+    "tom-select": "^2.6.2"
   },
   "devDependencies": {
     "prisma": "^5.20.0"

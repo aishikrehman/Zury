@@ -5,6 +5,7 @@ const membershipService = require('../services/membershipService');
 const userDirectory = require('../services/userDirectoryService');
 const lifecycle = require('../services/lifecycleService');
 const statsService = require('../services/statsService');
+const catalogService = require('../wiki/catalogService');
 const { canUseWikiForEvents } = require('../services/permissionService');
 const { EVENT_TYPES, readTypeConfig } = require('../events/eventTypes');
 const { PERMISSIONS, EVENT_ROLES, OVERRIDABLE_PERMISSIONS, ROLE_MANAGEMENT_PERMISSION } = require('../permissions/registry');
@@ -78,7 +79,15 @@ function config(req, res) {
 
 async function updateConfig(req, res, next) {
   const type = req.contest.type;
-  const parsed = contestForm.parse({ ...req.body, type }, { type, wikiAllowed: wikiAllowedForEdit(req) });
+  let loaded;
+  try {
+    loaded = await catalogService.validators();
+  } catch (err) {
+    return next(err);
+  }
+  // An event may keep its primary wiki even if that wiki has since closed.
+  const catalog = { ...loaded, open: (w) => w === req.contest.primaryWiki || loaded.open(w) };
+  const parsed = contestForm.parse({ ...req.body, type }, { type, wikiAllowed: wikiAllowedForEdit(req), catalog });
   if (Object.keys(parsed.errors).length) return renderConfig(req, res, { form: parsed.form, errors: parsed.errors, status: 422 });
   try {
     await eventService.update({ actorId: req.user.id, contest: req.contest, settings: req.settings, parsed, autoSlug: !req.body.slug?.trim() });

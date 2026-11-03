@@ -9,6 +9,7 @@
   const on = (k) => form[k] === true || form[k] === 'on' || form[k] === 'true';
   const wikiScope = eventWikiScope(subject);
   const errorCount = Object.keys(errors).length;
+  const listVal = (k) => [].concat(form[k] ?? []).flatMap((x) => String(x).split(/[s,]+/)).filter(Boolean);
 %>
 <% if (errorCount) { %>
   <div class="alert alert-danger" role="alert">Please fix the <%= errorCount %> highlighted field<%= errorCount === 1 ? '' : 's' %> below.</div>
@@ -44,7 +45,9 @@
       </div>
       <div class="col-md-6">
         <label class="form-label" for="primaryWiki">Primary wiki</label>
-        <input class="form-control<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" maxlength="64" value="<%= v('primaryWiki') %>" placeholder="bnwiki" aria-describedby="wikiHelp">
+        <select class="form-select<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" data-picker="wiki" placeholder="Search wikis…" aria-describedby="wikiHelp">
+          <% if (v('primaryWiki')) { %><option value="<%= v('primaryWiki') %>" selected><%= v('primaryWiki') %></option><% } %>
+        </select>
         <div id="wikiHelp" class="form-text">
           <% if (wikiScope) { %>You can use: <%= wikiScope.length ? wikiScope.join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.<% } %>
         </div>
@@ -52,12 +55,16 @@
       </div>
       <div class="col-md-6">
         <label class="form-label" for="additionalWikis">Additional wikis</label>
-        <textarea class="form-control<%= inv('additionalWikis') %>" id="additionalWikis" name="additionalWikis" rows="2" placeholder="One per line"><%= v('additionalWikis') %></textarea>
+        <select class="form-select<%= inv('additionalWikis') %>" id="additionalWikis" name="additionalWikis" multiple data-picker="wiki" placeholder="Search wikis…">
+          <% listVal('additionalWikis').forEach((w) => { %><option value="<%= w %>" selected><%= w %></option><% }) %>
+        </select>
         <%- err('additionalWikis') %>
       </div>
       <div class="col-md-3">
         <label class="form-label" for="language">Language</label>
-        <input class="form-control<%= inv('language') %>" id="language" name="language" maxlength="35" value="<%= v('language') %>">
+        <select class="form-select<%= inv('language') %>" id="language" name="language" data-picker="language" placeholder="Search languages…">
+          <% if (v('language')) { %><option value="<%= v('language') %>" selected><%= v('language') %></option><% } %>
+        </select>
         <%- err('language') %>
       </div>
       <div class="col-md-3">
@@ -137,9 +144,11 @@
         <input type="number" min="1" class="form-control<%= inv('participantLimit') %>" id="participantLimit" name="participantLimit" value="<%= v('participantLimit') %>" placeholder="No limit">
         <%- err('participantLimit') %>
       </div>
-      <div class="col-sm-6 col-lg-3">
+      <div class="col-lg-6">
         <label class="form-label" for="eligibleNamespaces">Eligible namespaces</label>
-        <input class="form-control<%= inv('eligibleNamespaces') %>" id="eligibleNamespaces" name="eligibleNamespaces" value="<%= v('eligibleNamespaces') %>" placeholder="Default: <%= typeDef.defaultNamespaces.join(', ') %>">
+        <select class="form-select<%= inv('eligibleNamespaces') %>" id="eligibleNamespaces" name="eligibleNamespaces" multiple data-picker="namespace" data-wiki-source="primaryWiki" placeholder="Default: <%= typeDef.defaultNamespaces.join(', ') %>">
+          <% listVal('eligibleNamespaces').forEach((n) => { %><option value="<%= n %>" selected><%= n %></option><% }) %>
+        </select>
         <%- err('eligibleNamespaces') %>
       </div>
       <div class="col-lg-9">

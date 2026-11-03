@@ -113,6 +113,15 @@ const PLATFORM_ROLES = {
     description: 'Trusted community organizer who can create events on any wiki and organizes them.',
     permissions: ['createEvent'],
   },
+  // Every permission. Only grantable from the server command line, never the web UI.
+  superuser: {
+    label: 'Superuser',
+    source: 'zury',
+    scope: 'global',
+    cliOnly: true,
+    description: 'Full access to everything in Zury.',
+    permissions: Object.keys(PERMISSIONS),
+  },
   'platform-admin': {
     label: 'Platform Administrator',
     source: 'zury',

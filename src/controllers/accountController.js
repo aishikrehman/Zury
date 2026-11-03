@@ -2,6 +2,7 @@ const prisma = require('../config/prisma');
 const userService = require('../services/userService');
 const contestService = require('../services/contestService');
 const statsService = require('../services/statsService');
+const catalogService = require('../wiki/catalogService');
 
 const { TIMEZONES } = require('../utils/time');
 
@@ -43,11 +44,12 @@ function showSettings(req, res) {
 }
 
 async function updateSettings(req, res, next) {
-  const { errors, values } = userService.validatePreferences(req.body);
-  if (Object.keys(errors).length) {
-    return renderSettings(res, { values: req.body, errors, status: 422 });
-  }
   try {
+    const catalog = await catalogService.validators();
+    const { errors, values } = userService.validatePreferences(req.body, catalog.language);
+    if (Object.keys(errors).length) {
+      return renderSettings(res, { values: req.body, errors, status: 422 });
+    }
     await userService.updatePreferences(req.user.id, values);
     res.redirect('/settings?saved=1');
   } catch (err) {

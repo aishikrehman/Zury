@@ -14,6 +14,7 @@ const { eventWikiScope } = require('./services/permissionService');
 const { attachUser } = require('./middleware/auth');
 const { csrfProtection } = require('./middleware/csrf');
 const { flashMessages } = require('./middleware/flash');
+const { displayPreferences } = require('./middleware/display');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -44,6 +45,7 @@ const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules'
 app.use('/vendor/tabler', vendor('@tabler/core'));
 app.use('/vendor/tabler-icons', vendor('@tabler/icons-webfont'));
 app.use('/vendor/apexcharts', vendor('apexcharts'));
+app.use('/vendor/tom-select', vendor('tom-select'));
 
 // Defaults so the layout can always render, even for early errors.
 app.use((req, res, next) => {
@@ -51,7 +53,8 @@ app.use((req, res, next) => {
   res.locals.csrfToken = '';
   res.locals.can = () => false;
   res.locals.currentPath = req.path;
-  res.locals.layoutKey = layouts.readLayoutCookie(req.headers.cookie) || layouts.DEFAULT_LAYOUT;
+  res.locals.layoutKey = layouts.DEFAULT_LAYOUT;
+  res.locals.ui = { wide: false, textLarge: false };
   next();
 });
 
@@ -76,23 +79,17 @@ app.use(
 );
 
 app.use(attachUser);
+app.use(displayPreferences);
 app.use(csrfProtection);
 app.use(flashMessages);
 
-// A display preference only; switching it changes nothing else.
-app.get('/layout/:name', (req, res) => {
-  const next = typeof req.query.next === 'string' && req.query.next.startsWith('/') && !req.query.next.startsWith('//') ? req.query.next : '/dashboard';
-  if (layouts.LAYOUTS[req.params.name]) {
-    res.cookie(layouts.COOKIE, req.params.name, { maxAge: 365 * 24 * 3600 * 1000, sameSite: 'lax', httpOnly: true, secure: env.nodeEnv === 'production' });
-  }
-  res.redirect(next);
-});
-
+app.use('/', require('./routes/preferences'));
 app.use('/', require('./routes'));
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/users'));
 app.use('/', require('./routes/account'));
 app.use('/', require('./routes/events'));
+app.use('/', require('./routes/api'));
 app.use('/', require('./routes/admin'));
 if (env.demoMode) app.use('/', require('./routes/demo'));
 

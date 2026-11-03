@@ -11,7 +11,8 @@ class RoleError extends Error {
 
 // Only roles Zury owns can be granted here; Wikimedia roles come from verification.
 function assertAssignable(role) {
-  if (PLATFORM_ROLES[role]?.source !== 'zury') throw new RoleError(`"${role}" can't be assigned in Zury.`);
+  const def = PLATFORM_ROLES[role];
+  if (def?.source !== 'zury' || def.cliOnly) throw new RoleError(`"${role}" can't be assigned here.`);
 }
 
 async function grant({ actorId, userId, role }) {

@@ -1,12 +1,18 @@
-// Bootstraps the first platform administrator. The user must have logged in once.
-// Usage: npm run admin:grant -- "Username"
+// Grants a Zury platform role from the server command line. The user must have logged in once.
+// Usage: npm run admin:grant -- "Username" [--role=platform-admin|event-creator|superuser]
 const prisma = require('../src/config/prisma');
 const audit = require('../src/services/auditService');
+const { PLATFORM_ROLES } = require('../src/permissions/registry');
 
 async function main() {
-  const username = process.argv.slice(2).join(' ').trim();
-  if (!username) {
-    console.error('Usage: npm run admin:grant -- "Username"');
+  const args = process.argv.slice(2);
+  const roleArg = args.find((a) => a.startsWith('--role='));
+  const role = roleArg ? roleArg.slice('--role='.length) : 'platform-admin';
+  const username = args.filter((a) => !a.startsWith('--')).join(' ').trim();
+
+  if (!username || PLATFORM_ROLES[role]?.source !== 'zury') {
+    const roles = Object.entries(PLATFORM_ROLES).filter(([, r]) => r.source === 'zury').map(([k]) => k);
+    console.error(`Usage: npm run admin:grant -- "Username" [--role=${roles.join('|')}]`);
     process.exitCode = 1;
     return;
   }
@@ -16,19 +22,16 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const existing = await prisma.userGlobalRole.findUnique({ where: { userId_role: { userId: user.id, role: 'platform-admin' } } });
+  const existing = await prisma.userGlobalRole.findUnique({ where: { userId_role: { userId: user.id, role } } });
   if (existing) {
-    console.log(`${username} is already a platform administrator.`);
+    console.log(`${username} already has ${PLATFORM_ROLES[role].label}.`);
     return;
   }
   await prisma.$transaction(async (tx) => {
-    await tx.userGlobalRole.create({ data: { userId: user.id, role: 'platform-admin' } });
-    await audit.record(
-      { action: 'platformRole.granted', entityType: 'User', entityId: user.id, details: { role: 'platform-admin', username, via: 'cli' } },
-      tx,
-    );
+    await tx.userGlobalRole.create({ data: { userId: user.id, role } });
+    await audit.record({ action: 'platformRole.granted', entityType: 'User', entityId: user.id, details: { role, username, via: 'cli' } }, tx);
   });
-  console.log(`${username} is now a platform administrator.`);
+  console.log(`${username} now has ${PLATFORM_ROLES[role].label}.`);
 }
 
 main().finally(() => prisma.$disconnect());

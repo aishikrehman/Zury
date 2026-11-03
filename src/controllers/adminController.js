@@ -44,7 +44,7 @@ async function users(req, res, next) {
       page,
       pages: Math.max(1, Math.ceil(total / perPage)),
       rows: list.map((u) => ({ user: u, subject: buildSubject(u) })),
-      assignableRoles: Object.entries(PLATFORM_ROLES).filter(([, r]) => r.source === 'zury'),
+      assignableRoles: Object.entries(PLATFORM_ROLES).filter(([, r]) => r.source === 'zury' && !r.cliOnly),
     });
   } catch (err) {
     next(err);

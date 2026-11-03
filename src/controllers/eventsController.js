@@ -3,6 +3,7 @@ const contestForm = require('../services/contestFormService');
 const eventService = require('../services/eventService');
 const { canUseWikiForEvents } = require('../services/permissionService');
 const { EVENT_TYPES } = require('../events/eventTypes');
+const catalogService = require('../wiki/catalogService');
 const { CONTEST_TYPES, STATUS_GROUPS } = require('../utils/contestLabels');
 
 const GROUP_TITLES = { active: 'Active events', upcoming: 'Upcoming events', completed: 'Completed events' };
@@ -52,7 +53,13 @@ function createForm(req, res) {
 async function create(req, res, next) {
   const { type } = req.body;
   if (!EVENT_TYPES[type]) return res.redirect('/events/create');
-  const parsed = contestForm.parse(req.body, { type, wikiAllowed: (w) => canUseWikiForEvents(req.subject, w) });
+  let catalog;
+  try {
+    catalog = await catalogService.validators();
+  } catch (err) {
+    return next(err);
+  }
+  const parsed = contestForm.parse(req.body, { type, wikiAllowed: (w) => canUseWikiForEvents(req.subject, w), catalog });
   if (Object.keys(parsed.errors).length) {
     return renderForm(res, { type, form: parsed.form, errors: parsed.errors, status: 422 });
   }

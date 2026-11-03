@@ -27,6 +27,10 @@ model User {
   status                String    @default("active")
   isDemo                Boolean   @default(false)
   rightsCheckedAt       DateTime?
+  // Display preferences.
+  uiLayout              String?
+  uiWide                Boolean   @default(false)
+  uiTextLarge           Boolean   @default(false)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   lastLoginAt           DateTime?
@@ -242,6 +246,44 @@ model SubmissionHistory {
   actor      User?      @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([submissionId])
+}
+
+// Wikimedia wikis from Meta-Wiki's sitematrix, refreshed periodically.
+model WikiSite {
+  dbname    String   @id
+  url       String
+  // Project family code, e.g. "wiki", "wiktionary", "commons".
+  family    String
+  sitename  String
+  lang      String?
+  closed    Boolean  @default(false)
+  private   Boolean  @default(false)
+  fetchedAt DateTime @default(now())
+
+  namespaces WikiNamespace[]
+
+  @@index([lang])
+}
+
+model Language {
+  code      String   @id
+  name      String
+  localName String?
+  fetchedAt DateTime @default(now())
+}
+
+// Namespaces of a wiki, from its siteinfo API.
+model WikiNamespace {
+  wiki      String
+  id        Int
+  name      String
+  canonical String?
+  content   Boolean  @default(false)
+  fetchedAt DateTime @default(now())
+
+  site WikiSite @relation(fields: [wiki], references: [dbname], onDelete: Cascade)
+
+  @@id([wiki, id])
 }
 
 model AuditLog {

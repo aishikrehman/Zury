@@ -40,12 +40,13 @@ function isValidTimezone(tz) {
   }
 }
 
-function validatePreferences({ preferredLanguage, timezone }) {
+// knownLanguage: check against the stored language catalog (permissive if not loaded).
+function validatePreferences({ preferredLanguage, timezone }, knownLanguage = () => true) {
   const errors = {};
   const lang = (preferredLanguage || '').trim();
   const tz = (timezone || '').trim();
 
-  if (lang && !LANGUAGE_CODE.test(lang)) errors.preferredLanguage = 'Use a language code such as "en" or "bn".';
+  if (lang && (!LANGUAGE_CODE.test(lang) || !knownLanguage(lang))) errors.preferredLanguage = 'Unknown language.';
   if (tz && !isValidTimezone(tz)) errors.timezone = 'Unknown timezone.';
 
   return { errors, values: { preferredLanguage: lang || null, timezone: tz || null } };

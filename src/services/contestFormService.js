@@ -92,7 +92,11 @@ function intField(value, { min, max, optional = false }, errors, key) {
  * @param type       event type (fixed after creation)
  * @param wikiAllowed (wiki) => boolean: whether this editor may use a primary wiki
  */
-function parse(body, { type, wikiAllowed }) {
+// catalog: validators from the stored wiki/language catalog (see catalogService.validators).
+// When the catalog hasn't been fetched yet, only the name format is checked.
+const PERMISSIVE = { empty: true, known: () => true, open: () => true, language: () => true };
+
+function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const errors = {};
   const typeDef = EVENT_TYPES[type];
 
@@ -110,15 +114,18 @@ function parse(body, { type, wikiAllowed }) {
   if (contactInfo.length > 500) errors.contactInfo = 'At most 500 characters.';
 
   const primaryWiki = str(body.primaryWiki).toLowerCase();
-  if (!WIKI_DBNAME.test(primaryWiki)) errors.primaryWiki = 'Use a wiki database name such as bnwiki, commonswiki or wikidatawiki.';
+  if (!WIKI_DBNAME.test(primaryWiki) && catalog.empty) errors.primaryWiki = 'Choose a wiki.';
+  else if (!catalog.known(primaryWiki)) errors.primaryWiki = 'This wiki does not exist.';
+  else if (!catalog.open(primaryWiki)) errors.primaryWiki = 'This wiki is closed.';
   else if (!wikiAllowed(primaryWiki)) errors.primaryWiki = "You can't use this wiki as the primary wiki.";
 
   const additionalWikis = listOf(body.additionalWikis).map((w) => w.toLowerCase()).filter((w) => w !== primaryWiki);
-  if (additionalWikis.some((w) => !WIKI_DBNAME.test(w))) errors.additionalWikis = 'Use wiki database names, one per line.';
+  const unknownWiki = additionalWikis.find((w) => (catalog.empty ? !WIKI_DBNAME.test(w) : !catalog.known(w)));
+  if (unknownWiki) errors.additionalWikis = `Unknown wiki: ${unknownWiki}`;
   else if (additionalWikis.length > 20) errors.additionalWikis = 'At most 20 additional wikis.';
 
   const language = str(body.language) || 'en';
-  if (!LANGUAGE_CODE.test(language)) errors.language = 'Use a language code such as "bn" or "en".';
+  if (!LANGUAGE_CODE.test(language) || !catalog.language(language)) errors.language = 'Unknown language.';
   const timezone = str(body.timezone) || 'UTC';
   if (!isValidTimezone(timezone)) errors.timezone = 'Unknown timezone.';
   const visibility = body.visibility === 'private' ? 'private' : 'public';

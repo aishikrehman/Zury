@@ -1,5 +1,5 @@
 <%# Expects `s`: a permission subject (platformRoles, adminWikis). %>
-<% const roleColor = { steward: 'red', 'global-sysop': 'orange', 'local-admin': 'yellow', 'event-creator': 'green', 'platform-admin': 'purple' }; %>
+<% const roleColor = { steward: 'red', 'global-sysop': 'orange', 'local-admin': 'yellow', 'event-creator': 'green', 'platform-admin': 'purple', superuser: 'pink' }; %>
 <% if (!s.platformRoles.size) { %>
   <span class="text-secondary">No platform roles</span>
 <% } else { %>

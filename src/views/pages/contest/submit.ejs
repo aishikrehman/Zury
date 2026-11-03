@@ -33,7 +33,7 @@
           <% if (canOthers) { %>
             <div class="mb-3">
               <label class="form-label" for="participant">On behalf of <span class="text-secondary fw-normal">(optional)</span></label>
-              <input class="form-control" id="participant" name="participant" value="<%= participant %>" placeholder="Participant's username">
+              <select class="form-select" id="participant" name="participant" data-picker="user" placeholder="Search participants…"><% if (participant) { %><option value="<%= participant %>" selected><%= participant %></option><% } %></select>
             </div>
           <% } %>
         </div>

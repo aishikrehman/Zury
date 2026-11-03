@@ -12,10 +12,7 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <div class="col-sm-6">
                 <label class="form-label" for="memberUsername">Wikimedia username</label>
-                <div class="input-icon">
-                  <span class="input-icon-addon"><i class="ti ti-user-search"></i></span>
-                  <input class="form-control" id="memberUsername" name="username" required maxlength="85" autocomplete="off" placeholder="e.g. Example User">
-                </div>
+                <select class="form-select" id="memberUsername" name="username" required data-picker="user" placeholder="Search Wikimedia users…"></select>
               </div>
               <div class="col-sm-4">
                 <label class="form-label" for="memberRole">Role</label>
@@ -92,7 +89,7 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <div class="mb-2">
                 <label class="form-label" for="ovUser">Username</label>
-                <input class="form-control" id="ovUser" name="username" required maxlength="85" autocomplete="off">
+                <select class="form-select" id="ovUser" name="username" required data-picker="user" placeholder="Search Wikimedia users…"></select>
               </div>
               <div class="mb-2">
                 <label class="form-label" for="ovPermission">Permission</label>
