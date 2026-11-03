@@ -1,5 +1,5 @@
 <% const pages = Math.max(1, Math.ceil(result.total / result.perPage)); %>
-<div class="container py-5">
+<div class="page-body"><div class="container-xl">
   <%- include('../../partials/adminNav', { active: 'logs' }) %>
   <div class="table-responsive">
     <table class="table table-sm small align-middle">
@@ -25,4 +25,5 @@
       <% } %>
     </ul>
   <% } %>
+</div>
 </div>

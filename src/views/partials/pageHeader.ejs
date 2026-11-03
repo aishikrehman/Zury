@@ -1,0 +1,14 @@
+<%# Expects: heading; optional pretitle, actions (trusted HTML built in templates). %>
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <% if (typeof pretitle !== 'undefined' && pretitle) { %><div class="page-pretitle"><%= pretitle %></div><% } %>
+        <h2 class="page-title"><%= heading %></h2>
+      </div>
+      <% if (typeof actions !== 'undefined' && actions) { %>
+        <div class="col-auto ms-auto d-print-none"><div class="btn-list"><%- actions %></div></div>
+      <% } %>
+    </div>
+  </div>
+</div>

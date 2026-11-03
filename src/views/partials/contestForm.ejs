@@ -18,8 +18,9 @@
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <input type="hidden" name="type" value="<%= type %>">
 
-  <fieldset class="mb-5">
-    <legend class="h5">Basics</legend>
+  <fieldset class="card mb-4">
+    <div class="card-header"><h3 class="card-title">Basics</h3></div>
+    <div class="card-body">
     <div class="row g-3">
       <div class="col-md-8">
         <label class="form-label" for="title">Title</label>
@@ -95,10 +96,12 @@
         <%- err('bannerUrl') %>
       </div>
     </div>
+  </div>
   </fieldset>
 
-  <fieldset class="mb-5">
-    <legend class="h5">Dates</legend>
+  <fieldset class="card mb-4">
+    <div class="card-header"><h3 class="card-title">Dates</h3></div>
+    <div class="card-body">
     <p class="form-text mt-0">In the event's timezone (<%= v('timezone') || 'UTC' %>). Start and end are needed before publishing; the rest are optional.</p>
     <div class="row g-3">
       <% DATE_FIELDS.forEach(([key, label]) => { %>
@@ -109,10 +112,12 @@
         </div>
       <% }) %>
     </div>
+  </div>
   </fieldset>
 
-  <fieldset class="mb-5">
-    <legend class="h5">Participation</legend>
+  <fieldset class="card mb-4">
+    <div class="card-header"><h3 class="card-title">Participation</h3></div>
+    <div class="card-body">
     <div class="row g-3">
       <div class="col-sm-6 col-lg-3">
         <label class="form-label" for="participationMode">Who can take part</label>
@@ -154,10 +159,12 @@
         <% }) %>
       </div>
     </div>
+  </div>
   </fieldset>
 
-  <fieldset class="mb-5">
-    <legend class="h5">Features</legend>
+  <fieldset class="card mb-4">
+    <div class="card-header"><h3 class="card-title">Features</h3></div>
+    <div class="card-body">
     <div class="row g-2">
       <% FEATURE_FIELDS.forEach(([key, label, help]) => { %>
         <div class="col-md-6 col-lg-4">
@@ -169,10 +176,12 @@
         </div>
       <% }) %>
     </div>
+  </div>
   </fieldset>
 
-  <fieldset class="mb-5">
-    <legend class="h5"><%= typeDef.label %> settings</legend>
+  <fieldset class="card mb-4">
+    <div class="card-header"><h3 class="card-title"><%= typeDef.label %> settings</h3></div>
+    <div class="card-body">
     <div class="row g-3">
       <% typeDef.fields.forEach((f) => { const name = 'type_' + f.key; %>
         <div class="<%= f.type === 'list' ? 'col-md-6' : 'col-sm-6 col-lg-4' %>">
@@ -201,7 +210,8 @@
         </div>
       <% }) %>
     </div>
+  </div>
   </fieldset>
 
-  <button type="submit" class="btn btn-primary"><%= submitLabel %></button>
+  <div class="text-end"><button type="submit" class="btn btn-primary btn-lg"><i class="ti ti-device-floppy me-1"></i><%= submitLabel %></button></div>
 </form>

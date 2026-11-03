@@ -18,7 +18,7 @@
     }
   };
 %>
-<div class="container py-5">
+<div class="page-body"><div class="container-xl">
   <%- include('../../partials/contestHeader', { active: 'activity' }) %>
   <% if (!entries.length) { %>
     <p class="text-muted">No activity yet.</p>
@@ -33,4 +33,5 @@
     </ul>
     <p class="small text-muted mt-2">Showing the latest <%= entries.length %> entries, in <%= contest.timezone %>.</p>
   <% } %>
+</div>
 </div>

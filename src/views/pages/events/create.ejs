@@ -1,12 +1,7 @@
-<div class="container py-5" style="max-width: 1000px">
-  <nav aria-label="breadcrumb">
-    <ol class="breadcrumb small">
-      <li class="breadcrumb-item"><a href="/events">Events</a></li>
-      <li class="breadcrumb-item"><a href="/events/create">Create</a></li>
-      <li class="breadcrumb-item active"><%= typeDef.label %></li>
-    </ol>
-  </nav>
-  <h1 class="h3">New <%= typeDef.label.toLowerCase() %></h1>
+<%- include('../../partials/pageHeader', { pretitle: 'Create an event · step 2 of 2', heading: 'New ' + typeDef.label.toLowerCase() }) %>
+<div class="page-body"><div class="container-xl" style="max-width: 1000px">
+  
   <p class="text-muted">Step 2 of 2. The event is saved as a draft that only organizers can see; you'll be its first organizer. You can change everything except the type later.</p>
   <%- include('../../partials/contestForm', { action: '/events/create', submitLabel: 'Create draft' }) %>
+</div>
 </div>

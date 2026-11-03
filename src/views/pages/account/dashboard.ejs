@@ -1,63 +1,92 @@
-<div class="container py-5">
-  <div class="d-flex flex-wrap justify-content-between align-items-baseline mb-4">
-    <h1 class="h3 mb-0">Welcome, <%= currentUser.username %></h1>
-    <div class="small">
-      <a href="<%= userPath(currentUser.username) %>">Public profile</a> &middot; <a href="/settings">Preferences</a>
-    </div>
-  </div>
-
-  <div class="row g-4">
-    <div class="col-lg-8">
-      <h2 class="h5">My events</h2>
-      <% if (!myEvents.length) { %>
-        <p class="text-muted">You haven't joined any events yet. <a href="/events">Browse events</a>.</p>
-      <% } else { %>
-        <div class="row g-3">
-          <% myEvents.forEach(({ contest: c, roles }) => { %>
-            <div class="col-md-6"><%- include('../../partials/contestCard', { c, roles }) %></div>
-          <% }) %>
+<%
+  const organizing = myEvents.filter((e) => e.roles.includes('organizer')).length;
+  const participating = myEvents.filter((e) => e.roles.includes('participant')).length;
+  const tiles = [
+    ['calendar-event', 'primary', myEvents.length, 'My events'],
+    ['briefcase', 'green', organizing, 'Organizing'],
+    ['gavel', 'orange', juryEvents.length, 'On the jury'],
+    ['files', 'azure', typeof submissionCount !== 'undefined' ? submissionCount : participating, typeof submissionCount !== 'undefined' ? 'Submissions' : 'Participating'],
+  ];
+  const actions = [
+    can('createEvent') ? '<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>Create event</a>' : '',
+    can('accessAdmin') ? '<a class="btn btn-dark" href="/admin"><i class="ti ti-shield-lock me-1"></i>Administration</a>' : '',
+  ].join('');
+%>
+<%- include('../../partials/pageHeader', { pretitle: 'Dashboard', heading: `Welcome, ${currentUser.username}`, actions }) %>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-deck row-cards mb-4">
+      <% tiles.forEach(([icon, color, value, label]) => { %>
+        <div class="col-sm-6 col-lg-3">
+          <div class="card card-sm">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-auto"><span class="bg-<%= color %> text-white avatar"><i class="ti ti-<%= icon %>"></i></span></div>
+                <div class="col">
+                  <div class="h2 mb-0"><%= value %></div>
+                  <div class="text-secondary"><%= label %></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      <% } %>
-
-      <h2 class="h5 mt-5">Jury assignments</h2>
-      <% if (!juryEvents.length) { %>
-        <p class="text-muted">You're not on any jury.</p>
-      <% } else { %>
-        <p class="small text-muted mb-2">You're on the jury for <%= juryEvents.length %> event<%= juryEvents.length === 1 ? '' : 's' %>. Entry assignments arrive with jury review (Phase 6).</p>
-        <ul class="small">
-          <% juryEvents.forEach(({ contest: c }) => { %><li><a href="/contest/<%= c.id %>"><%= c.title %></a></li><% }) %>
-        </ul>
-      <% } %>
+      <% }) %>
     </div>
 
-    <div class="col-lg-4">
-      <div class="card mb-3">
-        <div class="card-body">
-          <h2 class="h6">Platform roles</h2>
-          <%- include('../../partials/accessSummary', { s: subject }) %>
-          <% if (can('createEvent')) { %><a class="btn btn-sm btn-primary mt-2" href="/events/create">Create an event</a><% } %>
-          <% if (can('accessAdmin')) { %><a class="btn btn-sm btn-dark mt-2" href="/admin">Open administration</a><% } %>
-        </div>
-      </div>
-      <div class="card mb-3">
-        <div class="card-body">
-          <h2 class="h6">Verified Wikimedia groups</h2>
-          <% if (!wikiRoles.length) { %>
-            <p class="small text-muted mb-0">None that Zury tracks.</p>
+    <div class="row row-cards">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">My events</h3></div>
+          <% if (!myEvents.length) { %>
+            <div class="empty">
+              <div class="empty-icon"><i class="ti ti-calendar-off icon"></i></div>
+              <p class="empty-title">No events yet</p>
+              <p class="empty-subtitle text-secondary">Join an event to see it here.</p>
+              <div class="empty-action"><a href="/events" class="btn btn-primary">Browse events</a></div>
+            </div>
           <% } else { %>
-            <ul class="small mb-0 ps-3">
-              <% wikiRoles.forEach((r) => { %>
-                <li><%= r.rightName %> on <%= r.wiki === '*' ? 'all wikis (global)' : r.wiki %>
-                  <span class="text-muted">· <%= r.verificationSource === 'demo' ? 'demo data' : 'checked ' + formatDateTime(r.verifiedAt, currentUser.timezone || 'UTC') %></span></li>
-              <% }) %>
-            </ul>
+            <div class="table-responsive">
+              <table class="table table-vcenter card-table">
+                <thead><tr><th>Event</th><th>Status</th><th>Your roles</th><th>Dates</th></tr></thead>
+                <tbody>
+                  <% myEvents.forEach(({ contest: c, roles }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
+                    <tr>
+                      <td><a href="/contest/<%= c.id %>"><%= c.title %></a><div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= c.primaryWiki %></div></td>
+                      <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
+                      <td><% roles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r].label %></span><% }) %></td>
+                      <td class="text-secondary small text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) : '—' %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
           <% } %>
         </div>
       </div>
-      <div class="card">
-        <div class="card-body">
-          <h2 class="h6">Notifications</h2>
-          <p class="small text-muted mb-0">Notifications arrive in Phase 8.</p>
+
+      <div class="col-lg-4">
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title">Platform roles</h3></div>
+          <div class="card-body"><%- include('../../partials/accessSummary', { s: subject }) %></div>
+        </div>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title">Verified Wikimedia groups</h3></div>
+          <div class="list-group list-group-flush">
+            <% if (!wikiRoles.length) { %><div class="list-group-item text-secondary">None that Zury tracks.</div><% } %>
+            <% wikiRoles.forEach((r) => { %>
+              <div class="list-group-item">
+                <div><span class="badge bg-purple-lt"><%= r.rightName %></span> on <%= r.wiki === '*' ? 'all wikis (global)' : r.wiki %></div>
+                <div class="text-secondary small"><%= r.verificationSource === 'demo' ? 'Demo data' : 'Checked ' + formatDateTime(r.verifiedAt, currentUser.timezone || 'UTC') %></div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">Profile</h3></div>
+          <div class="list-group list-group-flush">
+            <a class="list-group-item list-group-item-action" href="<%= userPath(currentUser.username) %>"><i class="ti ti-user me-2"></i>Public profile</a>
+            <a class="list-group-item list-group-item-action" href="/settings"><i class="ti ti-settings me-2"></i>Preferences</a>
+          </div>
         </div>
       </div>
     </div>

@@ -11,11 +11,8 @@
     return s ? `?${s}` : '';
   };
 %>
-<div class="container py-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0"><%= heading %></h1>
-    <% if (can('createEvent')) { %><a class="btn btn-primary btn-sm" href="/events/create">Create event</a><% } %>
-  </div>
+<%- include('../../partials/pageHeader', { pretitle: 'Events', heading, actions: can('createEvent') ? '<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>Create event</a>' : '' }) %>
+<div class="page-body"><div class="container-xl">
 
   <ul class="nav nav-pills mb-3">
     <li class="nav-item"><a class="nav-link<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>">All</a></li>
@@ -82,4 +79,5 @@
       </ul>
     </nav>
   <% } %>
+</div>
 </div>

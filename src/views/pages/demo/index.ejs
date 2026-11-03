@@ -1,5 +1,5 @@
-<div class="container py-5">
-  <h1 class="h3">Demo users</h1>
+<%- include('../../partials/pageHeader', { pretitle: 'Demo mode', heading: 'Demo users' }) %>
+<div class="page-body"><div class="container-xl">
   <p class="text-muted">Log in as any of these sample accounts to see Zury from their point of view. Demo login only exists when <code>DEMO_MODE=true</code> outside production.</p>
 
   <% if (!rows.length) { %>
@@ -27,4 +27,5 @@
       </div>
     <% }) %>
   </div>
+</div>
 </div>

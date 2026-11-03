@@ -1,6 +1,6 @@
-<div class="container py-5">
-  <nav aria-label="breadcrumb"><ol class="breadcrumb small"><li class="breadcrumb-item"><a href="/events">Events</a></li><li class="breadcrumb-item active">Create</li></ol></nav>
-  <h1 class="h3">Create an event</h1>
+<%- include('../../partials/pageHeader', { pretitle: 'Create an event · step 1 of 2', heading: 'What kind of event is it?' }) %>
+<div class="page-body"><div class="container-xl">
+  
   <p class="text-muted">Step 1 of 2: what kind of event is it? The type can't be changed later.</p>
   <div class="row g-3">
     <% Object.entries(types).forEach(([key, t]) => { %>
@@ -14,4 +14,5 @@
       </div>
     <% }) %>
   </div>
+</div>
 </div>

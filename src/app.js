@@ -42,6 +42,7 @@ app.use((req, res, next) => {
   res.locals.currentUser = null;
   res.locals.csrfToken = '';
   res.locals.can = () => false;
+  res.locals.currentPath = req.path;
   next();
 });
 

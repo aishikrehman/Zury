@@ -1,30 +1,43 @@
-<div class="bg-light py-5">
-  <div class="container text-center">
-    <h1 class="display-5 fw-bold">Zury</h1>
-    <p class="lead text-muted">A unified platform for Wikimedia contests and community events.</p>
-    <a href="/events" class="btn btn-primary btn-lg mt-2">Browse events</a>
-    <% if (!currentUser && demoMode) { %>
-      <a href="/demo" class="btn btn-outline-secondary btn-lg mt-2 ms-2">Try a demo user</a>
-    <% } %>
-  </div>
-</div>
+<%- include('../partials/pageHeader', {
+  pretitle: 'Wikimedia contests & community events',
+  heading: 'Welcome to Zury',
+  actions: '<a href="/events" class="btn btn-primary"><i class="ti ti-calendar-event me-1"></i>Browse events</a>' + (!currentUser && demoMode ? '<a href="/demo" class="btn btn-outline-secondary"><i class="ti ti-users-group me-1"></i>Try a demo user</a>' : ''),
+}) %>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-deck row-cards mb-4">
+      <% const counts = { active: 'success', upcoming: 'azure', completed: 'secondary' }; %>
+      <% sections.forEach((section) => { %>
+        <div class="col-sm-4">
+          <a class="card card-sm card-link" href="/events/<%= section.key %>">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-auto"><span class="bg-<%= counts[section.key] %> text-white avatar"><i class="ti ti-<%= section.key === 'active' ? 'player-play' : section.key === 'upcoming' ? 'clock' : 'flag-check' %>"></i></span></div>
+                <div class="col">
+                  <div class="font-weight-medium"><%= section.items.length %><%= section.items.length === 6 ? '+' : '' %> <%= section.heading.toLowerCase() %></div>
+                  <div class="text-secondary">See all</div>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      <% }) %>
+    </div>
 
-<div class="container py-5">
-  <% sections.forEach((section) => { %>
-    <section class="mb-5">
-      <div class="d-flex justify-content-between align-items-baseline mb-3">
-        <h2 class="h4 mb-0"><%= section.heading %></h2>
-        <a href="/events/<%= section.key %>" class="small">See all</a>
+    <% sections.forEach((section) => { %>
+      <div class="d-flex justify-content-between align-items-baseline mb-3 mt-2">
+        <h3 class="mb-0"><%= section.heading %></h3>
+        <a href="/events/<%= section.key %>" class="small">See all <i class="ti ti-arrow-right"></i></a>
       </div>
       <% if (!section.items.length) { %>
-        <p class="text-muted"><%= section.empty %></p>
+        <div class="empty py-4"><p class="empty-subtitle text-secondary"><%= section.empty %></p></div>
       <% } else { %>
-        <div class="row g-3">
+        <div class="row row-cards mb-4">
           <% section.items.forEach((c) => { %>
             <div class="col-sm-6 col-lg-4"><%- include('../partials/contestCard', { c, roles: [] }) %></div>
           <% }) %>
         </div>
       <% } %>
-    </section>
-  <% }) %>
+    <% }) %>
+  </div>
 </div>

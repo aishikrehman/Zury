@@ -1,0 +1,66 @@
+<%
+  const active = (prefix, exact = false) => (exact ? currentPath === prefix : currentPath === prefix || currentPath.startsWith(prefix + '/')) ? ' active' : '';
+  const item = (href, icon, label, isActive) => ({ href, icon, label, isActive });
+  const main = [
+    item('/', 'home', 'Home', active('/', true)),
+    item('/events', 'calendar-event', 'Events', active('/events') || active('/contest')),
+  ];
+  if (currentUser) {
+    main.push(item('/dashboard', 'layout-dashboard', 'Dashboard', active('/dashboard')));
+    main.push(item('/submissions', 'files', 'My submissions', active('/submissions')));
+  }
+  if (can('createEvent')) main.push(item('/events/create', 'circle-plus', 'Create event', active('/events/create', true)));
+%>
+<aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="navbar-brand navbar-brand-autodark">
+      <a href="/" class="text-decoration-none text-reset d-flex align-items-center gap-2">
+        <span class="avatar avatar-sm bg-primary text-white fw-bold">Z</span>
+        <span>Zury</span>
+      </a>
+    </div>
+    <div class="navbar-nav flex-row d-lg-none">
+      <%- include('userMenu') %>
+    </div>
+    <div class="collapse navbar-collapse" id="sidebar-menu">
+      <ul class="navbar-nav pt-lg-3">
+        <% main.forEach((i) => { %>
+          <li class="nav-item<%= i.isActive %>">
+            <a class="nav-link" href="<%= i.href %>">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-<%= i.icon %> icon"></i></span>
+              <span class="nav-link-title"><%= i.label %></span>
+            </a>
+          </li>
+        <% }) %>
+
+        <% if (can('accessAdmin')) { %>
+          <li class="nav-item dropdown<%= active('/admin') %>">
+            <a class="nav-link dropdown-toggle<%= active('/admin') ? ' show' : '' %>" href="#navbar-admin" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="<%= active('/admin') ? 'true' : 'false' %>">
+              <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-shield-lock icon"></i></span>
+              <span class="nav-link-title">Administration</span>
+            </a>
+            <div class="dropdown-menu<%= active('/admin') ? ' show' : '' %>">
+              <a class="dropdown-item<%= active('/admin', true) %>" href="/admin">Overview</a>
+              <a class="dropdown-item<%= active('/admin/users') %>" href="/admin/users">Users</a>
+              <a class="dropdown-item<%= active('/admin/permissions') %>" href="/admin/permissions">Permissions</a>
+              <% if (can('viewAuditLog')) { %><a class="dropdown-item<%= active('/admin/logs') %>" href="/admin/logs">Audit log</a><% } %>
+            </div>
+          </li>
+        <% } %>
+
+        <li class="nav-item mt-lg-3"><div class="nav-link disabled small text-uppercase text-secondary">Zury</div></li>
+        <% if (demoMode) { %>
+          <li class="nav-item<%= active('/demo') %>">
+            <a class="nav-link" href="/demo"><span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-users-group icon"></i></span><span class="nav-link-title">Demo users</span></a>
+          </li>
+        <% } %>
+        <li class="nav-item<%= active('/about') %>">
+          <a class="nav-link" href="/about"><span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-info-circle icon"></i></span><span class="nav-link-title">About</span></a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</aside>

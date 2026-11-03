@@ -1,95 +1,119 @@
 <% const roleOrder = Object.keys(EVENT_ROLES); %>
-<div class="container py-5">
+<div class="page-body"><div class="container-xl">
   <%- include('../../partials/contestHeader', { active: 'people' }) %>
 
-  <% if (roleOptions.length) { %>
-    <form method="post" action="/contest/<%= contest.id %>/members" class="row g-2 align-items-end mb-4">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="col-sm-5 col-md-4">
-        <label class="form-label small" for="memberUsername">Wikimedia username</label>
-        <input class="form-control form-control-sm" id="memberUsername" name="username" required maxlength="85" autocomplete="off">
+  <div class="row row-cards">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Members</h3><div class="card-actions text-secondary small"><%= members.length %> active</div></div>
+        <% if (roleOptions.length) { %>
+          <div class="card-body border-bottom">
+            <form method="post" action="/contest/<%= contest.id %>/members" class="row g-2 align-items-end">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <div class="col-sm-6">
+                <label class="form-label" for="memberUsername">Wikimedia username</label>
+                <div class="input-icon">
+                  <span class="input-icon-addon"><i class="ti ti-user-search"></i></span>
+                  <input class="form-control" id="memberUsername" name="username" required maxlength="85" autocomplete="off" placeholder="e.g. Example User">
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label" for="memberRole">Role</label>
+                <select class="form-select" id="memberRole" name="role">
+                  <% roleOptions.forEach(([key, role]) => { %><option value="<%= key %>"><%= role.label %></option><% }) %>
+                </select>
+              </div>
+              <div class="col-sm-2"><button class="btn btn-primary w-100" type="submit"><i class="ti ti-user-plus me-1"></i>Add</button></div>
+              <div class="col-12 form-hint">People who haven't used Zury yet are looked up on Wikimedia and added.</div>
+            </form>
+          </div>
+        <% } %>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead><tr><th>User</th><th>Role</th><th>Home wiki</th><th>Since</th><th class="w-1"></th></tr></thead>
+            <tbody>
+              <% if (!members.length) { %><tr><td colspan="5" class="text-secondary">No members yet.</td></tr><% } %>
+              <% roleOrder.forEach((role) => members.filter((m) => m.role === role).forEach((m) => { %>
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="avatar avatar-xs me-2"><%= m.user.username.charAt(0).toUpperCase() %></span>
+                      <a href="<%= userPath(m.user.username) %>"><%= m.user.username %></a>
+                    </div>
+                  </td>
+                  <td><span class="badge bg-<%= { organizer: 'green', jury: 'orange', participant: 'blue', viewer: 'secondary' }[role] %>-lt"><%= EVENT_ROLES[role].label %></span></td>
+                  <td class="text-secondary"><%= m.user.homeWiki || '—' %></td>
+                  <td class="text-secondary text-nowrap"><%= formatDate(m.assignedAt, contest.timezone) %></td>
+                  <td>
+                    <% if (can(ROLE_MANAGEMENT_PERMISSION[m.role])) { %>
+                      <form method="post" action="/contest/<%= contest.id %>/members/<%= m.id %>/remove" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button class="btn btn-sm btn-ghost-danger" type="submit" title="Remove <%= m.user.username %>"><i class="ti ti-trash"></i><span class="visually-hidden">Remove</span></button>
+                      </form>
+                    <% } %>
+                  </td>
+                </tr>
+              <% })) %>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="col-sm-4 col-md-3">
-        <label class="form-label small" for="memberRole">Role</label>
-        <select class="form-select form-select-sm" id="memberRole" name="role">
-          <% roleOptions.forEach(([key, role]) => { %><option value="<%= key %>"><%= role.label %></option><% }) %>
-        </select>
-      </div>
-      <div class="col-auto"><button class="btn btn-sm btn-primary" type="submit">Add</button></div>
-      <div class="col-12 form-text mt-1">People who haven't used Zury yet are looked up on Wikimedia and added.</div>
-    </form>
-  <% } %>
+    </div>
 
-  <% roleOrder.forEach((role) => { const list = members.filter((m) => m.role === role); %>
-    <h2 class="h6 mt-4"><%= EVENT_ROLES[role].plural %> <span class="text-muted fw-normal">(<%= list.length %>)</span></h2>
-    <% if (!list.length) { %>
-      <p class="small text-muted">None.</p>
-    <% } else { %>
-      <div class="table-responsive">
-        <table class="table table-sm align-middle mb-2">
-          <tbody>
-            <% list.forEach((m) => { %>
-              <tr>
-                <td style="width: 40%"><a href="<%= userPath(m.user.username) %>"><%= m.user.username %></a></td>
-                <td class="small text-muted"><%= m.user.homeWiki || '' %></td>
-                <td class="small text-muted">since <%= formatDate(m.assignedAt, contest.timezone) %></td>
-                <td class="text-end">
-                  <% if (can(ROLE_MANAGEMENT_PERMISSION[m.role])) { %>
-                    <form method="post" action="/contest/<%= contest.id %>/members/<%= m.id %>/remove" class="d-inline">
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">Permission overrides</h3></div>
+        <div class="card-body">
+          <p class="text-secondary small">Give or take away one permission for one person in this event. Overrides never reduce the authority of stewards, global sysops or local admins.</p>
+          <% if (!overrides.length) { %><p class="text-secondary small mb-0">No overrides.</p><% } %>
+        </div>
+        <% if (overrides.length) { %>
+          <div class="list-group list-group-flush">
+            <% overrides.forEach((o) => { %>
+              <div class="list-group-item">
+                <div class="d-flex align-items-start">
+                  <div class="flex-fill">
+                    <div><strong><%= o.user.username %></strong> <span class="badge bg-<%= o.allowed ? 'green' : 'red' %>-lt"><%= o.allowed ? 'allowed' : 'denied' %></span></div>
+                    <div class="text-secondary small"><%= permissionLabels[o.permission] || o.permission %> · <code><%= o.permission %></code></div>
+                  </div>
+                  <% if (can('manageEvent')) { %>
+                    <form method="post" action="/contest/<%= contest.id %>/overrides/<%= o.id %>/remove">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                      <button class="btn btn-sm btn-link text-danger p-0" type="submit">Remove</button>
+                      <button class="btn btn-sm btn-ghost-danger" type="submit" title="Remove override"><i class="ti ti-x"></i><span class="visually-hidden">Remove</span></button>
                     </form>
                   <% } %>
-                </td>
-              </tr>
+                </div>
+              </div>
             <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
-  <% }) %>
-
-  <h2 class="h5 mt-5">Permission overrides</h2>
-  <p class="small text-muted">Give or take away a single permission for one person in this event. Overrides never reduce the authority of stewards, global sysops or local admins.</p>
-  <% if (!overrides.length) { %>
-    <p class="small text-muted">No overrides.</p>
-  <% } else { %>
-    <ul class="list-unstyled small">
-      <% overrides.forEach((o) => { %>
-        <li class="mb-1">
-          <%= o.user.username %>: <span class="badge text-bg-<%= o.allowed ? 'success' : 'danger' %>"><%= o.allowed ? 'allowed' : 'denied' %></span>
-          <%= permissionLabels[o.permission] || o.permission %> <code class="text-muted"><%= o.permission %></code>
-          <% if (can('manageEvent')) { %>
-            <form method="post" action="/contest/<%= contest.id %>/overrides/<%= o.id %>/remove" class="d-inline">
+          </div>
+        <% } %>
+        <% if (can('manageEvent')) { %>
+          <div class="card-footer">
+            <form method="post" action="/contest/<%= contest.id %>/overrides">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button class="btn btn-sm btn-link text-danger p-0 ms-1" type="submit">Remove</button>
+              <div class="mb-2">
+                <label class="form-label" for="ovUser">Username</label>
+                <input class="form-control" id="ovUser" name="username" required maxlength="85" autocomplete="off">
+              </div>
+              <div class="mb-2">
+                <label class="form-label" for="ovPermission">Permission</label>
+                <select class="form-select" id="ovPermission" name="permission">
+                  <% overridable.forEach((p) => { %><option value="<%= p %>"><%= permissionLabels[p] %> (<%= p %>)</option><% }) %>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="ovAllowed">Effect</label>
+                <select class="form-select" id="ovAllowed" name="allowed">
+                  <option value="true">Allow</option>
+                  <option value="false">Deny</option>
+                </select>
+              </div>
+              <button class="btn btn-outline-primary w-100" type="submit">Save override</button>
             </form>
-          <% } %>
-        </li>
-      <% }) %>
-    </ul>
-  <% } %>
-  <% if (can('manageEvent')) { %>
-    <form method="post" action="/contest/<%= contest.id %>/overrides" class="row g-2 align-items-end">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="col-sm-4 col-md-3">
-        <label class="form-label small" for="ovUser">Username</label>
-        <input class="form-control form-control-sm" id="ovUser" name="username" required maxlength="85" autocomplete="off">
+          </div>
+        <% } %>
       </div>
-      <div class="col-sm-5 col-md-4">
-        <label class="form-label small" for="ovPermission">Permission</label>
-        <select class="form-select form-select-sm" id="ovPermission" name="permission">
-          <% overridable.forEach((p) => { %><option value="<%= p %>"><%= permissionLabels[p] %> (<%= p %>)</option><% }) %>
-        </select>
-      </div>
-      <div class="col-sm-3 col-md-2">
-        <label class="form-label small" for="ovAllowed">Effect</label>
-        <select class="form-select form-select-sm" id="ovAllowed" name="allowed">
-          <option value="true">Allow</option>
-          <option value="false">Deny</option>
-        </select>
-      </div>
-      <div class="col-auto"><button class="btn btn-sm btn-outline-primary" type="submit">Save override</button></div>
-    </form>
-  <% } %>
+    </div>
+  </div>
+</div>
 </div>

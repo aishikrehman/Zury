@@ -11,68 +11,73 @@
     return value === '' ? '—' : value;
   };
 %>
-<div class="container py-5">
+<div class="page-body"><div class="container-xl">
   <%- include('../../partials/contestHeader', { active: 'overview' }) %>
 
-  <div class="row g-4">
+  <div class="row row-cards">
     <div class="col-lg-8">
-      <% if (contest.description) { %><p class="lead" style="white-space: pre-line"><%= contest.description %></p><% } %>
-
-      <h2 class="h5 mt-4">Timeline <span class="small text-muted fw-normal">(<%= tz %>)</span></h2>
-      <% if (!timeline.length) { %>
-        <p class="text-muted">Dates haven't been set yet.</p>
-      <% } else { %>
-        <ul class="list-group list-group-flush mb-4">
-          <% timeline.forEach((t) => { %>
-            <li class="list-group-item d-flex justify-content-between px-0">
-              <span><%= t.label %></span><span class="text-muted"><%= formatDateTime(t.at, tz) %></span>
-            </li>
-          <% }) %>
-        </ul>
+      <% if (contest.description) { %>
+        <div class="card mb-3"><div class="card-body"><p class="mb-0" style="white-space: pre-line"><%= contest.description %></p></div></div>
       <% } %>
-
-      <h2 class="h5">Details</h2>
-      <dl class="row">
-        <% if (contest.organizingCommunity) { %><dt class="col-sm-4">Organized by</dt><dd class="col-sm-8"><%= contest.organizingCommunity %></dd><% } %>
-        <dt class="col-sm-4">Wikis</dt><dd class="col-sm-8"><%= [contest.primaryWiki, ...additionalWikis].join(', ') %></dd>
-        <dt class="col-sm-4">Language</dt><dd class="col-sm-8"><%= contest.language %></dd>
-        <% if (contest.contactInfo) { %><dt class="col-sm-4">Contact</dt><dd class="col-sm-8"><%= contest.contactInfo %></dd><% } %>
-        <dt class="col-sm-4">Organizers</dt>
-        <dd class="col-sm-8">
-          <% if (!organizers.length) { %><span class="text-muted">None listed</span><% } %>
-          <% organizers.forEach((u, i) => { %><a href="<%= userPath(u.username) %>"><%= u.username %></a><%= i < organizers.length - 1 ? ', ' : '' %><% }) %>
-        </dd>
-        <% if (settings.juryReviewEnabled) { %><dt class="col-sm-4">Jury</dt><dd class="col-sm-8"><%= jury.length %> member<%= jury.length === 1 ? '' : 's' %></dd><% } %>
-        <dt class="col-sm-4">Participants</dt>
-        <dd class="col-sm-8">
-          <%= participantCount %><%= settings.participantLimit ? ` of ${settings.participantLimit}` : '' %>
-          <% if (showParticipants && participants.length) { %>
-            <details class="small"><summary>Show names</summary>
-              <% participants.forEach((u, i) => { %><a href="<%= userPath(u.username) %>"><%= u.username %></a><%= i < participants.length - 1 ? ', ' : '' %><% }) %>
-            </details>
-          <% } %>
-        </dd>
-      </dl>
-
-      <h2 class="h5 mt-4">Rules</h2>
-      <ul class="small">
-        <li><%= PARTICIPATION_MODES[settings.participationMode] %>.</li>
-        <% if (settings.minAccountAgeDays) { %><li>Wikimedia account at least <%= settings.minAccountAgeDays %> days old.</li><% } %>
-        <% if (settings.minEditCount) { %><li>At least <%= settings.minEditCount %> edits across Wikimedia projects.</li><% } %>
-        <% if (settings.registrationRequired) { %><li>Register before submitting.</li><% } %>
-        <% typeDef.fields.forEach((f) => { %><li><%= f.label %>: <%= display(f, typeConfig[f.key]) %></li><% }) %>
-      </ul>
-      <% if (enabled.length) { %>
-        <p class="small mb-0">
-          <% enabled.forEach(([, label]) => { %><span class="badge text-bg-light border me-1"><%= label %></span><% }) %>
-        </p>
-      <% } %>
+      <div class="row row-cards mb-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-time me-2"></i>Timeline</h3><div class="card-actions text-secondary small"><%= tz %></div></div>
+            <% if (!timeline.length) { %>
+              <div class="card-body text-secondary">Dates haven't been set yet.</div>
+            <% } else { %>
+              <div class="list-group list-group-flush">
+                <% timeline.forEach((t) => { %>
+                  <div class="list-group-item py-2 d-flex justify-content-between"><span><%= t.label %></span><span class="text-secondary"><%= formatDateTime(t.at, tz) %></span></div>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i>Details</h3></div>
+            <div class="card-body">
+              <div class="datagrid">
+                <% if (contest.organizingCommunity) { %><div class="datagrid-item"><div class="datagrid-title">Organized by</div><div class="datagrid-content"><%= contest.organizingCommunity %></div></div><% } %>
+                <div class="datagrid-item"><div class="datagrid-title">Wikis</div><div class="datagrid-content"><%= [contest.primaryWiki, ...additionalWikis].join(', ') %></div></div>
+                <div class="datagrid-item"><div class="datagrid-title">Language</div><div class="datagrid-content"><%= contest.language %></div></div>
+                <div class="datagrid-item"><div class="datagrid-title">Participants</div><div class="datagrid-content"><%= participantCount %><%= settings.participantLimit ? ' / ' + settings.participantLimit : '' %></div></div>
+                <% if (settings.juryReviewEnabled) { %><div class="datagrid-item"><div class="datagrid-title">Jury</div><div class="datagrid-content"><%= jury.length %> member<%= jury.length === 1 ? '' : 's' %></div></div><% } %>
+                <% if (contest.contactInfo) { %><div class="datagrid-item"><div class="datagrid-title">Contact</div><div class="datagrid-content"><%= contest.contactInfo %></div></div><% } %>
+                <div class="datagrid-item"><div class="datagrid-title">Organizers</div><div class="datagrid-content">
+                  <% if (!organizers.length) { %><span class="text-secondary">None listed</span><% } %>
+                  <div class="avatar-list avatar-list-stacked"><% organizers.forEach((u) => { %><a href="<%= userPath(u.username) %>" class="avatar avatar-xs" title="<%= u.username %>"><%= u.username.charAt(0).toUpperCase() %></a><% }) %></div>
+                </div></div>
+              </div>
+              <% if (showParticipants && participants.length) { %>
+                <details class="small mt-3"><summary>Participant names</summary>
+                  <% participants.forEach((u, i) => { %><a href="<%= userPath(u.username) %>"><%= u.username %></a><%= i < participants.length - 1 ? ', ' : '' %><% }) %>
+                </details>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i>Rules</h3></div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item py-2"><%= PARTICIPATION_MODES[settings.participationMode] %></div>
+          <% if (settings.minAccountAgeDays) { %><div class="list-group-item py-2">Wikimedia account at least <%= settings.minAccountAgeDays %> days old</div><% } %>
+          <% if (settings.minEditCount) { %><div class="list-group-item py-2">At least <%= settings.minEditCount %> edits across Wikimedia projects</div><% } %>
+          <% if (settings.registrationRequired) { %><div class="list-group-item py-2">Register before submitting</div><% } %>
+          <% typeDef.fields.forEach((f) => { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= f.label %></span><span class="text-secondary"><%= display(f, typeConfig[f.key]) %></span></div><% }) %>
+        </div>
+        <% if (enabled.length) { %>
+          <div class="card-footer"><% enabled.forEach(([, label]) => { %><span class="badge bg-green-lt me-1 mb-1"><i class="ti ti-check me-1"></i><%= label %></span><% }) %></div>
+        <% } %>
+      </div>
     </div>
 
     <div class="col-lg-4">
       <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title">Take part</h3></div>
         <div class="card-body">
-          <h2 class="h6">Take part</h2>
           <% if (isParticipant) { %>
             <p class="small text-success mb-2">You're a participant.</p>
             <% if (!['completed', 'archived'].includes(contest.status)) { %>
@@ -97,8 +102,8 @@
       </div>
 
       <div class="card">
+        <div class="card-header"><h3 class="card-title">Your access</h3></div>
         <div class="card-body">
-          <h2 class="h6">Your access to this event</h2>
           <% if (!currentUser) { %>
             <p class="small text-muted mb-0">Log in to see what you can do here.</p>
           <% } else { %>
@@ -127,4 +132,5 @@
       </div>
     </div>
   </div>
+</div>
 </div>

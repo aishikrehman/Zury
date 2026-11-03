@@ -1,5 +1,5 @@
 <% const statusLabel = (s) => (CONTEST_STATUSES[s] || { label: s }).label; const sticky = ['draft', 'cancelled', 'archived'].includes(contest.status); %>
-<div class="container py-5">
+<div class="page-body"><div class="container-xl">
   <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 
   <% if (can('manageEvent')) { %>
@@ -66,4 +66,5 @@
       </div>
     </section>
   <% } %>
+</div>
 </div>
