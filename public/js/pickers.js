@@ -7,10 +7,13 @@
   // Pickers that also accept a new value typed in.
   const CREATABLE = ['user', 'series', 'community'];
   const json = (url) => fetch(url, { headers: { Accept: 'application/json' } }).then((r) => (r.ok ? r.json() : []));
+  // Lists open on top of the page instead of inside the form, so opening one
+  // never makes the card (or a scrolling table) grow.
+  const ON_TOP = { dropdownParent: 'body' };
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function remote(el, kind) {
-    return new window.TomSelect(el, {
+    return new window.TomSelect(el, { ...ON_TOP,
       valueField: 'value',
       labelField: 'text',
       searchField: ['text', 'value', 'localName'],
@@ -67,7 +70,7 @@
     el.setAttribute('placeholder', zt('Then choose the wiki…'));
     row.children[1].appendChild(el);
 
-    const wikis = new window.TomSelect(el, {
+    const wikis = new window.TomSelect(el, { ...ON_TOP,
       valueField: 'value',
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
@@ -85,7 +88,7 @@
       });
     };
 
-    const languages = new window.TomSelect(langSelect, {
+    const languages = new window.TomSelect(langSelect, { ...ON_TOP,
       valueField: 'value',
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
@@ -116,7 +119,7 @@
   // Namespace options follow the wiki chosen in another field.
   function namespaces(el) {
     const source = document.getElementById(el.dataset.wikiSource);
-    const ts = new window.TomSelect(el, { valueField: 'value', labelField: 'text', searchField: ['text'], plugins: ['remove_button'], maxOptions: 200 });
+    const ts = new window.TomSelect(el, { ...ON_TOP, valueField: 'value', labelField: 'text', searchField: ['text'], plugins: ['remove_button'], maxOptions: 200 });
     const reload = (wiki) => {
       if (!wiki) return;
       json(`/api/wikis/${encodeURIComponent(wiki)}/namespaces`).then((items) => {
