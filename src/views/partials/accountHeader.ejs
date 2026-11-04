@@ -3,7 +3,6 @@
   const who = typeof person !== 'undefined' && person ? person : currentUser;
   const tabs = [
     ['profile', userPath(currentUser.username), 'user', t('Profile')],
-    ['dashboard', '/dashboard', 'layout-dashboard', t('Dashboard')],
     ['submissions', '/submissions', 'files', t('My submissions')],
     ['settings', '/settings', 'settings', t('Preferences')],
   ];
