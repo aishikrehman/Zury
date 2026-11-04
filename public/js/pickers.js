@@ -31,6 +31,8 @@
         this.setTextboxValue('');
         this.clearOptions((option) => this.items.includes(option.value));
         this.close();
+        // A single choice: let go of the box so the picked name shows at once.
+        if (!el.multiple) setTimeout(() => this.blur());
       },
       load(query, callback) {
         json(`${ENDPOINT[kind]}?q=${encodeURIComponent(query)}`).then(callback).catch(() => callback());
@@ -84,6 +86,7 @@
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
       maxOptions: 500,
+      onItemAdd() { setTimeout(() => this.blur()); },
       render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>` },
     });
     const loadWikis = (code, keep) => {
@@ -102,6 +105,7 @@
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
       maxOptions: 500,
+      onItemAdd() { setTimeout(() => this.blur()); },
       render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>` },
       onChange: (code) => {
         // The event's language follows the project language (not for Commons and the like).
