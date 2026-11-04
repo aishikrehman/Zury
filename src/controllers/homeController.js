@@ -24,7 +24,7 @@ async function index(req, res, next) {
     let demoUsers = [];
     if (env.demoMode && !req.user) {
       ensureCsrfToken(req, res);
-      demoUsers = await prisma.user.findMany({ where: { isDemo: true }, select: { id: true, username: true }, orderBy: { wikimediaId: 'desc' } });
+      demoUsers = await prisma.user.findMany({ where: { isDemo: true, wikimediaId: { gt: -1000 } }, select: { id: true, username: true }, orderBy: { wikimediaId: 'desc' } });
     }
     res.render('pages/home', {
       title: 'Zury — Wikimedia Contests & Events',

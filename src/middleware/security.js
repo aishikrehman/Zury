@@ -11,6 +11,8 @@ const CSP = [
   "img-src 'self' data: https://upload.wikimedia.org https://commons.wikimedia.org",
   "font-src 'self' data:",
   "connect-src 'self'",
+  // The review window shows the entry's page from its wiki.
+  "frame-src https://*.wikipedia.org https://*.wiktionary.org https://*.wikibooks.org https://*.wikinews.org https://*.wikiquote.org https://*.wikisource.org https://wikisource.org https://*.wikiversity.org https://*.wikivoyage.org https://*.wikimedia.org https://www.wikidata.org https://www.mediawiki.org",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self' https://meta.wikimedia.org",

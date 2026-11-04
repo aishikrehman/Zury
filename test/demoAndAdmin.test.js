@@ -41,8 +41,12 @@ test('demo mode is never enabled in production', () => {
 });
 
 test('seed is idempotent', async () => {
-  assert.equal(await t.prisma.user.count({ where: { isDemo: true } }), 9);
-  assert.equal(await t.prisma.contest.count({ where: { isDemo: true } }), 12);
+  assert.equal(await t.prisma.user.count({ where: { isDemo: true, wikimediaId: { gt: -1000 } } }), 9, 'the switchable demo users');
+  assert.equal(await t.prisma.contest.count({ where: { isDemo: true } }), 13);
+  // The edition copied from Fountain, with its real articles and jury marks.
+  const wam25 = await t.prisma.contest.findUnique({ where: { slug: 'wam-2025' }, include: { _count: { select: { submissions: true, reviews: true } } } });
+  assert.equal(wam25._count.submissions, 137);
+  assert.ok(wam25._count.reviews >= 137);
   assert.equal(await t.prisma.eventSeries.count({ where: { isDemo: true } }), 2);
 });
 

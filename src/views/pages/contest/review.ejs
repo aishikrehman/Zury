@@ -46,7 +46,12 @@
             </div>
             <a class="btn btn-sm" href="<%= entry.url %>" rel="noopener" target="_blank"><i class="ti ti-external-link me-1"></i><%= t('Open on wiki') %></a>
           </div>
-          <% if (meta.file && meta.file.thumbUrl) { %>
+          <% if (preview) { %>
+            <div class="z-review-page">
+              <iframe src="<%= preview %>" title="<%= entry.title %>" loading="eager" referrerpolicy="no-referrer"
+                sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>
+            </div>
+          <% } else if (meta.file && meta.file.thumbUrl) { %>
             <div class="z-review-media"><img src="<%= meta.file.thumbUrl %>" alt="<%= entry.title %>" referrerpolicy="no-referrer"></div>
           <% } else if (meta.extract) { %>
             <div class="card-body z-review-text"><%= meta.extract.slice(0, 1600) %><%= meta.extract.length > 1600 ? '…' : '' %></div>

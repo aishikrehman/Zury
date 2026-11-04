@@ -1,6 +1,15 @@
 const prisma = require('../config/prisma');
 const reviewService = require('../services/reviewService');
 const { eventPath } = require('../utils/format');
+const { dbnameToHost } = require('../wiki/wikiUrls');
+
+// The page itself, rendered by its wiki, for articles and other text pages.
+// Files and Wikidata items have their own previews.
+function pagePreview(entry) {
+  if (!entry || ['file', 'item', 'property', 'lexeme'].includes(entry.entryType)) return null;
+  const host = dbnameToHost(entry.wiki);
+  return host ? `https://${host}/w/rest.php/v1/page/${encodeURIComponent(entry.title.replace(/ /g, '_'))}/html` : null;
+}
 
 const { ReviewError } = reviewService;
 const REVIEW_PERMISSION = 'reviewAssignedEntry';
@@ -35,6 +44,7 @@ async function window(req, res, next) {
       title: `Review — ${req.contest.title}`,
       entry,
       meta: entry ? JSON.parse(entry.metadata || '{}') : null,
+      preview: pagePreview(entry),
       validation: entry ? JSON.parse(entry.validation || '{}') : null,
       mine: entry ? entry.reviews.find((r) => r.jurorId === req.user.id) || null : null,
       others: entry ? entry.reviews.filter((r) => r.jurorId !== req.user.id) : [],

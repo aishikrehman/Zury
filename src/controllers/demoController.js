@@ -5,7 +5,7 @@ const { ensureCsrfToken } = require('../middleware/csrf');
 async function index(req, res, next) {
   try {
     const users = await prisma.user.findMany({
-      where: { isDemo: true },
+      where: { isDemo: true, wikimediaId: { gt: -1000 } },
       include: {
         globalRoles: true,
         wikiRoles: true,
@@ -29,7 +29,7 @@ async function index(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const user = await prisma.user.findFirst({ where: { id: Number(req.body.userId), isDemo: true, status: 'active' } });
+    const user = await prisma.user.findFirst({ where: { id: Number(req.body.userId), isDemo: true, wikimediaId: { gt: -1000 }, status: 'active' } });
     if (!user) return res.redirect('/demo');
     req.session.regenerate((err) => {
       if (err) return next(err);

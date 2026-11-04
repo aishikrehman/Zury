@@ -5,6 +5,7 @@ const { computeAutoStatus } = require('../src/services/lifecycleService');
 const { defaultSettings } = require('../src/services/contestFormService');
 const { readTypeConfig } = require('../src/events/eventTypes');
 const { defaultCode } = require('../src/services/eventWikiService');
+const { seedFountain, realTitles } = require('./demoFountain');
 
 // Recurring events: /<slug> lists every edition.
 const DEMO_SERIES = [
@@ -28,6 +29,27 @@ const DEMO_USERS = [
 const d = (s) => new Date(s.length === 10 ? `${s}T00:00:00+06:00` : s);
 
 const DEMO_CONTESTS = [
+  // Copied from Fountain: its articles, jury and marks are added by seedFountain.
+  {
+    slug: 'wam-2025',
+    category: 'culture', mainCategory: 'উইকিপিডিয়া এশীয় মাস ২০২৫',
+    series: 'wam',
+    edition: '2025',
+    title: 'উইকিপিডিয়া এশীয় মাস ২০২৫',
+    description: 'নভেম্বর মাসজুড়ে এশিয়া বিষয়ক নতুন নিবন্ধ লেখার প্রতিযোগিতা। বাংলা উইকিপিডিয়ায় ১৩৭টি নিবন্ধ জমা পড়েছিল।',
+    type: 'writing',
+    resultsPublished: true,
+    primaryWiki: 'bnwiki',
+    organizingCommunity: 'বাংলা উইকিপিডিয়া সম্প্রদায়',
+    contactInfo: 'উইকিপিডিয়া:উইকিপিডিয়া এশীয় মাস ২০২৫',
+    language: 'bn',
+    timezone: 'Asia/Dhaka',
+    dates: { startDate: '2025-11-01T00:00:00Z', endDate: '2025-11-30T23:59:59Z', submissionOpensAt: '2025-11-01T00:00:00Z', submissionDeadline: '2025-11-30T23:59:59Z', reviewDeadline: '2025-12-31T00:00:00Z', resultsAnnouncedAt: '2026-01-10T00:00:00Z' },
+    settings: { allowJuryParticipation: false },
+    typeConfig: { createdDuringEventOnly: true },
+    createdBy: 'organizer',
+    members: [['organizer', 'organizer']],
+  },
   {
     slug: 'wam-2026',
     category: 'culture', mainCategory: 'Wikipedia Asian Month 2026', previousEditionUrl: 'https://meta.wikimedia.org/wiki/Wikipedia_Asian_Month_2025',
@@ -405,7 +427,7 @@ async function seedDemoData(prisma, now = new Date()) {
     }
   }
 
-  const submissions = await seedSubmissions(prisma, users);
+  const submissions = (await seedSubmissions(prisma, users)) + (await seedFountain(prisma, users));
   await seedReviews(prisma, users);
   return { users: DEMO_USERS.length, contests: DEMO_CONTESTS.length, submissions };
 }
@@ -470,6 +492,12 @@ async function seedSubmissions(prisma, users) {
 // Tracked edits for an event: participants' edits and edits tagged with the hashtag.
 async function seedContributions(prisma, contest, spec, users, now) {
   const rand = prng(77);
+  // Real article titles on each wiki (from the Fountain copy).
+  const titles = realTitles();
+  const titleOn = (wiki, i) => {
+    const list = titles.filter((x) => x.wiki === wiki);
+    return list.length ? list[i % list.length].title : `Asia topic ${i}`;
+  };
   const from = new Date(spec.from).getTime();
   const span = Math.max(3600000, now.getTime() - from);
   const rows = [];
@@ -485,7 +513,7 @@ async function seedContributions(prisma, contest, spec, users, now) {
       source: byParticipant ? 'participant' : 'hashtag',
       username,
       userId: byParticipant ? users[spec.users[i % spec.users.length]].id : null,
-      pageTitle: `Asia topic ${i}`,
+      pageTitle: titleOn(wiki, i),
       ns: 0,
       revId: 70000000 + i,
       isNew,
@@ -565,7 +593,6 @@ function prng(seed) {
 
 // Volume for the charts: many entries spread over each event's dates.
 const BULK = [
-  { slug: 'wam-2026', count: 40, wikis: ['bnwiki', 'bnwiki', 'hiwiki', 'enwiki'], who: ['participant', 'newcomer'], type: 'article', title: (i) => `Asian Month article ${i}`, from: '2026-11-01', mix: { validated: 75, pending: 15, invalid: 10 } },
   { slug: 'wlm-bangladesh-2026', count: 72, who: ['participant', 'newcomer', 'participant'], type: 'file', title: (i) => `File:WLM Bangladesh 2026 heritage site ${String(i).padStart(3, '0')}.jpg`, from: '2026-09-01', mix: { validated: 45, under_review: 20, approved: 18, rejected: 9, invalid: 8 } },
   { slug: 'liberation-war-editathon', count: 34, who: ['participant', 'juror', 'newcomer'], type: 'article', title: (i) => `মুক্তিযুদ্ধ নিবন্ধ ${i}`, from: '2026-10-15', mix: { validated: 70, pending: 20, withdrawn: 10 } },
   { slug: 'wle-bangladesh-2026', count: 48, who: ['participant'], type: 'file', title: (i) => `File:WLE Bangladesh 2026 nature ${String(i).padStart(3, '0')}.jpg`, from: '2026-05-01', mix: { approved: 55, rejected: 35, disqualified: 10 } },
