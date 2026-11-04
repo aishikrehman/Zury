@@ -1,29 +1,116 @@
+<%
+  // Your entries, grouped by event, with totals and filters on top.
+  const qs = (extra) => {
+    const p = new URLSearchParams();
+    if (filters.status) p.set('status', filters.status);
+    if (filters.contestId) p.set('event', filters.contestId);
+    if (filters.q) p.set('q', filters.q);
+    if (filters.sort !== 'newest') p.set('sort', filters.sort);
+    Object.entries(extra).forEach(([k, v]) => (v === null ? p.delete(k) : p.set(k, v)));
+    const str = p.toString();
+    return str ? '?' + str : '?';
+  };
+  const waiting = ['pending', 'validated', 'under_review', 'appealed'].reduce((n, k) => n + (mine.counts[k] || 0), 0);
+  const groups = [];
+  mine.items.forEach((s) => {
+    let g = groups.find((x) => x.contest.id === s.contestId);
+    if (!g) groups.push((g = { contest: s.contest, items: [], words: 0, approved: 0 }));
+    g.items.push(s);
+    g.words += s.wordCount || 0;
+    if (s.status === 'approved') g.approved += 1;
+  });
+%>
 <%- include('../../partials/pageHeader', { pretitle: t('Account'), heading: t('My submissions') }) %>
 <div class="page-body"><div class="container-xl">
-  <div class="card">
-    <% if (!submissions.length) { %>
+  <% if (!mine.total) { %>
+    <div class="card">
       <div class="empty">
         <div class="empty-icon"><i class="ti ti-files-off icon"></i></div>
         <p class="empty-title"><%= t("No submissions yet") %></p>
         <p class="empty-subtitle text-secondary"><%= t("Find an active event and submit your first entry.") %></p>
         <div class="empty-action"><a href="/events/active" class="btn btn-primary"><%= t("Active events") %></a></div>
       </div>
-    <% } else { %>
-      <div class="table-responsive">
-        <table class="table table-vcenter card-table">
-          <thead><tr><th><%= t("Entry") %></th><th><%= t("Event") %></th><th><%= t("Status") %></th><th><%= t("Submitted") %></th></tr></thead>
-          <tbody>
-            <% submissions.forEach((s) => { %>
-              <tr>
-                <td><a href="/contest/<%= s.contest.id %>/submissions/<%= s.id %>"><%= s.title %></a><div class="text-secondary small"><%= wikiName(s.wiki) %> · <%= s.entryType %></div></td>
-                <td><a href="/contest/<%= s.contest.id %>" class="text-reset"><%= s.contest.title %></a></td>
-                <td><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
-                <td class="text-secondary text-nowrap"><%= formatDate(s.submittedAt) %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+    </div>
+  <% } else { %>
+    <div class="row row-cards mb-3">
+      <% [[t('Entries'), mine.total, 'files', 'primary', ''], [t('Approved'), mine.counts.approved || 0, 'circle-check', 'green', 'approved'], [t('Waiting'), waiting, 'hourglass', 'yellow', ''], [t('Rejected'), mine.counts.rejected || 0, 'circle-x', 'red', 'rejected'], [t('Words accepted'), mine.approvedWords, 'letter-case', 'purple', '']].forEach(([label, value, icon, color, st]) => { %>
+        <div class="col-6 col-md-4 col-lg">
+          <a class="card card-sm card-link text-reset" href="<%= st ? qs({ status: st }) : qs({ status: null }) %>"><div class="card-body d-flex align-items-center">
+            <span class="avatar bg-<%= color %>-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
+            <div class="min-w-0"><div class="h3 m-0"><%= formatNumber(value) %></div><div class="text-secondary small text-truncate"><%= label %></div></div>
+          </div></a>
+        </div>
+      <% }) %>
+    </div>
+
+    <form class="card card-body mb-3 py-2" method="get">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md">
+          <div class="input-icon"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input class="form-control" type="search" name="q" value="<%= filters.q %>" placeholder="<%= t('Search titles') %>" aria-label="<%= t('Search titles') %>"></div>
+        </div>
+        <div class="col-6 col-md-auto">
+          <select class="form-select" name="status" aria-label="<%= t('Status') %>" data-autosubmit>
+            <option value=""><%= t('All statuses') %></option>
+            <% statuses.filter((st) => mine.counts[st]).forEach((st) => { %><option value="<%= st %>"<%= filters.status === st ? ' selected' : '' %>><%= SUBMISSION_STATUSES[st].label %> (<%= mine.counts[st] %>)</option><% }) %>
+          </select>
+        </div>
+        <% if (mine.events.length > 1) { %>
+          <div class="col-6 col-md-auto">
+            <select class="form-select" name="event" aria-label="<%= t('Event') %>" data-autosubmit>
+              <option value=""><%= t('All events') %></option>
+              <% mine.events.forEach((e) => { %><option value="<%= e.id %>"<%= filters.contestId === e.id ? ' selected' : '' %>><%= e.title %> (<%= e.count %>)</option><% }) %>
+            </select>
+          </div>
+        <% } %>
+        <div class="col-6 col-md-auto">
+          <select class="form-select" name="sort" aria-label="<%= t('Order') %>" data-autosubmit>
+            <% [['newest', t('Newest first')], ['oldest', t('Oldest first')], ['title', t('Title')], ['words', t('Most words')]].forEach(([v, label]) => { %><option value="<%= v %>"<%= filters.sort === v ? ' selected' : '' %>><%= label %></option><% }) %>
+          </select>
+        </div>
+        <% if (filters.status || filters.contestId || filters.q || filters.sort !== 'newest') { %><div class="col-6 col-md-auto"><a class="btn btn-ghost-secondary w-100" href="/submissions"><%= t('Clear') %></a></div><% } %>
       </div>
+    </form>
+
+    <% if (!groups.length) { %>
+      <div class="card"><div class="card-body text-secondary"><%= t('Nothing matches these filters') %></div></div>
     <% } %>
-  </div>
+    <% groups.forEach((g) => { const st = CONTEST_STATUSES[g.contest.status] || { label: g.contest.status, badge: 'secondary' }; const path = eventPath(g.contest); const words = g.contest.settings && g.contest.settings.wordCountEnabled; %>
+      <div class="card mb-3">
+        <div class="card-header flex-wrap gap-2">
+          <div class="min-w-0 me-auto">
+            <h3 class="card-title text-truncate"><a href="<%= path %>" class="text-reset"><%= g.contest.title %></a> <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt ms-1"><%= st.label %></span></h3>
+            <div class="text-secondary small"><%= tn('{n} entry', '{n} entries', g.items.length) %> · <%= t('{n} approved', { n: g.approved }) %><% if (words) { %> · <%= t('{n} words', { n: formatNumber(g.words) }) %><% } %></div>
+          </div>
+          <a class="btn btn-sm" href="<%= path %>/submissions?mine=1"><%= t('In the event') %></a>
+          <% if (g.contest.status === 'active') { %><a class="btn btn-sm btn-primary" href="<%= path %>/submit"><i class="ti ti-upload me-1"></i><%= t('Submit entries') %></a><% } %>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead><tr><th><%= t('Entry') %></th><th><%= t('Status') %></th><% if (words) { %><th class="text-end"><%= t('Words') %></th><% } %><th><%= t('Submitted') %></th><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
+            <tbody>
+              <% g.items.forEach((s) => { %>
+                <tr>
+                  <td class="min-w-0"><a href="<%= path %>/submissions/<%= s.id %>"><%= s.title %></a></td>
+                  <td><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
+                  <% if (words) { %><td class="text-end"><%= s.wordCount != null ? formatNumber(s.wordCount) : '—' %></td><% } %>
+                  <td class="text-secondary text-nowrap"><%= formatDate(s.submittedAt) %></td>
+                  <td>
+                    <div class="z-row-actions">
+                      <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= path %>/submissions/<%= s.id %>" title="<%= t('View') %>" aria-label="<%= t('View') %>"><i class="ti ti-eye"></i></a>
+                      <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= s.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
+                      <% if (withdrawable.includes(s.status)) { %>
+                        <form method="post" action="<%= path %>/submissions/<%= s.id %>/withdraw" data-confirm="<%= t('Withdraw this entry?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Withdraw') %>" aria-label="<%= t('Withdraw') %>"><i class="ti ti-arrow-back-up"></i></button>
+                        </form>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% }) %>
+  <% } %>
 </div></div>

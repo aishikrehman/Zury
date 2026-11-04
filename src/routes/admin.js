@@ -12,5 +12,8 @@ router.post('/admin/users/:userId(\\d+)/roles', requirePermission('managePlatfor
 router.post('/admin/users/:userId(\\d+)/roles/revoke', requirePermission('managePlatformRoles'), adminController.revokeRole);
 router.get('/admin/permissions', adminController.permissions);
 router.get('/admin/logs', requirePermission('viewAuditLog'), adminController.logs);
+router.get('/admin/maintenance', requirePermission('maintainSite'), adminController.maintenancePage);
+router.post('/admin/maintenance/backup', requirePermission('maintainSite'), adminController.downloadBackup);
+router.post('/admin/maintenance/clean/:task(sessions|activity)', requirePermission('maintainSite'), adminController.cleanUp);
 
 module.exports = router;

@@ -1,0 +1,54 @@
+<%
+  const mb = (b) => (b / 1048576).toFixed(1);
+  const up = (sec) => (sec >= 86400 ? t('{n} days', { n: Math.floor(sec / 86400) }) : sec >= 3600 ? t('{n} hours', { n: Math.floor(sec / 3600) }) : t('{n} minutes', { n: Math.floor(sec / 60) }));
+%>
+<%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Maintenance') }) %>
+<div class="page-body"><div class="container-xl">
+  <div class="row row-cards">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-database me-2"></i><%= t('Database') %></h3><div class="card-actions text-secondary"><%= t('{n} MB', { n: mb(status.dbBytes) }) %></div></div>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <tbody>
+              <% status.tables.forEach((r) => { %><tr><td><%= t(r.label) %></td><td class="text-end"><%= formatNumber(r.count) %></td></tr><% }) %>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer">
+          <form method="post" action="/admin/maintenance/backup" class="d-flex flex-wrap align-items-center gap-2">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-primary" type="submit"><i class="ti ti-download me-1"></i><%= t('Download a backup') %></button>
+            <span class="text-secondary small"><%= t('A full copy of the database, without anyone\'s sign-in session. Keep it somewhere private.') %></span>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-broom me-2"></i><%= t('Clean up') %></h3></div>
+        <div class="list-group list-group-flush">
+          <div class="list-group-item d-flex align-items-center gap-2">
+            <div class="flex-fill"><div><%= t('Expired sign-in sessions') %></div><div class="text-secondary small"><%= formatNumber(status.expiredSessions) %></div></div>
+            <form method="post" action="/admin/maintenance/clean/sessions"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"<%= status.expiredSessions ? '' : ' disabled' %>><%= t('Remove') %></button></form>
+          </div>
+          <div class="list-group-item d-flex align-items-center gap-2">
+            <div class="flex-fill"><div><%= t('Activity log older than a year') %></div><div class="text-secondary small"><%= status.oldestLog ? t('Oldest: {date}', { date: formatDate(status.oldestLog) }) : '—' %></div></div>
+            <form method="post" action="/admin/maintenance/clean/activity" data-confirm="<%= t('Remove activity log rows older than a year?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><%= t('Remove') %></button></form>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-server me-2"></i><%= t('Server') %></h3></div>
+        <div class="card-body">
+          <dl class="z-facts-list">
+            <dt><%= t('Zury') %></dt><dd><%= status.version %></dd>
+            <dt>Node.js</dt><dd><%= status.node %></dd>
+            <dt><%= t('Memory') %></dt><dd><%= t('{n} MB', { n: status.memoryMB }) %></dd>
+            <dt><%= t('Running for') %></dt><dd><%= up(status.uptimeSeconds) %></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>

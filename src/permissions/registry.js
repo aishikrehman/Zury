@@ -43,6 +43,8 @@ const PERMISSIONS = {
   managePlatformRoles: 'Grant and revoke Zury platform roles',
   manageSiteConfig: 'Change Zury site configuration',
   viewAuditLog: 'View the audit log',
+  // Superusers only (every permission): backups and clean-up.
+  maintainSite: 'Back up the database and run maintenance',
 };
 
 // Holding the key on the left also grants the keys on the right.

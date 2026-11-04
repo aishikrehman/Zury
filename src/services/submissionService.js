@@ -295,16 +295,35 @@ async function revalidate({ actor, submission, contest, settings, eventWikis = [
   });
 }
 
-function listMine(userId) {
-  return prisma.submission.findMany({
-    where: { participantId: userId, contest: { deletedAt: null } },
-    orderBy: { submittedAt: 'desc' },
-    take: 200,
-    include: { contest: { select: { id: true, title: true, status: true } } },
-  });
+// Someone's own entries across every event, with totals, filters and an order.
+const MINE_SORTS = { newest: { submittedAt: 'desc' }, oldest: { submittedAt: 'asc' }, title: { title: 'asc' }, words: { wordCount: { sort: 'desc', nulls: 'last' } } };
+
+async function listMine(userId, { status = '', contestId = null, q = '', sort = 'newest' } = {}) {
+  const base = { participantId: userId, contest: { deletedAt: null } };
+  const where = { ...base, ...(STATUSES.includes(status) && { status }), ...(contestId && { contestId }), ...(q && { title: { contains: q } }) };
+  const [items, byStatus, words, events] = await Promise.all([
+    prisma.submission.findMany({
+      where,
+      orderBy: [MINE_SORTS[sort] || MINE_SORTS.newest, { id: 'desc' }],
+      take: 500,
+      include: { contest: { select: { id: true, title: true, status: true, slug: true, edition: true, series: { select: { slug: true } }, settings: { select: { wordCountEnabled: true } } } } },
+    }),
+    prisma.submission.groupBy({ by: ['status'], where: base, _count: { _all: true } }),
+    prisma.submission.aggregate({ where: { ...base, status: 'approved' }, _sum: { wordCount: true } }),
+    prisma.submission.groupBy({ by: ['contestId'], where: base, _count: { _all: true } }),
+  ]);
+  const titles = await prisma.contest.findMany({ where: { id: { in: events.map((e) => e.contestId) } }, select: { id: true, title: true } });
+  const counts = Object.fromEntries(byStatus.map((g) => [g.status, g._count._all]));
+  return {
+    items,
+    counts,
+    total: Object.values(counts).reduce((a, b) => a + b, 0),
+    approvedWords: words._sum.wordCount || 0,
+    events: titles.map((c) => ({ ...c, count: events.find((e) => e.contestId === c.id)._count._all })).sort((a, b) => a.title.localeCompare(b.title)),
+  };
 }
 
-module.exports = { SORTS,
+module.exports = { SORTS, MINE_SORTS,
   MAX_BATCH,
   STATUSES,
   WITHDRAWABLE,

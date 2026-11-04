@@ -240,7 +240,19 @@ const revalidate = action(
 
 async function mine(req, res, next) {
   try {
-    res.render('pages/submissions/mine', { title: 'My submissions — Zury', submissions: await submissionService.listMine(req.user.id) });
+    const filters = {
+      status: submissionService.STATUSES.includes(req.query.status) ? req.query.status : '',
+      contestId: Number.parseInt(req.query.event, 10) || null,
+      q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
+      sort: Object.keys(submissionService.MINE_SORTS).includes(req.query.sort) ? req.query.sort : 'newest',
+    };
+    res.render('pages/submissions/mine', {
+      title: 'My submissions — Zury',
+      mine: await submissionService.listMine(req.user.id, filters),
+      filters,
+      statuses: submissionService.STATUSES,
+      withdrawable: submissionService.WITHDRAWABLE,
+    });
   } catch (err) {
     next(err);
   }

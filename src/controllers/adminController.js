@@ -86,4 +86,34 @@ async function logs(req, res, next) {
   }
 }
 
-module.exports = { index, users, grantRole, revokeRole, permissions, logs };
+const maintenance = require('../services/maintenanceService');
+
+async function maintenancePage(req, res, next) {
+  try {
+    res.render('pages/admin/maintenance', { title: 'Maintenance — Zury', status: await maintenance.status() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function downloadBackup(req, res, next) {
+  try {
+    const file = await maintenance.backup(req.user.id);
+    const name = `zury-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.db`;
+    res.download(file, name, () => require('fs').unlink(file, () => {}));
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function cleanUp(req, res, next) {
+  try {
+    const removed = await maintenance.cleanUp({ actorId: req.user.id, task: req.params.task });
+    req.flash('success', req.t('{n} rows removed.', { n: removed }));
+    res.redirect('/admin/maintenance');
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { maintenancePage, downloadBackup, cleanUp, index, users, grantRole, revokeRole, permissions, logs };

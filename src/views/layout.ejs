@@ -29,6 +29,7 @@
         { href: '/admin/users', icon: 'users', label: t('Users'), active: isActive('/admin/users') },
         { href: '/admin/permissions', icon: 'key', label: t('Permissions'), active: isActive('/admin/permissions') },
         ...(can('viewAuditLog') ? [{ href: '/admin/logs', icon: 'history', label: t('Audit log'), active: isActive('/admin/logs') }] : []),
+        ...(can('maintainSite') ? [{ href: '/admin/maintenance', icon: 'database', label: t('Maintenance'), active: isActive('/admin/maintenance') }] : []),
       ],
     });
   }

@@ -147,3 +147,21 @@ test('platform admins grant and revoke roles with an audit trail', async () => {
   });
   assert.equal(forbidden.status, 403, 'stewards cannot grant platform roles');
 });
+
+test('maintenance: superusers see the database, download a backup without sessions, and clean up', async () => {
+  const user = await t.prisma.user.findFirst({ where: { username: NAME['Platform Admin'] } });
+  // Platform admins run the site but backups are for superusers only.
+  assert.equal((await t.request('/admin/maintenance', { cookie: await loginAs(NAME['Platform Admin']) })).status, 403);
+  await t.prisma.userGlobalRole.create({ data: { userId: user.id, role: 'superuser' } });
+  const cookie = await loginAs(NAME['Platform Admin']);
+  const page = await t.request('/admin/maintenance', { cookie });
+  assert.equal(page.status, 200);
+  assert.match(page.body, /Download a backup/);
+  const csrf = csrfFrom(page.body);
+  const backup = await t.request('/admin/maintenance/backup', { cookie, method: 'POST', form: { _csrf: csrf } });
+  assert.equal(backup.status, 200);
+  assert.ok(backup.body.startsWith('SQLite format 3'), 'a SQLite file');
+  const clean = await t.request('/admin/maintenance/clean/sessions', { cookie, method: 'POST', form: { _csrf: csrf } });
+  assert.equal(clean.status, 302);
+  await t.prisma.userGlobalRole.deleteMany({ where: { userId: user.id, role: 'superuser' } });
+});
