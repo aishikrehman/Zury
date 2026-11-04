@@ -1,0 +1,18 @@
+<%- include('../../partials/pageHeader', { pretitle: t('Event management'), heading: t('Import from Fountain') }) %>
+<div class="page-body">
+  <div class="container-xl" style="max-width: 44rem">
+    <form method="post" action="/events/import" class="card">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="text-secondary"><%= t('Bring an editathon from Fountain into Zury. Its articles become entries, the Fountain jury decides them, and Zury keeps them up to date every hour.') %></p>
+        <label class="form-label" for="code"><%= t('Fountain editathon code or address') %></label>
+        <input class="form-control<%= error ? ' is-invalid' : '' %>" id="code" name="code" value="<%= value %>" placeholder="https://fountain.toolforge.org/editathons/…" required autofocus>
+        <% if (error) { %><div class="invalid-feedback"><%= error %></div><% } %>
+        <p class="form-hint mt-2"><%= t('To add a Fountain editathon to an existing event or series edition, open that event’s settings and use Wikis.') %></p>
+      </div>
+      <div class="card-footer d-flex justify-content-end">
+        <button class="btn btn-primary" type="submit"><%= t('Import') %></button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -46,6 +46,10 @@ const server = app.listen(env.port, () => {
   setTimeout(backupNow, 60 * 60 * 1000).unref();
   setInterval(backupNow, 24 * 60 * 60 * 1000).unref();
   setInterval(trackingSweep, TRACKING_SWEEP_MS).unref();
+  // Editathons followed on Fountain: entries and jury decisions, every hour.
+  const fountainNow = () => require('./services/fountainService').syncAll().catch((err) => console.error('Fountain sync failed:', err.message));
+  setTimeout(fountainNow, 5 * 60 * 1000).unref();
+  setInterval(fountainNow, 60 * 60 * 1000).unref();
 });
 
 // Hosts stop the app with SIGTERM: finish open requests, close the database, exit.

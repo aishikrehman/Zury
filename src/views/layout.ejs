@@ -21,11 +21,11 @@
   }
   if (can('createEvent')) {
     navItems.push({
-      icon: 'circle-plus', label: t('Create'), active: isActive('/events/create') || isActive('/series'),
+      icon: 'calendar-cog', label: t('Event management'), active: isActive('/events/create') || isActive('/events/import') || isActive('/series'),
       children: [
         { href: '/events/create', icon: 'calendar-plus', label: t('Create event'), active: isActive('/events/create') },
-        { href: '/series/new', icon: 'stack-2', label: t('New series'), active: isActive('/series/new') },
-        { href: '/series', icon: 'settings', label: t('Manage series and editions'), active: currentPath === '/series' },
+        { href: '/events/import', icon: 'download', label: t('Import from Fountain'), active: isActive('/events/import') },
+        { href: '/series', icon: 'stack-2', label: t('Series and editions'), active: isActive('/series') },
       ],
     });
   }

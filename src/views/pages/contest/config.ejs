@@ -88,14 +88,23 @@
       <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3></div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th><%= t("Address") %></th><th><%= t("Wiki") %></th><th><%= t("Status") %></th><th class="w-1"></th></tr></thead>
+          <thead><tr><th><%= t("Address") %></th><th><%= t("Wiki") %></th><th><%= t("Status") %></th><th>Fountain</th><th class="w-1"></th></tr></thead>
           <tbody>
             <% allWikis.forEach((w) => { %>
               <tr>
                 <td><a href="<%= eventBase %>/<%= w.code %>"><%= eventBase %>/<%= w.code %></a></td>
                 <td><%- wikiLabel(w.wiki) %></td>
-                <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= w.status %></span></td>
+                <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= t(w.status) %></span></td>
                 <td class="text-nowrap">
+                  <% if (w.fountainCode) { %>
+                    <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(w.fountainCode) %>" rel="noopener" target="_blank"><%= w.fountainCode %></a>
+                    <div class="text-secondary small"><%= w.fountainSyncedAt ? t('Updated {when}', { when: formatDateTime(w.fountainSyncedAt, contest.timezone) }) : '' %></div>
+                  <% } else { %><span class="text-secondary">—</span><% } %>
+                </td>
+                <td class="text-nowrap">
+                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ['unlink', t('Stop following'), 'ghost-secondary']].forEach(([action, label, cls]) => { %>
+                    <form method="post" action="<%= eventBase %>/fountain/<%= w.id %>/<%= action %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button></form>
+                  <% }) %><% } %>
                   <% (wikiActions[w.status] || []).forEach(([action, label, cls]) => { %>
                     <form method="post" action="<%= eventBase %>/wikis/<%= w.id %>/<%= action %>" class="d-inline">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -113,6 +122,11 @@
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="col"><select class="form-select" name="wiki" data-picker="wiki" placeholder="<%= t("Add a wiki…") %>" required></select></div>
           <div class="col-auto"><button class="btn btn-primary" type="submit"><i class="ti ti-plus me-1"></i><%= t("Add wiki") %></button></div>
+        </form>
+        <form method="post" action="<%= eventBase %>/fountain" class="row g-2 align-items-center mt-2">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col"><input class="form-control" name="code" placeholder="<%= t('Fountain editathon code or address') %>" aria-label="<%= t('Fountain editathon code or address') %>" required></div>
+          <div class="col-auto"><button class="btn" type="submit"><%= t("Follow on Fountain") %></button></div>
         </form>
       </div>
     </div>

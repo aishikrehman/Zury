@@ -3,6 +3,7 @@ const eventsController = require('../controllers/eventsController');
 const contestController = require('../controllers/contestController');
 const submissionController = require('../controllers/submissionController');
 const wikiController = require('../controllers/eventWikiController');
+const fountainController = require('../controllers/fountainController');
 const messageController = require('../controllers/messageController');
 const trackingController = require('../controllers/trackingController');
 const sessionController = require('../controllers/sessionController');
@@ -28,6 +29,8 @@ const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity
 router.get('/events', eventsController.index);
 router.get('/events/create', requirePermission('createEvent'), eventsController.createForm);
 router.post('/events/create', requirePermission('createEvent'), eventsController.create);
+router.get('/events/import', requirePermission('createEvent'), fountainController.importForm);
+router.post('/events/import', requirePermission('createEvent'), fountainController.importEvent);
 router.get('/events/:group(active|upcoming|completed)', eventsController.index);
 router.get('/submissions', requireAuth, submissionController.mine);
 router.get('/review', requireAuth, reviewController.myQueue);
@@ -53,6 +56,9 @@ contest.post('/move', requireEventWide('deleteEvent'), contestController.move);
 // Wikis taking part. Requests are open to logged-in users; the rest is for global controllers.
 contest.post('/wikis/request', requireAuth, wikiController.request);
 contest.post('/wikis', requireEventWide('manageEvent'), wikiController.add);
+contest.post('/fountain', requireEventWide('manageEvent'), fountainController.link);
+contest.post('/fountain/:wikiId(\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
+contest.post('/fountain/:wikiId(\d+)/:action(unlink)', requireEventWide('manageEvent'), fountainController.unlink);
 contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume|remove)', requireEventWide('manageEvent'), wikiController.change);
 
 // Per-role permission checks happen in the controller/service.
