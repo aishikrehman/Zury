@@ -74,7 +74,6 @@ Object.assign(app.locals, format, contestLabels, { EVENT_TYPES, FEATURE_DEFAULTS
   DATE_FIELDS,
   PARTICIPATION_MODES,
   eventWikiScope,
-  demoMode: env.demoMode,
 });
 
 app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: env.nodeEnv === 'production' ? '1d' : 0 }));
@@ -98,7 +97,9 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   // The site's own address, for canonical links and sharing cards.
   res.locals.siteOrigin = `${req.protocol}://${req.get('host')}`;
-  res.locals.ui = { wide: false, textLarge: false };
+  res.locals.ui = require('./config/displayOptions').read({});
+  res.locals.uiClasses = '';
+  res.locals.DISPLAY_SWITCHES = require('./config/displayOptions').SWITCHES;
   next();
 });
 
@@ -176,7 +177,6 @@ app.use('/', require('./routes/users'));
 app.use('/', require('./routes/account'));
 app.use('/', require('./routes/api'));
 app.use('/', require('./routes/admin'));
-if (env.demoMode) app.use('/', require('./routes/demo'));
 // Last: event series addresses (/wam/2026) must not shadow other pages.
 app.use('/', require('./routes/events'));
 

@@ -116,7 +116,7 @@ async function refresh({ contest, settings, eventWikis = [], now = new Date() })
   const errors = [];
   const participants = await prisma.contestMembership.findMany({
     where: { contestId: contest.id, role: 'participant', status: 'active' },
-    include: { user: { select: { username: true, isDemo: true } } },
+    include: { user: { select: { username: true } } },
   });
 
   for (const eventWiki of parts) {
@@ -126,7 +126,7 @@ async function refresh({ contest, settings, eventWikis = [], now = new Date() })
     if (!from || from > now) continue;
     const until = eff.contest.endDate && eff.contest.endDate < now ? eff.contest.endDate : now;
     const t = enabledFor(eff.settings);
-    const users = participants.filter((m) => !m.user.isDemo && (!m.wiki || m.wiki === wiki || parts.length === 1)).map((m) => m.user.username);
+    const users = participants.filter((m) => (!m.wiki || m.wiki === wiki || parts.length === 1)).map((m) => m.user.username);
     const jobs = [
       t.participants && users.length && participantEdits(wiki, users, from, until),
       t.hashtags.length && hashtagEdits(wiki, t.hashtags, from, until),

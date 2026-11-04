@@ -150,8 +150,7 @@ async function maintenancePage(req, res, next) {
 async function downloadBackup(req, res, next) {
   try {
     const file = await maintenance.backup(req.user.id);
-    const name = `zury-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.db`;
-    res.download(file, name, () => require('fs').unlink(file, () => {}));
+    res.download(file, require('path').basename(file));
   } catch (err) {
     next(err);
   }

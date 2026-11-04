@@ -49,7 +49,6 @@
             <a href="/dashboard" class="dropdown-item"><i class="ti ti-layout-dashboard me-2"></i><%= t('Dashboard') %></a>
             <a href="/submissions" class="dropdown-item"><i class="ti ti-files me-2"></i><%= t('My submissions') %></a>
             <a href="/settings" class="dropdown-item"><i class="ti ti-settings me-2"></i><%= t('Preferences') %></a>
-            <% if (demoMode) { %><a href="/demo" class="dropdown-item"><i class="ti ti-users-group me-2"></i><%= t('Switch demo user') %></a><% } %>
             <div class="dropdown-divider"></div>
             <form action="/logout" method="post" class="m-0">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -58,7 +57,6 @@
           </div>
         </div>
       <% } else { %>
-        <% if (demoMode) { %><a href="/demo" class="btn d-none d-md-inline-flex"><%= t('Try a demo user') %></a><% } %>
         <a href="/login" class="btn btn-primary"><i class="ti ti-brand-wikipedia me-1"></i><%= t('Log in') %></a>
       <% } %>
     </div>

@@ -20,7 +20,7 @@ async function sweep() {
 // Looks for new contributions in every running event that tracks them.
 async function trackingSweep() {
   try {
-    const events = await prisma.contest.findMany({ where: { status: 'active', deletedAt: null, isDemo: false }, include: { settings: true, wikis: true } });
+    const events = await prisma.contest.findMany({ where: { status: 'active', deletedAt: null }, include: { settings: true, wikis: true } });
     for (const { settings, wikis, ...contest } of events) {
       if (!settings || !trackingService.isTracking(settings)) continue;
       const { added, errors } = await trackingService.refresh({ contest, settings, eventWikis: wikis });
@@ -41,6 +41,10 @@ const server = app.listen(env.port, () => {
     .catch((err) => console.error('Wiki catalog refresh failed:', err.message));
   sweep();
   setInterval(sweep, STATUS_SWEEP_MS).unref();
+  // A backup every day (and the first one an hour after start).
+  const backupNow = () => require('./services/backupService').write('daily').then((f) => console.log(`Backup written: ${f}`)).catch((err) => console.error('Backup failed:', err.message));
+  setTimeout(backupNow, 60 * 60 * 1000).unref();
+  setInterval(backupNow, 24 * 60 * 60 * 1000).unref();
   setInterval(trackingSweep, TRACKING_SWEEP_MS).unref();
 });
 

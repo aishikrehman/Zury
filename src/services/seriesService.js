@@ -88,7 +88,6 @@ async function nextEdition({ actorId, series }) {
         previousEditionUrl: '',
         status: 'draft',
         statusMode: 'auto',
-        isDemo: latest.isDemo,
         createdById: actorId,
         settings: { create: copySettings },
         wikis: { create: wikis.map((w) => ({ wiki: w.wiki, code: w.code, status: w.status === 'pending' ? 'pending' : 'active', overrides: w.overrides })) },

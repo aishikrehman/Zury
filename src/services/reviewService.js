@@ -109,20 +109,6 @@ const QUEUE_SORTS = {
   title: [{ title: 'asc' }],
 };
 
-// The strip of entries at the top of the review page: the current one and those around it.
-async function queueStrip({ ids, currentId, jurorId, size = 14 }) {
-  const at = Math.max(0, ids.indexOf(currentId));
-  const start = Math.max(0, Math.min(at - 2, ids.length - size));
-  const window = ids.slice(start, start + size);
-  if (currentId && !window.includes(currentId)) window.unshift(currentId);
-  const rows = await prisma.submission.findMany({
-    where: { id: { in: window } },
-    select: { id: true, title: true, wordCount: true, status: true, participant: { select: { username: true } }, reviews: { where: { jurorId }, select: { decision: true } } },
-  });
-  const byId = new Map(rows.map((r) => [r.id, r]));
-  return { items: window.map((id) => byId.get(id)).filter(Boolean), position: ids.indexOf(currentId) + 1, total: ids.length };
-}
-
 // Each jury member's work: reviews, accepted and rejected, and when they last reviewed.
 async function juryActivity(contestId, { wiki } = {}) {
   const where = { contestId, ...(wiki && { submission: { wiki } }) };
@@ -476,7 +462,7 @@ function appeals(contestId) {
   });
 }
 
-module.exports = { juryActivity, queueStrip, queuePage, QUEUE_SORTS,
+module.exports = { juryActivity, queuePage, QUEUE_SORTS,
   REVIEWABLE,
   assignedMode,
   jurorsFor,

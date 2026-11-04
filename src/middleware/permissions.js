@@ -14,7 +14,7 @@ function forbidden() {
 // Paths that can never be an event series (they belong to the app).
 const RESERVED = new Set([
   'events', 'contest', 'admin', 'api', 'users', 'dashboard', 'settings', 'submissions', 'login', 'logout',
-  'auth', 'demo', 'layout', 'preferences', 'review', 'vendor', 'css', 'js', 'images', 'about', 'favicon.ico', 'series', 'robots.txt', 'sitemap.xml', 'icons',
+  'auth', 'layout', 'preferences', 'review', 'vendor', 'css', 'js', 'images', 'about', 'favicon.ico', 'series', 'robots.txt', 'sitemap.xml', 'icons',
 ]);
 
 const notFound = (res) => res.status(404).render('pages/404', { title: 'Event Not Found' });

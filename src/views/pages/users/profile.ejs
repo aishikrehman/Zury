@@ -15,7 +15,7 @@
         <h2 class="page-title"><%= profileUser.username %></h2>
       </div>
       <div class="col-auto ms-auto btn-list">
-        <% if (!profileUser.isDemo) { %><a class="btn btn-outline-secondary" href="<%= wikiUserUrl %>" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i><%= t("Wikimedia account") %></a><% } %>
+        <a class="btn btn-outline-secondary" href="<%= wikiUserUrl %>" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i><%= t("Wikimedia account") %></a>
         <% if (isOwnProfile) { %><a class="btn btn-primary" href="/settings"><i class="ti ti-settings me-1"></i><%= t("Preferences") %></a><% } %>
       </div>
     </div>

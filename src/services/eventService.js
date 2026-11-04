@@ -42,8 +42,7 @@ async function seriesFields(tx, series, title, excludeId) {
   return { seriesId: row.id, edition: series.edition };
 }
 
-// Events made by demo users are demo data too, so re-seeding removes them.
-async function create({ actorId, type, parsed, autoSlug, isDemo = false }) {
+async function create({ actorId, type, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug });
     const series = await seriesFields(tx, parsed.series, parsed.contest.title);
@@ -53,7 +52,6 @@ async function create({ actorId, type, parsed, autoSlug, isDemo = false }) {
         ...series,
         slug,
         type,
-        isDemo,
         status: 'draft',
         createdById: actorId,
         settings: { create: { ...defaultSettings(type), ...parsed.settings } },

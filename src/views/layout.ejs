@@ -41,7 +41,7 @@
       ],
     });
   }
-  const htmlClasses = [ui.wide && 'zury-wide', ui.textLarge && 'zury-text-lg'].filter(Boolean).join(' ');
+  const htmlClasses = uiClasses;
 %>
 <!DOCTYPE html>
 <html lang="<%= lang.code %>" dir="<%= lang.dir %>"<% if (htmlClasses) { %> class="<%= htmlClasses %>"<% } %>>
@@ -64,14 +64,8 @@
   <%- include('partials/header', { navItems }) %>
 
   <main id="content" class="z-main">
-    <% if (demoMode || (typeof flash !== 'undefined' && flash)) { %>
+    <% if (typeof flash !== 'undefined' && flash) { %>
       <div class="container-xl pt-3">
-        <% if (demoMode) { %>
-          <div class="flash flash-warn mb-2" role="note">
-            <i class="ti ti-flask"></i><span><strong><%= t("Demo mode.") %></strong> <%= t("Everything here is sample data.") %></span>
-            <a href="/demo" class="ms-auto"><%= t("Switch demo user") %></a>
-          </div>
-        <% } %>
         <% if (typeof flash !== 'undefined' && flash) { %>
           <div class="flash flash-<%= flash.type === 'danger' ? 'error' : flash.type === 'warning' ? 'warn' : 'success' %>" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
             <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : flash.type === 'warning' ? 'alert-triangle' : 'circle-check' %>"></i><span><%= t(flash.message) %></span>

@@ -14,7 +14,7 @@ async function safe(fn, label) {
 }
 
 async function wikimediaBans(user, wiki) {
-  if (!user || user.isDemo) return [];
+  if (!user) return [];
   const reasons = [];
   const [global, globalBlocks, local] = await Promise.all([
     safe(() => wikiApi.get('metawiki', { action: 'query', meta: 'globaluserinfo', guiuser: user.username }), 'global lock'),

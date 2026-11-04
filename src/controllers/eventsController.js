@@ -96,7 +96,6 @@ async function create(req, res, next) {
       type,
       parsed,
       autoSlug: parsed.autoSlug,
-      isDemo: req.user.isDemo,
     });
     const problems = await addStartingTeam(req, contest, { ...contestForm.defaultSettings(type), ...parsed.settings });
     req.flash('success', 'Event created as a draft. Review the settings, then publish it when ready.');

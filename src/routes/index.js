@@ -8,7 +8,7 @@ const router = express.Router();
 // Search engines: what to skip, and every public event and series.
 router.get('/robots.txt', (req, res) => {
   const origin = `${req.protocol}://${req.get('host')}`;
-  res.type('text/plain').send(['User-agent: *', 'Disallow: /admin', 'Disallow: /api', 'Disallow: /settings', 'Disallow: /dashboard', 'Disallow: /review', 'Disallow: /demo', 'Disallow: /login', 'Disallow: /*/export/', `Sitemap: ${origin}/sitemap.xml`, ''].join('\n'));
+  res.type('text/plain').send(['User-agent: *', 'Disallow: /admin', 'Disallow: /api', 'Disallow: /settings', 'Disallow: /dashboard', 'Disallow: /review', 'Disallow: /login', 'Disallow: /*/export/', `Sitemap: ${origin}/sitemap.xml`, ''].join('\n'));
 });
 
 router.get('/sitemap.xml', async (req, res, next) => {

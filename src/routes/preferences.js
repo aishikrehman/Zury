@@ -8,12 +8,17 @@ const router = express.Router();
 const safeNext = (value, fallback) =>
   typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : fallback;
 
+const display = require('../config/displayOptions');
+
 async function save(req, changes) {
   if (!Object.keys(changes).length) return;
   if (req.user) {
-    const data = {};
-    if ('wide' in changes) data.uiWide = changes.wide;
-    if ('textLarge' in changes) data.uiTextLarge = changes.textLarge;
+    let prefs = {};
+    try { prefs = JSON.parse(req.user.uiPrefs || '{}'); } catch { prefs = {}; }
+    const { wide, textLarge, ...rest } = changes;
+    const data = { uiPrefs: JSON.stringify({ ...prefs, ...rest }) };
+    if (wide !== undefined) data.uiWide = wide;
+    if (textLarge !== undefined) data.uiTextLarge = textLarge;
     await prisma.user.update({ where: { id: req.user.id }, data });
   } else {
     req.session.ui = { ...(req.session.ui || {}), ...changes };
@@ -23,10 +28,13 @@ async function save(req, changes) {
 router.get('/preferences/display', async (req, res, next) => {
   try {
     const changes = {};
-    for (const key of ['wide', 'textLarge']) {
+    for (const key of Object.keys(display.SWITCHES)) {
       if (req.query[key] === '1' || req.query[key] === '0') changes[key] = req.query[key] === '1';
     }
+    if (display.THEMES.includes(req.query.theme)) changes.theme = req.query.theme;
     await save(req, changes);
+    // The page's script asks for no redirect: the option is already applied, nothing reloads.
+    if (req.get('x-requested-with') === 'zury') return res.status(204).end();
     res.redirect(safeNext(req.query.next, '/'));
   } catch (err) {
     next(err);

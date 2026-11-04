@@ -19,7 +19,7 @@
           <form method="post" action="/admin/maintenance/backup" class="d-flex flex-wrap align-items-center gap-2">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button class="btn btn-primary" type="submit"><i class="ti ti-download me-1"></i><%= t('Download a backup') %></button>
-            <span class="text-secondary small"><%= t('A full copy of the database, without anyone\'s sign-in session. Keep it somewhere private.') %></span>
+            <span class="text-secondary small"><%= t('Every table except sign-in sessions, as compressed JSON. One is also made every day and before each update; the last 14 are kept.') %></span>
           </form>
         </div>
       </div>

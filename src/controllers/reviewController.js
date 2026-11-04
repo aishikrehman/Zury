@@ -208,7 +208,7 @@ async function results(req, res, next) {
     res.render('pages/contest/results', {
       title: `Results and statistics — ${req.contest.title}`,
       rows: showRanking ? await reviewService.leaderboard({ contest: req.contest, settings: req.eventSettings, wiki }) : [],
-      // The demo and older events may lack word counts: then points decide, and no word column.
+      // Events without word counts are ranked by points, with no word column.
       showRanking,
       progress: insider ? await reviewService.progress(req.contest.id, { wiki }) : null,
       stats: showStats ? await require('../services/statsService').eventStats(req.contest, { wiki }) : null,

@@ -1,8 +1,6 @@
 const prisma = require('../config/prisma');
 const contestService = require('../services/contestService');
 const statsService = require('../services/statsService');
-const { ensureCsrfToken } = require('../middleware/csrf');
-const env = require('../config/env');
 
 async function index(req, res, next) {
   // Like GitHub: the home page is for visitors; people who are logged in start on their dashboard.
@@ -20,12 +18,6 @@ async function index(req, res, next) {
       ]),
       statsService.platformStats(),
     ]);
-    // The demo user picker in the login wizard posts a form, which needs a token.
-    let demoUsers = [];
-    if (env.demoMode && !req.user) {
-      ensureCsrfToken(req, res);
-      demoUsers = (await require('./demoController').switchable()).map((u) => ({ id: u.id, username: u.username }));
-    }
     // Yours first: events in your language and events that span several wikis, unless you ask for all.
     const lang = (req.user && req.user.preferredLanguage) || req.lang || res.locals.lang?.code || 'en';
     const all = req.query.all === '1';
@@ -50,7 +42,6 @@ async function index(req, res, next) {
       calendar: { year, month: mon, start: monthStart, events: all ? calendarEvents : calendarEvents.filter(mineFirst) },
       title: 'Zury — Wikimedia Contests & Events',
       stats: { events: stats[0], submissions: stats[1], users: stats[2], wikis: stats[3] },
-      demoUsers,
       trend: platform.submissions,
       active,
       upcoming,

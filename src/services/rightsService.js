@@ -53,7 +53,6 @@ async function refreshFromWikimedia(user) {
 }
 
 function needsRefresh(user, now = new Date()) {
-  if (user.isDemo) return false;
   return !user.rightsCheckedAt || now - user.rightsCheckedAt > REFRESH_AFTER_MS;
 }
 

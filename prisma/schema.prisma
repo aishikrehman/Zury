@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -17,7 +17,7 @@ model User {
   // Demo users use negative IDs so they can never collide with real accounts.
   wikimediaId           Int       @unique
   username              String    @unique
-  avatarUrl             String?
+  avatarUrl             String? @db.Text
   homeWiki              String?
   wikimediaRegisteredAt DateTime?
   // Global edit count from CentralAuth, refreshed with rights; used for eligibility.
@@ -25,13 +25,14 @@ model User {
   preferredLanguage     String?
   timezone              String?
   status                String    @default("active")
-  isDemo                Boolean   @default(false)
   rightsCheckedAt       DateTime?
   // Display preferences.
   uiLayout              String?
   uiWide                Boolean   @default(false)
   uiTextLarge           Boolean   @default(false)
   uiSidebarCollapsed    Boolean   @default(false)
+  // JSON: the other display options (see src/config/displayOptions.js).
+  uiPrefs               String @db.Text    @default("{}")
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   lastLoginAt           DateTime?
@@ -90,8 +91,8 @@ model UserWikiRole {
 model Contest {
   id                  Int       @id @default(autoincrement())
   slug                String    @unique
-  title               String
-  description         String    @default("")
+  title               String @db.VarChar(1000)
+  description         String @db.Text    @default("")
   type                String
   status              String    @default("draft")
   // "auto": status follows the dates once published. "manual": pinned by an organizer.
@@ -100,18 +101,18 @@ model Contest {
   organizingCommunity String    @default("")
   primaryWiki         String
   // JSON array of wiki database names.
-  additionalWikis     String    @default("[]")
+  additionalWikis     String @db.Text    @default("[]")
   language            String    @default("en")
   timezone            String    @default("UTC")
-  contactInfo         String    @default("")
+  contactInfo         String @db.Text    @default("")
   // Kind of project, e.g. "glam", "education" (see PROJECT_CATEGORIES).
   category            String    @default("")
   // Link to the previous edition's page, for recurring events run elsewhere before.
-  previousEditionUrl  String    @default("")
+  previousEditionUrl  String @db.Text    @default("")
   // The event's main category on the wiki, without "Category:".
-  mainCategory        String    @default("")
-  logoUrl             String?
-  bannerUrl           String?
+  mainCategory        String @db.Text    @default("")
+  logoUrl             String? @db.Text
+  bannerUrl           String? @db.Text
 
   // All stored in UTC; entered and shown in the event's timezone.
   registrationOpensAt  DateTime?
@@ -125,7 +126,6 @@ model Contest {
   appealDeadline       DateTime?
   resultsAnnouncedAt   DateTime?
 
-  isDemo      Boolean   @default(false)
   // Recurring events: /<series slug>/<edition>, e.g. /wam/2026.
   seriesId    Int?
   edition     String?
@@ -167,8 +167,7 @@ model EventSeries {
   id          Int      @id @default(autoincrement())
   slug        String   @unique
   title       String
-  description String   @default("")
-  isDemo      Boolean  @default(false)
+  description String @db.Text   @default("")
   createdAt   DateTime @default(now())
 
   editions Contest[]
@@ -184,8 +183,11 @@ model ContestWiki {
   // active | pending (requested, awaiting approval) | paused
   status        String   @default("active")
   // JSON: { contest: {...}, settings: {...}, typeConfig: {...} } — only overridden fields.
-  overrides     String   @default("{}")
+  overrides     String @db.Text   @default("{}")
   requestedById Int?
+  // The Fountain editathon this wiki follows (fountain.toolforge.org/editathons/<code>), if any.
+  fountainCode  String   @default("")
+  fountainSyncedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -222,14 +224,14 @@ model ContestSettings {
   allowOrganizerParticipation Boolean @default(false)
   anonymousParticipants       Boolean @default(false)
   // JSON array of namespace numbers; empty means the event type's default.
-  eligibleNamespaces          String  @default("[]")
-  typeConfig                  String  @default("{}")
+  eligibleNamespaces          String @db.Text  @default("[]")
+  typeConfig                  String @db.Text  @default("{}")
   // Contribution tracking. Participant tracking uses contributionDiscoveryEnabled.
   // JSON arrays: hashtags without "#", categories without "Category:".
-  trackHashtags               String  @default("[]")
-  trackCategories             String  @default("[]")
+  trackHashtags               String @db.Text  @default("[]")
+  trackCategories             String @db.Text  @default("[]")
   // Jury marks (Fountain-style), JSON: [{ name, values: [{ label, points }] }].
-  marks                       String  @default("[]")
+  marks                       String @db.Text  @default("[]")
   // Reviews an entry needs before it is decided; the majority decides.
   requiredReviews             Int     @default(1)
   // open: any jury member of the entry's wiki may review it.
@@ -285,8 +287,8 @@ model Submission {
   submittedById Int
   // Wiki database name, e.g. "commonswiki".
   wiki          String
-  title         String
-  url           String
+  title         String @db.VarChar(1000)
+  url           String @db.Text
   // Stable identity for duplicate checks: page ID, or entity ID on Wikidata.
   pageKey       String
   // article | file | item | property | lexeme | page
@@ -294,9 +296,9 @@ model Submission {
   // pending | validated | invalid | under_review | approved | rejected | disqualified | withdrawn | appealed
   status        String
   // JSON: normalized metadata from the wiki at the last check.
-  metadata      String   @default("{}")
+  metadata      String @db.Text   @default("{}")
   // JSON: { errors: [], warnings: [] } from the last rule check.
-  validation    String   @default("{}")
+  validation    String @db.Text   @default("{}")
   checkedAt     DateTime?
   submittedAt   DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -329,9 +331,9 @@ model SubmissionHistory {
   actorId       Int?
   // submitted | status_changed | revalidated | withdrawn
   action        String
-  previousValue String?
-  newValue      String?
-  note          String?
+  previousValue String? @db.VarChar(1000)
+  newValue      String? @db.VarChar(1000)
+  note          String? @db.Text
   createdAt     DateTime @default(now())
 
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
@@ -393,7 +395,7 @@ model AuditLog {
   entityType String
   entityId   String?
   // JSON-encoded; SQLite has no native JSON column in Prisma 5.
-  details    String?
+  details    String? @db.Text
   createdAt  DateTime @default(now())
 
   actor   User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
@@ -408,7 +410,7 @@ model EventBlock {
   id          Int       @id @default(autoincrement())
   contestId   Int
   userId      Int
-  reason      String    @default("")
+  reason      String @db.Text    @default("")
   blockedById Int?
   createdAt   DateTime  @default(now())
   liftedAt    DateTime?
@@ -426,19 +428,19 @@ model EventSession {
   contestId  Int
   // Wiki database name the session belongs to; "" means the whole event.
   wiki       String    @default("")
-  title      String
+  title      String @db.VarChar(1000)
   // planned | open | held | cancelled
   status     String    @default("planned")
   // online | offline | hybrid
   mode       String    @default("offline")
   startsAt   DateTime
   endsAt     DateTime?
-  location   String    @default("")
-  meetingUrl String    @default("")
+  location   String @db.Text    @default("")
+  meetingUrl String @db.Text    @default("")
   capacity   Int?
-  agenda     String    @default("")
+  agenda     String @db.Text    @default("")
   // Written after the session: what happened, outcomes.
-  report     String    @default("")
+  report     String @db.Text    @default("")
   createdAt  DateTime  @default(now())
 
   contest     Contest             @relation(fields: [contestId], references: [id], onDelete: Cascade)
@@ -474,12 +476,12 @@ model Contribution {
   source    String
   username  String   @default("")
   userId    Int?
-  pageTitle String
+  pageTitle String @db.VarChar(1000)
   ns        Int      @default(0)
   revId     Int?
   isNew     Boolean  @default(false)
   sizeDiff  Int      @default(0)
-  comment   String   @default("")
+  comment   String @db.Text   @default("")
   timestamp DateTime
   foundAt   DateTime @default(now())
 
@@ -493,7 +495,7 @@ model Contribution {
 // Login sessions, kept in the database so they survive restarts.
 model Session {
   sid       String   @id
-  data      String
+  data      String @db.Text
   expiresAt DateTime
 
   @@index([expiresAt])
@@ -508,9 +510,9 @@ model Review {
   // accept | reject
   decision     String
   // JSON: { "<mark name>": "<value label>" }
-  marks        String   @default("{}")
+  marks        String @db.Text   @default("{}")
   points       Float    @default(0)
-  comment      String   @default("")
+  comment      String @db.Text   @default("")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -528,10 +530,10 @@ model Appeal {
   contestId    Int
   submissionId Int
   userId       Int
-  reason       String
+  reason       String @db.Text
   // open | upheld | dismissed
   status       String    @default("open")
-  response     String    @default("")
+  response     String @db.Text    @default("")
   resolvedById Int?
   createdAt    DateTime  @default(now())
   resolvedAt   DateTime?

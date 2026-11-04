@@ -28,7 +28,7 @@
                     <%- include('../../partials/avatar', { u, size: 'sm' }) %>
                     <div class="ms-2 min-w-0">
                       <a href="<%= userPath(u.username) %>" class="fw-medium text-reset"><%= u.username %></a>
-                      <div class="text-secondary small"><%= u.homeWiki ? wikiLocal(u.homeWiki) : '' %><% if (u.isDemo) { %> · <span class="text-warning"><%= t('demo') %></span><% } %></div>
+                      <div class="text-secondary small"><%= u.homeWiki ? wikiLocal(u.homeWiki) : '' %></div>
                     </div>
                   </div>
                 </td>

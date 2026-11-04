@@ -57,5 +57,26 @@ document.addEventListener('change', (e) => {
   }
 });
 
-// Keep the current entry of the review strip in view.
-document.querySelectorAll('[data-strip] .active').forEach((el) => el.scrollIntoView({ block: 'nearest', inline: 'center' }));
+
+// Display options: switch at once (class on <html>), save in the background, keep the panel open.
+document.addEventListener('click', (e) => {
+  const sw = e.target instanceof Element && e.target.closest('[data-ui-switch], [data-ui-theme]');
+  if (!sw) return;
+  e.preventDefault();
+  const html = document.documentElement;
+  let query;
+  if (sw.dataset.uiTheme) {
+    html.classList.remove('z-theme-light', 'z-theme-dark');
+    if (sw.dataset.uiTheme !== 'auto') html.classList.add(`z-theme-${sw.dataset.uiTheme}`);
+    sw.parentElement.querySelectorAll('[data-ui-theme]').forEach((b) => { b.classList.toggle('active', b === sw); b.setAttribute('aria-pressed', String(b === sw)); });
+    query = `theme=${sw.dataset.uiTheme}`;
+  } else {
+    const on = sw.getAttribute('aria-checked') !== 'true';
+    html.classList.toggle(sw.dataset.uiClass, on);
+    sw.setAttribute('aria-checked', String(on));
+    const box = sw.querySelector('input');
+    if (box) box.checked = on;
+    query = `${sw.dataset.uiSwitch}=${on ? 1 : 0}`;
+  }
+  fetch(`/preferences/display?${query}`, { headers: { 'X-Requested-With': 'zury' }, credentials: 'same-origin' }).catch(() => {});
+});

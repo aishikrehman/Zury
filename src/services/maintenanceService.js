@@ -1,15 +1,13 @@
 // Site upkeep for superusers: how big things are, a database backup, and clean-up.
-const fs = require('fs');
 const os = require('os');
-const path = require('path');
-const { PrismaClient } = require('@prisma/client');
 const prisma = require('../config/prisma');
 const audit = require('./auditService');
+const backups = require('./backupService');
 
-// The SQLite file behind DATABASE_URL (Prisma reads relative paths from prisma/).
-function dbFile() {
-  const raw = (process.env.DATABASE_URL || '').replace(/^file:/, '').split('?')[0];
-  return path.isAbsolute(raw) ? raw : path.join(__dirname, '..', '..', 'prisma', raw);
+// The database's size on the server, from MariaDB's own table statistics.
+async function databaseBytes() {
+  const [row] = await prisma.$queryRawUnsafe('SELECT COALESCE(SUM(data_length + index_length), 0) AS bytes FROM information_schema.tables WHERE table_schema = DATABASE()');
+  return Number(row.bytes);
 }
 
 const TABLES = [
@@ -18,7 +16,6 @@ const TABLES = [
 ];
 
 async function status() {
-  const file = dbFile();
   const counts = await Promise.all(TABLES.map(([, model]) => prisma[model].count()));
   const [expired, oldestLog] = await Promise.all([
     prisma.session.count({ where: { expiresAt: { lt: new Date() } } }),
@@ -26,7 +23,8 @@ async function status() {
   ]);
   const mem = process.memoryUsage();
   return {
-    dbBytes: fs.existsSync(file) ? fs.statSync(file).size : 0,
+    dbBytes: await databaseBytes(),
+    backups: backups.list().slice(0, 5),
     tables: TABLES.map(([label], i) => ({ label, count: counts[i] })),
     expiredSessions: expired,
     oldestLog: oldestLog?.createdAt || null,
@@ -38,19 +36,11 @@ async function status() {
   };
 }
 
-// A consistent copy of the whole database (VACUUM INTO), without anyone's sign-in session.
+// A fresh backup (every table but sign-in sessions), also kept with the daily ones.
 async function backup(actorId) {
-  const copy = path.join(os.tmpdir(), `zury-backup-${Date.now()}.db`);
-  await prisma.$executeRawUnsafe(`VACUUM INTO '${copy.replace(/'/g, "''")}'`);
-  const client = new PrismaClient({ datasources: { db: { url: `file:${copy}` } } });
-  try {
-    await client.$executeRawUnsafe('DELETE FROM "Session"');
-    await client.$executeRawUnsafe('VACUUM');
-  } finally {
-    await client.$disconnect();
-  }
-  await audit.record({ actorId, action: 'site.backup', entityType: 'Site', entityId: 'database', details: { bytes: fs.statSync(copy).size } });
-  return copy;
+  const file = await backups.write('manual');
+  await audit.record({ actorId, action: 'site.backup', entityType: 'Site', entityId: 'database', details: { file: require('path').basename(file) } });
+  return file;
 }
 
 async function cleanUp({ actorId, task }) {
@@ -67,4 +57,4 @@ async function cleanUp({ actorId, task }) {
   return removed;
 }
 
-module.exports = { status, backup, cleanUp, dbFile };
+module.exports = { status, backup, cleanUp };

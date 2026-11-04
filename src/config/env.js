@@ -8,16 +8,11 @@ for (const [ours, theirs] of [['SESSION_SECRET', 'SECRET_KEY'], ['WIKIMEDIA_CONS
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 
-// Demo login lets anyone become any demo user, so it can never run in production.
-function isDemoModeEnabled(vars = process.env) {
-  return vars.DEMO_MODE === 'true' && (vars.NODE_ENV || 'development') !== 'production';
-}
 
 const env = {
   port: parseInt(process.env.PORT, 10) || 5000,
   nodeEnv,
   sessionSecret: process.env.SESSION_SECRET,
-  demoMode: isDemoModeEnabled(),
   wikimedia: {
     consumerKey: process.env.WIKIMEDIA_CONSUMER_KEY,
     consumerSecret: process.env.WIKIMEDIA_CONSUMER_SECRET,
@@ -27,7 +22,6 @@ const env = {
     apiUrlTemplate: process.env.WIKIMEDIA_API_URL_TEMPLATE || null,
   },
   userAgent: 'Zury/0.1 (https://github.com/aishikrehman/Zury)',
-  isDemoModeEnabled,
 };
 
 if (!env.sessionSecret) {
@@ -51,8 +45,6 @@ if (nodeEnv === 'production') {
   const problems = productionProblems();
   if (problems.length) throw new Error(`Zury can't start in production:\n- ${problems.join('\n- ')}`);
 }
-if (process.env.DEMO_MODE === 'true' && !env.demoMode) {
-  console.warn('DEMO_MODE is ignored in production.');
-}
+
 
 module.exports = env;

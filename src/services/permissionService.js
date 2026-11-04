@@ -35,7 +35,7 @@ function buildSubject(user, now = new Date()) {
     if (PLATFORM_ROLES[role]?.source === 'zury') platformRoles.add(role);
   }
   for (const right of user.wikiRoles || []) {
-    const fresh = right.verificationSource === 'demo' || now - new Date(right.verifiedAt) <= RIGHTS_MAX_AGE_MS;
+    const fresh = now - new Date(right.verifiedAt) <= RIGHTS_MAX_AGE_MS;
     if (!fresh) continue;
     if (right.wiki === '*' && GLOBAL_GROUP_ROLES[right.rightName]) {
       platformRoles.add(GLOBAL_GROUP_ROLES[right.rightName]);

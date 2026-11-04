@@ -30,7 +30,7 @@ async function recipients({ contestId, audience, wiki, usernames = [] }) {
       ...(wiki && { wiki: audience === 'participant' ? wiki : { in: ['', wiki] } }),
       user: { status: 'active', eventBlocks: { none: { contestId, liftedAt: null } } },
     },
-    include: { user: { select: { id: true, username: true, homeWiki: true, isDemo: true } } },
+    include: { user: { select: { id: true, username: true, homeWiki: true } } },
     orderBy: { user: { username: 'asc' } },
   });
   const wanted = new Set(usernames.map((u) => u.trim().toLowerCase()).filter(Boolean));
