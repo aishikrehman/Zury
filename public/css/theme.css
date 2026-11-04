@@ -6,14 +6,15 @@
 
 /* ── Palette ─────────────────────────────────────────────────────────────── */
 :root {
-  --z-brand: #066fd1;
-  --z-brand-hover: #055db0;
-  --z-brand-soft: #e8f2fd;
-  --z-brand-ink: #044a8c;
+  /* Wikimedia blue, green and red (the logo's colours) */
+  --z-brand: #3366cc;
+  --z-brand-hover: #2a4b8d;
+  --z-brand-soft: #eaf3ff;
+  --z-brand-ink: #2a4b8d;
   --z-sun: #ffd43b;
   --z-violet: #6d4aff;
-  --z-gradient: linear-gradient(135deg, #066fd1 0%, #4f5bff 55%, #8a4dff 100%);
-  --z-gradient-soft: linear-gradient(135deg, #eef5ff 0%, #f3f0ff 100%);
+  --z-gradient: linear-gradient(135deg, #3366cc 0%, #2a4b8d 100%);
+  --z-gradient-soft: linear-gradient(180deg, #f5f8fd 0%, #ffffff 100%);
 
   --z-fg: #1b2330;
   --z-fg-muted: #5f6b7a;
@@ -24,12 +25,12 @@
   --z-border-strong: #d0d8e2;
   --z-hover: #f1f4f8;
 
-  --z-green: #12a150;
-  --z-green-soft: #e3f7ec;
+  --z-green: #339966;
+  --z-green-soft: #e6f4ec;
   --z-amber: #b7791f;
   --z-amber-soft: #fff6dd;
-  --z-red: #d6334a;
-  --z-red-soft: #fdecee;
+  --z-red: #990000;
+  --z-red-soft: #fbeaea;
   --z-purple: #7c4dff;
   --z-purple-soft: #f1ebff;
   --z-orange: #e8590c;
@@ -44,7 +45,7 @@
   --z-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
   --z-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
   --z-shadow-lg: 0 12px 32px -12px rgba(16, 24, 40, 0.18), 0 4px 8px -4px rgba(16, 24, 40, 0.06);
-  --z-ring: 0 0 0 3px rgba(6, 111, 209, 0.18);
+  --z-ring: 0 0 0 3px rgba(51, 102, 204, 0.2);
 
   --z-font: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Serif Bengali Variable", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --z-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -52,11 +53,11 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --z-brand: #4c9bff;
+    --z-brand: #6d9eeb;
     --z-brand-hover: #6aaeff;
     --z-brand-soft: rgba(76, 155, 255, 0.14);
     --z-brand-ink: #9cc7ff;
-    --z-gradient-soft: linear-gradient(135deg, #111b2e 0%, #18142b 100%);
+    --z-gradient-soft: linear-gradient(180deg, #111a2b 0%, #0b0f17 100%);
     --z-fg: #e7ecf3;
     --z-fg-muted: #94a0b2;
     --z-bg: #0b0f17;
@@ -65,11 +66,11 @@
     --z-border: #222b3a;
     --z-border-strong: #2e394b;
     --z-hover: #1a2231;
-    --z-green: #3fcf7f;
+    --z-green: #5cbf8a;
     --z-green-soft: rgba(63, 207, 127, 0.13);
     --z-amber: #f0b429;
     --z-amber-soft: rgba(240, 180, 41, 0.13);
-    --z-red: #ff6b7f;
+    --z-red: #e06666;
     --z-red-soft: rgba(255, 107, 127, 0.13);
     --z-purple: #a98bff;
     --z-purple-soft: rgba(169, 139, 255, 0.14);
@@ -105,7 +106,11 @@
   --tblr-border-radius: var(--z-radius-sm);
   --tblr-border-radius-lg: var(--z-radius);
   --tblr-primary: var(--z-brand);
-  --tblr-primary-rgb: 6, 111, 209;
+  --tblr-primary-rgb: 51, 102, 204;
+  /* Tabler's blue, green and red follow the Wikimedia colours too. */
+  --tblr-blue: #3366cc; --tblr-blue-rgb: 51, 102, 204;
+  --tblr-green: #339966; --tblr-green-rgb: 51, 153, 102; --tblr-success: #339966; --tblr-success-rgb: 51, 153, 102;
+  --tblr-red: #990000; --tblr-red-rgb: 153, 0, 0; --tblr-danger: #990000; --tblr-danger-rgb: 153, 0, 0;
   --tblr-link-color: var(--z-brand);
   --tblr-link-hover-color: var(--z-brand-hover);
   --tblr-box-shadow: var(--z-shadow);
@@ -510,12 +515,12 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
   position: absolute;
   right: 0; top: 0;
   width: 360px; height: 100%;
-  background: radial-gradient(closest-side, rgba(138, 77, 255, 0.16), transparent);
+  background: none;
   pointer-events: none;
 }
 .gh-repohead > .container-xl { position: relative; z-index: 1; }
 .gh-repohead-title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 1.35rem; letter-spacing: -0.02em; }
-.gh-repohead-title > .ti { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; font-size: 1.15rem; color: #fff; background: var(--z-gradient); border-radius: 10px; box-shadow: 0 6px 14px -6px rgba(79, 91, 255, 0.7); }
+.gh-repohead-title > .ti { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; font-size: 1.15rem; color: #fff; background: var(--z-gradient); border-radius: 10px; box-shadow: 0 6px 14px -6px rgba(51, 102, 204, 0.6); }
 .gh-repohead-title a:not(.btn) { color: var(--z-fg-muted); font-weight: 500; }
 .gh-repohead-title a:not(.btn):hover { color: var(--z-brand); }
 .gh-repohead-title strong a { color: var(--z-fg); font-weight: 750; }
@@ -551,9 +556,9 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
   content: ""; position: absolute; border-radius: 50%; pointer-events: none; filter: blur(10px);
 }
 .z-hero::before { width: 420px; height: 420px; left: -140px; top: -180px; background: radial-gradient(closest-side, rgba(6, 111, 209, 0.22), transparent); }
-.z-hero::after { width: 520px; height: 520px; right: -160px; bottom: -260px; background: radial-gradient(closest-side, rgba(138, 77, 255, 0.2), transparent); }
+.z-hero::after { width: 520px; height: 520px; right: -160px; bottom: -260px; background: none; }
 .z-hero > .container-xl { position: relative; z-index: 1; }
-.z-gradient-text { background: linear-gradient(120deg, var(--z-fg) 10%, var(--z-brand) 55%, #8a4dff 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.z-gradient-text { background: linear-gradient(120deg, var(--z-fg) 20%, var(--z-brand) 80%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .z-hero .card { box-shadow: var(--z-shadow-lg); }
 
 /* ── Floating display button ─────────────────────────────────────────────── */
