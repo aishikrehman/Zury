@@ -155,38 +155,49 @@ async function progress(contestId, { wiki } = {}) {
 async function leaderboard({ contest, settings, wiki }) {
   const where = { contestId: contest.id, ...(wiki && { wiki }) };
   const typeConfig = readTypeConfig(contest.type, settings.typeConfig);
+  const byWords = !!settings.wordCountEnabled;
   let entries;
   let pointsOf;
   if (contest.type === 'proofread') {
-    entries = await prisma.submission.findMany({ where: { ...where, status: { in: ['validated', 'approved'] } }, select: { participantId: true, metadata: true } });
+    entries = await prisma.submission.findMany({ where: { ...where, status: { in: ['validated', 'approved'] } }, select: { participantId: true, metadata: true, wordCount: true } });
     pointsOf = (e) => {
       const level = JSON.parse(e.metadata || '{}').proofread?.level;
       return level >= 4 ? typeConfig.pointsValidated : level === 3 ? typeConfig.pointsProofread : 0;
     };
-  } else if (settings.juryReviewEnabled) {
-    entries = await prisma.submission.findMany({ where: { ...where, status: 'approved' }, select: { participantId: true, score: true } });
-    const hasMarks = markScheme(settings).length > 0;
-    pointsOf = (e) => (hasMarks ? e.score || 0 : 1);
-  } else {
-    entries = await prisma.submission.findMany({ where: { ...where, status: { in: ['validated', 'approved'] } }, select: { participantId: true } });
-    pointsOf = () => 1;
   }
   const rows = new Map();
-  for (const e of entries) {
-    const row = rows.get(e.participantId) || { participantId: e.participantId, entries: 0, points: 0 };
-    row.entries += 1;
-    row.points += pointsOf(e);
-    rows.set(e.participantId, row);
+  if (entries) {
+    for (const e of entries) {
+      const row = rows.get(e.participantId) || { participantId: e.participantId, entries: 0, points: 0, words: 0 };
+      row.entries += 1;
+      row.points += pointsOf(e);
+      row.words += e.wordCount || 0;
+      rows.set(e.participantId, row);
+    }
+  } else {
+    // Added up by the database, one row per person: fast with 100,000+ entries.
+    const jury = settings.juryReviewEnabled;
+    const hasMarks = jury && markScheme(settings).length > 0;
+    const grouped = await prisma.submission.groupBy({
+      by: ['participantId'],
+      where: { ...where, status: jury ? 'approved' : { in: ['validated', 'approved'] } },
+      _count: { _all: true },
+      _sum: { score: true, wordCount: true },
+    });
+    for (const g of grouped) {
+      rows.set(g.participantId, { participantId: g.participantId, entries: g._count._all, points: hasMarks ? g._sum.score || 0 : g._count._all, words: g._sum.wordCount || 0 });
+    }
   }
   const users = await prisma.user.findMany({ where: { id: { in: [...rows.keys()] } }, select: { id: true, username: true } });
   const name = Object.fromEntries(users.map((u) => [u.id, u.username]));
   const sorted = [...rows.values()]
     .map((r) => ({ ...r, points: Math.round(r.points * 100) / 100, username: name[r.participantId] }))
-    .sort((a, b) => b.points - a.points || b.entries - a.entries || a.username.localeCompare(b.username));
-  // Equal points share a rank.
+    .sort((a, b) => (byWords ? b.words - a.words : 0) || b.points - a.points || b.entries - a.entries || a.username.localeCompare(b.username));
+  // Equal scores share a rank.
+  const key = (r) => (byWords ? r.words : r.points);
   let rank = 0;
   return sorted.map((r, i) => {
-    if (i === 0 || r.points !== sorted[i - 1].points) rank = i + 1;
+    if (i === 0 || key(r) !== key(sorted[i - 1])) rank = i + 1;
     return { ...r, rank };
   });
 }

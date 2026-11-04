@@ -272,6 +272,7 @@ async function people(req, res, next) {
       ROLE_MANAGEMENT_PERMISSION,
       overridable: OVERRIDABLE_PERMISSIONS,
       permissionLabels: PERMISSIONS,
+      query: { show: typeof req.query.show === 'string' ? req.query.show : '' },
     });
   } catch (err) {
     next(err);

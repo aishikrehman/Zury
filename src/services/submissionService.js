@@ -135,6 +135,7 @@ async function save({ actor, contest, settings, participant, items, ensurePartic
           entryType: item.meta.entryType,
           status: item.status,
           metadata: JSON.stringify(item.meta),
+          wordCount: item.meta?.wordCount ?? null,
           validation: JSON.stringify({ errors: [], warnings: item.warnings }),
           checkedAt: new Date(),
           history: {
@@ -181,9 +182,10 @@ const SORTS = {
   participant: (dir) => [{ participant: { username: dir } }],
   status: (dir) => [{ status: dir }],
   submitted: (dir) => [{ submittedAt: dir }],
+  words: (dir) => [{ wordCount: { sort: dir, nulls: 'last' } }],
 };
 
-async function list({ contestId, user, can, status, q, mine, wiki, sort = 'submitted', dir = 'desc', page = 1, perPage = 25 }) {
+async function list({ contestId, user, can, status, q, mine, participant, wiki, sort = 'submitted', dir = 'desc', page = 1, perPage = 25 }) {
   let base = visibilityWhere({ contestId, user, can });
   if (!base) return { items: [], total: 0, page, perPage, counts: {} };
   if (wiki) base = { AND: [base, { wiki }] };
@@ -191,7 +193,8 @@ async function list({ contestId, user, can, status, q, mine, wiki, sort = 'submi
   if (STATUSES.includes(status)) where.AND.push({ status });
   if (q) where.AND.push({ title: { contains: q } });
   if (mine && user) where.AND.push({ participantId: user.id });
-  const [items, total, grouped] = await Promise.all([
+  if (participant) where.AND.push({ participantId: participant });
+  const [items, total, grouped, sums, byPerson] = await Promise.all([
     prisma.submission.findMany({
       where,
       orderBy: [...(SORTS[sort] || SORTS.submitted)(dir === 'asc' ? 'asc' : 'desc'), { id: 'desc' }],
@@ -201,8 +204,20 @@ async function list({ contestId, user, can, status, q, mine, wiki, sort = 'submi
     }),
     prisma.submission.count({ where }),
     prisma.submission.groupBy({ by: ['status'], where: base, _count: true }),
+    prisma.submission.aggregate({ where, _sum: { wordCount: true } }),
+    // Everyone with entries here, for the participant filter: entries and words each.
+    prisma.submission.groupBy({ by: ['participantId'], where: base, _count: { _all: true }, _sum: { wordCount: true } }),
   ]);
-  return { items, total, page, perPage, counts: Object.fromEntries(grouped.map((g) => [g.status, g._count])) };
+  // Big events (Wikidata, lexemes) can have thousands of people: the filter lists the
+  // busiest 300, plus whoever is picked; the rest are found through their name in the table.
+  byPerson.sort((x, y) => y._count._all - x._count._all);
+  const shown = byPerson.filter((g, i) => i < 300 || g.participantId === participant);
+  const names = await prisma.user.findMany({ where: { id: { in: shown.map((g) => g.participantId) } }, select: { id: true, username: true } });
+  const nameOf = Object.fromEntries(names.map((u) => [u.id, u.username]));
+  const participants = shown
+    .map((g) => ({ id: g.participantId, username: nameOf[g.participantId] || '?', entries: g._count._all, words: g._sum.wordCount || 0 }))
+    .sort((a, b) => a.username.localeCompare(b.username));
+  return { items, total, page, perPage, counts: Object.fromEntries(grouped.map((g) => [g.status, g._count])), words: sums._sum.wordCount || 0, participants };
 }
 
 async function findVisible({ contestId, id, user, can, wiki }) {
@@ -269,6 +284,7 @@ async function revalidate({ actor, submission, contest, settings, eventWikis = [
       where: { id: submission.id },
       data: {
         metadata: JSON.stringify(meta.exists ? meta : { ...JSON.parse(submission.metadata), exists: false }),
+        ...(meta.exists && { wordCount: meta.wordCount ?? null }),
         validation: JSON.stringify({ errors, warnings: result.warnings }),
         checkedAt: new Date(),
         status,

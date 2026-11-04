@@ -89,7 +89,7 @@ function members(contestId) {
 function overrides(contestId) {
   return prisma.contestPermission.findMany({
     where: { contestId },
-    include: { user: { select: { username: true } } },
+    include: { user: { select: { id: true, username: true, homeWiki: true } } },
     orderBy: [{ userId: 'asc' }, { permission: 'asc' }],
   });
 }

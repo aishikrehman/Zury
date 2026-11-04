@@ -207,6 +207,8 @@ model ContestSettings {
   autoValidationEnabled           Boolean @default(true)
   contributionDiscoveryEnabled    Boolean @default(false)
   badgesEnabled                   Boolean @default(false)
+  // Count the words of each article and show them in tables, results and statistics.
+  wordCountEnabled                Boolean @default(false)
   publicStatisticsEnabled         Boolean @default(true)
   participantNotificationsEnabled Boolean @default(true)
 
@@ -310,8 +312,14 @@ model Submission {
   // Average points of its reviews, set when the entry is decided.
   score       Float?
 
+  // Words in the article at the last check (from metadata), for sorting and totals.
+  wordCount   Int?
+
   @@index([contestId, pageKey])
   @@index([contestId, status])
+  @@index([contestId, participantId])
+  @@index([contestId, submittedAt])
+  @@index([contestId, wordCount])
   @@index([participantId])
 }
 

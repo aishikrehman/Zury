@@ -41,6 +41,7 @@ const FEATURE_FIELDS = [
   ['autoValidationEnabled', 'Automatic validation', 'Entries are checked against the rules when submitted.'],
   ['contributionDiscoveryEnabled', "Track participants' edits", "Participants' edits during the event are found automatically."],
   ['badgesEnabled', 'Badges', 'Award badges to participants and winners.'],
+  ['wordCountEnabled', 'Count by words', 'Rank participants by the words in their accepted articles, and show word counts in tables, results and statistics.'],
   ['publicStatisticsEnabled', 'Public statistics', 'Anyone can see the statistics page.'],
   ['participantNotificationsEnabled', 'Participant notifications', 'Participants are notified about their entries.'],
 ];
@@ -318,6 +319,7 @@ function defaultSettings(type) {
     autoValidationEnabled: true,
     contributionDiscoveryEnabled: false,
     badgesEnabled: false,
+    wordCountEnabled: false,
     publicStatisticsEnabled: true,
     participantNotificationsEnabled: true,
     registrationRequired: false,

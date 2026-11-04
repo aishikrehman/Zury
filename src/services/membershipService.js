@@ -181,7 +181,7 @@ async function isBlocked(contestId, userId, client = prisma) {
 function activeBlocks(contestId) {
   return prisma.eventBlock.findMany({
     where: { contestId, liftedAt: null },
-    include: { user: { select: { id: true, username: true } }, blockedBy: { select: { username: true } } },
+    include: { user: { select: { id: true, username: true, homeWiki: true } }, blockedBy: { select: { username: true } } },
     orderBy: { createdAt: 'desc' },
   });
 }

@@ -39,6 +39,9 @@ async function people(prisma) {
 
 const articleMeta = (wiki, a, pageUrl, createdAt) => ({
   exists: true, wiki, pageId: a.id, ns: 0, title: a.name, url: pageUrl(wiki, a.name), entryType: 'article', creator: a.user, categories: [], createdAt,
+  // Measured from the live article when the copy was made.
+  ...(a.words != null && { wordCount: a.words }),
+  ...(a.bytes != null && { sizeBytes: a.bytes }),
 });
 
 async function seedFountain(prisma, users) {

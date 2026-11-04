@@ -30,7 +30,7 @@
             <div class="datagrid-item"><div class="datagrid-title"><%= t("Submitted") %></div><div class="datagrid-content"><%= formatDateTime(submission.submittedAt, tz) %></div></div>
             <% if (meta.createdAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= submission.entryType === 'file' ? 'Uploaded' : 'Created' %></div><div class="datagrid-content"><%= formatDateTime(new Date(meta.createdAt), tz) %><%= meta.creator ? ' by ' + meta.creator : '' %></div></div><% } %>
             <% if (meta.sizeBytes != null) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Size") %></div><div class="datagrid-content"><%= t('{n} bytes', { n: meta.sizeBytes }) %></div></div><% } %>
-            <% if (meta.wordCount != null) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Words") %></div><div class="datagrid-content"><%= meta.wordCount != null ? formatNumber(meta.wordCount) : '' %></div></div><% } %>
+            <% if (settings.wordCountEnabled && meta.wordCount != null) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Words") %></div><div class="datagrid-content"><%= meta.wordCount != null ? formatNumber(meta.wordCount) : '' %></div></div><% } %>
             <% if (meta.file) { %>
               <div class="datagrid-item"><div class="datagrid-title"><%= t("Resolution") %></div><div class="datagrid-content"><%= meta.file.width %> × <%= meta.file.height %> (<%= meta.file.megapixels %> MP)</div></div>
               <% if (meta.file.license) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("License") %></div><div class="datagrid-content"><%= meta.file.license %></div></div><% } %>

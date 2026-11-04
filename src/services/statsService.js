@@ -4,12 +4,25 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const DECIDED = ['approved', 'rejected', 'disqualified'];
 const INACTIVE = ['withdrawn'];
 
-const dayKey = (d, timeZone = 'UTC') => new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+// One formatter per time zone; formatting is the slow part with 100,000+ entries.
+const formatters = new Map();
+const dayKey = (d, timeZone = 'UTC') => {
+  if (!formatters.has(timeZone)) formatters.set(timeZone, new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }));
+  return formatters.get(timeZone).format(d);
+};
+// Every zone's offset is a multiple of 15 minutes, so entries in the same quarter hour share a day.
+const QUARTER = 15 * 60 * 1000;
 
 // Counts per calendar day (in timeZone) between from and to, including empty days.
 function dailySeries(dates, from, to, timeZone = 'UTC') {
   const counts = new Map();
-  for (const d of dates) counts.set(dayKey(d, timeZone), (counts.get(dayKey(d, timeZone)) || 0) + 1);
+  const keyOf = new Map();
+  for (const d of dates) {
+    const q = Math.floor(new Date(d).getTime() / QUARTER);
+    let key = keyOf.get(q);
+    if (!key) keyOf.set(q, (key = dayKey(new Date(q * QUARTER), timeZone)));
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
   const labels = [];
   const values = [];
   const days = Math.min(400, Math.max(1, Math.ceil((to - from) / DAY_MS) + 1));
@@ -27,7 +40,7 @@ const toMap = (rows, key) => Object.fromEntries(rows.map((r) => [r[key], r._coun
 // wiki: limit submission numbers to one wiki of a multi-wiki event (people stay event-wide).
 async function eventStats(contest, { wiki, now = new Date() } = {}) {
   const where = { contestId: contest.id, ...(wiki && { wiki }) };
-  const [byStatus, byType, byWiki, top, memberships, dates] = await Promise.all([
+  const [byStatus, byType, byWiki, top, memberships, dates, words, approvedWords] = await Promise.all([
     prisma.submission.groupBy({ by: ['status'], where, _count: { _all: true } }),
     prisma.submission.groupBy({ by: ['entryType'], where: { ...where, status: { notIn: INACTIVE } }, _count: { _all: true } }),
     prisma.submission.groupBy({ by: ['wiki'], where: { ...where, status: { notIn: INACTIVE } }, _count: { _all: true } }),
@@ -40,6 +53,8 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     }),
     prisma.contestMembership.groupBy({ by: ['role'], where: { contestId: contest.id, status: 'active' }, _count: { _all: true } }),
     prisma.submission.findMany({ where, select: { submittedAt: true }, orderBy: { submittedAt: 'asc' } }),
+    prisma.submission.aggregate({ where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true } }),
+    prisma.submission.aggregate({ where: { ...where, status: 'approved' }, _sum: { wordCount: true } }),
   ]);
 
   const status = toMap(byStatus, 'status');
@@ -73,6 +88,8 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     topParticipants: top.map((t) => ({ username: name[t.participantId], count: t._count._all, approved: approvedMap[t.participantId] || 0 })),
     series,
     last7: series.values.slice(-7),
+    words: words._sum.wordCount || 0,
+    approvedWords: approvedWords._sum.wordCount || 0,
   };
 }
 

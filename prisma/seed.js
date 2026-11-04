@@ -45,7 +45,7 @@ const DEMO_CONTESTS = [
     language: 'bn',
     timezone: 'Asia/Dhaka',
     dates: { startDate: '2025-11-01T00:00:00Z', endDate: '2025-11-30T23:59:59Z', submissionOpensAt: '2025-11-01T00:00:00Z', submissionDeadline: '2025-11-30T23:59:59Z', reviewDeadline: '2025-12-31T00:00:00Z', resultsAnnouncedAt: '2026-01-10T00:00:00Z' },
-    settings: { allowJuryParticipation: false },
+    settings: { allowJuryParticipation: false, wordCountEnabled: true },
     typeConfig: { createdDuringEventOnly: true },
     createdBy: 'organizer',
     members: [['organizer', 'organizer']],
@@ -68,7 +68,7 @@ const DEMO_CONTESTS = [
       submissionOpensAt: '2026-11-01T00:00:00Z', submissionDeadline: '2026-11-30T23:59:00Z',
       reviewOpensAt: '2026-12-01T00:00:00Z', reviewDeadline: '2026-12-20T00:00:00Z',
     },
-    settings: { allowJuryParticipation: false, badgesEnabled: true, contributionDiscoveryEnabled: true, trackHashtags: '["wam2026"]', marks: '[{"name":"Accepted","values":[{"label":"Yes","points":1},{"label":"No","points":0}]},{"name":"Quality","values":[{"label":"0","points":0},{"label":"1","points":1},{"label":"2","points":2},{"label":"3","points":3}]}]' },
+    settings: { allowJuryParticipation: false, badgesEnabled: true, wordCountEnabled: true, contributionDiscoveryEnabled: true, trackHashtags: '["wam2026"]', marks: '[{"name":"Accepted","values":[{"label":"Yes","points":1},{"label":"No","points":0}]},{"name":"Quality","values":[{"label":"0","points":0},{"label":"1","points":1},{"label":"2","points":2},{"label":"3","points":3}]}]' },
     typeConfig: { minWordCount: 300, minBytes: 3000, createdDuringEventOnly: true },
     contributions: { count: 60, wikis: ['bnwiki', 'bnwiki', 'hiwiki', 'enwiki'], users: ['participant', 'newcomer'], hashtagUsers: ['Arif Rahman', 'Priya Sharma', 'Ken Watanabe'], from: '2026-11-01T00:00:00Z' },
     // [wiki, status, overrides, requested by]: each wiki may set its own rules, dates and contact.
@@ -429,6 +429,8 @@ async function seedDemoData(prisma, now = new Date()) {
 
   const submissions = (await seedSubmissions(prisma, users)) + (await seedFountain(prisma, users));
   await seedReviews(prisma, users);
+  // Each entry's word count as a column, for sorting and totals.
+  await prisma.$executeRawUnsafe(`UPDATE "Submission" SET "wordCount" = CAST(json_extract("metadata", '$.wordCount') AS INTEGER) WHERE json_extract("metadata", '$.wordCount') IS NOT NULL AND "contestId" IN (SELECT "id" FROM "Contest" WHERE "isDemo" = 1)`);
   return { users: DEMO_USERS.length, contests: DEMO_CONTESTS.length, submissions };
 }
 

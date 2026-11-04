@@ -97,7 +97,10 @@ test('results are private until published, then public', async () => {
   const rows = await leaderboard({ contest: c, settings: c.settings });
   assert.ok(rows.length > 0);
   assert.equal(rows[0].rank, 1);
-  assert.ok(rows.every((r, i) => i === 0 || rows[i - 1].points >= r.points), 'sorted by points');
+  // WAM counts by words: the ranking follows the words in accepted articles.
+  assert.ok(c.settings.wordCountEnabled);
+  assert.ok(rows.every((r, i) => i === 0 || rows[i - 1].words >= r.words), 'sorted by words');
+  assert.ok(rows.some((r) => r.words > 0));
 });
 
 test('appeals: a participant appeals a rejection, an organizer upholds it and the jury sees it again', async () => {
@@ -185,7 +188,12 @@ test('submissions table: sortable columns, wiki only on the whole event, quick a
   assert.deepEqual(titles, [...titles].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)), 'sorted by title');
   assert.match(asc.body, /sort=title&amp;dir=desc/, 'a second click turns the order round');
   assert.match(asc.body, /page=2[^"]*sort=title|sort=title[^"]*page=2/, 'pages keep the order');
-  assert.match(asc.body, /href="\/users\//, 'participants are linked');
+  assert.match(asc.body, /href="\?[^"]*participant=\d+/, 'a name filters the table to that participant');
+  const pid = Number(asc.body.match(/participant=(\d+)/)[1]);
+  const one = await organizer.get(`/wam/2026/submissions?participant=${pid}`);
+  const owners = await t.prisma.submission.findMany({ where: { id: { in: [...one.body.matchAll(/\/wam\/2026\/submissions\/(\d+)"/g)].map((m) => Number(m[1])) } }, select: { participantId: true } });
+  assert.ok(owners.length > 0 && owners.every((o) => o.participantId === pid), 'only that participant');
+  assert.match(one.body, /words in all/, 'total words for what is shown');
   assert.match(asc.body, /z-entry-wiki/, 'several wikis: the wiki is shown');
   assert.doesNotMatch((await organizer.get("/wam/2026/bn/submissions")).body, /z-entry-wiki/, "one wiki: no wiki name");
 

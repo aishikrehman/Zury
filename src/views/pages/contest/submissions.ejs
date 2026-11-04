@@ -4,6 +4,7 @@
     if (filters.status) p.set('status', filters.status);
     if (filters.q) p.set('q', filters.q);
     if (filters.mine) p.set('mine', '1');
+    if (filters.participant) p.set('participant', filters.participant);
     if (filters.sort !== 'submitted' || filters.dir !== 'desc') { p.set('sort', filters.sort); p.set('dir', filters.dir); }
     Object.entries(extra).forEach(([k, v]) => (v === null ? p.delete(k) : p.set(k, v)));
     const s = p.toString();
@@ -35,6 +36,14 @@
       </ul>
       <form class="ms-auto d-flex gap-2" method="get">
         <% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
+        <% if (showNames && result.participants.length > 1) { %>
+          <select class="form-select w-auto" name="participant" aria-label="<%= t('Participant') %>" data-autosubmit>
+            <option value=""><%= t('All participants') %></option>
+            <% result.participants.forEach((pp) => { %>
+              <option value="<%= pp.id %>"<%= filters.participant === pp.id ? ' selected' : '' %>><%= pp.username %> (<%= settings.wordCountEnabled ? t('{n} entries, {w} words', { n: pp.entries, w: formatNumber(pp.words) }) : pp.entries %>)</option>
+            <% }) %>
+          </select>
+        <% } %>
         <% if (filters.sort !== 'submitted' || filters.dir !== 'desc') { %><input type="hidden" name="sort" value="<%= filters.sort %>"><input type="hidden" name="dir" value="<%= filters.dir %>"><% } %>
         <% if (currentUser) { %>
           <label class="form-check form-switch m-0 align-self-center">
@@ -49,6 +58,17 @@
       </form>
     </div>
 
+    <% const picked = filters.participant && result.participants.find((pp) => pp.id === filters.participant); %>
+    <% if (result.total && (picked || settings.wordCountEnabled)) { %>
+      <div class="card-body border-bottom py-2 d-flex flex-wrap gap-3 align-items-center small">
+        <% if (picked) { %>
+          <span><i class="ti ti-user me-1"></i><a href="/users/<%= encodeURIComponent(picked.username) %>" class="fw-medium"><%= picked.username %></a></span>
+        <% } %>
+        <span class="text-secondary"><%= tn('{n} entry', '{n} entries', result.total) %></span>
+        <% if (settings.wordCountEnabled) { %><span><i class="ti ti-letter-case me-1"></i><%= t('{n} words in all', { n: formatNumber(result.words) }) %></span><% } %>
+        <% if (picked) { %><a class="ms-auto" href="<%= qs({ participant: null, page: null }) %>"><i class="ti ti-x me-1"></i><%= t('Show everyone') %></a><% } %>
+      </div>
+    <% } %>
     <% if (!result.items.length) { %>
       <div class="empty">
         <div class="empty-icon"><i class="ti ti-files-off icon"></i></div>
@@ -59,7 +79,7 @@
     <% } else { %>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
+          <thead><tr><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><% if (settings.wordCountEnabled) { %><%- sortHead('words', t('Words'), 'text-end') %><% } %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
           <tbody>
             <% result.items.forEach((s) => { const meta = JSON.parse(s.metadata); %>
               <tr>
@@ -78,10 +98,11 @@
                 </td>
                 <td>
                   <% if (showNames || (currentUser && currentUser.id === s.participantId)) { %>
-                    <a href="/users/<%= encodeURIComponent(s.participant.username) %>"><%= s.participant.username %></a>
+                    <a href="<%= qs({ participant: s.participantId, page: null }) %>" title="<%= t('Only this participant') %>"><%= s.participant.username %></a>
                   <% } else { %><span class="text-secondary"><%= t('Anonymous') %></span><% } %>
                 </td>
                 <td><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
+                <% if (settings.wordCountEnabled) { %><td class="text-end"><%= s.wordCount != null ? formatNumber(s.wordCount) : '—' %></td><% } %>
                 <td class="text-secondary text-nowrap"><%= formatDateTime(s.submittedAt, contest.timezone) %></td>
                 <td>
                   <div class="z-row-actions">

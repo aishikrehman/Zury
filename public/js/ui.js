@@ -22,3 +22,17 @@ document.addEventListener('submit', (e) => {
   const form = e.target;
   if (form instanceof HTMLFormElement && form.dataset.confirm && !window.confirm(form.dataset.confirm)) e.preventDefault();
 });
+
+// A search box that hides table rows not matching it: <input data-filter-rows="#table">.
+// Rows carry their text in data-filter-text; a detail row right after a row follows it.
+document.addEventListener('input', (e) => {
+  const box = e.target;
+  if (!(box instanceof HTMLInputElement) || !box.dataset.filterRows) return;
+  const q = box.value.trim().toLowerCase();
+  document.querySelectorAll(`${box.dataset.filterRows} tbody tr[data-filter-text]`).forEach((row) => {
+    const hide = q !== '' && !row.dataset.filterText.includes(q);
+    row.hidden = hide;
+    const next = row.nextElementSibling;
+    if (next && !next.dataset.filterText && next.classList.contains('collapse')) next.hidden = hide;
+  });
+});

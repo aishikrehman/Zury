@@ -27,6 +27,7 @@ const OVERRIDABLE = {
     'autoValidationEnabled',
     'contributionDiscoveryEnabled',
     'badgesEnabled',
+    'wordCountEnabled',
     'publicStatisticsEnabled',
     'participantNotificationsEnabled',
     'registrationRequired',

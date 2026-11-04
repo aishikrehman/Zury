@@ -138,16 +138,20 @@ async function index(req, res, next) {
       status: submissionService.STATUSES.includes(req.query.status) ? req.query.status : '',
       q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
       mine: req.query.mine === '1',
-      sort: Object.keys(submissionService.SORTS).includes(req.query.sort) ? req.query.sort : 'submitted',
+      sort: Object.keys(submissionService.SORTS).includes(req.query.sort) && (req.query.sort !== 'words' || req.settings.wordCountEnabled) ? req.query.sort : 'submitted',
       dir: req.query.dir === 'asc' ? 'asc' : 'desc',
+      participant: Number.parseInt(req.query.participant, 10) || null,
     };
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    // Anonymous events don't let visitors pick out one person's entries.
+    const showNames = !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions');
+    if (!showNames) filters.participant = null;
     const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki, page, ...filters });
     res.render('pages/contest/submissions', {
       title: `Submissions — ${req.contest.title}`,
       result,
       filters,
-      showNames: !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
+      showNames,
       statuses: submissionService.STATUSES,
       // The wiki under each title only helps when entries come from several wikis.
       showWiki: !req.wikiScope && (req.eventWikis || []).length > 1,

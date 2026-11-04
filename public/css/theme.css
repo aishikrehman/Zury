@@ -627,3 +627,5 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 .z-phases .step-item { min-width: 7.5rem; }
 .z-takepart { border-top: 3px solid var(--z-brand); }
 #statistics { scroll-margin-top: 6rem; }
+/* People page: the per-person panel opened from a row. */
+.z-person-panel > td { background: var(--z-bg-subtle, rgba(0, 0, 0, .02)); padding: 1rem 1.25rem; }

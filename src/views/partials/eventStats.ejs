@@ -17,6 +17,9 @@
             <div class="me-auto"><span class="text-<%= sum7 ? 'green' : 'secondary' %> d-inline-flex align-items-center lh-1"><%= t('{n} this week', { n: sum7 }) %> <i class="ti ti-trending-up ms-1"></i></span></div>
           </div>
         </div>
+        <% if (settings.wordCountEnabled) { %>
+          <div class="card-body pt-0 pb-2 small d-flex"><span><i class="ti ti-letter-case me-1"></i><%= t('{n} words', { n: formatNumber(s.words) }) %></span><span class="ms-auto text-green"><%= t('{n} accepted', { n: formatNumber(s.approvedWords) }) %></span></div>
+        <% } %>
         <%- include('./chart', { spec: { type: 'area', sparkline: true, height: 40, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: t('Daily submissions') }) %>
       </div>
     </div>
