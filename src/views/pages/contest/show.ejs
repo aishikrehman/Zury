@@ -1,6 +1,8 @@
 <%
   const tz = contest.timezone;
-  const timeline = dateFields.filter(([key]) => contest[key]).map(([key, label]) => ({ label, at: contest[key] }));
+  // The jury's own dates (review opens, review deadline) stay off the public timeline.
+  const HIDDEN_DATES = ['reviewOpensAt', 'reviewDeadline'];
+  const timeline = dateFields.filter(([key]) => contest[key] && !HIDDEN_DATES.includes(key)).map(([key, label]) => ({ key, label, at: contest[key] }));
   const showParticipants = !settings.anonymousParticipants || can('manageParticipants');
   const enabled = featureFields.filter(([key]) => settings[key]);
   const display = (f, value) => {
@@ -35,20 +37,30 @@
           <% } %>
         </div>
       <%
+        // One stop per day: things that happen the same day share it.
         const now = Date.now();
-        const phases = [...timeline].sort((x, y) => new Date(x.at) - new Date(y.at));
-        const passed = phases.filter((x) => new Date(x.at).getTime() <= now).length;
+        const stops = [];
+        [...timeline].sort((x, y) => new Date(x.at) - new Date(y.at)).forEach((x) => {
+          const dayKey = formatDate(x.at, tz);
+          const last = stops[stops.length - 1];
+          if (last && last.day === dayKey) last.labels.push(x.label);
+          else stops.push({ day: dayKey, at: x.at, labels: [x.label] });
+        });
+        const current = stops.filter((x) => new Date(x.at).getTime() <= now).length - 1;
+        const daysTo = (at) => Math.round((new Date(at).getTime() - now) / 86400000);
       %>
-      <% if (phases.length) { %>
-        <div class="card-footer bg-transparent">
-          <ul class="steps steps-counter steps-green my-1 z-phases">
-            <% phases.forEach((x, i) => { %>
-              <li class="step-item<%= i === passed - 1 ? ' active' : '' %>" title="<%= formatDateTime(x.at, tz) %>">
-                <div class="small"><%= x.label %></div>
-                <div class="text-secondary small"><%= formatDate(x.at, tz) %></div>
+      <% if (stops.length) { %>
+        <div class="card-footer bg-transparent z-timeline-wrap">
+          <ol class="z-timeline">
+            <% stops.forEach((x, i) => { const state = i < current ? 'done' : i === current ? 'now' : 'next'; const d = daysTo(x.at); %>
+              <li class="z-stop z-stop-<%= state %>" title="<%= formatDateTime(x.at, tz) %>">
+                <span class="z-stop-dot"><% if (state === 'done') { %><i class="ti ti-check"></i><% } %></span>
+                <span class="z-stop-date"><%= x.day %></span>
+                <span class="z-stop-label"><%= x.labels.join(' · ') %></span>
+                <% if (state === 'next' && d >= 0 && d <= 60) { %><span class="z-stop-when"><%= d === 0 ? t('Today') : tn('in {n} day', 'in {n} days', d) %></span><% } %>
               </li>
             <% }) %>
-          </ul>
+          </ol>
         </div>
       <% } %>
       </div>

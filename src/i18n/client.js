@@ -25,6 +25,7 @@ const CLIENT_STRINGS = [
   'Quality',
   'Search Wikimedia users…',
   '{n} selected',
+  'Loading…',
 ];
 
 // { English: translation } for one language, safe to put inside a <script> element.

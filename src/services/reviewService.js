@@ -63,7 +63,12 @@ async function queue({ contestId, settings, jurorId, wikis = null, after = 0, fi
     ...(mode !== 'mine' && assignedMode(settings) && { assignments: { some: { jurorId } } }),
     ...(filters.participantId && { participantId: filters.participantId }),
     ...(filters.q && { title: { contains: filters.q } }),
-    ...(filters.minWords && { wordCount: { gte: filters.minWords } }),
+    ...((filters.minWords || filters.maxWords) && { wordCount: { ...(filters.minWords && { gte: filters.minWords }), ...(filters.maxWords && { lte: filters.maxWords }) } }),
+    ...((filters.from || filters.to) && { submittedAt: { ...(filters.from && { gte: filters.from }), ...(filters.to && { lte: filters.to }) } }),
+    ...(filters.status && { status: filters.status }),
+    ...(filters.reviews === 'none' && { reviews: { none: {} } }),
+    ...(filters.reviews === 'some' && { reviews: { some: {} } }),
+    ...(filters.checks === 'warnings' && { validation: { contains: '"warnings":["' } }),
     NOT: { participantId: jurorId },
   };
   const order = QUEUE_SORTS[filters.sort] || QUEUE_SORTS.oldest;
@@ -79,6 +84,20 @@ async function queue({ contestId, settings, jurorId, wikis = null, after = 0, fi
   const next = (from >= 0 ? list[from + 1] : null) || (from >= 0 ? list.find((c) => c.id !== after) : list[0]) || null;
   const reviewedByMe = await prisma.review.count({ where: { contestId, jurorId } });
   return { nextId: next ? next.id : null, remaining: list.length, reviewedByMe, mode, ids: list.map((c) => c.id) };
+}
+
+// One page of the queue (in its order) for the entry picker, optionally searched by title.
+async function queuePage({ ids, q = '', page = 1, perPage = 30 }) {
+  let pool = ids;
+  if (q) {
+    const hits = await prisma.submission.findMany({ where: { id: { in: ids }, title: { contains: q } }, select: { id: true } });
+    const set = new Set(hits.map((h) => h.id));
+    pool = ids.filter((id) => set.has(id));
+  }
+  const slice = pool.slice((page - 1) * perPage, page * perPage);
+  const rows = await prisma.submission.findMany({ where: { id: { in: slice } }, select: { id: true, title: true, wordCount: true, status: true, participant: { select: { username: true } } } });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return { items: slice.map((id) => byId.get(id)).filter(Boolean).map((r) => ({ ...r, position: ids.indexOf(r.id) + 1 })), total: pool.length, more: page * perPage < pool.length };
 }
 
 // Orders of the review queue.
@@ -447,7 +466,7 @@ function appeals(contestId) {
   });
 }
 
-module.exports = { juryActivity, queueStrip, QUEUE_SORTS,
+module.exports = { juryActivity, queueStrip, queuePage, QUEUE_SORTS,
   REVIEWABLE,
   assignedMode,
   jurorsFor,

@@ -4,7 +4,7 @@ const audit = require('./auditService');
 // Statuses the dates can produce once an event is published.
 const AUTO_STATUSES = ['published', 'upcoming', 'active', 'submission_closed', 'under_review', 'completed'];
 // Statuses only a person can set; the sweep never moves an event out of them.
-const STICKY_STATUSES = ['draft', 'cancelled', 'archived'];
+const STICKY_STATUSES = ['draft', 'paused', 'cancelled', 'archived'];
 
 class LifecycleError extends Error {
   constructor(message) {
@@ -51,6 +51,12 @@ function applyAction(contest, settings, { action, status }, now = new Date()) {
       return { status, statusMode: 'manual' };
     case 'resume_auto':
       if (STICKY_STATUSES.includes(current)) throw new LifecycleError('This event is not published.');
+      return { status: computeAutoStatus(contest, settings, now), statusMode: 'auto' };
+    case 'pause':
+      if (STICKY_STATUSES.includes(current)) throw new LifecycleError('Only running events can be paused.');
+      return { status: 'paused', statusMode: 'manual' };
+    case 'resume':
+      if (current !== 'paused') throw new LifecycleError('Only paused events can be resumed.');
       return { status: computeAutoStatus(contest, settings, now), statusMode: 'auto' };
     case 'cancel':
       if (['cancelled', 'archived'].includes(current)) throw new LifecycleError('This event is already closed.');

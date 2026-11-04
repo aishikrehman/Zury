@@ -144,8 +144,6 @@ async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
     typeDef: EVENT_TYPES[req.contest.type],
     form,
     errors,
-    autoStatus: lifecycle.computeAutoStatus(req.contest, req.settings),
-    manualStatuses: lifecycle.AUTO_STATUSES.filter((s) => s !== 'published'),
   });
 }
 

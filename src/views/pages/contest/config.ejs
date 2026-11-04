@@ -1,57 +1,46 @@
 <%
-  const statusLabel = (s) => (CONTEST_STATUSES[s] || { label: s }).label;
-  const sticky = ['draft', 'cancelled', 'archived'].includes(contest.status);
-  const action = (name, label, cls, icon) => ({ name, label, cls, icon });
+  const statusLabel = (st) => t((CONTEST_STATUSES[st] || { label: st }).label);
+  const st = CONTEST_STATUSES[contest.status] || { badge: 'secondary' };
+  // The status follows the dates; organizers only publish, pause, cancel or delete.
+  const action = (name, label, cls, icon, confirm) => ({ name, label, cls, icon, confirm });
   const actions = [
-    contest.status === 'draft' && action('publish', 'Publish', 'primary', 'rocket'),
-    ['published', 'upcoming'].includes(contest.status) && action('unpublish', 'Back to draft', 'outline-secondary', 'arrow-back-up'),
-    !sticky && contest.statusMode === 'manual' && action('resume_auto', 'Follow the dates again', 'outline-primary', 'calendar-time'),
-    ['completed', 'cancelled'].includes(contest.status) && action('archive', 'Archive', 'outline-secondary', 'archive'),
-    contest.status === 'cancelled' && action('reopen', 'Reopen as draft', 'outline-secondary', 'refresh'),
-    !['cancelled', 'archived'].includes(contest.status) && action('cancel', 'Cancel event', 'outline-danger', 'ban'),
+    contest.status === 'draft' && action('publish', t('Publish'), 'primary', 'rocket'),
+    ['published', 'upcoming'].includes(contest.status) && action('unpublish', t('Back to draft'), 'ghost-secondary', 'arrow-back-up'),
+    contest.status === 'paused' && action('resume', t('Resume'), 'primary', 'player-play'),
+    !['draft', 'paused', 'cancelled', 'archived'].includes(contest.status) && action('pause', t('Pause'), 'outline-secondary', 'player-pause', t('Pause this event? Nobody can join or submit until you resume it.')),
+    contest.status === 'cancelled' && action('reopen', t('Reopen as draft'), 'outline-secondary', 'refresh'),
+    ['completed', 'cancelled'].includes(contest.status) && action('archive', t('Archive'), 'outline-secondary', 'archive'),
+    !['cancelled', 'archived'].includes(contest.status) && action('cancel', t('Cancel event'), 'outline-danger', 'ban', t('Cancel this event?')),
   ].filter(Boolean);
 %>
 <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 <div class="page-body"><div class="container-xl">
 
   <% if (can('manageEvent') && !wikiMode) { %>
-    <div class="card mb-4">
-      <div class="card-header"><h3 class="card-title"><i class="ti ti-progress me-2"></i><%= t("Status") %></h3></div>
-      <div class="card-body">
-        <div class="row align-items-center g-3">
-          <div class="col-md">
-            <div class="h3 mb-1"><%= statusLabel(contest.status) %></div>
-            <div class="text-secondary">
-              <% if (!sticky) { %>
-                <% if (contest.statusMode === 'auto') { %><i class="ti ti-calendar-time me-1"></i>Follows the dates automatically.<% } else { %><i class="ti ti-pin me-1"></i>Pinned by an organizer. By the dates it would be <%= statusLabel(autoStatus) %>.<% } %>
-              <% } else { %><%= t('Set by hand.') %><% } %>
-            </div>
-          </div>
-          <div class="col-md-auto">
-            <div class="btn-list">
-              <% actions.forEach((a) => { %>
-                <form method="post" action="<%= base %>/status">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <input type="hidden" name="action" value="<%= a.name %>">
-                  <button type="submit" class="btn btn-<%= a.cls %>"><i class="ti ti-<%= a.icon %> me-1"></i><%= a.label %></button>
-                </form>
-              <% }) %>
-            </div>
-          </div>
-        </div>
-      </div>
-      <% if (!sticky) { %>
-        <div class="card-footer">
-          <form method="post" action="<%= base %>/status" class="row g-2 align-items-center">
+    <div class="card mb-3 z-statebar">
+      <div class="card-body d-flex flex-wrap align-items-center gap-2">
+        <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt fs-5 me-1"><%= statusLabel(contest.status) %></span>
+        <span class="text-secondary small me-auto"><%= ['draft', 'paused', 'cancelled', 'archived'].includes(contest.status) ? '' : t('Follows the event dates.') %></span>
+        <% actions.forEach((a) => { %>
+          <form method="post" action="<%= base %>/status"<% if (a.confirm) { %> data-confirm="<%= a.confirm %>"<% } %>>
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="hidden" name="action" value="set_status">
-            <div class="col-auto"><label class="form-label m-0" for="pinStatus"><%= t("Pin status to") %></label></div>
-            <div class="col-auto">
-              <select id="pinStatus" name="status" class="form-select">
-                <% manualStatuses.forEach((s) => { %><option value="<%= s %>"<%= s === contest.status ? ' selected' : '' %>><%= statusLabel(s) %></option><% }) %>
-              </select>
+            <input type="hidden" name="action" value="<%= a.name %>">
+            <button type="submit" class="btn btn-<%= a.cls %>"><i class="ti ti-<%= a.icon %> me-1"></i><%= a.label %></button>
+          </form>
+        <% }) %>
+        <% if (can('deleteEvent')) { %>
+          <button class="btn btn-ghost-danger" type="button" data-bs-toggle="collapse" data-bs-target="#delete-event" aria-expanded="false" aria-controls="delete-event"><i class="ti ti-trash me-1"></i><%= t('Delete') %></button>
+        <% } %>
+      </div>
+      <% if (can('deleteEvent')) { %>
+        <div class="collapse" id="delete-event">
+          <form method="post" action="<%= base %>/delete" class="card-body border-top d-flex flex-wrap align-items-end gap-2">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="flex-fill" style="max-width: 24rem">
+              <label class="form-label" for="confirmation"><%- th('Type {address} to confirm', { address: '<code>' + h(contest.slug) + '</code>' }) %></label>
+              <input class="form-control" id="confirmation" name="confirmation" autocomplete="off">
             </div>
-            <div class="col-auto"><button type="submit" class="btn btn-outline-primary"><%= t("Set") %></button></div>
+            <button type="submit" class="btn btn-danger"><i class="ti ti-trash me-1"></i><%= t("Delete event") %></button>
           </form>
         </div>
       <% } %>
@@ -131,21 +120,5 @@
     </div>
   <% } %>
 
-  <% if (can('deleteEvent') && !wikiMode) { %>
-    <div class="card card-borderless mt-4">
-      <div class="card-status-start bg-danger"></div>
-      <div class="card-header"><h3 class="card-title text-danger"><i class="ti ti-alert-triangle me-2"></i><%= t("Danger zone") %></h3></div>
-      <div class="card-body">
-        <form method="post" action="<%= base %>/delete" class="row g-2 align-items-end">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="col-sm-6 col-md-4">
-            <label class="form-label" for="confirmation"><%- th('Type {address} to confirm', { address: '<code>' + h(contest.slug) + '</code>' }) %></label>
-            <input class="form-control" id="confirmation" name="confirmation" autocomplete="off">
-          </div>
-          <div class="col-auto"><button type="submit" class="btn btn-danger"><i class="ti ti-trash me-1"></i><%= t("Delete event") %></button></div>
-        </form>
-      </div>
-    </div>
-  <% } %>
 </div>
 </div>

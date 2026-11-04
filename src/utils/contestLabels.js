@@ -41,6 +41,7 @@ const CONTEST_STATUSES = {
   under_review: { label: 'Under review', badge: 'warning' },
   completed: { label: 'Completed', badge: 'dark' },
   archived: { label: 'Archived', badge: 'light' },
+  paused: { label: 'Paused', badge: 'secondary' },
   cancelled: { label: 'Cancelled', badge: 'danger' },
 };
 

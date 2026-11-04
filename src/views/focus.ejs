@@ -1,0 +1,43 @@
+<%# Full-page layout (the review window): a slim bar with the way back, then the page. %>
+<!DOCTYPE html>
+<html lang="<%= lang.code %>" dir="<%= lang.dir %>" class="z-focus">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title><%= typeof title !== 'undefined' ? t(title) : 'Zury' %></title>
+  <link rel="icon" type="image/svg+xml" href="/images/zury-logo.svg">
+  <link rel="stylesheet" href="/css/tabler.css">
+  <link rel="stylesheet" href="/vendor/tom-select/css/tom-select.bootstrap5.min.css">
+  <link rel="stylesheet" href="/vendor/tabler-icons/tabler-icons.min.css">
+  <link rel="stylesheet" href="/vendor/inter/index.css">
+  <link rel="stylesheet" href="/vendor/noto-bengali/wght.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="z-focusbar">
+    <a href="<%= typeof base !== 'undefined' ? base : '/' %>" class="z-icon-btn" title="<%= t('Back to the event') %>" aria-label="<%= t('Back to the event') %>"><i class="ti ti-arrow-left"></i></a>
+    <a href="/" class="z-brand" aria-label="Zury"><img src="/images/zury-logo.svg" width="26" height="26" alt=""></a>
+    <div class="min-w-0 flex-fill">
+      <div class="fw-bold text-truncate"><%= typeof contest !== 'undefined' ? contest.title : '' %></div>
+      <div class="text-secondary small text-truncate"><%= t('Review') %><%= typeof wikiScope !== 'undefined' && wikiScope ? ' · ' + wikiLocal(wikiScope.wiki) : '' %></div>
+    </div>
+    <% if (currentUser) { %><span class="z-avatar" title="<%= currentUser.username %>"><%= currentUser.username.charAt(0).toUpperCase() %></span><% } %>
+  </header>
+  <main id="content" class="z-focus-main">
+    <% if (typeof flash !== 'undefined' && flash) { %>
+      <div class="flash flash-<%= flash.type === 'danger' ? 'error' : flash.type === 'warning' ? 'warn' : 'success' %> mb-2" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
+        <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : flash.type === 'warning' ? 'alert-triangle' : 'circle-check' %>"></i><span><%= t(flash.message) %></span>
+      </div>
+    <% } %>
+    <%- body %>
+  </main>
+  <script type="application/json" id="zury-i18n"><%- clientStrings %></script>
+  <script src="/js/i18n.js"></script>
+  <script src="/vendor/tabler/js/tabler.min.js"></script>
+  <script src="/vendor/tom-select/js/tom-select.complete.min.js" defer></script>
+  <script src="/js/ui.js" defer></script>
+  <script src="/js/review.js" defer></script>
+</body>
+</html>

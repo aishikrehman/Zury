@@ -36,6 +36,12 @@ function reviewFilters(req) {
     minWords: Math.max(0, Number.parseInt(src.minWords, 10) || 0) || null,
     wiki: typeof src.wiki === 'string' && /^[a-z0-9_]+$/.test(src.wiki) ? src.wiki : '',
     sort: Object.keys(reviewService.QUEUE_SORTS).includes(src.sort) && src.sort !== 'oldest' ? src.sort : '',
+    maxWords: Math.max(0, Number.parseInt(src.maxWords, 10) || 0) || null,
+    status: ['pending', 'validated', 'under_review', 'approved', 'rejected', 'appealed'].includes(src.status) ? src.status : '',
+    reviews: ['none', 'some'].includes(src.reviews) ? src.reviews : '',
+    checks: src.checks === 'warnings' ? 'warnings' : '',
+    from: /^\d{4}-\d{2}-\d{2}$/.test(src.from || '') ? new Date(`${src.from}T00:00:00Z`) : null,
+    to: /^\d{4}-\d{2}-\d{2}$/.test(src.to || '') ? new Date(`${src.to}T23:59:59Z`) : null,
   };
 }
 
@@ -47,8 +53,33 @@ function filterQuery(f, extra = {}) {
   if (f.minWords) p.set('minWords', f.minWords);
   if (f.wiki) p.set('wiki', f.wiki);
   if (f.sort) p.set('sort', f.sort);
+  if (f.maxWords) p.set('maxWords', f.maxWords);
+  if (f.status) p.set('status', f.status);
+  if (f.reviews) p.set('reviews', f.reviews);
+  if (f.checks) p.set('checks', f.checks);
+  if (f.from) p.set('from', f.from.toISOString().slice(0, 10));
+  if (f.to) p.set('to', f.to.toISOString().slice(0, 10));
   for (const [k, v] of Object.entries(extra)) p.set(k, v);
   return p.toString();
+}
+
+// Entries for the picker on the review page: the queue in its order, searched by title, a page at a time.
+async function entries(req, res, next) {
+  try {
+    const wikis = judgedWikis(req);
+    if (wikis && !wikis.length) return res.status(403).json({ items: [] });
+    const filters = reviewFilters(req);
+    const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, filters });
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const result = await reviewService.queuePage({ ids: q.ids, q: typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '', page });
+    res.json({
+      ...result,
+      items: result.items.map((r) => ({ value: String(r.id), text: r.title, position: r.position, participant: r.participant.username, words: r.wordCount, status: r.status })),
+      next: result.more ? page + 1 : null,
+    });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // The review window: one entry at a time.
@@ -90,7 +121,8 @@ async function window(req, res, next) {
       queue: q,
       progress: await reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }),
       activity: await reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki }),
-      strip: await reviewService.queueStrip({ ids: q.ids, currentId: id || null, jurorId: req.user.id }),
+      position: id ? q.ids.indexOf(id) + 1 : 0,
+      layout: 'focus',
       filters,
       filterQuery,
       // People with entries here, for the participant filter (the busiest 200).
@@ -315,4 +347,4 @@ const releaseJuror = assignmentAction(async (req) => {
   return req.t('{n} unreviewed entries taken back.', { n });
 });
 
-module.exports = { bulkSave, assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+module.exports = { entries, bulkSave, assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };

@@ -9,11 +9,11 @@
   const done = total ? Math.round((progress.decided / total) * 100) : 0;
   const decisionLabel = { accept: t('Accept'), reject: t('Reject') };
   const fq = (extra) => filterQuery(filters, extra || {});
-  const filtered = !!(filters.mode || filters.participantId || filters.q || filters.minWords || filters.wiki || filters.sort);
+  const filtered = !!(filters.mode || filters.participantId || filters.q || filters.minWords || filters.maxWords || filters.wiki || filters.sort || filters.status || filters.reviews || filters.checks || filters.from || filters.to);
+  const day = (d) => (d ? d.toISOString().slice(0, 10) : '');
   const modes = [['', t('Waiting for me')], ['open', t('All not yet decided')], ['mine', t('Reviewed by me')]];
 %>
-<%- include('../../partials/contestHeader', { active: 'review' }) %>
-<div class="page-body"><div class="container-fluid z-review-wrap">
+<div class="z-review-wrap">
 
   <div class="z-review-bar">
     <div class="me-auto">
@@ -23,13 +23,11 @@
         <span class="small text-secondary text-nowrap"><%= t('{n}% decided', { n: done }) %></span>
       </div>
     </div>
-    <form method="get" class="z-go" role="search">
-      <% Object.entries({ mode: filters.mode, participant: filters.participantId, minWords: filters.minWords, wiki: filters.wiki, sort: filters.sort }).forEach(([k, v]) => { if (v) { %><input type="hidden" name="<%= k %>" value="<%= v %>"><% } }) %>
-      <div class="input-icon">
-        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-        <input class="form-control" type="search" name="go" placeholder="<%= t('Go to an entry: title or #number') %>" aria-label="<%= t('Go to an entry: title or #number') %>">
-      </div>
-    </form>
+    <div class="z-go">
+      <select data-review-picker data-url="<%= base %>/review/entries?<%= fq() %>" data-go="<%= base %>/review?<%= fq() %>" aria-label="<%= t('Entries') %>" placeholder="<%= t('Search the entries…') %>">
+        <% if (entry) { %><option value="<%= entry.id %>" selected><%= position ? t('{a} of {b}', { a: formatNumber(position), b: formatNumber(queue.remaining) }) + ' · ' : '' %><%= entry.title %></option><% } %>
+      </select>
+    </div>
     <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters"><i class="ti ti-filter me-1"></i><%= t('Filter') %></button>
     <% if (entry) { %>
       <a class="btn" href="<%= base %>/review?<%= fq({ after: entry.id }) %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-1 d-none d-md-inline">S</kbd></a>
@@ -56,13 +54,47 @@
         </div>
       <% } %>
       <div class="col-sm-4 col-lg-2">
+        <label class="form-label" for="f-status"><%= t('Status') %></label>
+        <select class="form-select" id="f-status" name="status">
+          <option value=""><%= t('Any') %></option>
+          <% ['pending', 'validated', 'under_review', 'approved', 'rejected', 'appealed'].forEach((v) => { %><option value="<%= v %>"<%= filters.status === v ? ' selected' : '' %>><%= SUBMISSION_STATUSES[v].label %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-sm-4 col-lg-2">
+        <label class="form-label" for="f-reviews"><%= t('Reviews so far') %></label>
+        <select class="form-select" id="f-reviews" name="reviews">
+          <option value=""><%= t('Any') %></option>
+          <option value="none"<%= filters.reviews === 'none' ? ' selected' : '' %>><%= t('None yet') %></option>
+          <option value="some"<%= filters.reviews === 'some' ? ' selected' : '' %>><%= t('At least one') %></option>
+        </select>
+      </div>
+      <div class="col-sm-4 col-lg-2">
+        <label class="form-label" for="f-checks"><%= t('Automatic checks') %></label>
+        <select class="form-select" id="f-checks" name="checks">
+          <option value=""><%= t('Any') %></option>
+          <option value="warnings"<%= filters.checks === 'warnings' ? ' selected' : '' %>><%= t('With warnings') %></option>
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="f-from"><%= t('Submitted from') %></label>
+        <input class="form-control" id="f-from" name="from" type="date" value="<%= day(filters.from) %>">
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="f-to"><%= t('Submitted until') %></label>
+        <input class="form-control" id="f-to" name="to" type="date" value="<%= day(filters.to) %>">
+      </div>
+      <div class="col-sm-4 col-lg-2">
         <label class="form-label" for="f-q"><%= t('Title contains') %></label>
         <input class="form-control" id="f-q" name="q" value="<%= filters.q %>" maxlength="100">
       </div>
       <% if (settings.wordCountEnabled) { %>
-        <div class="col-sm-4 col-lg-1">
+        <div class="col-6 col-lg-1">
           <label class="form-label" for="f-words"><%= t('Min. words') %></label>
           <input class="form-control" id="f-words" name="minWords" type="number" min="0" value="<%= filters.minWords || '' %>">
+        </div>
+        <div class="col-6 col-lg-1">
+          <label class="form-label" for="f-maxwords"><%= t('Max. words') %></label>
+          <input class="form-control" id="f-maxwords" name="maxWords" type="number" min="0" value="<%= filters.maxWords || '' %>">
         </div>
       <% } %>
       <div class="col-sm-4 col-lg-2">
@@ -77,20 +109,6 @@
       </div>
     </div>
   </form>
-
-  <% if (strip.items.length) { %>
-    <nav class="z-strip" aria-label="<%= t('Entries') %>">
-      <span class="z-strip-pos"><%= t('{a} of {b}', { a: formatNumber(strip.position || 0), b: formatNumber(strip.total) }) %></span>
-      <div class="z-strip-list" data-strip>
-        <% strip.items.forEach((it) => { const my = it.reviews[0]; %>
-          <a class="z-strip-item<%= entry && it.id === entry.id ? ' active' : '' %>" href="<%= base %>/review?<%= fq({ entry: it.id }) %>"<%= entry && it.id === entry.id ? ' aria-current="true"' : '' %>>
-            <span class="z-strip-title"><% if (my) { %><i class="ti ti-<%= my.decision === 'accept' ? 'check text-green' : 'x text-red' %>"></i><% } %><%= it.title %></span>
-            <span class="z-strip-meta"><%= it.participant.username %><%= settings.wordCountEnabled && it.wordCount != null ? ' · ' + formatNumber(it.wordCount) : '' %></span>
-          </a>
-        <% }) %>
-      </div>
-    </nav>
-  <% } %>
 
   <% if (!entry) { %>
     <div class="card">
@@ -222,5 +240,4 @@
       </aside>
     </div>
   <% } %>
-</div>
 </div>

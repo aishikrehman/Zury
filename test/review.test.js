@@ -297,14 +297,18 @@ test('review page: filters, go to an entry, the next one after a verdict, and co
   assert.match(mine.body, /Jury activity/);
 });
 
-test('review queue order: most words first, then the next one in that order', async () => {
+test('review queue order: the entry picker lists the queue in that order, a page at a time', async () => {
   const bn = await session('Bn Admin');
   const page = await bn.get('/wam/2026/bn/review?sort=words-desc&mode=open');
   assert.equal(page.status, 200);
-  assert.match(page.body, /class="z-strip"/, 'the entries are listed above the page');
-  const ids = [...page.body.matchAll(/class="z-strip-item[^"]*" href="\/wam\/2026\/bn\/review\?[^"]*entry=(\d+)"/g)].map((m) => Number(m[1]));
-  const rows = await t.prisma.submission.findMany({ where: { id: { in: ids } }, select: { id: true, wordCount: true } });
-  const words = ids.map((id) => rows.find((r) => r.id === id).wordCount ?? -1);
-  assert.ok(ids.length > 1);
-  assert.deepEqual(words, [...words].sort((a, b) => b - a), 'most words first');
+  assert.match(page.body, /data-review-picker/, 'entries are picked from a searchable list');
+  assert.doesNotMatch(page.body, /class="z-topbar/, 'the review page uses the whole screen');
+  const res = await bn.get('/wam/2026/bn/review/entries?mode=open&sort=words-desc&page=1');
+  const json = JSON.parse(res.body);
+  assert.ok(json.items.length > 1);
+  const words = json.items.map((i) => i.words ?? -1);
+  assert.deepEqual(words, [...words].sort((x, y) => y - x), 'most words first');
+  assert.equal(json.items[0].position, 1);
+  const search = JSON.parse((await bn.get(`/wam/2026/bn/review/entries?mode=open&search=${encodeURIComponent(json.items[0].text.slice(0, 4))}`)).body);
+  assert.ok(search.items.some((i) => i.value === json.items[0].value), 'searchable by title');
 });

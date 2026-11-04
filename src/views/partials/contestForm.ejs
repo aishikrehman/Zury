@@ -46,6 +46,19 @@
   <% if (!creating && !wikiMode) { %><input type="hidden" name="type" value="<%= type %>"><% } %>
 
   <div class="row g-4">
+    <% if (!creating) { %>
+    <div class="col-12">
+      <div class="card z-config">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
+            <% steps.forEach(([key, label, hint], i) => { %>
+              <li class="nav-item step-item<%= i === 0 ? ' active' : '' %>" role="presentation">
+                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><%= label %></a>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+    <% } else { %>
     <div class="col-lg-3">
       <div class="card sticky-lg-top" style="top: 1rem; z-index: 1">
         <div class="card-body">
@@ -66,6 +79,7 @@
 
     <div class="col-lg-9">
       <div class="card">
+    <% } %>
         <div class="card-body">
 
           <%# ── 1. Basic info ─────────────────────────────────────────── %>
