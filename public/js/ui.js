@@ -98,3 +98,10 @@ document.addEventListener('click', (e) => {
   toast.querySelector('[data-toast-close]').addEventListener('click', hide);
   if (toast.hasAttribute('data-autohide')) setTimeout(hide, 5000);
 })();
+
+// Import from Fountain: the event type only matters for a new event.
+(function () {
+  const target = document.querySelector('[data-import-target]');
+  const only = document.querySelector('[data-new-only]');
+  if (target && only) target.addEventListener('change', () => { only.hidden = Boolean(target.value); });
+})();

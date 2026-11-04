@@ -8,11 +8,19 @@
         <label class="form-label" for="code"><%= t('Fountain editathon code or address') %></label>
         <input class="form-control<%= error ? ' is-invalid' : '' %>" id="code" name="code" value="<%= value %>" placeholder="https://fountain.toolforge.org/editathons/…" required autofocus>
         <% if (error) { %><div class="invalid-feedback"><%= error %></div><% } %>
+        <label class="form-label mt-3" for="target"><%= t("Import into") %></label>
+        <select class="form-select" id="target" name="target" data-import-target>
+          <option value=""><%= t("A new event") %></option>
+          <% if (events.length) { %><optgroup label="<%= t('An existing event, as one more wiki') %>">
+            <% events.forEach((e) => { %><option value="<%= e.id %>"<%= String(e.id) === target ? ' selected' : '' %>><%= e.label %></option><% }) %>
+          </optgroup><% } %>
+        </select>
+        <div data-new-only<%- target ? ' hidden' : '' %>>
         <label class="form-label mt-3" for="type"><%= t("Type") %></label>
         <select class="form-select" id="type" name="type">
           <% types.forEach((k) => { %><option value="<%= k %>"<%= k === type ? ' selected' : '' %>><%= t(CONTEST_TYPES[k]) %></option><% }) %>
         </select>
-        <p class="form-hint mt-2"><%= t('To add a Fountain editathon to an existing event or series edition, open that event’s settings and use Wikis.') %></p>
+        </div>
       </div>
       <div class="card-footer d-flex justify-content-end">
         <button class="btn btn-primary" type="submit"><%= t('Import') %></button>

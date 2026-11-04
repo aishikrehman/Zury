@@ -1187,5 +1187,9 @@
   "What": "কী",
   "Where": "কোথায়",
   "More details": "আরও তথ্য",
-  "optional": "ঐচ্ছিক"
+  "optional": "ঐচ্ছিক",
+  "Import into": "কোথায় আমদানি",
+  "A new event": "নতুন ইভেন্ট",
+  "An existing event, as one more wiki": "বিদ্যমান ইভেন্টে, নতুন একটি উইকি হিসেবে",
+  "Choose an event you organize.": "আপনি আয়োজন করেন এমন একটি ইভেন্ট বেছে নিন।"
 }

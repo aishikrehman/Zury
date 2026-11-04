@@ -38,7 +38,7 @@ async function seriesFields(tx, series, title, excludeId) {
   }
   if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: series.title || title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
   const taken = await tx.contest.findFirst({ where: { seriesId: row.id, edition: series.edition, NOT: excludeId ? { id: excludeId } : undefined }, select: { id: true } });
-  if (taken) throw new EventError(`/${series.slug}/${series.edition} is already used by another event.`, 'edition');
+  if (taken) throw new EventError(`/${series.slug}/${series.edition} is already used by another event. To add a wiki to it, open that event and use Wikis in its settings.`, 'edition');
   return { seriesId: row.id, edition: series.edition };
 }
 
