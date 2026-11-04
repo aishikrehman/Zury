@@ -2,19 +2,23 @@ const prisma = require('../config/prisma');
 const fountain = require('../services/fountainService');
 const { EventWikiError } = require('../services/eventWikiService');
 
+// Fountain counts Wikipedia articles: a writing contest or an edit-a-thon.
+const TYPES = ['writing', 'editathon'];
+
 function importForm(req, res) {
-  res.render('pages/events/import', { title: 'Import from Fountain — Zury', value: '', error: '' });
+  res.render('pages/events/import', { title: 'Import from Fountain — Zury', value: '', type: 'writing', types: TYPES, error: '' });
 }
 
 async function importEvent(req, res, next) {
   const value = String(req.body.code || '').trim();
+  const type = TYPES.includes(req.body.type) ? req.body.type : 'writing';
   try {
-    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value });
+    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type });
     req.flash('success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));
     res.redirect(`/${contest.slug}`);
   } catch (err) {
     if (!(err instanceof fountain.FountainError)) return next(err);
-    res.status(400).render('pages/events/import', { title: 'Import from Fountain — Zury', value, error: req.t(err.message) });
+    res.status(400).render('pages/events/import', { title: 'Import from Fountain — Zury', value, type, types: TYPES, error: req.t(err.message) });
   }
 }
 

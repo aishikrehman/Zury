@@ -548,35 +548,40 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
 .text-reset:hover { color: var(--z-brand) !important; }
 
 /* ── Event header ────────────────────────────────────────────────────────── */
-.gh-repohead {
-  position: relative;
-  padding-top: 1.5rem;
-  background: var(--z-gradient-soft);
-  border-bottom: 1px solid var(--z-border);
-  /* Above the page below it, so its menus open over the content. */
-  z-index: 20;
-}
-.gh-repohead + .page-body { margin-top: 1.5rem; }
-.gh-repohead::after {
-  content: "";
-  position: absolute;
-  right: 0; top: 0;
-  width: 360px; height: 100%;
-  background: none;
-  pointer-events: none;
-}
-.gh-repohead > .container-xl { position: relative; z-index: 1; }
-.gh-repohead-title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 1.35rem; letter-spacing: -0.02em; }
-.gh-repohead-title > .ti { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; font-size: 1.15rem; color: #fff; background: var(--z-gradient); border-radius: 10px; box-shadow: 0 6px 14px -6px rgba(51, 102, 204, 0.6); }
-.gh-repohead-title a:not(.btn) { color: var(--z-fg-muted); font-weight: 500; }
-.gh-repohead-title a:not(.btn):hover { color: var(--z-brand); }
-.gh-repohead-title strong a { color: var(--z-fg); font-weight: 750; }
-.gh-repohead-title .sep { color: var(--z-border-strong); font-weight: 300; }
-.gh-repohead-title .badge { margin-left: 0.25rem; }
-.gh-repohead-actions { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-.gh-repohead-actions form { margin: 0; }
-.gh-repohead-sub { margin: -0.2rem 0 0.25rem 2.75rem; color: var(--z-fg-muted); font-size: 0.875rem; }
-.gh-repohead .nav-tabs { border-bottom: 0; margin-top: 0.75rem !important; }
+.z-evhead { position: relative; z-index: 20; background: var(--z-surface); border-bottom: 1px solid var(--z-border); }
+.z-evhead::before { content: ""; position: absolute; inset: 0; background: radial-gradient(60rem 14rem at 0 0, color-mix(in srgb, var(--z-proj) 9%, transparent), transparent 70%); pointer-events: none; }
+.z-evhead > .container-xl { position: relative; padding-top: 1.5rem; }
+.z-evhead-cover { height: 170px; background: center / cover no-repeat; }
+.z-evhead.has-cover .z-evhead-cover { -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent); }
+.z-evhead.has-cover > .container-xl { margin-top: -4.5rem; }
+.z-evhead-path { display: flex; flex-wrap: wrap; gap: 0.4rem; font-size: 0.8125rem; color: var(--z-fg-muted); margin-bottom: 0.75rem; }
+.z-evhead-path a { color: inherit; text-decoration: none; }
+.z-evhead-path a:hover { color: var(--z-brand); }
+.z-evhead-path span { opacity: 0.5; }
+.z-evhead-main { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; }
+.z-evhead-logo { flex: none; width: 3.5rem; height: 3.5rem; border-radius: 16px; background: var(--z-surface) center / contain no-repeat; box-shadow: 0 0 0 1px var(--z-border), 0 8px 24px -12px rgba(16, 24, 40, 0.35); }
+.z-evhead-logo.is-icon { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 1.6rem; background: linear-gradient(140deg, var(--z-proj), color-mix(in srgb, var(--z-proj) 65%, #000)); box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--z-proj) 80%, transparent); }
+.z-evhead-text { flex: 1 1 20rem; min-width: 0; }
+.z-evhead-title { margin: 0; font-size: clamp(1.35rem, 1.1rem + 1vw, 1.85rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; }
+.z-evhead-title a { color: var(--z-fg); text-decoration: none; }
+.z-evhead-wiki { color: var(--z-fg-muted); font-weight: 500; }
+.z-evhead-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1rem; margin-top: 0.4rem; font-size: 0.875rem; color: var(--z-fg-muted); }
+.z-evhead-meta > span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.z-evhead-meta .ti { font-size: 1rem; opacity: 0.8; }
+.z-evhead-status { font-weight: 600; color: var(--z-fg); }
+.z-evhead-status i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--z-fg-muted); }
+.z-evhead-status.is-green i { background: var(--z-green); box-shadow: 0 0 0 3px var(--z-green-soft); }
+.z-evhead-status.is-blue i, .z-evhead-status.is-azure i { background: var(--z-brand); box-shadow: 0 0 0 3px var(--z-brand-soft); }
+.z-evhead-status.is-yellow i, .z-evhead-status.is-orange i { background: var(--z-amber); box-shadow: 0 0 0 3px var(--z-amber-soft); }
+.z-evhead-status.is-red i { background: #d73333; }
+.z-evhead-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-left: auto; }
+.z-evhead-actions form { margin: 0; }
+.z-evhead-tabs { display: flex; gap: 0.25rem; margin-top: 1.25rem; overflow-x: auto; scrollbar-width: none; }
+.z-evhead-tabs a { padding: 0.65rem 0.85rem; color: var(--z-fg-muted); font-weight: 500; font-size: 0.9rem; text-decoration: none; white-space: nowrap; box-shadow: inset 0 -2px 0 transparent; transition: color .15s, box-shadow .15s; }
+.z-evhead-tabs a:hover { color: var(--z-fg); box-shadow: inset 0 -2px 0 var(--z-border-strong); }
+.z-evhead-tabs a.active { color: var(--z-fg); font-weight: 650; box-shadow: inset 0 -2px 0 var(--z-proj); }
+.z-evhead + .page-body { margin-top: 1.5rem; }
+@media (max-width: 575.98px) { .z-evhead-logo { width: 2.75rem; height: 2.75rem; border-radius: 12px; font-size: 1.25rem; } .z-evhead-actions { margin-left: 0; width: 100%; } }
 
 /* ── Event cards: a colour per event type ─────────────────────────────────── */
 .z-event-card { --type: var(--z-brand); --type-soft: var(--z-brand-soft); overflow: hidden; }
@@ -620,8 +625,6 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
   .z-topbar-inner { gap: 0.5rem; }
   .z-brand span, .z-lang-code { display: none; }
   .z-topbar .btn-primary .ti { margin: 0 !important; }
-  .gh-repohead-title { font-size: 1.15rem; }
-  .gh-repohead-sub { margin-left: 0 !important; }
 }
 
 /* ── Review window ───────────────────────────────────────────────────────── */
@@ -757,7 +760,6 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 .z-proj-strip { height: 4px; background: var(--z-proj); }
 .z-proj-icon { background: color-mix(in srgb, var(--z-proj) 14%, transparent); color: var(--z-proj); }
 .z-proj-name { color: var(--z-proj); font-weight: 600; }
-.gh-repohead-title > .ti.z-proj-tile { background: linear-gradient(135deg, var(--z-proj), color-mix(in srgb, var(--z-proj) 70%, #000)); box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--z-proj) 70%, transparent); }
 .z-cal-ev { background: color-mix(in srgb, var(--z-proj) 14%, var(--z-surface)); border-left: 3px solid var(--z-proj); }
 .z-cal-ev .ti { color: var(--z-proj); }
 

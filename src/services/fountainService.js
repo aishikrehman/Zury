@@ -139,7 +139,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
 }
 
 // A new Zury event from a Fountain editathon, following it from then on.
-async function importEvent({ actorId, input }) {
+async function importEvent({ actorId, input, type = 'writing' }) {
   const code = parseCode(input);
   if (!code) throw new FountainError('Enter a Fountain editathon code or address.');
   const linked = await prisma.contestWiki.findFirst({ where: { fountainCode: code, contest: { deletedAt: null } }, include: { contest: true } });
@@ -151,7 +151,7 @@ async function importEvent({ actorId, input }) {
   const finish = e.finish ? new Date(e.finish) : null;
   const contest = await eventService.create({
     actorId,
-    type: 'editathon',
+    type,
     autoSlug: true,
     parsed: {
       contest: {

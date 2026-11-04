@@ -1,8 +1,4 @@
-<%#
-  Event header in the style of a GitHub repository header: type icon,
-  "Events / series / event" path with labels, actions on the right, then the
-  underlined tab bar.
-%>
+<%# Event header: path, title with status, one line of facts, actions, then the tabs. %>
 <%
   const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' };
   const color = st.badge === 'dark' ? 'secondary' : st.badge;
@@ -24,25 +20,42 @@
   if (can('manageEvent')) tabs.push(['activity', t('Activity'), '/activity', 'history']);
   const canSubmit = currentUser && contest.status === 'active' && active !== 'submit' && typeDef.entries !== false;
 %>
-<div class="gh-repohead d-print-none">
+<% const headProj = eventProject({ wikis: eventWikis, primaryWiki: contest.primaryWiki }); %>
+    <%
+      const shownWikis = wikiScope ? [wikiScope] : eventWikis;
+      const facts = [
+        contest.organizingCommunity,
+        // One wiki: its name. Several: how many (the wiki menu lists them).
+        shownWikis.length > 1 ? tn('{n} wiki', '{n} wikis', shownWikis.length) : wikiLocal((shownWikis[0] || {}).wiki || contest.primaryWiki),
+        // A multi-wiki event has no single language.
+        shownWikis.length > 1 ? '' : null,
+      ].filter(Boolean);
+      if (shownWikis.length <= 1 && contest.language) facts.push(langLocal(contest.language));
+    %>
+<header class="z-evhead d-print-none<%= contest.bannerUrl ? ' has-cover' : '' %>" style="--z-proj: <%= headProj.color %>">
+  <% if (contest.bannerUrl) { %><div class="z-evhead-cover" style="background-image: url('<%= contest.bannerUrl %>')"></div><% } %>
   <div class="container-xl">
-    <div class="gh-repohead-title">
-      <% if (contest.logoUrl) { %>
-        <span class="avatar avatar-xs rounded" style="background-image: url('<%= contest.logoUrl %>'); background-size: contain"></span>
-      <% } else { %>
-        <% const headProj = eventProject({ wikis: eventWikis, primaryWiki: contest.primaryWiki }); %>
-        <i class="ti ti-<%= headProj.icon %> z-proj-tile" style="--z-proj: <%= headProj.color %>" title="<%= headProj.label %> · <%= CONTEST_TYPES[contest.type] %>"></i>
-      <% } %>
+    <nav class="z-evhead-path" aria-label="<%= t('Breadcrumb') %>">
       <a href="/events"><%= t('Events') %></a>
-      <span class="sep">/</span>
-      <% if (series) { %><a href="/<%= series.slug %>"><%= series.title %></a><span class="sep">/</span><% } %>
-      <strong><a href="<%= eventBase %>"><%= series ? contest.edition : contest.title %></a></strong>
-      <% if (wikiScope) { %><span class="sep">/</span><strong><a href="<%= base %>"><%= wikiScope.code %></a></strong><% } %>
-      <span class="badge bg-<%= color %>-lt"><%= st.label %></span>
-      <% if (contest.visibility === 'private') { %><span class="badge"><%= t("Private") %></span><% } %>
-      <% if (contest.statusMode === 'manual' && !['draft', 'cancelled', 'archived'].includes(contest.status)) { %><span class="badge" title="<%= t("Status set by an organizer") %>"><%= t("pinned") %></span><% } %>
-
-      <div class="gh-repohead-actions">
+      <% if (series) { %><span>/</span><a href="/<%= series.slug %>"><%= series.title %></a><% } %>
+      <% if (wikiScope) { %><span>/</span><a href="<%= eventBase %>"><%= series ? contest.edition : contest.title %></a><% } %>
+    </nav>
+    <div class="z-evhead-main">
+      <% if (contest.logoUrl) { %>
+        <span class="z-evhead-logo" style="background-image: url('<%= contest.logoUrl %>')"></span>
+      <% } else { %>
+        <span class="z-evhead-logo is-icon" title="<%= headProj.label %> · <%= CONTEST_TYPES[contest.type] %>"><i class="ti ti-<%= headProj.icon %>"></i></span>
+      <% } %>
+      <div class="z-evhead-text">
+        <h1 class="z-evhead-title"><a href="<%= base %>"><%= series ? (contest.title || contest.edition) : contest.title %></a><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
+        <div class="z-evhead-meta">
+          <span class="z-evhead-status is-<%= color %>"><i></i><%= t(st.label) %></span>
+          <% if (contest.visibility === 'private') { %><span><i class="ti ti-lock"></i><%= t('Private') %></span><% } %>
+          <% if (contest.startDate) { %><span><i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %> – <%= formatDate(contest.endDate, contest.timezone) %></span><% } %>
+          <% facts.forEach((f) => { %><span><%= f %></span><% }) %>
+        </div>
+      </div>
+      <div class="z-evhead-actions">
         <% if (allWikis.length > 1) { %>
           <div class="dropdown">
             <button class="btn btn-ghost-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-world me-1"></i><%= wikiScope ? '/' + wikiScope.code : t('All wikis') %></button>
@@ -95,25 +108,10 @@
         <% } %>
       </div>
     </div>
-    <%
-      const shownWikis = wikiScope ? [wikiScope] : eventWikis;
-      const facts = [
-        contest.organizingCommunity,
-        // One wiki: its name. Several: how many (the wiki menu lists them).
-        shownWikis.length > 1 ? tn('{n} wiki', '{n} wikis', shownWikis.length) : wikiLocal((shownWikis[0] || {}).wiki || contest.primaryWiki),
-        // A multi-wiki event has no single language.
-        shownWikis.length > 1 ? '' : null,
-      ].filter(Boolean);
-      if (shownWikis.length <= 1 && contest.language) facts.push(langLocal(contest.language));
-    %>
-    <p class="gh-repohead-sub"><% if (contest.title && series) { %><span class="text-body"><%= contest.title %></span> · <% } %><%= facts.join(' · ') %></p>
-    <nav class="nav nav-tabs" aria-label="<%= t('Event') %>">
+    <nav class="z-evhead-tabs" aria-label="<%= t('Event') %>">
       <% tabs.forEach(([key, label, suffix, icon]) => { %>
-        <a class="nav-link<%= active === key ? ' active' : '' %>" href="<%= base %><%= suffix %>"<%= active === key ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %>"></i><%= label %></a>
+        <a class="<%= active === key ? 'active' : '' %>" href="<%= base %><%= suffix %>"<%- active === key ? ' aria-current="page"' : '' %>><%= label %></a>
       <% }) %>
     </nav>
   </div>
-</div>
-<% if (contest.bannerUrl && active === 'overview') { %>
-  <img src="<%= contest.bannerUrl %>" alt="" class="w-100 rounded mb-3" style="max-height: 220px; object-fit: cover" referrerpolicy="no-referrer">
-<% } %>
+</header>
