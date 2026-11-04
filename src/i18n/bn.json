@@ -1156,5 +1156,7 @@
   "Reduce motion": "নড়াচড়া কমান",
   "Every table except sign-in sessions, as compressed JSON. One is also made every day and before each update; the last 14 are kept.": "সাইন-ইন সেশন বাদে সব টেবিল, সংকুচিত JSON হিসেবে। প্রতিদিন ও প্রতিটি হালনাগাদের আগে একটি করে তৈরি হয়; শেষ ১৪টি রাখা হয়।",
   "The database is not empty; restore only into an empty one.": "ডাটাবেজ খালি নয়; শুধু খালি ডাটাবেজে ফেরত আনা যায়।",
-  "Filters": "ফিল্টার"
+  "Filters": "ফিল্টার",
+  "all wikis (global)": "সব উইকি (বৈশ্বিক)",
+  "Verified on Wikimedia": "উইকিমিডিয়ায় যাচাইকৃত"
 }

@@ -120,19 +120,16 @@
 
       <div class="col-lg-4">
         <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><%= t("Platform roles") %></h3></div>
-          <div class="card-body"><%- include('../../partials/accessSummary', { s: subject }) %></div>
-        </div>
-        <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><%= t("Verified Wikimedia groups") %></h3></div>
-          <div class="list-group list-group-flush">
-            <% if (!wikiRoles.length) { %><div class="list-group-item text-secondary"><%= t("None that Zury tracks.") %></div><% } %>
-            <% wikiRoles.forEach((r) => { %>
-              <div class="list-group-item">
-                <div><span class="badge bg-purple-lt"><%= r.rightName %></span> on <%- r.wiki === '*' ? 'all wikis (global)' : wikiLabel(r.wiki) %></div>
-                <div class="text-secondary small">Checked <%= formatDateTime(r.verifiedAt, currentUser.timezone || 'UTC') %></div>
-              </div>
-            <% }) %>
+          <div class="card-header"><h3 class="card-title"><%= t("Roles") %></h3></div>
+          <div class="card-body">
+            <%- include('../../partials/accessSummary', { s: subject }) %>
+            <% if (wikiRoles.length) { %>
+              <ul class="list-unstyled m-0 z-role-list border-top mt-2 pt-1">
+                <% wikiRoles.forEach((r) => { %>
+                  <li><i class="ti ti-world text-secondary"></i><div><div class="fw-medium"><%= r.rightName %> <span class="text-secondary fw-normal">· <%- r.wiki === '*' ? h(t('all wikis (global)')) : wikiLabel(r.wiki) %></span></div><div class="text-secondary small"><%= t('Verified on Wikimedia') %> · <%= formatDateTime(r.verifiedAt, currentUser.timezone || 'UTC') %></div></div></li>
+                <% }) %>
+              </ul>
+            <% } %>
           </div>
         </div>
         <div class="card">
