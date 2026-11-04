@@ -1183,5 +1183,9 @@
   "No Fountain editathon has this code.": "এই কোডের কোনো ফাউন্টেন এডিটাথন নেই।",
   "active": "সক্রিয়",
   "pending": "অপেক্ষমাণ",
-  "paused": "স্থগিত"
+  "paused": "স্থগিত",
+  "What": "কী",
+  "Where": "কোথায়",
+  "More details": "আরও তথ্য",
+  "optional": "ঐচ্ছিক"
 }

@@ -839,3 +839,13 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-toast-close:hover{background:var(--z-hover);color:var(--z-fg)}
 @keyframes z-toast-in{from{opacity:0;transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){.z-toast{animation:none;transition:none}}
+.z-form-group{padding:1.25rem 0;border-top:1px solid var(--z-border)}
+.z-form-group:first-child{padding-top:.25rem;border-top:0}
+.z-form-group-title{font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--z-fg-muted);margin:0 0 .85rem}
+.z-form-fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.4rem;margin:0}
+.z-form-fold>summary::-webkit-details-marker{display:none}
+.z-form-fold>summary::before{content:"";width:.45rem;height:.45rem;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s;margin-right:.2rem}
+.z-form-fold[open]>summary::before{transform:rotate(45deg)}
+.z-form-fold>summary .fw-normal{text-transform:none;letter-spacing:0}
+.z-step-num{display:inline-flex;align-items:center;justify-content:center;width:1.4rem;height:1.4rem;margin-right:.45rem;border-radius:50%;font-size:.75rem;font-weight:700;background:var(--z-hover);color:var(--z-fg-muted)}
+.step-item.active .z-step-num,.nav-link.active .z-step-num{background:var(--z-brand);color:#fff}

@@ -50,22 +50,23 @@
     <div class="col-12">
       <div class="card z-config">
         <div class="card-header">
-          <% if (creating) { %><h3 class="card-title me-3 d-none d-md-block"><%= t('Create new event') %></h3><% } %>
           <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
             <% steps.forEach(([key, label, hint], i) => { %>
               <li class="nav-item step-item<%= i === 0 ? ' active' : '' %>" role="presentation">
-                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><%= label %></a>
+                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><% if (creating) { %><span class="z-step-num"><%= formatNumber(i + 1) %></span><% } %><%= label %></a>
               </li>
             <% }) %>
           </ul>
         </div>
         <div class="card-body">
 
-          <%# ── 1. Basic info ─────────────────────────────────────────── %>
+          <%# ── 1. Basic info: what, where, when; series and extras folded away. ── %>
+          <% const openIf = (...keys) => keys.some((k) => errors[k] || v(k)) ? ' open' : ''; %>
           <section class="wizard-pane" id="step-basics" data-step="0">
-            <h3 class="mb-4"><%= t("Basic info") %></h3>
             <% if (!wikiMode) { %>
-              <div class="row g-3 mb-4">
+              <div class="z-form-group">
+                <h3 class="z-form-group-title"><%= t('What') %></h3>
+                <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label required" for="type"><%= t("Type of event") %></label>
                   <select class="form-select<%= inv('type') %>" id="type" <%- creating ? 'name="type" required' : 'disabled' %> data-type-select>
@@ -77,6 +78,38 @@
                   <div class="form-hint" data-type-description><%= typeDef ? typeDef.description : '' %></div>
                   <%- err('type') %>
                 </div>
+                  <div class="col-md-8">
+                    <label class="form-label required" for="title"><%= t("Title") %></label>
+                    <input class="form-control<%= inv('title') %>" id="title" name="title" maxlength="200" minlength="3" required value="<%= v('title') %>" placeholder="<%= t("e.g. Wiki Loves Monuments 2026 in Bangladesh") %>">
+                    <%- err('title') %>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" for="slug"><%= t("Address") %></label>
+                    <div class="input-group">
+                      <span class="input-group-text"><%= origin %>/</span>
+                      <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="<%= t("made-from-the-title") %>" data-slug>
+                      <span class="input-group-text d-none" data-series-address></span>
+                    </div>
+                    <div class="form-hint" data-address-hint><%= t("Made from the title; you can change it.") %></div>
+                    <%- err('slug') %>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+            <div class="z-form-group<%= wikiMode ? '' : ' pt-0 border-0' %>">
+              <% if (wikiMode) { %><h3 class="z-form-group-title"><%= t('What') %></h3><% } %>
+              <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label" for="description"><%= t("Description") %><%- mark('contest.description') %></label>
+                <textarea class="form-control<%= inv('description') %>" id="description" name="description" rows="5" maxlength="5000"><%= v('description') %></textarea>
+                <%- err('description') %>
+              </div>
+              </div>
+            </div>
+            <% if (!wikiMode) { %>
+              <div class="z-form-group">
+                <h3 class="z-form-group-title"><%= t('Where') %></h3>
+                <div class="row g-3">
                 <div class="col-md-8">
                   <select class="form-select<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" data-picker="wiki" required
                     data-language-label="<%= t('Project language') %>" data-site-label="<%= t('Project site') %>">
@@ -88,9 +121,35 @@
                   <% } %>
                   <%- err('primaryWiki') %><%- err('language') %>
                 </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="category"><%= t("Project category") %></label>
+                  <select class="form-select" id="category" name="category">
+                    <option value=""><%= t("Choose…") %></option>
+                    <% Object.entries(PROJECT_CATEGORIES).forEach(([key, label]) => { %><option value="<%= key %>"<%= v('category') === key ? ' selected' : '' %>><%= label %></option><% }) %>
+                  </select>
+                </div>
+                </div>
               </div>
-
-              <div class="row g-3 mb-4">
+            <% } %>
+            <div class="z-form-group">
+              <h3 class="z-form-group-title"><%= t('When') %></h3>
+              <div class="row g-3">
+              <div class="col-md-4"><%- dateInput('startDate') %></div>
+              <div class="col-md-4"><%- dateInput('endDate') %></div>
+              <div class="col-md-4">
+                <label class="form-label required" for="timezone"><%= t('Time zone') %><%- mark('contest.timezone') %></label>
+                <select class="form-select<%= inv('timezone') %>" id="timezone" name="timezone" required>
+                  <option value=""<%= v('timezone') ? '' : ' selected' %>><%= t("Choose…") %></option>
+                  <% TIMEZONES.forEach((tz) => { %><option value="<%= tz %>"<%= v('timezone') === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
+                </select>
+                <%- err('timezone') %>
+              </div>
+              </div>
+            </div>
+            <% if (!wikiMode) { %>
+              <details class="z-form-group z-form-fold"<%= openIf('seriesSlug', 'edition', 'previousEditionUrl') %>>
+                <summary class="z-form-group-title"><%= t('Series') %> <span class="text-secondary fw-normal"><%= t('optional') %></span></summary>
+                <div class="row g-3 mt-1">
                 <div class="col-md-4">
                   <label class="form-label" for="seriesSlug"><%= t("Part of") %></label>
                   <select class="form-select<%= inv('seriesSlug') %>" id="seriesSlug" name="seriesSlug" data-picker="series" placeholder="<%= t("e.g. Wiki Loves Monuments") %>">
@@ -108,56 +167,12 @@
                   <input class="form-control<%= inv('previousEditionUrl') %>" id="previousEditionUrl" name="previousEditionUrl" value="<%= v('previousEditionUrl') %>" placeholder="<%= t("https://…") %>">
                   <%- err('previousEditionUrl') %>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label" for="mainCategory"><%= t("Main category") %></label>
-                  <div class="input-group">
-                    <span class="input-group-text"><%= t("Category:") %></span>
-                    <input class="form-control<%= inv('mainCategory') %>" id="mainCategory" name="mainCategory" maxlength="200" value="<%= v('mainCategory') %>" placeholder="<%= t("Wiki Loves Monuments 2026 in Bangladesh") %>">
-                  </div>
-                  <%- err('mainCategory') %>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label" for="category"><%= t("Project category") %></label>
-                  <select class="form-select" id="category" name="category">
-                    <option value=""><%= t("Choose…") %></option>
-                    <% Object.entries(PROJECT_CATEGORIES).forEach(([key, label]) => { %><option value="<%= key %>"<%= v('category') === key ? ' selected' : '' %>><%= label %></option><% }) %>
-                  </select>
-                </div>
-              </div>
-
-              <div class="row g-3 mb-4">
-                <div class="col-12">
-                  <label class="form-label required" for="title"><%= t("Title") %></label>
-                  <input class="form-control form-control-lg<%= inv('title') %>" id="title" name="title" maxlength="200" minlength="3" required value="<%= v('title') %>" placeholder="<%= t("e.g. Wiki Loves Monuments 2026 in Bangladesh") %>">
-                  <%- err('title') %>
-                </div>
-                <div class="col-12">
-                  <label class="form-label" for="slug"><%= t("Address") %></label>
-                  <div class="input-group">
-                    <span class="input-group-text"><%= origin %>/</span>
-                    <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="<%= t("made-from-the-title") %>" data-slug>
-                    <span class="input-group-text d-none" data-series-address></span>
-                  </div>
-                  <div class="form-hint" data-address-hint><%= t("Made from the title; you can change it.") %></div>
-                  <%- err('slug') %>
-                </div>
-              </div>
+              </details>
             <% } %>
-
-            <div class="row g-3 mb-4">
-              <div class="col-md-4"><%- dateInput('startDate') %></div>
-              <div class="col-md-4"><%- dateInput('endDate') %></div>
-              <div class="col-md-4">
-                <label class="form-label required" for="timezone"><%= t('Time zone') %><%- mark('contest.timezone') %></label>
-                <select class="form-select<%= inv('timezone') %>" id="timezone" name="timezone" required>
-                  <option value=""<%= v('timezone') ? '' : ' selected' %>><%= t("Choose…") %></option>
-                  <% TIMEZONES.forEach((tz) => { %><option value="<%= tz %>"<%= v('timezone') === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
-                </select>
-                <%- err('timezone') %>
-              </div>
-            </div>
-
-            <div class="row g-3">
+            <details class="z-form-group z-form-fold"<%= openIf('organizingCommunity', 'contactInfo', 'mainCategory', 'logoUrl', 'bannerUrl') %>>
+              <summary class="z-form-group-title"><%= t('More details') %> <span class="text-secondary fw-normal"><%= t('optional') %></span></summary>
+              <div class="row g-3 mt-1">
               <% if (!wikiMode) { %>
                 <div class="col-md-6">
                   <label class="form-label" for="organizingCommunity"><%= t("Organizing community") %></label>
@@ -168,15 +183,20 @@
                 </div>
               <% } %>
               <div class="col-md-6">
-                <label class="form-label" for="contactInfo">Contact<%- mark('contest.contactInfo') %></label>
+                <label class="form-label" for="contactInfo"><%= t("Contact") %><%- mark('contest.contactInfo') %></label>
                 <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="<%= t("Talk page, email list or similar") %>">
                 <%- err('contactInfo') %>
               </div>
-              <div class="col-12">
-                <label class="form-label" for="description">Description<%- mark('contest.description') %></label>
-                <textarea class="form-control<%= inv('description') %>" id="description" name="description" rows="5" maxlength="5000"><%= v('description') %></textarea>
-                <%- err('description') %>
-              </div>
+<% if (!wikiMode) { %>
+                <div class="col-md-6">
+                  <label class="form-label" for="mainCategory"><%= t("Main category") %></label>
+                  <div class="input-group">
+                    <span class="input-group-text"><%= t("Category:") %></span>
+                    <input class="form-control<%= inv('mainCategory') %>" id="mainCategory" name="mainCategory" maxlength="200" value="<%= v('mainCategory') %>" placeholder="<%= t("Wiki Loves Monuments 2026 in Bangladesh") %>">
+                  </div>
+                  <%- err('mainCategory') %>
+                </div>
+<% } %>
               <% if (!wikiMode) { %>
                 <div class="col-md-6">
                   <label class="form-label" for="logoUrl"><%= t("Logo") %></label>
@@ -189,7 +209,8 @@
                   <%- err('bannerUrl') %>
                 </div>
               <% } %>
-            </div>
+              </div>
+            </details>
           </section>
 
           <%# ── 2. Submission rules ───────────────────────────────────── %>
