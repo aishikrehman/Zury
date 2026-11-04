@@ -6,6 +6,8 @@
     if (filters.wiki) p.set('wiki', filters.wiki);
     if (filters.q) p.set('q', filters.q);
     if (filters.sort !== 'newest') p.set('sort', filters.sort);
+    if (filters.project) p.set('project', filters.project);
+    if (filters.view !== 'grid') p.set('view', filters.view);
     Object.entries(extra).forEach(([k, v]) => p.set(k, v));
     const s = p.toString();
     return s ? `?${s}` : '';
@@ -15,51 +17,52 @@
 <%- include('../../partials/pageHeader', { pretitle: t('Events'), heading, actions: can('createEvent') ? `<a class="btn" href="/series/new"><i class="ti ti-stack-2 me-1"></i>${h(t('New series'))}</a> <a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>${h(t('Create event'))}</a>` : '' }) %>
 <div class="page-body">
   <div class="container-xl">
-    <div class="row g-4">
-      <div class="col-lg-3">
-        <form method="get" action="<%= base %>">
-          <div class="subheader mb-2"><%= t("Status") %></div>
-          <div class="list-group list-group-transparent mb-3">
-            <a class="list-group-item list-group-item-action d-flex align-items-center<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>"><i class="ti ti-calendar me-2"></i><%= t("All events") %></a>
-            <% groups.forEach((g) => { %>
-              <a class="list-group-item list-group-item-action d-flex align-items-center<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><i class="ti ti-<%= groupIcons[g] %> me-2"></i><%= t({ active: 'Active', upcoming: 'Upcoming', completed: 'Completed' }[g]) %></a>
-            <% }) %>
-          </div>
-          <div class="subheader mb-2"><%= t("Search") %></div>
-          <div class="input-icon mb-3">
-            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-            <input id="q" name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t("Title or community") %>" aria-label="<%= t("Search events") %>">
-          </div>
-          <div class="subheader mb-2"><%= t("Type") %></div>
-          <div class="mb-3">
-            <label class="form-check">
-              <input class="form-check-input" type="radio" name="type" value=""<%= !filters.type ? ' checked' : '' %>>
-              <span class="form-check-label"><%= t("All types") %></span>
-            </label>
-            <% Object.entries(CONTEST_TYPES).forEach(([key, label]) => { %>
-              <label class="form-check">
-                <input class="form-check-input" type="radio" name="type" value="<%= key %>"<%= filters.type === key ? ' checked' : '' %>>
-                <span class="form-check-label"><%= label %></span>
-              </label>
-            <% }) %>
-          </div>
-          <div class="subheader mb-2"><%= t("Wiki") %></div>
-          <select id="wiki" name="wiki" class="form-select mb-3" aria-label="<%= t("Wiki") %>">
-            <option value=""><%= t("All wikis") %></option>
-            <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiText(w) %></option><% }) %>
-          </select>
-          <div class="subheader mb-2"><%= t("Sort") %></div>
-          <select id="sort" name="sort" class="form-select mb-4" aria-label="<%= t("Sort") %>">
-            <% [['newest', 'Newest first'], ['soonest', 'Oldest first'], ['title', 'Title']].forEach(([key, label]) => { %>
-              <option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= label %></option>
-            <% }) %>
-          </select>
-          <button class="btn btn-primary w-100" type="submit"><i class="ti ti-filter me-1"></i><%= t("Apply filters") %></button>
-          <% if (filters.type || filters.wiki || filters.q) { %><a class="btn btn-link w-100 mt-1" href="<%= base %>"><%= t("Reset") %></a><% } %>
-        </form>
+    <%# Filters in one bar across the top. %>
+    <div class="card mb-3">
+      <div class="card-header flex-wrap gap-2">
+        <ul class="nav nav-pills card-header-pills">
+          <li class="nav-item"><a class="nav-link<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>"><%= t("All") %></a></li>
+          <% groups.forEach((g) => { %><li class="nav-item"><a class="nav-link<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><i class="ti ti-<%= groupIcons[g] %> me-1"></i><%= t({ active: 'Active', upcoming: 'Upcoming', completed: 'Completed' }[g]) %></a></li><% }) %>
+        </ul>
+        <div class="ms-auto btn-group" role="group" aria-label="<%= t('View') %>">
+          <a class="btn btn-sm btn-icon<%= filters.view === 'grid' ? ' active' : '' %>" href="<%= base %><%= qs({ view: 'grid' }).replace('view=grid', '').replace(/[?&]$/, '') %>" title="<%= t('Cards') %>" aria-label="<%= t('Cards') %>"><i class="ti ti-layout-grid"></i></a>
+          <a class="btn btn-sm btn-icon<%= filters.view === 'list' ? ' active' : '' %>" href="<%= base %><%= qs({ view: 'list' }) %>" title="<%= t('List') %>" aria-label="<%= t('List') %>"><i class="ti ti-list"></i></a>
+        </div>
       </div>
-
-      <div class="col-lg-9">
+      <form method="get" action="<%= base %>" class="card-body py-2">
+        <% if (filters.view !== 'grid') { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
+        <div class="row g-2 align-items-center">
+          <div class="col-12 col-md">
+            <div class="input-icon"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t("Title or community") %>" aria-label="<%= t("Search events") %>"></div>
+          </div>
+          <div class="col-6 col-md-auto">
+            <select name="project" class="form-select" aria-label="<%= t('Project') %>" data-autosubmit>
+              <option value=""><%= t('All projects') %></option>
+              <% Object.entries(PROJECTS).forEach(([key, pr]) => { %><option value="<%= key %>"<%= filters.project === key ? ' selected' : '' %>><%= pr.label %></option><% }) %>
+            </select>
+          </div>
+          <div class="col-6 col-md-auto">
+            <select name="type" class="form-select" aria-label="<%= t('Type') %>" data-autosubmit>
+              <option value=""><%= t("All types") %></option>
+              <% Object.entries(CONTEST_TYPES).forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.type === key ? ' selected' : '' %>><%= label %></option><% }) %>
+            </select>
+          </div>
+          <div class="col-6 col-md-auto">
+            <select name="wiki" class="form-select" aria-label="<%= t("Wiki") %>" data-autosubmit>
+              <option value=""><%= t("All wikis") %></option>
+              <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiLocal(w) %></option><% }) %>
+            </select>
+          </div>
+          <div class="col-6 col-md-auto">
+            <select name="sort" class="form-select" aria-label="<%= t("Sort") %>" data-autosubmit>
+              <% [['newest', 'Newest first'], ['soonest', 'Oldest first'], ['title', 'Title']].forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+            </select>
+          </div>
+          <% if (filters.type || filters.wiki || filters.q || filters.project) { %><div class="col-auto"><a class="btn btn-ghost-secondary" href="<%= base %>"><%= t("Reset") %></a></div><% } %>
+        </div>
+      </form>
+    </div>
+    <div>
         <div class="text-secondary mb-3"><%= tn('{n} event', '{n} events', result.total) %></div>
         <% if (!result.items.length) { %>
           <div class="card">
@@ -71,11 +74,37 @@
             </div>
           </div>
         <% } else { %>
+          <% if (filters.view === 'list') { %>
+            <div class="card">
+              <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                  <thead><tr><th><%= t('Event') %></th><th><%= t('Type') %></th><th><%= t('Dates') %></th><th class="text-end"><%= t('Participants') %></th><th><%= t('Status') %></th></tr></thead>
+                  <tbody>
+                    <% result.items.forEach((c) => { const pr = eventProject(c); const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
+                      <tr class="z-proj" style="--z-proj: <%= pr.color %>">
+                        <td>
+                          <div class="d-flex align-items-center">
+                            <span class="avatar avatar-sm z-proj-icon me-2" title="<%= pr.label %>"><i class="ti ti-<%= pr.icon %>"></i></span>
+                            <div class="min-w-0"><a href="<%= eventPath(c) %>" class="fw-medium text-reset"><%= c.title %></a><div class="small"><span class="z-proj-name"><%= pr.label %></span> · <%= c.wikis && c.wikis.length > 1 ? tn('{n} wiki', '{n} wikis', c.wikis.length) : wikiLocal(c.primaryWiki) %></div></div>
+                          </div>
+                        </td>
+                        <td class="text-secondary"><%= CONTEST_TYPES[c.type] %></td>
+                        <td class="text-secondary text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) + ' – ' + formatDate(c.endDate, c.timezone) : '—' %></td>
+                        <td class="text-end"><%= formatNumber(c._count ? c._count.memberships : 0) %></td>
+                        <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          <% } else { %>
           <div class="row row-cards">
             <% result.items.forEach((c) => { %>
               <div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div>
             <% }) %>
           </div>
+          <% } %>
         <% } %>
         <% if (result.pages > 1) { %>
           <div class="d-flex mt-4">
@@ -88,7 +117,6 @@
             </ul>
           </div>
         <% } %>
-      </div>
     </div>
   </div>
 </div>

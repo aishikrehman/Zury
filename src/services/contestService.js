@@ -42,11 +42,22 @@ function listByGroup(group, take = 6) {
   });
 }
 
-async function listPublic({ group, type, wiki, q, sort, page = 1, perPage = 12 }) {
+// Events on one project: their wikis' database names end the project's way.
+const SPECIAL = ['commonswiki', 'wikidatawiki', 'metawiki', 'specieswiki', 'mediawikiwiki', 'incubatorwiki', 'wikifunctionswiki', 'sourceswiki', 'outreachwiki', 'foundationwiki'];
+function projectWhere(project) {
+  if (project === 'commons') return { wikis: { some: { wiki: 'commonswiki' } } };
+  if (project === 'wikidata') return { wikis: { some: { wiki: 'wikidatawiki' } } };
+  if (project === 'wikipedia') return { wikis: { some: { wiki: { endsWith: 'wiki', notIn: SPECIAL } } } };
+  if (project === 'wikimedia') return { wikis: { some: { wiki: { in: SPECIAL.filter((w) => !['commonswiki', 'wikidatawiki'].includes(w)) } } } };
+  return { wikis: { some: { wiki: { endsWith: project } } } };
+}
+
+async function listPublic({ group, type, wiki, project, q, sort, page = 1, perPage = 12 }) {
   const where = { ...PUBLIC_WHERE };
   if (STATUS_GROUPS[group]) where.status = { in: STATUS_GROUPS[group] };
   if (CONTEST_TYPES[type]) where.type = type;
   if (wiki) where.wikis = { some: { wiki, status: { not: 'pending' } } };
+  else if (project) Object.assign(where, projectWhere(project));
   if (q) where.OR = [{ title: { contains: q } }, { organizingCommunity: { contains: q } }];
 
   const [items, total, wikis] = await Promise.all([

@@ -14,6 +14,7 @@
         <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and jury see this page.') %><% } %>
       </div>
     </div>
+    <% if (showRanking && (can('manageEvent') || can('exportData'))) { %><div class="ms-auto"><%- include('../../partials/exportMenu', { dataset: 'results', btn: '' }) %></div><% } %>
     <% if (can('publishResults')) { %>
       <form method="post" action="<%= base %>/results/publish" class="ms-auto">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">

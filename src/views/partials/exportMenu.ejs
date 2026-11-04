@@ -1,0 +1,8 @@
+<%# Download one dataset of this event: dataset, label (optional), btn (optional class). %>
+<% const fmts = [['csv', 'CSV', 'file-type-csv'], ['xls', 'Excel', 'file-spreadsheet'], ['wiki', t('Wikitext'), 'brand-wikipedia'], ['md', 'Markdown', 'markdown']]; %>
+<div class="dropdown">
+  <button class="btn <%= typeof btn !== 'undefined' ? btn : 'btn-sm' %> dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-download me-1"></i><%= typeof label !== 'undefined' ? label : t('Download') %></button>
+  <div class="dropdown-menu dropdown-menu-end">
+    <% fmts.forEach(([f, name, icon]) => { %><a class="dropdown-item" href="<%= base %>/export/<%= dataset %>.<%= f %>"><i class="ti ti-<%= icon %> me-2"></i><%= name %></a><% }) %>
+  </div>
+</div>

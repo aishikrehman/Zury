@@ -313,3 +313,22 @@ test('review queue order: the entry picker lists the queue in that order, a page
   const search = JSON.parse((await bn.get(`/wam/2026/bn/review/entries?mode=open&search=${encodeURIComponent(json.items[0].text.slice(0, 4))}`)).body);
   assert.ok(search.items.some((i) => i.value === json.items[0].value), 'searchable by title');
 });
+
+test('event data: download in CSV, Excel, wikitext and Markdown; clear the activity log', async () => {
+  const organizer = await session('Organizer');
+  const csv = await organizer.get('/wam/2026/export/entries.csv');
+  assert.equal(csv.status, 200);
+  assert.ok(csv.body.replace(/^\uFEFF/, '').startsWith('Title,Wiki,Participant,Status'), 'CSV with a header row');
+  assert.match((await organizer.get('/wam/2026/export/results.xls')).body, /<Workbook/);
+  assert.match((await organizer.get('/wam/2026/export/people.wiki')).body, /^\{\| class="wikitable sortable"/);
+  assert.match((await organizer.get('/wam/2026/export/reviews.md')).body, /^# .*\n\n\| Entry \|/);
+  assert.equal((await (await session('Participant')).get('/wam/2026/export/entries.csv')).status, 403, 'organizers only');
+
+  const c = await wam();
+  assert.ok(await t.prisma.auditLog.count({ where: { contestId: c.id } }));
+  const config = await organizer.get('/wam/2026/config');
+  assert.match(config.body, /id="data"/);
+  await organizer.post('/wam/2026/data/clear/activity');
+  assert.equal(await t.prisma.auditLog.count({ where: { contestId: c.id } }), 0, 'the event activity is gone');
+  assert.ok(await t.prisma.auditLog.findFirst({ where: { action: 'eventData.cleared.activity' } }), 'but the clearing itself is recorded');
+});

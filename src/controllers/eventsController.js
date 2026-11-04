@@ -21,15 +21,18 @@ async function index(req, res, next) {
       wiki: typeof req.query.wiki === 'string' ? req.query.wiki.slice(0, 64) : '',
       q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
       sort: contestService.SORTS[req.query.sort] ? req.query.sort : 'newest',
+      project: require('../utils/projectStyle').PROJECTS[req.query.project] ? req.query.project : '',
+      view: req.query.view === 'list' ? 'list' : 'grid',
     };
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const result = await contestService.listPublic({ ...filters, page });
+    const result = await contestService.listPublic({ ...filters, page, perPage: filters.view === 'list' ? 30 : 12 });
     res.render('pages/events/index', {
       title: `${GROUP_TITLES[group] || 'All events'} — Zury`,
       heading: GROUP_TITLES[group] || 'All events',
       filters,
       result,
       groups: Object.keys(GROUP_TITLES),
+      PROJECTS: require('../utils/projectStyle').PROJECTS,
     });
   } catch (err) {
     next(err);

@@ -1137,5 +1137,20 @@
   "{n} users": "{n} জন ব্যবহারকারী",
   "Jury and results": "জুরি ও ফলাফল",
   "Site": "সাইট",
-  "Platform": "প্ল্যাটফর্ম"
+  "Platform": "প্ল্যাটফর্ম",
+  "All projects": "সব প্রকল্প",
+  "CSV and Excel open in spreadsheets; wikitext pastes into a wiki page; Markdown into GitHub or a document.": "CSV ও Excel স্প্রেডশিটে খোলে; উইকিটেক্সট উইকি পাতায় বসানো যায়; Markdown গিটহাব বা নথিতে।",
+  "Cards": "কার্ড",
+  "Data": "ডেটা",
+  "Delete these rows for good? Download them first if you may need them.": "এই সারিগুলো স্থায়ীভাবে মুছবেন? দরকার হতে পারলে আগে ডাউনলোড করে নিন।",
+  "Download": "ডাউনলোড",
+  "Entries, reviews and results stay. Only what you delete here goes, for good.": "জমা, পর্যালোচনা ও ফলাফল থাকবে। শুধু এখান থেকে যা মুছবেন সেগুলো স্থায়ীভাবে যাবে।",
+  "List": "তালিকা",
+  "Unknown data.": "অজানা ডেটা।",
+  "Unknown dataset.": "অজানা ডেটাসেট।",
+  "Unknown format.": "অজানা ফরম্যাট।",
+  "Wikitext": "উইকিটেক্সট",
+  "Entry history": "জমার ইতিহাস",
+  "Withdrawn and invalid entries": "প্রত্যাহার করা ও অবৈধ জমা",
+  "Jury assignments": "জুরির দায়িত্ব"
 }

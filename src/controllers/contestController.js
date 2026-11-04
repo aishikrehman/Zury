@@ -148,6 +148,8 @@ async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
 }
 
 async function config(req, res) {
+  // The data card: what could be cleared, and how much of it there is.
+  res.locals.dataCounts = await eventData.counts(req.contest.id);
   const shown = req.wikiScope ? req.effective.contest : req.contest;
   renderConfig(req, res, { form: contestForm.toForm({ ...shown, series: req.series }, req.settings) });
 }
@@ -403,7 +405,35 @@ async function activity(req, res, next) {
   }
 }
 
-module.exports = {
+const eventData = require('../services/eventDataService');
+
+// /export/entries.csv and the like: one dataset in one format.
+async function exportData(req, res, next) {
+  try {
+    const { dataset, format } = req.params;
+    if (!eventData.DATASETS[dataset] || !eventData.FORMATS[format]) return res.status(404).render('pages/404', { title: 'Not Found' });
+    const title = `${req.contest.title} — ${eventData.DATASETS[dataset]}`;
+    const file = eventData.render(await eventData.table(req.contest, req.eventSettings, dataset, { wiki: req.wikiScope?.wiki }), format, title);
+    const name = `${req.contest.slug}${req.wikiScope ? '-' + req.wikiScope.code : ''}-${dataset}.${file.ext}`;
+    res.setHeader('Content-Type', file.type);
+    res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+    res.send(file.body);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function clearData(req, res, next) {
+  try {
+    const n = await eventData.clear({ actor: req.user, contest: req.contest, what: req.params.what });
+    req.flash('success', req.t('{n} rows removed.', { n }));
+    res.redirect(`${req.base}/config#data`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { exportData, clearData,
   show,
   config,
   updateConfig,
