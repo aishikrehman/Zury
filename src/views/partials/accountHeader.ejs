@@ -1,4 +1,4 @@
-<%# Your own pages: a sidebar with who you are and the links, then the page; close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
+<%# Your own pages: a sidebar with who you are, then tabs and the page; close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
 <%
   const me = currentUser;
   const tabs = [
@@ -15,7 +15,7 @@
           <div class="card-body text-center">
             <div class="mb-2"><%- include('./avatar', { u: me, size: 'xl' }) %></div>
             <h1 class="h3 m-0"><%= me.username %></h1>
-            <div class="text-secondary small"><%- me.homeWiki ? wikiLabel(me.homeWiki) : 'Wikimedia' %></div>
+            <div class="text-secondary small"><%= me.homeWiki ? wikiLocal(me.homeWiki) : 'Wikimedia' %></div>
             <% if (typeof actions !== 'undefined' && actions) { %><div class="btn-list justify-content-center mt-3"><%- actions %></div><% } %>
           </div>
           <div class="card-body small">
@@ -29,11 +29,9 @@
               <%- include('./accessSummary', { s: subject }) %>
             </div>
           <% } %>
-          <nav class="list-group list-group-flush border-top" aria-label="<%= t('Account') %>">
-            <% tabs.forEach(([key, href, icon, label]) => { %>
-              <a href="<%= href %>" class="list-group-item list-group-item-action d-flex align-items-center<%= key === tab ? ' active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-2"></i><%= label %></a>
-            <% }) %>
-          </nav>
         </div>
       </aside>
       <div class="col-lg-9">
+        <nav class="z-account-tabs mb-3" aria-label="<%= t('Account') %>">
+          <% tabs.forEach(([key, href, icon, label]) => { %><a href="<%= href %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-1"></i><%= label %></a><% }) %>
+        </nav>
