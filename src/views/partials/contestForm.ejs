@@ -33,7 +33,7 @@
   const toggle = (key, label, section = 'settings') => `
     <label class="form-check form-switch">
       <input class="form-check-input" type="checkbox" id="${key}" name="${key}"${on(key) ? ' checked' : ''}>
-      <span class="form-check-label">${esc(label)}${mark(section + '.' + key)}</span>
+      <span class="form-check-label">${esc(t(label))}${mark(section + '.' + key)}</span>
     </label>`;
 %>
 <% if (errorCount) { %>
@@ -148,7 +148,7 @@
               <div class="col-md-4"><%- dateInput('startDate') %></div>
               <div class="col-md-4"><%- dateInput('endDate') %></div>
               <div class="col-md-4">
-                <label class="form-label required" for="timezone">Time zone<%- mark('contest.timezone') %></label>
+                <label class="form-label required" for="timezone"><%= t('Time zone') %><%- mark('contest.timezone') %></label>
                 <select class="form-select<%= inv('timezone') %>" id="timezone" name="timezone" required>
                   <option value=""<%= v('timezone') ? '' : ' selected' %>><%= t("Choose…") %></option>
                   <% TIMEZONES.forEach((tz) => { %><option value="<%= tz %>"<%= v('timezone') === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
@@ -210,12 +210,12 @@
                 </select>
               </div>
               <div class="col-sm-6 col-lg-3">
-                <label class="form-label" for="minAccountAgeDays">Account age (days)<%- mark('settings.minAccountAgeDays') %></label>
+                <label class="form-label" for="minAccountAgeDays"><%= t('Account age (days)') %><%- mark('settings.minAccountAgeDays') %></label>
                 <input type="number" min="0" class="form-control<%= inv('minAccountAgeDays') %>" id="minAccountAgeDays" name="minAccountAgeDays" value="<%= v('minAccountAgeDays') %>" placeholder="0">
                 <%- err('minAccountAgeDays') %>
               </div>
               <div class="col-sm-6 col-lg-3">
-                <label class="form-label" for="minEditCount">Global edits<%- mark('settings.minEditCount') %></label>
+                <label class="form-label" for="minEditCount"><%= t('Global edits') %><%- mark('settings.minEditCount') %></label>
                 <input type="number" min="0" class="form-control<%= inv('minEditCount') %>" id="minEditCount" name="minEditCount" value="<%= v('minEditCount') %>" placeholder="0">
                 <%- err('minEditCount') %>
               </div>
@@ -410,9 +410,9 @@
             <button type="button" class="btn" data-wizard-back disabled><i class="ti ti-arrow-left me-1"></i><%= t("Back") %></button>
             <span class="text-secondary small mx-auto" data-wizard-count></span>
             <button type="button" class="btn btn-primary" data-wizard-next><%= t("Next") %><i class="ti ti-arrow-right ms-1"></i></button>
-            <button type="submit" class="btn btn-primary d-none" data-wizard-submit><i class="ti ti-check me-1"></i><%= submitLabel %></button>
+            <button type="submit" class="btn btn-primary d-none" data-wizard-submit><i class="ti ti-check me-1"></i><%= t(submitLabel) %></button>
           <% } else { %>
-            <button type="submit" class="btn btn-primary ms-auto"><i class="ti ti-device-floppy me-1"></i><%= submitLabel %></button>
+            <button type="submit" class="btn btn-primary ms-auto"><i class="ti ti-device-floppy me-1"></i><%= t(submitLabel) %></button>
           <% } %>
         </div>
       </div>

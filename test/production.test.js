@@ -74,3 +74,27 @@ test('rate limits answer 429 once the limit is passed', async () => {
   assert.equal(third.res.statusCode, 429);
   assert.ok(Number(third.res.headers['Retry-After']) > 0);
 });
+
+test('search engines: descriptions, canonical links, noindex on staff pages, robots.txt and sitemap.xml', async () => {
+  const { startTestApp } = require('./helpers/testApp');
+  const app = await startTestApp({ DEMO_MODE: 'true' });
+  try {
+    await require('./helpers/fixtures').seedDemoData(app.prisma);
+    const home = await app.request('/events');
+    assert.match(home.body, /<meta name="description" content="[^"]{20,}">/);
+    assert.match(home.body, /<link rel="canonical" href="http:\/\/127\.0\.0\.1:\d+\/events">/);
+    assert.match(home.body, /property="og:title"/);
+    const event = await app.request('/wam/2026');
+    assert.match(event.body, /<meta name="description" content="Write or expand articles about Asia/);
+    assert.match((await app.request('/demo')).body, /noindex/, 'staff and personal pages stay out of search');
+    const robots = await app.request('/robots.txt');
+    assert.match(robots.body, /Disallow: \/admin/);
+    assert.match(robots.body, /Sitemap: /);
+    const map = await app.request('/sitemap.xml');
+    assert.match(map.body, /<urlset/);
+    assert.match(map.body, /\/wam\/2026<\/loc>/);
+    assert.doesNotMatch(map.body, /jury-calibration/, 'no private events');
+  } finally {
+    app.stop();
+  }
+});

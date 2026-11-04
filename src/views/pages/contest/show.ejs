@@ -19,7 +19,7 @@
 
   <%# Why the Join button is missing, for someone who can't take part. %>
   <% if (currentUser && !isParticipant && !eligibility.eligible && eligibility.reasons.length) { %>
-    <div class="alert alert-warning"><i class="ti ti-info-circle"></i><div><% eligibility.reasons.forEach((r) => { %><div><%= r %></div><% }) %></div></div>
+    <div class="alert alert-warning"><i class="ti ti-info-circle"></i><div><% eligibility.reasons.forEach((r) => { %><div><%= t(r) %></div><% }) %></div></div>
   <% } %>
 
   <%# ── About the event and how to take part ── %>

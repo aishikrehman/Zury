@@ -3,17 +3,22 @@
     let d = {};
     try { d = JSON.parse(e.details || '{}'); } catch { d = {}; }
     const label = (s) => (CONTEST_STATUSES[s] || { label: s }).label;
+    // Each line in the reader's language.
+    const n = (d.changed || []).length;
     switch (e.action) {
-      case 'contest.created': return 'created the event';
-      case 'contest.updated': return `changed ${(d.changed || []).length} setting${(d.changed || []).length === 1 ? '' : 's'}: ${(d.changed || []).join(', ')}`;
-      case 'contest.statusChanged': return `status ${label(d.from)} → ${label(d.to)}${d.by ? ` (${d.by})` : ''}`;
-      case 'contest.deleted': return 'deleted the event';
-      case 'membership.added': return `added ${d.username} as ${d.role}`;
-      case 'membership.removed': return `removed ${d.username} (${d.role})`;
-      case 'membership.joined': return 'joined as a participant';
-      case 'membership.left': return 'left the event';
-      case 'contestPermission.set': return `${d.allowed ? 'allowed' : 'denied'} ${d.permission} for ${d.username}`;
-      case 'contestPermission.removed': return `removed the ${d.permission} override for ${d.username}`;
+      case 'contest.created': return t('created the event');
+      case 'contest.updated': return tn('changed {n} setting: {list}', 'changed {n} settings: {list}', n).replace('{list}', (d.changed || []).join(', '));
+      case 'contest.statusChanged': return t('status {from} → {to}', { from: t(label(d.from)), to: t(label(d.to)) });
+      case 'contest.deleted': return t('deleted the event');
+      case 'membership.added': return t('added {user} as {role}', { user: d.username, role: t(EVENT_ROLES[d.role] ? EVENT_ROLES[d.role].label : d.role) });
+      case 'membership.removed': return t('removed {user} ({role})', { user: d.username, role: t(EVENT_ROLES[d.role] ? EVENT_ROLES[d.role].label : d.role) });
+      case 'membership.joined': return t('joined as a participant');
+      case 'membership.left': return t('left the event');
+      case 'contestPermission.set': return t(d.allowed ? 'allowed {permission} for {user}' : 'denied {permission} for {user}', { permission: d.permission, user: d.username });
+      case 'contestPermission.removed': return t('removed the {permission} override for {user}', { permission: d.permission, user: d.username });
+      case 'submissions.created': return tn('submitted {n} entry', 'submitted {n} entries', d.count || 1);
+      case 'results.published': return t('published the results');
+      case 'results.unpublished': return t('hid the results');
       default: return e.action;
     }
   };
@@ -22,7 +27,7 @@
 <div class="page-body"><div class="container-xl">
   <% const iconFor = (a) => ({ 'contest.created': ['plus', 'green'], 'contest.updated': ['pencil', 'blue'], 'contest.statusChanged': ['progress', 'azure'], 'contest.deleted': ['trash', 'red'], 'membership.added': ['user-plus', 'green'], 'membership.removed': ['user-minus', 'orange'], 'membership.joined': ['login', 'teal'], 'membership.left': ['logout', 'secondary'], 'contestPermission.set': ['key', 'purple'], 'contestPermission.removed': ['key-off', 'purple'], 'submissions.created': ['upload', 'blue'] }[a] || ['point', 'secondary']); %>
   <div class="card">
-    <div class="card-header"><h3 class="card-title"><%= t("Activity") %></h3><div class="card-actions text-secondary">Latest <%= entries.length %> · <%= contest.timezone %></div></div>
+    <div class="card-header"><h3 class="card-title"><%= t("Activity") %></h3><div class="card-actions text-secondary"><%= t('Latest {n}', { n: entries.length }) %> · <%= contest.timezone %></div></div>
     <% if (!entries.length) { %>
       <div class="empty"><div class="empty-icon"><i class="ti ti-history-off icon"></i></div><p class="empty-title"><%= t("No activity yet") %></p></div>
     <% } else { %>

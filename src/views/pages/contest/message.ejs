@@ -32,7 +32,7 @@
               <% Object.entries(methods).forEach(([k, label]) => { %>
                 <div class="form-check form-check-inline">
                   <input class="form-check-input" type="radio" name="method" id="method_<%= k %>" value="<%= k %>"<%= form.method === k ? ' checked' : '' %>>
-                  <label class="form-check-label" for="method_<%= k %>"><%= label %></label>
+                  <label class="form-check-label" for="method_<%= k %>"><%= t(label) %></label>
                 </div>
               <% }) %>
             </div>

@@ -1,0 +1,23 @@
+<%#
+  Search and sharing: a description, the canonical address, Open Graph and Twitter
+  cards, and "noindex" for pages that are personal or for staff.
+%>
+<%
+  const origin = (typeof siteOrigin !== 'undefined' && siteOrigin) || '';
+  const path = typeof currentPath !== 'undefined' ? currentPath : '/';
+  const ev = typeof contest !== 'undefined' && contest && contest.title ? contest : null;
+  const desc = String((typeof metaDescription !== 'undefined' && metaDescription) || (ev && ev.description) || t('Contests, edit-a-thons and community events for Wikipedia, Commons, Wikidata and the other Wikimedia projects.')).replace(/\s+/g, ' ').trim().slice(0, 160);
+  const pageTitle = typeof title !== 'undefined' ? t(title) : 'Zury';
+  const privatePath = /^\/(admin|settings|dashboard|submissions|review|demo|login|series(\/new)?$)|\/(config|participants|assignments|activity|message|review|submit|appeals)(\/|$)/.test(path);
+  const hidden = privatePath || (ev && ev.visibility === 'private');
+%>
+  <meta name="description" content="<%= desc %>">
+  <% if (hidden) { %><meta name="robots" content="noindex, nofollow"><% } else { %><link rel="canonical" href="<%= origin + path %>"><% } %>
+  <meta property="og:site_name" content="Zury">
+  <meta property="og:type" content="<%= ev ? 'article' : 'website' %>">
+  <meta property="og:title" content="<%= pageTitle %>">
+  <meta property="og:description" content="<%= desc %>">
+  <meta property="og:url" content="<%= origin + path %>">
+  <meta property="og:image" content="<%= origin %>/images/zury-logo.svg">
+  <meta property="og:locale" content="<%= lang.code === 'bn' ? 'bn_BD' : 'en_GB' %>">
+  <meta name="twitter:card" content="summary">

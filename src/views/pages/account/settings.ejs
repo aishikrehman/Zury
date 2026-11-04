@@ -24,7 +24,7 @@
                 <div class="col-auto"><%- include('../../partials/avatar', { u: currentUser, size: 'xl' }) %></div>
                 <div class="col">
                   <div class="fw-bold"><%= currentUser.username %></div>
-                  <div class="text-secondary">Home wiki: <%- currentUser.homeWiki ? wikiLabel(currentUser.homeWiki) : 'unknown' %></div>
+                  <div class="text-secondary"><%= t('Home wiki') %>: <%= currentUser.homeWiki ? wikiLocal(currentUser.homeWiki) : t('unknown') %></div>
                 </div>
               </div>
               <h3 class="card-title mt-4"><%= t("Language and time") %></h3>

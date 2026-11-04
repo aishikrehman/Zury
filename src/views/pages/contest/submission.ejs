@@ -121,7 +121,7 @@
           <ul class="steps steps-vertical">
             <% submission.history.forEach((h, i) => { %>
               <li class="step-item<%= i === 0 ? ' active' : '' %>">
-                <div class="h5 m-0"><%= h.actor ? h.actor.username : 'Zury' %> <span class="fw-normal"><%= actionLabel[h.action] || h.action %></span></div>
+                <div class="h5 m-0"><%= h.actor ? h.actor.username : 'Zury' %> <span class="fw-normal"><%= actionLabel[h.action] ? t(actionLabel[h.action]) : h.action %></span></div>
                 <div class="text-secondary small"><%= formatDateTime(h.createdAt, tz) %>
                   <% if (h.previousValue && h.newValue && h.previousValue !== h.newValue) { %> · <%= (SUBMISSION_STATUSES[h.previousValue] || {}).label %> → <%= (SUBMISSION_STATUSES[h.newValue] || {}).label %><% } %>
                 </div>

@@ -1,5 +1,5 @@
 // Trims Tabler's stylesheet and icon font to what Zury uses.
-//   assets/tabler.css               → public/css/tabler.css (rules whose classes appear in the code)
+//   @tabler/core's tabler.css       → public/css/tabler.css (rules whose classes appear in the code)
 //   @tabler/icons-webfont           → public/icons/ (only the icons the code names)
 // Run after changing views or scripts: npm run build:assets
 const fs = require('fs');
@@ -18,7 +18,7 @@ function sourceFiles(dir, exts) {
   }
   return out;
 }
-const SOURCES = [...sourceFiles('src', ['.ejs', '.js']), ...sourceFiles('public/js', ['.js']), 'public/css/theme.css', 'public/css/style.css'];
+const SOURCES = [...sourceFiles('src', ['.ejs', '.js']), ...sourceFiles('public/js', ['.js']), 'public/css/theme.css'];
 const text = SOURCES.map(read).join('\n');
 const words = new Set(text.match(/[A-Za-z0-9_-]+/g));
 // Classes made from pieces, e.g. bg-<%= color %>-lt or `btn-${kind}`: keep every class with that start.
@@ -132,7 +132,7 @@ function emit(nodes) {
   return out;
 }
 
-const source = read('assets/tabler.css');
+const source = read('node_modules/@tabler/core/dist/css/tabler.css');
 const trimmed = emit(parse(source))
   .replace(/\s*\n\s*/g, '')
   .replace(/;\s*}/g, '}')

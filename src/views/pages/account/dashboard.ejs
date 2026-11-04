@@ -8,7 +8,7 @@
     ['files', 'azure', typeof submissionCount !== 'undefined' ? submissionCount : participating, typeof submissionCount !== 'undefined' ? 'Submissions' : 'Participating'],
   ];
   const actions = [
-    can('createEvent') ? '<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>Create event</a>' : '',
+    can('createEvent') ? `<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>${h(t('Create event'))}</a>` : '',
     can('accessAdmin') ? '<a class="btn btn-dark" href="/admin"><i class="ti ti-shield-lock me-1"></i>Administration</a>' : '',
   ].join('');
 %>
@@ -54,7 +54,7 @@
                     <div class="col-auto"><span class="bg-<%= color %> text-white avatar"><i class="ti ti-<%= icon %>"></i></span></div>
                     <div class="col">
                       <div class="font-weight-medium h2 mb-0"><%= value %></div>
-                      <div class="text-secondary"><%= label %></div>
+                      <div class="text-secondary"><%= t(label) %></div>
                     </div>
                   </div>
                 </div>

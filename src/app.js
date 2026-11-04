@@ -81,7 +81,6 @@ app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: env.nodeE
 // Self-hosted: Toolforge forbids loading assets from third-party CDNs.
 const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules', pkg, 'dist'), { maxAge: '7d' });
 app.use('/vendor/tabler', vendor('@tabler/core'));
-app.use('/vendor/tabler-icons', vendor('@tabler/icons-webfont'));
 app.use('/vendor/apexcharts', vendor('apexcharts'));
 app.use('/vendor/tom-select', vendor('tom-select'));
 // Inter for Latin text.
@@ -97,6 +96,8 @@ app.use((req, res, next) => {
   res.locals.csrfToken = '';
   res.locals.can = () => false;
   res.locals.currentPath = req.path;
+  // The site's own address, for canonical links and sharing cards.
+  res.locals.siteOrigin = `${req.protocol}://${req.get('host')}`;
   res.locals.ui = { wide: false, textLarge: false };
   next();
 });
