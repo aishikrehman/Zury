@@ -121,8 +121,9 @@ async function changeStatus({ actorId, contest, settings, action, status }) {
 async function softDelete({ actorId, contest, confirmation }) {
   if (confirmation !== contest.slug) throw new EventError('Type the event slug exactly to confirm.', 'confirmation');
   return prisma.$transaction(async (tx) => {
-    await tx.contest.update({ where: { id: contest.id }, data: { deletedAt: new Date(), deletedById: actorId } });
-    await audit.record({ actorId, contestId: contest.id, action: 'contest.deleted', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, slug: contest.slug } }, tx);
+    // A deleted event gives up its address, so a new event can use /<slug> or /<series>/<edition> again.
+    await tx.contest.update({ where: { id: contest.id }, data: { deletedAt: new Date(), deletedById: actorId, slug: `deleted-${contest.id}-${contest.slug}`.slice(0, 190), edition: null } });
+    await audit.record({ actorId, contestId: contest.id, action: 'contest.deleted', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, slug: contest.slug, edition: contest.edition } }, tx);
   });
 }
 
