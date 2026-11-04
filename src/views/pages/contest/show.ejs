@@ -76,22 +76,30 @@
       <% if (wikiParts.length) { %>
         <div class="card mb-3">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3><div class="card-actions text-secondary small"><%= t('{n} taking part', { n: wikiParts.filter((w) => w.status !== 'pending').length }) %></div></div>
-          <div class="table-responsive">
-            <table class="table table-vcenter card-table">
-              <thead><tr><th><%= t("Wiki") %></th><th><%= t("Status") %></th><th class="text-end"><%= t("Entries") %></th><th class="text-end"><%= t("Organizers") %></th><th class="text-end"><%= t("Jury") %></th><th class="text-end"><%= t("Own settings") %></th></tr></thead>
-              <tbody>
-                <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: t(w.status === 'paused' ? 'Paused' : 'Waiting for approval'), badge: 'secondary' }; %>
-                  <tr>
-                    <td><a href="<%= eventBase %>/<%= w.code %>" class="fw-bold">/<%= w.code %></a> <span class="small ms-1"><%- wikiLabel(w.wiki) %></span></td>
-                    <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
-                    <td class="text-end"><%= formatNumber(w.entries) %></td>
-                    <td class="text-end"><%= formatNumber(w.organizers) %></td>
-                    <td class="text-end"><%= formatNumber(w.jury) %></td>
-                    <td class="text-end text-secondary"><%= w.overridden ? formatNumber(w.overridden) : '—' %></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
+          <% const mostEntries = Math.max(1, ...wikiParts.map((w) => w.entries)); %>
+          <div class="card-body">
+            <div class="row row-cards g-3">
+              <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: t(w.status === 'paused' ? 'Paused' : 'Waiting for approval'), badge: 'secondary' }; const pr = eventProject({ primaryWiki: w.wiki }); %>
+                <div class="col-sm-6 col-lg-4">
+                  <a class="z-wiki-card" href="<%= eventBase %>/<%= w.code %>" style="--z-proj: <%= pr.color %>">
+                    <div class="d-flex align-items-start gap-2">
+                      <span class="avatar avatar-sm z-proj-icon"><i class="ti ti-<%= pr.icon %>"></i></span>
+                      <div class="min-w-0 flex-fill">
+                        <div class="z-wiki-name text-truncate"><%= wikiLocal(w.wiki) %></div>
+                        <div class="z-wiki-code">/<%= w.code %><% if (w.overridden) { %> · <%= t('{n} own settings', { n: w.overridden }) %><% } %></div>
+                      </div>
+                      <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
+                    </div>
+                    <div class="z-wiki-bar" title="<%= t('{n} entries', { n: w.entries }) %>"><span style="width: <%= Math.round((w.entries / mostEntries) * 100) %>%"></span></div>
+                    <div class="z-wiki-stats">
+                      <span><strong><%= formatNumber(w.entries) %></strong> <%= t('Entries') %></span>
+                      <span><strong><%= formatNumber(w.organizers) %></strong> <%= t('Organizers') %></span>
+                      <span><strong><%= formatNumber(w.jury) %></strong> <%= t('Jury') %></span>
+                    </div>
+                  </a>
+                </div>
+              <% }) %>
+            </div>
           </div>
         </div>
       <% } %>
