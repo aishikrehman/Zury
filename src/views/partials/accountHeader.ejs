@@ -1,4 +1,4 @@
-<%# Your own pages: a sidebar with who you are, then tabs and the page; close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
+<%# Your own pages: a sidebar with who you are, then tabs and the page; close with accountEnd. Expects: tab; optional eventCount. %>
 <%
   const me = currentUser;
   const tabs = [
@@ -16,12 +16,12 @@
             <div class="mb-2"><%- include('./avatar', { u: me, size: 'xl' }) %></div>
             <h1 class="h3 m-0"><%= me.username %></h1>
             <div class="text-secondary small"><%= me.homeWiki ? wikiLocal(me.homeWiki) : 'Wikimedia' %></div>
-            <% if (typeof actions !== 'undefined' && actions) { %><div class="btn-list justify-content-center mt-3"><%- actions %></div><% } %>
           </div>
-          <div class="card-body small">
-            <% if (me.wikimediaRegisteredAt) { %><div class="d-flex justify-content-between"><span class="text-secondary"><%= t("Wikimedia account since") %></span><span><%= formatDate(me.wikimediaRegisteredAt) %></span></div><% } %>
-            <div class="d-flex justify-content-between mt-1"><span class="text-secondary"><%= t("Joined Zury") %></span><span><%= formatDate(me.createdAt) %></span></div>
-            <% if (typeof eventCount !== 'undefined') { %><div class="d-flex justify-content-between mt-1"><span class="text-secondary"><%= t("Events") %></span><span><%= formatNumber(eventCount) %></span></div><% } %>
+          <div class="card-body small z-account-facts">
+            <% if (me.wikimediaRegisteredAt) { %><div title="<%= t('Wikimedia account since') %>"><i class="ti ti-world"></i><%= formatDate(me.wikimediaRegisteredAt) %></div><% } %>
+            <div title="<%= t('Joined Zury') %>"><i class="ti ti-user-plus"></i><%= formatDate(me.createdAt) %></div>
+            <% if (typeof eventCount !== 'undefined') { %><div title="<%= t('Events') %>"><i class="ti ti-calendar-event"></i><%= tn('{n} event', '{n} events', eventCount) %></div><% } %>
+            <a href="https://meta.wikimedia.org/wiki/Special:CentralAuth/<%= encodeURIComponent(me.username.replace(/ /g, '_')) %>" rel="noopener" target="_blank"><i class="ti ti-external-link"></i><%= t('Wikimedia account') %></a>
           </div>
           <% if (typeof subject !== 'undefined' && subject) { %>
             <div class="card-body">
