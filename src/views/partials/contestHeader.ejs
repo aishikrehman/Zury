@@ -45,7 +45,7 @@
       <div class="gh-repohead-actions">
         <% if (allWikis.length > 1) { %>
           <div class="dropdown">
-            <button class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-world me-1"></i><%= wikiScope ? '/' + wikiScope.code : t('All wikis') %></button>
+            <button class="btn btn-ghost-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-world me-1"></i><%= wikiScope ? '/' + wikiScope.code : t('All wikis') %></button>
             <div class="dropdown-menu dropdown-menu-end">
               <a class="dropdown-item<%= wikiScope ? '' : ' active' %>" href="<%= eventBase %>"><%= t("All wikis") %></a>
               <div class="dropdown-divider"></div>
@@ -55,27 +55,52 @@
             </div>
           </div>
         <% } %>
-        <% if (canSubmit) { %>
+        <%
+          // Taking part lives here: join, then submit, then leave.
+          const isParticipant = scope.eventRoles && scope.eventRoles.includes('participant');
+          const joinable = settings.registrationEnabled && ['active', 'upcoming', 'published'].includes(contest.status);
+          const joinWikis = !wikiScope && eventWikis.length > 1 ? eventWikis.filter((w) => w.status === 'active') : [];
+        %>
+        <% if (!currentUser && joinable) { %>
+          <a href="/login" class="btn btn-primary"><i class="ti ti-login me-1"></i><%= t("Log in to join") %></a>
+        <% } else if (currentUser && !isParticipant && joinable && !(typeof eligibility !== 'undefined' && !eligibility.eligible)) { %>
+          <% if (joinWikis.length) { %>
+            <div class="dropdown">
+              <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></button>
+              <div class="dropdown-menu dropdown-menu-end">
+                <div class="dropdown-header"><%= t("Your wiki") %></div>
+                <% joinWikis.forEach((w) => { %>
+                  <form method="post" action="<%= base %>/join"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="wiki" value="<%= w.wiki %>">
+                    <button class="dropdown-item" type="submit"><%= wikiLocal(w.wiki) %></button>
+                  </form>
+                <% }) %>
+              </div>
+            </div>
+          <% } else { %>
+            <form method="post" action="<%= base %>/join"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-primary" type="submit"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></button>
+            </form>
+          <% } %>
+        <% } %>
+        <% if (canSubmit && (isParticipant || can('submitOnBehalf') || can('manageEvent'))) { %>
           <a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
+        <% } %>
+        <% if (isParticipant && !['completed', 'archived'].includes(contest.status)) { %>
+          <form method="post" action="<%= base %>/leave" data-confirm="<%= t('Leave this event?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-ghost-secondary" type="submit" title="<%= t("Leave event") %>"><i class="ti ti-logout me-1"></i><%= t("Leave") %></button>
+          </form>
         <% } %>
       </div>
     </div>
-    <% if (contest.title && series) { %><p class="gh-repohead-sub"><%= contest.title %></p><% } %>
-    <%# The event at a glance: who runs it, where, in what language, the jury and how to reach them. %>
-    <% const shownWikis = wikiScope ? [wikiScope] : eventWikis; %>
-    <ul class="z-facts">
-      <% if (contest.organizingCommunity) { %><li title="<%= t('Organized by') %>"><i class="ti ti-users-group"></i><%= contest.organizingCommunity %></li><% } %>
-      <li title="<%= t('Wikis') %>"><i class="ti ti-world"></i><%= shownWikis.length ? shownWikis.map((w) => wikiLocal(w.wiki)).join(', ') : wikiLocal(contest.primaryWiki) %></li>
-      <% if (contest.language) { %><li title="<%= t('Language') %>"><i class="ti ti-language"></i><%= langLocal(contest.language) %></li><% } %>
-      <% if (headerPeople && settings.juryReviewEnabled && typeDef.entries !== false) { %><li title="<%= t('Jury') %>"><i class="ti ti-gavel"></i><%= tn('{n} jury member', '{n} jury members', headerPeople.jury) %></li><% } %>
-      <% if (contest.contactInfo) { %><li title="<%= t('Contact') %>"><i class="ti ti-message-circle"></i><span class="text-truncate"><%= contest.contactInfo %></span></li><% } %>
-      <% if (headerPeople && headerPeople.organizers.length) { %>
-        <li title="<%= t('Organizers') %>">
-          <span class="avatar-list avatar-list-stacked"><% headerPeople.organizers.forEach((u) => { %><a href="<%= userPath(u) %>" class="avatar avatar-xs" title="<%= u %>"><%= u.charAt(0).toUpperCase() %></a><% }) %></span>
-          <span class="text-secondary"><%= t('Organizers') %></span>
-        </li>
-      <% } %>
-    </ul>
+    <%
+      const shownWikis = wikiScope ? [wikiScope] : eventWikis;
+      const facts = [
+        contest.organizingCommunity,
+        shownWikis.length ? shownWikis.map((w) => wikiLocal(w.wiki)).join(', ') : wikiLocal(contest.primaryWiki),
+        contest.language ? langLocal(contest.language) : '',
+      ].filter(Boolean);
+    %>
+    <p class="gh-repohead-sub"><% if (contest.title && series) { %><span class="text-body"><%= contest.title %></span> · <% } %><%= facts.join(' · ') %></p>
     <nav class="nav nav-tabs" aria-label="<%= t('Event') %>">
       <% tabs.forEach(([key, label, suffix, icon]) => { %>
         <a class="nav-link<%= active === key ? ' active' : '' %>" href="<%= base %><%= suffix %>"<%= active === key ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %>"></i><%= label %></a>

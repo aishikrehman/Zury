@@ -15,7 +15,7 @@ let ids;
 before(async () => {
   const baseUrl = await mock.start();
   t = await startTestApp({ DEMO_MODE: 'true', WIKIMEDIA_OAUTH_BASE_URL: baseUrl });
-  await require('../prisma/seed').seedDemoData(t.prisma);
+  await require('./helpers/fixtures').seedDemoData(t.prisma);
   const contests = await t.prisma.contest.findMany();
   const users = await t.prisma.user.findMany();
   ids = {

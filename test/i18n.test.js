@@ -61,7 +61,7 @@ function allKeys() {
 let t;
 before(async () => {
   t = await startTestApp({ DEMO_MODE: 'true' });
-  await require('../prisma/seed').seedDemoData(t.prisma);
+  await require('./helpers/fixtures').seedDemoData(t.prisma);
 });
 after(() => t?.stop());
 
@@ -86,7 +86,7 @@ test('the language follows the choice, the account and the browser', async () =>
   assert.equal(chosen.status, 302);
   const page = await t.request('/wam/2026', { cookie: chosen.cookie });
   assert.match(page.body, /<html lang="bn"/);
-  assert.match(page.body, /অংশ নিন/, 'event pages are translated');
+  assert.match(page.body, /যোগ দিতে লগইন করুন/, 'event pages are translated');
   assert.match(page.body, /২০২৬/, 'dates use Bangla digits');
   assert.match(page.body, /ধাপ \{n\} \/ \{total\}/, 'scripts get their strings');
   assert.match(page.body, /Wikipedia Asian Month 2026/, 'event content itself is not translated');

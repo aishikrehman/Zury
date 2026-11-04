@@ -4,7 +4,7 @@
 //     its real articles, writers, jury and Fountain's own marks;
 //   • real articles from the 2025 editions (bn, en, hi) as the entries waiting
 //     for the WAM 2026 jury, so the review window shows real wiki pages.
-const FOUNTAIN = require('./demo/fountain.json');
+const FOUNTAIN = require('./fountain-2025.json');
 
 const byCode = (code) => FOUNTAIN.editathons.find((e) => e.code === code);
 const WIKI = { bn: 'bnwiki', en: 'enwiki', hi: 'hiwiki' };
@@ -48,7 +48,7 @@ const articleMeta = (wiki, a, pageUrl, createdAt) => ({
 });
 
 async function seedFountain(prisma, users) {
-  const { pageUrl } = require('../src/wiki/wikiUrls');
+  const { pageUrl } = require('../../src/wiki/wikiUrls');
   const who = await people(prisma);
 
   // ── /wam/2025: the finished Bangla edition, as it was on Fountain ──

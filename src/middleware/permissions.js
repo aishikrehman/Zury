@@ -61,16 +61,6 @@ async function setupEvent(req, res, next, contest, code) {
   req.permissions = scope.permissions;
   req.base = base;
   req.eventBase = eventBase;
-  // The header's facts: who organizes, how many are on the jury (for pages, not form posts).
-  let headerPeople = null;
-  if (req.method === 'GET') {
-    const wikiFilter = wikiScope ? { wiki: { in: ['', wikiScope.wiki] } } : {};
-    const [organizers, jury] = await Promise.all([
-      prisma.contestMembership.findMany({ where: { contestId: rest.id, role: 'organizer', status: 'active', ...wikiFilter }, select: { user: { select: { username: true } } }, take: 6, orderBy: { id: 'asc' } }),
-      prisma.contestMembership.count({ where: { contestId: rest.id, role: 'jury', status: 'active', ...wikiFilter } }),
-    ]);
-    headerPeople = { organizers: [...new Set(organizers.map((m) => m.user.username))], jury };
-  }
   // Views show the effective values for the wiki in context; eventContest is the event as stored.
   Object.assign(res.locals, {
     contest: eff.contest,
@@ -84,7 +74,6 @@ async function setupEvent(req, res, next, contest, code) {
     scope,
     base,
     eventBase,
-    headerPeople,
     can: (permission) => scope.permissions.has(permission),
   });
   next();

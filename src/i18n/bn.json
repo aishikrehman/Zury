@@ -1002,5 +1002,7 @@
   "{n} entries reviewed.": "{n}টি জমা পর্যালোচনা করা হয়েছে।",
   "{n} jury member": "{n} জন জুরি",
   "{n} jury members": "{n} জন জুরি",
-  "{n} selected": "{n}টি বাছাই করা হয়েছে"
+  "{n} selected": "{n}টি বাছাই করা হয়েছে",
+  "Leave": "ছেড়ে দিন",
+  "Leave this event?": "এই ইভেন্ট ছেড়ে দেবেন?"
 }

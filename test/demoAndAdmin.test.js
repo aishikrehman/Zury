@@ -8,7 +8,7 @@ let ids;
 
 before(async () => {
   t = await startTestApp({ DEMO_MODE: 'true' });
-  const { seedDemoData } = require('../prisma/seed');
+  const { seedDemoData } = require('./helpers/fixtures');
   await seedDemoData(t.prisma);
   await seedDemoData(t.prisma); // re-running must replace, not duplicate
   const contests = await t.prisma.contest.findMany();

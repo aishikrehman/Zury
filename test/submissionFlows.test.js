@@ -28,7 +28,7 @@ let ids;
 before(async () => {
   const template = await api.start();
   t = await startTestApp({ DEMO_MODE: 'true', WIKIMEDIA_API_URL_TEMPLATE: template });
-  await require('../prisma/seed').seedDemoData(t.prisma);
+  await require('./helpers/fixtures').seedDemoData(t.prisma);
   ids = {
     contest: Object.fromEntries((await t.prisma.contest.findMany()).map((c) => [c.slug, c.id])),
     user: Object.fromEntries((await t.prisma.user.findMany()).map((u) => [(LABEL[u.username] || u.username), u.id])),

@@ -8,7 +8,7 @@ let ids;
 
 before(async () => {
   t = await startTestApp({ DEMO_MODE: 'true' });
-  await require('../prisma/seed').seedDemoData(t.prisma);
+  await require('./helpers/fixtures').seedDemoData(t.prisma);
   const users = await t.prisma.user.findMany();
   ids = Object.fromEntries(users.map((u) => [LABEL[u.username] || u.username, u.id]));
 });

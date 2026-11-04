@@ -15,15 +15,18 @@
 <%- include('../../partials/contestHeader', { active: 'overview' }) %>
 <div class="page-body"><div class="container-xl">
 
+  <%# Why the Join button is missing, for someone who can't take part. %>
+  <% if (currentUser && !isParticipant && !eligibility.eligible && eligibility.reasons.length) { %>
+    <div class="alert alert-warning"><i class="ti ti-info-circle"></i><div><% eligibility.reasons.forEach((r) => { %><div><%= r %></div><% }) %></div></div>
+  <% } %>
+
   <%# ── About the event and how to take part ── %>
   <div class="row row-cards mb-3">
-    <div class="col-lg-8">
-      <div class="card h-100 z-about">
+    <div class="col-12">
+      <div class="card z-about">
         <div class="card-body">
           <div class="d-flex flex-wrap gap-2 mb-2">
             <span class="badge bg-blue-lt"><i class="ti ti-<%= typeDef.icon || 'calendar-event' %> me-1"></i><%= typeDef.label %></span>
-            <% if (contest.organizingCommunity) { %><span class="badge bg-secondary-lt"><i class="ti ti-users-group me-1"></i><%= contest.organizingCommunity %></span><% } %>
-            <span class="badge bg-secondary-lt"><i class="ti ti-user-check me-1"></i><%= tn('{n} participant', '{n} participants', participantCount) %></span>
           </div>
           <% if (contest.description) { %>
             <p class="mb-0 z-lead" style="white-space: pre-line"><%= contest.description %></p>
@@ -49,51 +52,6 @@
         </div>
       <% } %>
       </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="card h-100 z-takepart">
-        <div class="card-header"><h3 class="card-title"><%= t("Take part") %></h3></div>
-        <div class="card-body">
-          <% if (isParticipant) { %>
-            <p class="small text-success mb-2">You're a participant<%= myWiki && eventWikis.length > 1 ? ' on ' + wikiName(myWiki) : '' %>.</p>
-            <% if (!['completed', 'archived'].includes(contest.status)) { %>
-              <form method="post" action="<%= base %>/leave">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button class="btn btn-sm btn-outline-secondary" type="submit"><%= t("Leave event") %></button>
-              </form>
-            <% } %>
-          <% } else if (!currentUser) { %>
-            <a class="btn btn-sm btn-primary" href="/login"><%= t("Log in to join") %></a>
-          <% } else if (eligibility.eligible) { %>
-            <form method="post" action="<%= base %>/join">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <% if (joinWikis.length) { %>
-                <label class="form-label" for="joinWiki"><%= t("Your wiki") %></label>
-                <select class="form-select mb-2" id="joinWiki" name="wiki" required>
-                  <option value=""><%= t("Choose…") %></option>
-                  <% joinWikis.forEach((w) => { %><option value="<%= w.wiki %>"<%= w.wiki === defaultJoinWiki ? ' selected' : '' %>><%= wikiText(w.wiki) %></option><% }) %>
-                </select>
-              <% } %>
-              <button class="btn btn-sm btn-primary" type="submit"><%= t("Join this event") %></button>
-            </form>
-          <% } else { %>
-            <ul class="text-secondary mb-0 ps-3">
-              <% eligibility.reasons.forEach((r) => { %><li><%= r %></li><% }) %>
-            </ul>
-          <% } %>
-        </div>
-        <% if (currentUser) { %>
-          <div class="card-body border-top">
-            <div class="subheader mb-2"><%= t("Your access") %></div>
-          
-            <p class="small mb-1"><strong><%= t("Event roles:") %></strong>
-              <% if (!scope.eventRoles.length) { %><span class="text-secondary"><%= t("none") %></span><% } %>
-              <% scope.eventRoles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r].label %></span><% }) %>
-            </p>
-          </div>
-        <% } %>
-      </div>
-
     </div>
   </div>
 
@@ -135,6 +93,7 @@
           <% if (settings.registrationRequired) { %><div class="list-group-item py-2"><%= t("Register before submitting") %></div><% } %>
           <% typeDef.fields.forEach((f) => { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= f.label %></span><span class="text-secondary"><%= display(f, typeConfig[f.key]) %></span></div><% }) %>
         </div>
+        <% if (contest.contactInfo) { %><div class="list-group-item py-2 d-flex justify-content-between gap-3"><span><%= t("Contact") %></span><span class="text-secondary text-end"><%= contest.contactInfo %></span></div><% } %>
         <% if (enabled.length) { %>
           <div class="card-footer"><% enabled.forEach(([, label]) => { %><span class="badge bg-green-lt me-1 mb-1"><i class="ti ti-check me-1"></i><%= label %></span><% }) %></div>
         <% } %>
