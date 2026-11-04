@@ -121,7 +121,9 @@ const mount = (loader) => (req, res, next) => {
   });
 };
 
+router.get('/series', requireAuth, eventsController.manageSeries);
 router.get('/series/new', requireAuth, requireCreate, eventsController.seriesForm);
+router.post(`/series/:series(${SLUG})/:action(update|delete)`, requireAuth, eventsController.seriesAction);
 router.post('/series', requireAuth, requireCreate, eventsController.createSeries);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);

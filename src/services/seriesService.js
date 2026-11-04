@@ -101,4 +101,26 @@ async function nextEdition({ actorId, series }) {
   return next;
 }
 
-module.exports = { SeriesError, create, summary, nextEdition };
+// Every series with its editions (newest first), for the management page.
+async function listAll() {
+  const series = await prisma.eventSeries.findMany({ orderBy: { title: 'asc' }, include: { editions: { where: { deletedAt: null }, orderBy: { edition: 'desc' }, select: { id: true, edition: true, title: true, status: true, startDate: true, wikis: { select: { code: true } } } } } });
+  return series;
+}
+
+async function update({ actorId, series, title, description }) {
+  title = String(title || '').trim();
+  if (!title) throw new SeriesError('Give the series a name.', 'title');
+  const updated = await prisma.eventSeries.update({ where: { id: series.id }, data: { title: title.slice(0, 120), description: String(description || '').trim().slice(0, 2000) } });
+  await audit.record({ actorId, action: 'series.updated', entityType: 'EventSeries', entityId: series.id, details: { slug: series.slug, title } });
+  return updated;
+}
+
+// Only a series without editions can go (editions keep their addresses through it).
+async function remove({ actorId, series }) {
+  const editions = await prisma.contest.count({ where: { seriesId: series.id } });
+  if (editions) throw new SeriesError('A series with editions cannot be deleted; delete or move its editions first.');
+  await prisma.eventSeries.delete({ where: { id: series.id } });
+  await audit.record({ actorId, action: 'series.deleted', entityType: 'EventSeries', entityId: series.id, details: { slug: series.slug } });
+}
+
+module.exports = { SeriesError, create, summary, nextEdition, listAll, update, remove };

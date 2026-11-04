@@ -156,6 +156,42 @@ async function nextEdition(req, res, next) {
   }
 }
 
+// /series: every series and its editions, to edit or extend.
+async function manageSeries(req, res, next) {
+  try {
+    const all = await require('../services/seriesService').listAll();
+    const allowed = [];
+    for (const sr of all) if (await canRunSeries(req, sr.id)) allowed.push(sr);
+    res.render('pages/events/seriesManage', { title: 'Series and editions — Zury', seriesList: allowed });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function seriesAction(req, res, next) {
+  const seriesService = require('../services/seriesService');
+  try {
+    const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!found) return next();
+    if (!(await canRunSeries(req, found.id))) {
+      const err = new Error("You don't have permission to do that.");
+      err.status = 403;
+      return next(err);
+    }
+    if (req.params.action === 'delete') {
+      await seriesService.remove({ actorId: req.user.id, series: found });
+      req.flash('success', 'Series deleted.');
+    } else {
+      await seriesService.update({ actorId: req.user.id, series: found, title: req.body.title, description: req.body.description });
+      req.flash('success', 'Saved.');
+    }
+  } catch (err) {
+    if (!(err instanceof seriesService.SeriesError)) return next(err);
+    req.flash('danger', err.message);
+  }
+  res.redirect('/series');
+}
+
 async function series(req, res, next) {
   try {
     const { RESERVED } = require('../middleware/permissions');
@@ -179,4 +215,4 @@ async function series(req, res, next) {
   }
 }
 
-module.exports = { index, createForm, create, series, seriesForm, createSeries, nextEdition };
+module.exports = { index, createForm, create, series, seriesForm, createSeries, nextEdition, manageSeries, seriesAction };

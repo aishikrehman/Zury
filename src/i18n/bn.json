@@ -1153,5 +1153,16 @@
   "Entry history": "জমার ইতিহাস",
   "Withdrawn and invalid entries": "প্রত্যাহার করা ও অবৈধ জমা",
   "Jury assignments": "জুরির দায়িত্ব",
-  "{n} own settings": "{n}টি নিজস্ব সেটিং"
+  "{n} own settings": "{n}টি নিজস্ব সেটিং",
+  "A series with editions cannot be deleted; delete or move its editions first.": "সংস্করণসহ সিরিজ মোছা যায় না; আগে সংস্করণগুলো মুছুন বা সরান।",
+  "Create": "তৈরি",
+  "Create the first edition": "প্রথম সংস্করণ তৈরি করুন",
+  "Delete series": "সিরিজ মুছুন",
+  "Delete this series?": "এই সিরিজ মুছবেন?",
+  "Manage series and editions": "সিরিজ ও সংস্করণ ব্যবস্থাপনা",
+  "Series and editions": "সিরিজ ও সংস্করণ",
+  "Series deleted.": "সিরিজ মুছে ফেলা হয়েছে।",
+  "You are not organizing any series yet. Make one, then create its first edition with “Part of” set to it.": "আপনি এখনো কোনো সিরিজ আয়োজন করছেন না। একটি তৈরি করুন, তারপর “অংশ” ঘরে সেটি বেছে প্রথম সংস্করণ তৈরি করুন।",
+  "{n} edition": "{n}টি সংস্করণ",
+  "{n} editions": "{n}টি সংস্করণ"
 }

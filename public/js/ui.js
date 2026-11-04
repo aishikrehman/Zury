@@ -20,7 +20,9 @@ document.addEventListener('keydown', (e) => {
 // Forms that undo or remove something ask first: <form data-confirm="Remove this entry?">.
 document.addEventListener('submit', (e) => {
   const form = e.target;
-  if (form instanceof HTMLFormElement && form.dataset.confirm && !window.confirm(form.dataset.confirm)) e.preventDefault();
+  // The button pressed may ask its own question (a Delete button inside an edit form).
+  const ask = (e.submitter && e.submitter.dataset.confirm) || (form instanceof HTMLFormElement && form.dataset.confirm);
+  if (ask && !window.confirm(ask)) e.preventDefault();
 });
 
 // A search box that hides table rows not matching it: <input data-filter-rows="#table">.
