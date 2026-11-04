@@ -13,6 +13,11 @@
   if (settings.publicStatisticsEnabled || can('viewStatistics')) tabs.push(['statistics', t('Statistics'), '/statistics', 'graph']);
   const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
   if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', t('Contributions'), '/tracking', 'activity']);
+  if (typeDef.entries !== false && settings.juryReviewEnabled && (can('reviewAssignedEntry') || (scope.wikisWith && scope.wikisWith('reviewAssignedEntry').length))) {
+    tabs.push(['review', t('Review'), '/review', 'gavel']);
+  }
+  if (typeDef.entries !== false && (contest.resultsPublishedAt || can('reviewEvent') || can('manageEvent'))) tabs.push(['results', t('Results'), '/results', 'trophy']);
+  if (settings.appealsEnabled && (can('reviewAppeal') || can('manageAppeals'))) tabs.push(['appeals', t('Appeals'), '/appeals', 'scale']);
   if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', t('People'), '/participants', 'users']);
   if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'settings']);
   if (can('manageEvent')) tabs.push(['activity', t('Activity'), '/activity', 'history']);

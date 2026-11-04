@@ -1,64 +1,88 @@
-<%# The slim top bar: menu button (small screens), search, create, language and account. %>
+<%#
+  Tabler-style horizontal header: the top bar (logo, search, language, account)
+  and the navigation bar beneath it. On small screens the navigation folds
+  behind the menu button.
+%>
 <header class="z-topbar d-print-none">
-  <% if (hasSidebar) { %>
-    <button class="z-icon-btn z-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#z-menu" aria-controls="z-menu" aria-label="<%= t('Toggle primary navigation') %>">
+  <div class="container-xl z-topbar-inner">
+    <button class="z-icon-btn z-menu-btn" type="button" data-bs-toggle="collapse" data-bs-target="#z-navbar" aria-controls="z-navbar" aria-expanded="false" aria-label="<%= t('Toggle primary navigation') %>">
       <i class="ti ti-menu-2"></i>
     </button>
-    <a href="/dashboard" class="z-brand z-brand-compact" aria-label="Zury"><img src="/images/zury-logo.svg" width="28" height="28" alt=""></a>
-  <% } else { %>
-    <a href="/" class="z-brand z-brand-top" aria-label="Zury"><img src="/images/zury-logo.svg" width="30" height="30" alt=""><span>Zury</span></a>
-    <nav class="z-toplinks" aria-label="<%= t('Primary') %>">
-      <a href="/events" class="<%= isActive('/events') ? 'active' : '' %>"><%= t('Events') %></a>
-      <a href="/about" class="<%= isActive('/about') ? 'active' : '' %>"><%= t('About') %></a>
-    </nav>
-  <% } %>
+    <a href="<%= currentUser ? '/dashboard' : '/' %>" class="z-brand" aria-label="Zury">
+      <img src="/images/zury-logo.svg" width="32" height="32" alt=""><span>Zury</span>
+    </a>
 
-  <form action="/events" method="get" role="search" class="z-search">
-    <i class="ti ti-search"></i>
-    <input type="search" name="q" placeholder="<%= t('Search events…') %>" aria-label="<%= t('Search events') %>" data-hotkey="/">
-    <kbd>/</kbd>
-  </form>
+    <form action="/events" method="get" role="search" class="z-search">
+      <i class="ti ti-search"></i>
+      <input type="search" name="q" placeholder="<%= t('Search events…') %>" aria-label="<%= t('Search events') %>" data-hotkey="/">
+      <kbd>/</kbd>
+    </form>
 
-  <div class="z-topbar-end">
-    <div class="dropdown">
-      <button class="z-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Language') %>" title="<%= t('Language') %>">
-        <i class="ti ti-language"></i><span class="z-lang-code"><%= lang.code.toUpperCase() %></span>
-      </button>
-      <div class="dropdown-menu dropdown-menu-end">
-        <% Object.values(LANGUAGES).forEach((l) => { %>
-          <a href="/preferences/language/<%= l.code %>?next=<%= encodeURIComponent(currentPath) %>" class="dropdown-item d-flex<%= l.code === lang.code ? ' active' : '' %>" lang="<%= l.code %>">
-            <%= l.native %><% if (l.native !== l.name) { %><span class="text-secondary ms-auto ps-3 small"><%= l.name %></span><% } %>
-          </a>
-        <% }) %>
-      </div>
-    </div>
-
-    <% if (currentUser) { %>
+    <div class="z-topbar-end">
       <div class="dropdown">
-        <button class="z-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Open user menu') %>">
-          <span class="z-avatar"><%= currentUser.username.charAt(0).toUpperCase() %></span>
-          <span class="d-none d-md-inline text-truncate"><%= currentUser.username %></span>
-          <i class="ti ti-chevron-down d-none d-md-inline"></i>
+        <button class="z-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Language') %>" title="<%= t('Language') %>">
+          <i class="ti ti-language"></i><span class="z-lang-code"><%= lang.code.toUpperCase() %></span>
         </button>
         <div class="dropdown-menu dropdown-menu-end">
-          <div class="dropdown-header">
-            <strong class="d-block text-body"><%= currentUser.username %></strong>
-            <span class="text-secondary"><%= currentUser.homeWiki ? wikiName(currentUser.homeWiki) : 'Wikimedia' %></span>
-          </div>
-          <div class="dropdown-divider"></div>
-          <a href="<%= userPath(currentUser.username) %>" class="dropdown-item"><i class="ti ti-user me-2"></i><%= t('Profile') %></a>
-          <a href="/dashboard" class="dropdown-item"><i class="ti ti-layout-dashboard me-2"></i><%= t('Dashboard') %></a>
-          <a href="/settings" class="dropdown-item"><i class="ti ti-settings me-2"></i><%= t('Preferences') %></a>
-          <div class="dropdown-divider"></div>
-          <form action="/logout" method="post" class="m-0">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="dropdown-item"><i class="ti ti-logout me-2"></i><%= t('Log out') %></button>
-          </form>
+          <% Object.values(LANGUAGES).forEach((l) => { %>
+            <a href="/preferences/language/<%= l.code %>?next=<%= encodeURIComponent(currentPath) %>" class="dropdown-item d-flex<%= l.code === lang.code ? ' active' : '' %>" lang="<%= l.code %>">
+              <%= l.native %><% if (l.native !== l.name) { %><span class="text-secondary ms-auto ps-3 small"><%= l.name %></span><% } %>
+            </a>
+          <% }) %>
         </div>
       </div>
-    <% } else { %>
-      <% if (demoMode) { %><a href="/demo" class="btn d-none d-md-inline-flex"><%= t('Try a demo user') %></a><% } %>
-      <a href="/login" class="btn btn-primary"><i class="ti ti-brand-wikipedia me-1"></i><%= t('Log in') %></a>
-    <% } %>
+
+      <% if (currentUser) { %>
+        <div class="dropdown">
+          <button class="z-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Open user menu') %>">
+            <span class="z-avatar"><%= currentUser.username.charAt(0).toUpperCase() %></span>
+            <span class="d-none d-md-inline text-truncate"><%= currentUser.username %></span>
+            <i class="ti ti-chevron-down d-none d-md-inline"></i>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <div class="dropdown-header">
+              <strong class="d-block text-body"><%= currentUser.username %></strong>
+              <span class="text-secondary"><%= currentUser.homeWiki ? wikiName(currentUser.homeWiki) : 'Wikimedia' %></span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <a href="<%= userPath(currentUser.username) %>" class="dropdown-item"><i class="ti ti-user me-2"></i><%= t('Profile') %></a>
+            <a href="/dashboard" class="dropdown-item"><i class="ti ti-layout-dashboard me-2"></i><%= t('Dashboard') %></a>
+            <a href="/settings" class="dropdown-item"><i class="ti ti-settings me-2"></i><%= t('Preferences') %></a>
+            <% if (demoMode) { %><a href="/demo" class="dropdown-item"><i class="ti ti-users-group me-2"></i><%= t('Switch demo user') %></a><% } %>
+            <div class="dropdown-divider"></div>
+            <form action="/logout" method="post" class="m-0">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="dropdown-item"><i class="ti ti-logout me-2"></i><%= t('Log out') %></button>
+            </form>
+          </div>
+        </div>
+      <% } else { %>
+        <% if (demoMode) { %><a href="/demo" class="btn d-none d-md-inline-flex"><%= t('Try a demo user') %></a><% } %>
+        <a href="/login" class="btn btn-primary"><i class="ti ti-brand-wikipedia me-1"></i><%= t('Log in') %></a>
+      <% } %>
+    </div>
   </div>
 </header>
+
+<div class="z-navbar d-print-none">
+  <div class="container-xl">
+    <nav class="collapse z-navbar-collapse" id="z-navbar" aria-label="<%= t('Primary') %>">
+      <ul class="z-navbar-list">
+        <% navItems.forEach((item) => { %>
+          <% if (item.children) { %>
+            <li class="dropdown">
+              <a href="#" class="z-navlink dropdown-toggle<%= item.active ? ' active' : '' %>" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                <i class="ti ti-<%= item.icon %>"></i><span><%= item.label %></span>
+              </a>
+              <div class="dropdown-menu">
+                <% item.children.forEach((c) => { %><a class="dropdown-item<%= c.active ? ' active' : '' %>" href="<%= c.href %>"><i class="ti ti-<%= c.icon %> me-2"></i><%= c.label %></a><% }) %>
+              </div>
+            </li>
+          <% } else { %>
+            <li><a href="<%= item.href %>" class="z-navlink<%= item.active ? ' active' : '' %>"<%= item.active ? ' aria-current="page"' : '' %>><i class="ti ti-<%= item.icon %>"></i><span><%= item.label %></span></a></li>
+          <% } %>
+        <% }) %>
+      </ul>
+    </nav>
+  </div>
+</div>

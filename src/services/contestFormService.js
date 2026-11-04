@@ -223,6 +223,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   else if (marks.some((m) => !m.values.length || m.values.length > 10)) errors.marks = 'Each mark needs 1 to 10 values.';
   else if (marks.some((m) => m.values.some((v) => !Number.isInteger(v.points) || v.points < -100 || v.points > 100))) errors.marks = 'Points must be whole numbers from -100 to 100.';
   settings.marks = JSON.stringify(marks);
+  settings.requiredReviews = intField(body.requiredReviews, { min: 1, max: 20 }, errors, 'requiredReviews') ?? 1;
   settings.trackHashtags = JSON.stringify([...new Set(hashtags)]);
   settings.trackCategories = JSON.stringify([...new Set(categories)]);
   for (const [key] of FEATURE_FIELDS) settings[key] = bool(body[key]);
@@ -295,6 +296,7 @@ function toForm(contest, settings) {
     anonymousParticipants: s.anonymousParticipants,
     eligibleNamespaces: JSON.parse(s.eligibleNamespaces || '[]').join(', '),
     marks: s.marks || '[]',
+    requiredReviews: String(s.requiredReviews || 1),
     trackHashtags: JSON.parse(s.trackHashtags || '[]').join(', '),
     trackCategories: JSON.parse(s.trackCategories || '[]').join('\n'),
   });
@@ -328,6 +330,7 @@ function defaultSettings(type) {
     trackHashtags: '[]',
     trackCategories: '[]',
     marks: '[]',
+    requiredReviews: 1,
     typeConfig: JSON.stringify(readTypeConfig(type, '{}')),
   };
   return { ...base, ...EVENT_TYPES[type].defaults };

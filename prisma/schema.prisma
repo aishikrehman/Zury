@@ -51,6 +51,9 @@ model User {
   eventBlocks          EventBlock[]        @relation("BlockedUser")
   eventBlocksMade      EventBlock[]        @relation("BlockedBy")
   attendances          SessionAttendance[]
+  reviews              Review[]            @relation("Reviewer")
+  appeals              Appeal[]            @relation("Appellant")
+  appealsResolved      Appeal[]            @relation("AppealResolver")
 }
 
 // Zury-assigned platform roles (e.g. platform-admin). Never derived from Wikimedia.
@@ -131,6 +134,8 @@ model Contest {
   // Set when the event was moved into another one; its address then redirects there.
   mergedIntoId Int?
   mergedWikiCode String?
+  // When the results were made public; until then only organizers and jury see them.
+  resultsPublishedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -144,6 +149,8 @@ model Contest {
   permissionOverrides ContestPermission[]
   auditLogs           AuditLog[]
   blocks              EventBlock[]
+  reviews             Review[]
+  appeals             Appeal[]
   sessions            EventSession[]
   contributions       Contribution[]
 
@@ -219,6 +226,8 @@ model ContestSettings {
   trackCategories             String  @default("[]")
   // Jury marks (Fountain-style), JSON: [{ name, values: [{ label, points }] }].
   marks                       String  @default("[]")
+  // Reviews an entry needs before it is decided; the majority decides.
+  requiredReviews             Int     @default(1)
   trackedAt                   DateTime?
 
   updatedAt DateTime @updatedAt
@@ -289,6 +298,11 @@ model Submission {
   participant User                @relation("SubmissionParticipant", fields: [participantId], references: [id], onDelete: Cascade)
   submittedBy User                @relation("SubmissionSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
   history     SubmissionHistory[]
+  reviews     Review[]
+  appeals     Appeal[]
+
+  // Average points of its reviews, set when the entry is decided.
+  score       Float?
 
   @@index([contestId, pageKey])
   @@index([contestId, status])
@@ -469,4 +483,49 @@ model Session {
   expiresAt DateTime
 
   @@index([expiresAt])
+}
+
+// One jury member's verdict on one entry.
+model Review {
+  id           Int      @id @default(autoincrement())
+  contestId    Int
+  submissionId Int
+  jurorId      Int
+  // accept | reject
+  decision     String
+  // JSON: { "<mark name>": "<value label>" }
+  marks        String   @default("{}")
+  points       Float    @default(0)
+  comment      String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contest    Contest    @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  juror      User       @relation("Reviewer", fields: [jurorId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, jurorId])
+  @@index([contestId, jurorId])
+}
+
+// A participant asking organizers to look at a decision again.
+model Appeal {
+  id           Int       @id @default(autoincrement())
+  contestId    Int
+  submissionId Int
+  userId       Int
+  reason       String
+  // open | upheld | dismissed
+  status       String    @default("open")
+  response     String    @default("")
+  resolvedById Int?
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  contest    Contest    @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  user       User       @relation("Appellant", fields: [userId], references: [id], onDelete: Cascade)
+  resolvedBy User?      @relation("AppealResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([contestId, status])
 }

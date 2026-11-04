@@ -2,9 +2,9 @@
 // from the server-side session otherwise. Nothing is kept in the browser.
 function displayPreferences(req, res, next) {
   const saved = req.user
-    ? { wide: req.user.uiWide, textLarge: req.user.uiTextLarge, sidebarCollapsed: req.user.uiSidebarCollapsed }
+    ? { wide: req.user.uiWide, textLarge: req.user.uiTextLarge }
     : req.session?.ui || {};
-  res.locals.ui = { wide: Boolean(saved.wide), textLarge: Boolean(saved.textLarge), sidebarCollapsed: Boolean(saved.sidebarCollapsed) };
+  res.locals.ui = { wide: Boolean(saved.wide), textLarge: Boolean(saved.textLarge) };
   next();
 }
 

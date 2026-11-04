@@ -1,0 +1,73 @@
+<%
+  const medal = { 1: 'gold', 2: 'silver', 3: 'bronze' };
+  const podium = rows.filter((r) => r.rank <= 3).slice(0, 3);
+%>
+<%- include('../../partials/contestHeader', { active: 'results' }) %>
+<div class="page-body"><div class="container-xl">
+
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <div>
+      <div class="h3 m-0"><%= t('Results') %></div>
+      <div class="text-secondary small">
+        <% if (published) { %><i class="ti ti-world me-1"></i><%= t('Published {date}', { date: formatDateTime(published, contest.timezone) }) %>
+        <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and jury see this page.') %><% } %>
+      </div>
+    </div>
+    <% if (can('publishResults')) { %>
+      <form method="post" action="<%= base %>/results/publish" class="ms-auto">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="published" value="<%= published ? 0 : 1 %>">
+        <button class="btn <%= published ? '' : 'btn-primary' %>" type="submit"><i class="ti ti-<%= published ? 'eye-off' : 'speakerphone' %> me-1"></i><%= published ? t('Hide results') : t('Publish results') %></button>
+      </form>
+    <% } %>
+  </div>
+
+  <% if (progress) { %>
+    <div class="row row-cards mb-3">
+      <% [[t('Waiting for review'), progress.waiting, 'hourglass', 'yellow'], [t('Approved'), progress.approved, 'circle-check', 'green'], [t('Rejected'), progress.rejected, 'circle-x', 'red'], [t('Jury members'), progress.jurors.length, 'gavel', 'purple']].forEach(([label, value, icon, color]) => { %>
+        <div class="col-6 col-lg-3">
+          <div class="card card-sm"><div class="card-body d-flex align-items-center">
+            <span class="avatar bg-<%= color %>-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
+            <div><div class="h2 m-0"><%= formatNumber(value) %></div><div class="text-secondary"><%= label %></div></div>
+          </div></div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (!rows.length) { %>
+    <div class="card"><%- include('../../partials/emptyArt', { title: t('No results yet'), text: t('The ranking fills in as entries are decided.') }) %></div>
+  <% } else { %>
+    <% if (podium.length) { %>
+      <div class="z-podium mb-4">
+        <% podium.forEach((r) => { %>
+          <div class="z-podium-place z-<%= medal[r.rank] %>">
+            <div class="z-podium-medal"><i class="ti ti-trophy"></i><span><%= formatNumber(r.rank) %></span></div>
+            <div class="z-podium-name"><%= showNames ? r.username : t('Participant') %></div>
+            <div class="z-podium-points"><%= t('{n} points', { n: r.points }) %></div>
+            <div class="text-secondary small"><%= tn('{n} entry', '{n} entries', r.entries) %></div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-list-numbers me-2"></i><%= t('Leaderboard') %></h3></div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Points') %></th></tr></thead>
+          <tbody>
+            <% rows.forEach((r) => { %>
+              <tr>
+                <td><span class="z-rank<%= medal[r.rank] ? ' z-' + medal[r.rank] : '' %>"><%= formatNumber(r.rank) %></span></td>
+                <td><% if (showNames) { %><a href="<%= userPath(r.username) %>"><%= r.username %></a><% } else { %><span class="text-secondary"><%= t('Participant') %></span><% } %></td>
+                <td class="text-end"><%= formatNumber(r.entries) %></td>
+                <td class="text-end fw-bold"><%= formatNumber(r.points) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+</div>
+</div>

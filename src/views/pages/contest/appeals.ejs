@@ -1,0 +1,42 @@
+<% const statusColor = { open: 'yellow', upheld: 'green', dismissed: 'secondary' }; const statusLabel = { open: t('Open'), upheld: t('Upheld'), dismissed: t('Dismissed') }; %>
+<%- include('../../partials/contestHeader', { active: 'appeals' }) %>
+<div class="page-body"><div class="container-xl">
+  <div class="h3 mb-3"><%= t('Appeals') %></div>
+  <% if (!appeals.length) { %>
+    <div class="card"><%- include('../../partials/emptyArt', { title: t('No appeals'), text: t('Participants can appeal a rejected entry until the appeal deadline.') }) %></div>
+  <% } %>
+  <div class="row row-cards">
+    <% appeals.forEach((a) => { %>
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <div class="flex-fill">
+              <h3 class="card-title"><a href="<%= base %>/submissions/<%= a.submission.id %>"><%= a.submission.title %></a></h3>
+              <div class="text-secondary small"><%= a.user.username %> · <%= formatDateTime(a.createdAt, contest.timezone) %></div>
+            </div>
+            <span class="badge bg-<%= statusColor[a.status] %>-lt"><%= statusLabel[a.status] %></span>
+          </div>
+          <div class="card-body">
+            <p class="mb-0" style="white-space: pre-line"><%= a.reason %></p>
+            <% if (a.status !== 'open') { %>
+              <div class="mt-3 text-secondary small"><i class="ti ti-message-reply me-1"></i><%= a.resolvedBy ? a.resolvedBy.username : '' %><%= a.response ? ': ' + a.response : '' %></div>
+            <% } %>
+          </div>
+          <% if (a.status === 'open' && can('manageAppeals')) { %>
+            <div class="card-footer">
+              <form method="post" class="row g-2 align-items-center" action="<%= base %>/appeals/<%= a.id %>/dismiss">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="col-md"><input class="form-control" name="response" maxlength="2000" placeholder="<%= t('Reply to the participant (optional)') %>"></div>
+                <div class="col-auto btn-list">
+                  <button class="btn btn-success" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/uphold"><i class="ti ti-arrow-back-up me-1"></i><%= t('Uphold: back to the jury') %></button>
+                  <button class="btn" type="submit"><i class="ti ti-x me-1"></i><%= t('Dismiss') %></button>
+                </div>
+              </form>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+</div>

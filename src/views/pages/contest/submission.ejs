@@ -85,6 +85,36 @@
         </div>
       <% } %>
 
+      <% if (canAppeal) { %>
+        <form method="post" action="<%= base %>/submissions/<%= submission.id %>/appeal" class="card mb-3">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-scale me-2"></i><%= t('Appeal a decision') %></h3></div>
+          <div class="card-body">
+            <textarea class="form-control" name="reason" rows="3" minlength="10" maxlength="2000" required placeholder="<%= t('Why should the organizers look at this again?') %>"></textarea>
+          </div>
+          <div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t('Send appeal') %></button></div>
+        </form>
+      <% } %>
+
+      <% if (reviews.length) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= t('Jury') %></h3><% if (submission.score != null) { %><div class="card-actions"><span class="badge bg-blue-lt"><%= t('{n} points', { n: submission.score }) %></span></div><% } %></div>
+          <div class="list-group list-group-flush">
+            <% reviews.forEach((r) => { const marks = JSON.parse(r.marks || '{}'); %>
+              <div class="list-group-item">
+                <div class="d-flex align-items-center gap-2">
+                  <strong><%= r.juror.username %></strong>
+                  <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt"><%= t(r.decision === 'accept' ? 'Accept' : 'Reject') %></span>
+                  <span class="ms-auto text-secondary small"><%= t('{n} points', { n: r.points }) %></span>
+                </div>
+                <% if (Object.keys(marks).length) { %><div class="text-secondary small mt-1"><%= Object.entries(marks).map(([k, v]) => k + ': ' + v).join(' · ') %></div><% } %>
+                <% if (r.comment) { %><div class="small mt-1"><%= r.comment %></div><% } %>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
       <div class="card">
         <div class="card-header"><h3 class="card-title"><%= t("History") %></h3></div>
         <div class="card-body">

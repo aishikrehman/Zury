@@ -46,7 +46,7 @@ const DEMO_CONTESTS = [
       submissionOpensAt: '2026-11-01T00:00:00Z', submissionDeadline: '2026-11-30T23:59:00Z',
       reviewOpensAt: '2026-12-01T00:00:00Z', reviewDeadline: '2026-12-20T00:00:00Z',
     },
-    settings: { allowJuryParticipation: false, badgesEnabled: true, contributionDiscoveryEnabled: true, trackHashtags: '["wam2026"]' },
+    settings: { allowJuryParticipation: false, badgesEnabled: true, contributionDiscoveryEnabled: true, trackHashtags: '["wam2026"]', marks: '[{"name":"Accepted","values":[{"label":"Yes","points":1},{"label":"No","points":0}]},{"name":"Quality","values":[{"label":"0","points":0},{"label":"1","points":1},{"label":"2","points":2},{"label":"3","points":3}]}]' },
     typeConfig: { minWordCount: 300, minBytes: 3000, createdDuringEventOnly: true },
     contributions: { count: 60, wikis: ['bnwiki', 'bnwiki', 'hiwiki', 'enwiki'], users: ['participant', 'newcomer'], hashtagUsers: ['Arif Rahman', 'Priya Sharma', 'Ken Watanabe'], from: '2026-11-01T00:00:00Z' },
     // [wiki, status, overrides, requested by]: each wiki may set its own rules, dates and contact.
@@ -164,11 +164,13 @@ const DEMO_CONTESTS = [
     title: 'Wiki Loves Earth 2026 in Bangladesh',
     description: 'Photograph protected natural areas of Bangladesh.',
     type: 'photo',
+    resultsPublished: true,
     primaryWiki: 'commonswiki',
     organizingCommunity: 'Wikimedia Bangladesh',
     language: 'bn',
     timezone: 'Asia/Dhaka',
     dates: { startDate: '2026-05-01', endDate: '2026-07-31', reviewDeadline: '2026-09-15', resultsAnnouncedAt: '2026-09-20' },
+    settings: { marks: '[{"name":"Stars","values":[{"label":"★","points":1},{"label":"★★","points":2},{"label":"★★★","points":3},{"label":"★★★★","points":4},{"label":"★★★★★","points":5}]}]' },
     typeConfig: { requiredCategory: 'Images from Wiki Loves Earth 2026 in Bangladesh', awardCategories: ['Best landscape', 'Best wildlife'] },
     createdBy: 'organizer',
     members: [['organizer', 'organizer'], ['juror', 'jury'], ['participant', 'participant']],
@@ -338,6 +340,7 @@ async function seedDemoData(prisma, now = new Date()) {
         category: c.category || '',
         mainCategory: c.mainCategory || '',
         previousEditionUrl: c.previousEditionUrl || '',
+        resultsPublishedAt: c.resultsPublished ? d(c.dates.resultsAnnouncedAt || c.dates.endDate) : null,
         primaryWiki: c.primaryWiki,
         additionalWikis: '[]',
         ...(c.series && { seriesId: series[c.series].id, edition: c.edition }),
@@ -403,6 +406,7 @@ async function seedDemoData(prisma, now = new Date()) {
   }
 
   const submissions = await seedSubmissions(prisma, users);
+  await seedReviews(prisma, users);
   return { users: DEMO_USERS.length, contests: DEMO_CONTESTS.length, submissions };
 }
 
@@ -492,6 +496,53 @@ async function seedContributions(prisma, contest, spec, users, now) {
   }
   await prisma.contribution.createMany({ data: rows });
   await prisma.contestSettings.update({ where: { contestId: contest.id }, data: { trackedAt: now } });
+}
+
+// Jury work: some WAM entries reviewed on bnwiki and enwiki, star scores for the
+// finished WLE, and an open appeal on WLM.
+async function seedReviews(prisma, users) {
+  const rand = prng(42);
+  const wam = await prisma.contest.findUnique({ where: { slug: 'wam-2026' } });
+  for (const [wiki, juror, count] of [['bnwiki', 'bnadmin', 8], ['enwiki', 'juror', 4]]) {
+    const entries = await prisma.submission.findMany({ where: { contestId: wam.id, wiki, status: 'validated' }, orderBy: { id: 'asc' }, take: count });
+    for (const e of entries) {
+      const accept = rand() < 0.8;
+      const quality = accept ? 1 + Math.floor(rand() * 3) : 0;
+      const points = (accept ? 1 : 0) + quality;
+      await prisma.review.create({
+        data: {
+          contestId: wam.id, submissionId: e.id, jurorId: users[juror].id, decision: accept ? 'accept' : 'reject',
+          marks: JSON.stringify({ Accepted: accept ? 'Yes' : 'No', Quality: String(quality) }), points,
+          comment: accept ? '' : 'Mostly a translation without sources.',
+        },
+      });
+      await prisma.submission.update({
+        where: { id: e.id },
+        data: {
+          status: accept ? 'approved' : 'rejected', score: points,
+          history: { create: { actorId: users[juror].id, action: 'reviewed', previousValue: 'validated', newValue: accept ? 'approved' : 'rejected', note: '1/1' } },
+        },
+      });
+    }
+  }
+
+  const wle = await prisma.contest.findUnique({ where: { slug: 'wle-bangladesh-2026' } });
+  const approved = await prisma.submission.findMany({ where: { contestId: wle.id, status: 'approved' }, select: { id: true } });
+  for (const e of approved) {
+    const stars = 2 + Math.floor(rand() * 4);
+    await prisma.review.create({ data: { contestId: wle.id, submissionId: e.id, jurorId: users.juror.id, decision: 'accept', marks: JSON.stringify({ Stars: '★'.repeat(stars) }), points: stars } });
+    await prisma.submission.update({ where: { id: e.id }, data: { score: stars } });
+  }
+
+  const wlm = await prisma.contest.findUnique({ where: { slug: 'wlm-bangladesh-2026' } });
+  const rejected = await prisma.submission.findFirst({ where: { contestId: wlm.id, participantId: users.participant.id, status: 'rejected' } });
+  if (rejected) {
+    await prisma.appeal.create({ data: { contestId: wlm.id, submissionId: rejected.id, userId: users.participant.id, reason: 'The monument is listed in the national heritage register; the category was added the day after uploading.' } });
+    await prisma.submission.update({
+      where: { id: rejected.id },
+      data: { status: 'appealed', history: { create: { actorId: users.participant.id, action: 'appealed', previousValue: 'rejected', newValue: 'appealed' } } },
+    });
+  }
 }
 
 // Deterministic pseudo-random numbers, so every re-seed produces the same data.

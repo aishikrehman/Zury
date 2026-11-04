@@ -40,6 +40,7 @@ const OVERRIDABLE = {
     'eligibleNamespaces',
     'trackHashtags',
     'trackCategories',
+    'requiredReviews',
   ],
 };
 const DATE_KEYS = new Set(OVERRIDABLE.contest.filter((k) => k.endsWith('At') || k.endsWith('Date') || k.endsWith('Deadline')));

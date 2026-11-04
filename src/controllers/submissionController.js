@@ -6,6 +6,7 @@ const { WikiApiError } = require('../wiki/wikiApi');
 const { readTypeConfig, EVENT_TYPES } = require('../events/eventTypes');
 const { effectiveFor } = require('../events/effective');
 const { wikimediaBans } = require('../wiki/banCheck');
+const reviewService = require('../services/reviewService');
 const prisma = require('../config/prisma');
 
 // Blocked from the event, or banned on Wikimedia (globally or on their wiki)?
@@ -169,6 +170,12 @@ async function show(req, res, next) {
       validation: JSON.parse(submission.validation),
       isOwner,
       canWithdraw: isOwner && submissionService.WITHDRAWABLE.includes(submission.status),
+      canAppeal: reviewService.canAppeal({ submission, contest: req.effective.contest, settings: req.settings, user: req.user }),
+      // Jury verdicts: for the jury and organizers, and for the participant once results are out.
+      reviews:
+        req.permissions.has('reviewEvent') || (isOwner && req.contest.resultsPublishedAt)
+          ? await prisma.review.findMany({ where: { submissionId: submission.id }, include: { juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } })
+          : [],
       showName: isOwner || !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
       statuses: submissionService.STATUSES,
     });

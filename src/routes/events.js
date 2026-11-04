@@ -6,6 +6,7 @@ const wikiController = require('../controllers/eventWikiController');
 const messageController = require('../controllers/messageController');
 const trackingController = require('../controllers/trackingController');
 const sessionController = require('../controllers/sessionController');
+const reviewController = require('../controllers/reviewController');
 const { takesEntries, EVENT_TYPES } = require('../events/eventTypes');
 const { loadContest, loadSeriesEvent, loadSlugEvent, requirePermission, requireEventWide } = require('../middleware/permissions');
 const { requireAuth } = require('../middleware/auth');
@@ -22,6 +23,7 @@ router.get('/events/create', requirePermission('createEvent'), eventsController.
 router.post('/events/create', requirePermission('createEvent'), eventsController.create);
 router.get('/events/:group(active|upcoming|completed)', eventsController.index);
 router.get('/submissions', requireAuth, submissionController.mine);
+router.get('/review', requireAuth, reviewController.myQueue);
 
 // Event pages. The same routes serve the whole event (/wam/2026, /contest/12)
 // and one wiki's part of it (/wam/2026/bn); permissions follow the context.
@@ -59,6 +61,15 @@ contest.get('/activity', requirePermission('manageEvent'), contestController.act
 contest.get('/statistics', contestController.statistics);
 contest.get('/tracking', trackingController.show);
 contest.post('/tracking/refresh', requirePermission('manageEvent'), trackingController.refresh);
+
+// Jury review, results and appeals.
+contest.get('/review', entriesOnly, requireAuth, reviewController.window);
+contest.post('/review/:submissionId(\\d+)', entriesOnly, requireAuth, reviewController.save);
+contest.get('/results', reviewController.results);
+contest.post('/results/publish', requireEventWide('publishResults'), reviewController.publish);
+contest.post('/submissions/:submissionId(\\d+)/appeal', entriesOnly, requireAuth, reviewController.appeal);
+contest.get('/appeals', requirePermission('reviewAppeal', 'manageAppeals'), reviewController.appealsList);
+contest.post('/appeals/:appealId(\\d+)/:action(uphold|dismiss)', requirePermission('manageAppeals'), reviewController.resolve);
 
 contest.get('/sessions', activityOnly, sessionController.index);
 contest.post('/sessions', activityOnly, requirePermission('manageEvent'), sessionController.create);

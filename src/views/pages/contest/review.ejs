@@ -1,0 +1,149 @@
+<%#
+  The review window: one entry at a time. Keys: A accept, R reject, S skip,
+  1–9 choose the values of the first mark, Ctrl+Enter save.
+%>
+<%
+  const total = progress.waiting + progress.decided;
+  const done = total ? Math.round((progress.decided / total) * 100) : 0;
+  const decisionLabel = { accept: t('Accept'), reject: t('Reject') };
+%>
+<%- include('../../partials/contestHeader', { active: 'review' }) %>
+<div class="page-body"><div class="container-xl">
+
+  <div class="z-review-bar">
+    <div>
+      <div class="h3 m-0"><%= t('Review') %></div>
+      <div class="text-secondary small">
+        <%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= tn('{n} review needed per entry', '{n} reviews needed per entry', required) %>
+      </div>
+    </div>
+    <div class="z-review-progress" title="<%= t('{a} of {b}', { a: progress.decided, b: total }) %>">
+      <div class="progress"><div class="progress-bar" style="width: <%= done %>%"></div></div>
+      <span class="small text-secondary"><%= t('{n}% decided', { n: done }) %></span>
+    </div>
+    <% if (entry) { %>
+      <a class="btn" href="<%= base %>/review?after=<%= entry.id %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-2">S</kbd></a>
+    <% } %>
+  </div>
+
+  <% if (!entry) { %>
+    <div class="card">
+      <div class="card-body text-center py-6">
+        <div class="z-done-icon"><i class="ti ti-circle-check"></i></div>
+        <h3 class="mt-3 mb-1"><%= t('All caught up') %></h3>
+        <p class="text-secondary mb-3"><%= t('There is nothing waiting for your review right now.') %></p>
+        <a class="btn" href="<%= base %>/results"><i class="ti ti-trophy me-1"></i><%= t('See the results') %></a>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="row g-4">
+      <div class="col-lg-7 col-xl-8">
+        <div class="card z-review-entry">
+          <div class="card-header">
+            <div class="flex-fill min-w-0">
+              <div class="text-secondary small"><%= wikiName(entry.wiki) %> · <%= entry.entryType %> · #<%= entry.id %></div>
+              <h3 class="card-title text-truncate"><%= entry.title %></h3>
+            </div>
+            <a class="btn btn-sm" href="<%= entry.url %>" rel="noopener" target="_blank"><i class="ti ti-external-link me-1"></i><%= t('Open on wiki') %></a>
+          </div>
+          <% if (meta.file && meta.file.thumbUrl) { %>
+            <div class="z-review-media"><img src="<%= meta.file.thumbUrl %>" alt="<%= entry.title %>" referrerpolicy="no-referrer"></div>
+          <% } else if (meta.extract) { %>
+            <div class="card-body z-review-text"><%= meta.extract.slice(0, 1600) %><%= meta.extract.length > 1600 ? '…' : '' %></div>
+          <% } else if (meta.entity) { %>
+            <div class="card-body">
+              <div class="h3 mb-1"><%= meta.entity.label || meta.entity.id %></div>
+              <div class="text-secondary mb-2"><%= meta.entity.description || '' %></div>
+              <div class="d-flex flex-wrap gap-1"><% (meta.entity.properties || []).forEach((prop) => { %><span class="badge"><%= prop %></span><% }) %></div>
+            </div>
+          <% } else { %>
+            <div class="card-body text-secondary"><i class="ti ti-file-text me-1"></i><%= t('No preview; open the entry on the wiki.') %></div>
+          <% } %>
+          <div class="card-body border-top">
+            <div class="datagrid">
+              <div class="datagrid-item"><div class="datagrid-title"><%= t('Participant') %></div><div class="datagrid-content"><%= entry.participant.username %></div></div>
+              <div class="datagrid-item"><div class="datagrid-title"><%= t('Submitted') %></div><div class="datagrid-content"><%= formatDateTime(entry.submittedAt, contest.timezone) %></div></div>
+              <% if (meta.createdAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Created') %></div><div class="datagrid-content"><%= formatDateTime(meta.createdAt, contest.timezone) %></div></div><% } %>
+              <% if (meta.sizeBytes != null) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Size') %></div><div class="datagrid-content"><%= t('{n} bytes', { n: meta.sizeBytes }) %></div></div><% } %>
+              <% if (meta.wordCount != null) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Words') %></div><div class="datagrid-content"><%= formatNumber(meta.wordCount) %></div></div><% } %>
+              <% if (meta.file) { %>
+                <div class="datagrid-item"><div class="datagrid-title"><%= t('Resolution') %></div><div class="datagrid-content"><%= meta.file.width %>×<%= meta.file.height %> (<%= meta.file.megapixels %> MP)</div></div>
+                <% if (meta.file.license) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Licence') %></div><div class="datagrid-content"><%= meta.file.license %></div></div><% } %>
+              <% } %>
+              <% if (meta.proofread) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Proofreading level') %></div><div class="datagrid-content"><%= meta.proofread.label || meta.proofread.level %></div></div><% } %>
+            </div>
+          </div>
+          <% const problems = [...(validation.errors || []), ...(validation.warnings || [])]; %>
+          <div class="card-footer">
+            <% if (!problems.length) { %>
+              <span class="text-success"><i class="ti ti-circle-check me-1"></i><%= t('Passed automatic checks') %></span>
+            <% } else { %>
+              <% (validation.errors || []).forEach((e) => { %><div class="text-danger small"><i class="ti ti-alert-circle me-1"></i><%= e %></div><% }) %>
+              <% (validation.warnings || []).forEach((w) => { %><div class="text-warning small"><i class="ti ti-alert-triangle me-1"></i><%= w %></div><% }) %>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5 col-xl-4">
+        <form method="post" action="<%= base %>/review/<%= entry.id %>" class="card z-review-panel" data-review-form>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="decision" value="<%= mine ? mine.decision : '' %>" data-decision>
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= mine ? t('Your review') : t('Your verdict') %></h3></div>
+          <div class="card-body">
+            <% const myMarks = mine ? JSON.parse(mine.marks || '{}') : {}; %>
+            <% scheme.forEach((mark, mi) => { %>
+              <div class="mb-3">
+                <div class="form-label"><%= mark.name %></div>
+                <div class="form-selectgroup form-selectgroup-pills" data-mark-group="<%= mi %>">
+                  <% mark.values.forEach((v, vi) => { %>
+                    <label class="form-selectgroup-item">
+                      <input type="radio" class="form-selectgroup-input" name="mark:<%= mark.name %>" value="<%= v.label %>"<%= myMarks[mark.name] === v.label ? ' checked' : '' %> required>
+                      <span class="form-selectgroup-label"><%= v.label %> <span class="text-secondary small">· <%= v.points %></span><% if (mi === 0 && vi < 9) { %><kbd class="ms-1"><%= vi + 1 %></kbd><% } %></span>
+                    </label>
+                  <% }) %>
+                </div>
+              </div>
+            <% }) %>
+            <div class="mb-3">
+              <label class="form-label" for="comment"><%= t('Comment') %> <span class="text-secondary fw-normal"><%= t('(optional)') %></span></label>
+              <textarea class="form-control" id="comment" name="comment" rows="3" maxlength="2000" placeholder="<%= t('What the organizers and other jury members should know') %>"><%= mine ? mine.comment : '' %></textarea>
+            </div>
+            <div class="z-decide">
+              <button type="submit" class="btn btn-success btn-lg" data-decide="accept"><i class="ti ti-check me-1"></i><%= t('Accept') %><kbd class="ms-2">A</kbd></button>
+              <button type="submit" class="btn btn-danger btn-lg" data-decide="reject"><i class="ti ti-x me-1"></i><%= t('Reject') %><kbd class="ms-2">R</kbd></button>
+            </div>
+          </div>
+          <% if (others.length) { %>
+            <div class="card-footer">
+              <div class="subheader mb-2"><%= t('Other jury members') %></div>
+              <% others.forEach((r) => { %>
+                <div class="d-flex align-items-start gap-2 mb-2">
+                  <span class="z-avatar"><%= r.juror.username.charAt(0).toUpperCase() %></span>
+                  <div class="small">
+                    <strong><%= r.juror.username %></strong>
+                    <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt ms-1"><%= decisionLabel[r.decision] %></span>
+                    <span class="text-secondary"><%= t('{n} points', { n: r.points }) %></span>
+                    <% if (r.comment) { %><div class="text-secondary"><%= r.comment %></div><% } %>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </form>
+
+        <% if (progress.jurors.length) { %>
+          <div class="card mt-3">
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('Jury progress') %></h3></div>
+            <div class="list-group list-group-flush">
+              <% progress.jurors.forEach((j) => { %>
+                <div class="list-group-item d-flex justify-content-between py-2"><span><%= j.username %></span><span class="text-secondary"><%= t('{n} reviews', { n: j.reviews }) %></span></div>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  <% } %>
+</div>
+</div>

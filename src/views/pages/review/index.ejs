@@ -1,0 +1,30 @@
+<%- include('../../partials/pageHeader', { pretitle: t('Jury'), heading: t('Review') }) %>
+<div class="page-body"><div class="container-xl">
+  <% if (!events.length) { %>
+    <div class="card"><%- include('../../partials/emptyArt', { title: t('You are not on any jury'), text: t('Organizers add jury members on the People page of their event.') }) %></div>
+  <% } else { %>
+    <div class="row row-cards">
+      <% events.forEach((e) => { %>
+        <div class="col-md-6 col-lg-4">
+          <a class="card card-link h-100 z-event-card" data-type-color="<%= TYPE_COLORS[e.contest.type] || 'blue' %>" href="<%= e.path %>/review">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-2">
+                <span class="avatar avatar-sm z-type-icon me-2"><i class="ti ti-<%= TYPE_ICONS[e.contest.type] || 'calendar' %>"></i></span>
+                <div class="text-secondary small"><%= CONTEST_TYPES[e.contest.type] %><%= e.wikis ? ' · ' + e.wikis.map(wikiName).join(', ') : '' %></div>
+              </div>
+              <h3 class="card-title mb-3"><%= e.contest.title %></h3>
+              <div class="d-flex align-items-end">
+                <div>
+                  <div class="h1 m-0 <%= e.remaining ? 'text-primary' : 'text-success' %>"><%= formatNumber(e.remaining) %></div>
+                  <div class="text-secondary small"><%= t('waiting for you') %></div>
+                </div>
+                <div class="ms-auto text-end text-secondary small"><%= t('{n} reviewed by you', { n: e.reviewed }) %></div>
+              </div>
+            </div>
+          </a>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+</div>
