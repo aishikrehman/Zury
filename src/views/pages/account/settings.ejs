@@ -1,72 +1,54 @@
 <%- include('../../partials/accountHeader', { tab: 'settings' }) %>
 <div class="page-body">
-  <div class="container-xl">
-    <div class="card">
-      <div class="row g-0">
-        <div class="col-12 col-md-3 border-end">
-          <div class="card-body">
-            <h4 class="subheader"><%= t("Account") %></h4>
-            <div class="list-group list-group-transparent">
-              <a href="/settings" class="list-group-item list-group-item-action d-flex align-items-center active"><%= t("Preferences") %></a>
-              <a href="<%= userPath(currentUser.username) %>" class="list-group-item list-group-item-action d-flex align-items-center"><%= t("Public profile") %></a>
-              <a href="/submissions" class="list-group-item list-group-item-action d-flex align-items-center"><%= t("My submissions") %></a>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-md-9 d-flex flex-column">
-          <form action="/settings" method="post" novalidate class="d-flex flex-column h-100">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="card-body">
-              <h2 class="mb-4"><%= t("Preferences") %></h2>
-              <% if (saved) { %><div class="alert alert-success" role="status"><i class="ti ti-circle-check me-1"></i><%= t("Preferences saved.") %></div><% } %>
-              <h3 class="card-title"><%= t("Wikimedia account") %></h3>
-              <div class="row align-items-center mb-4">
-                <div class="col-auto"><%- include('../../partials/avatar', { u: currentUser, size: 'xl' }) %></div>
-                <div class="col">
-                  <div class="fw-bold"><%= currentUser.username %></div>
-                  <div class="text-secondary"><%= t('Home wiki') %>: <%= currentUser.homeWiki ? wikiLocal(currentUser.homeWiki) : t('unknown') %></div>
-                </div>
-              </div>
-              <h3 class="card-title mt-4"><%= t("Language and time") %></h3>
-              <div class="row g-3">
-                <div class="col-md">
-                  <label for="preferredLanguage" class="form-label"><%= t("Preferred language") %></label>
-                  <select id="preferredLanguage" name="preferredLanguage" data-picker="language" placeholder="<%= t("Search languages…") %>"
-                          class="form-select<%= errors.preferredLanguage ? ' is-invalid' : '' %>">
-                    <option value=""><%= t("Default") %></option>
-                    <% if (values.preferredLanguage) { %><option value="<%= values.preferredLanguage %>" selected><%= values.preferredLanguage %></option><% } %>
-                  </select>
-                  <% if (errors.preferredLanguage) { %><div class="invalid-feedback"><%= errors.preferredLanguage %></div><% } %>
-                </div>
-                <div class="col-md">
-                  <label for="timezone" class="form-label"><%= t("Timezone") %></label>
-                  <select id="timezone" name="timezone" class="form-select<%= errors.timezone ? ' is-invalid' : '' %>">
-                    <option value=""><%= t("Not set") %></option>
-                    <% timezones.forEach((tz) => { %><option value="<%= tz %>"<%= values.timezone === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
-                  </select>
-                  <% if (errors.timezone) { %><div class="invalid-feedback"><%= errors.timezone %></div><% } %>
-                </div>
-              </div>
-            </div>
-            <div class="card-footer bg-transparent mt-auto">
-              <div class="btn-list justify-content-end">
-                <a href="/dashboard" class="btn btn-1"><%= t("Cancel") %></a>
-                <button type="submit" class="btn btn-primary btn-2"><%= t("Save preferences") %></button>
-              </div>
-            </div>
-          </form>
-          <form action="/settings/avatar" method="post" class="card-body border-top">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <h3 class="card-title"><%= t('Profile picture') %></h3>
-            <p class="text-secondary small"><%= t('Use a picture from Wikimedia Commons: type its file name, e.g. Example.jpg.') %></p>
+  <div class="container-xl" style="max-width: 52rem">
+    <% if (saved) { %><div class="alert alert-success" role="status"><i class="ti ti-circle-check me-1"></i><%= t("Preferences saved.") %></div><% } %>
+
+    <div class="card mb-3">
+      <div class="card-header"><h2 class="card-title"><i class="ti ti-photo me-2 text-secondary"></i><%= t('Profile picture') %></h2></div>
+      <form action="/settings/avatar" method="post" class="card-body">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="row g-3 align-items-center">
+          <div class="col-auto"><%- include('../../partials/avatar', { u: currentUser, size: 'xl' }) %></div>
+          <div class="col">
+            <p class="text-secondary small mb-2"><%= t('Use a picture from Wikimedia Commons: type its file name, e.g. Example.jpg.') %></p>
             <div class="d-flex flex-wrap gap-2">
-              <input class="form-control flex-fill" style="max-width: 26rem" name="file" placeholder="File:Example.jpg" aria-label="<%= t('File name on Commons') %>" maxlength="250">
+              <input class="form-control flex-fill" style="min-width: 12rem" name="file" placeholder="File:Example.jpg" aria-label="<%= t('File name on Commons') %>" maxlength="250">
               <button class="btn btn-primary" type="submit"><%= t('Use this picture') %></button>
               <% if (currentUser.avatarUrl) { %><button class="btn btn-ghost-danger" type="submit" name="remove" value="1"><%= t('Remove picture') %></button><% } %>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
+
+    <form action="/settings" method="post" novalidate class="card">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h2 class="card-title"><i class="ti ti-language me-2 text-secondary"></i><%= t("Language and time") %></h2></div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="preferredLanguage" class="form-label"><%= t("Preferred language") %></label>
+            <select id="preferredLanguage" name="preferredLanguage" data-picker="language" placeholder="<%= t("Search languages…") %>"
+                    class="form-select<%= errors.preferredLanguage ? ' is-invalid' : '' %>">
+              <option value=""><%= t("Default") %></option>
+              <% if (values.preferredLanguage) { %><option value="<%= values.preferredLanguage %>" selected><%= values.preferredLanguage %></option><% } %>
+            </select>
+            <% if (errors.preferredLanguage) { %><div class="invalid-feedback"><%= errors.preferredLanguage %></div><% } %>
+          </div>
+          <div class="col-md-6">
+            <label for="timezone" class="form-label"><%= t("Timezone") %></label>
+            <select id="timezone" name="timezone" class="form-select<%= errors.timezone ? ' is-invalid' : '' %>">
+              <option value=""><%= t("Not set") %></option>
+              <% timezones.forEach((tz) => { %><option value="<%= tz %>"<%= values.timezone === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
+            </select>
+            <% if (errors.timezone) { %><div class="invalid-feedback"><%= errors.timezone %></div><% } %>
+          </div>
+        </div>
+        <p class="text-secondary small mt-3 mb-0"><i class="ti ti-home me-1"></i><%= t('Home wiki') %>: <%= currentUser.homeWiki ? wikiLocal(currentUser.homeWiki) : t('unknown') %></p>
+      </div>
+      <div class="card-footer d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i><%= t("Save preferences") %></button>
+      </div>
+    </form>
   </div>
 </div>
