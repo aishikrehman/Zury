@@ -123,7 +123,7 @@
           <div class="card-header"><h3 class="card-title"><%= t("Roles") %></h3></div>
           <div class="card-body">
             <%- include('../../partials/accessSummary', { s: subject }) %>
-            <% const groups = {}; wikiRoles.forEach((r) => { (groups[r.rightName] ||= []).push(r.wiki === '*' ? t('all wikis (global)') : wikiLocal(r.wiki)); }); %>
+            <% const groups = {}; wikiRoles.filter((r) => !['sysop', 'steward', 'global-sysop'].includes(r.rightName)).forEach((r) => { (groups[r.rightName] ||= []).push(r.wiki === '*' ? t('all wikis (global)') : wikiLocal(r.wiki)); }); %>
             <% if (Object.keys(groups).length) { %>
               <ul class="list-unstyled m-0 z-role-list border-top mt-2 pt-1">
                 <% Object.entries(groups).forEach(([right, ws]) => { %><li title="<%= t('Verified on Wikimedia') %>"><i class="ti ti-world text-secondary"></i><span><%= right %> <span class="text-secondary">· <%= ws.join(', ') %></span></span></li><% }) %>
