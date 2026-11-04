@@ -54,3 +54,6 @@ document.addEventListener('change', (e) => {
     if (count) count.textContent = zt('{n} selected', { n });
   }
 });
+
+// Keep the current entry of the review strip in view.
+document.querySelectorAll('[data-strip] .active').forEach((el) => el.scrollIntoView({ block: 'nearest', inline: 'center' }));

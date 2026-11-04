@@ -26,6 +26,31 @@ const canJudge = (req, submission) => {
   return wikis === null || wikis.includes(submission.wiki);
 };
 
+// The review window's filters, from the address (and kept through each verdict).
+function reviewFilters(req) {
+  const src = { ...req.query, ...(req.method === 'POST' ? Object.fromEntries(new URLSearchParams(req.body.filters || '')) : {}) };
+  return {
+    mode: ['open', 'mine'].includes(src.mode) ? src.mode : '',
+    participantId: Number.parseInt(src.participant, 10) || null,
+    q: typeof src.q === 'string' ? src.q.trim().slice(0, 100) : '',
+    minWords: Math.max(0, Number.parseInt(src.minWords, 10) || 0) || null,
+    wiki: typeof src.wiki === 'string' && /^[a-z0-9_]+$/.test(src.wiki) ? src.wiki : '',
+    sort: Object.keys(reviewService.QUEUE_SORTS).includes(src.sort) && src.sort !== 'oldest' ? src.sort : '',
+  };
+}
+
+function filterQuery(f, extra = {}) {
+  const p = new URLSearchParams();
+  if (f.mode) p.set('mode', f.mode);
+  if (f.participantId) p.set('participant', f.participantId);
+  if (f.q) p.set('q', f.q);
+  if (f.minWords) p.set('minWords', f.minWords);
+  if (f.wiki) p.set('wiki', f.wiki);
+  if (f.sort) p.set('sort', f.sort);
+  for (const [k, v] of Object.entries(extra)) p.set(k, v);
+  return p.toString();
+}
+
 // The review window: one entry at a time.
 async function window(req, res, next) {
   try {
@@ -36,7 +61,19 @@ async function window(req, res, next) {
       return next(err);
     }
     const after = Number(req.query.after) || 0;
-    const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, after });
+    const filters = reviewFilters(req);
+    // "Go to": an entry by its number or title, among the ones this person may judge.
+    if (typeof req.query.go === 'string' && req.query.go.trim()) {
+      const go = req.query.go.trim().replace(/^#/, '');
+      const found = await prisma.submission.findFirst({
+        where: { contestId: req.contest.id, ...(wikis && { wiki: { in: wikis } }), OR: [...(/^\d+$/.test(go) ? [{ id: Number(go) }] : []), { title: { contains: go } }] },
+        select: { id: true },
+        orderBy: { id: 'asc' },
+      });
+      if (!found) req.flash('warning', req.t('No entry matches “{q}”.', { q: go.slice(0, 80) }));
+      return res.redirect(`${req.base}/review?${filterQuery(filters, found ? { entry: found.id } : {})}`);
+    }
+    const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, after, filters });
     const id = Number(req.query.entry) || q.nextId;
     const entry = id ? await reviewService.entryForReview(req.contest.id, id) : null;
     if (entry && !canJudge(req, entry)) return res.status(404).render('pages/404', { title: 'Submission Not Found' });
@@ -52,6 +89,17 @@ async function window(req, res, next) {
       required: Math.max(1, req.eventSettings.requiredReviews || 1),
       queue: q,
       progress: await reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }),
+      activity: await reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki }),
+      strip: await reviewService.queueStrip({ ids: q.ids, currentId: id || null, jurorId: req.user.id }),
+      filters,
+      filterQuery,
+      // People with entries here, for the participant filter (the busiest 200).
+      writers: await prisma.submission.groupBy({ by: ['participantId'], where: { contestId: req.contest.id, ...(wikis && { wiki: { in: wikis } }) }, _count: { _all: true }, orderBy: { _count: { participantId: 'desc' } }, take: 200 })
+        .then(async (rows) => {
+          const users = await prisma.user.findMany({ where: { id: { in: rows.map((r) => r.participantId) } }, select: { id: true, username: true } });
+          return users.sort((x, y) => x.username.localeCompare(y.username));
+        }),
+      reviewWikiList: wikis || req.eventWikis.map((w) => w.wiki),
     });
   } catch (err) {
     next(err);
@@ -75,11 +123,11 @@ async function save(req, res, next) {
       comment: req.body.comment,
     });
     req.flash('success', result.decided ? 'Review saved; the entry is decided.' : 'Review saved.');
-    res.redirect(`${req.base}/review?after=${id}`);
+    res.redirect(`${req.base}/review?${filterQuery(reviewFilters(req), { after: id })}`);
   } catch (err) {
     if (!(err instanceof ReviewError)) return next(err);
     req.flash('danger', err.message);
-    res.redirect(`${req.base}/review?entry=${id}`);
+    res.redirect(`${req.base}/review?${filterQuery(reviewFilters(req), { entry: id })}`);
   }
 }
 

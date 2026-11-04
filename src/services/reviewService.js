@@ -45,25 +45,80 @@ function scoreMarks(scheme, chosen) {
  */
 const assignedMode = (settings) => settings.reviewAssignment === 'assigned';
 
-async function queue({ contestId, settings, jurorId, wikis = null, after = 0 }) {
+/**
+ * The entries a jury member works through, oldest first, and where they are.
+ * filters: mode "waiting" (not yet reviewed by them, still needing reviews; the default),
+ * "open" (everything not yet decided) or "mine" (what they reviewed, to correct it);
+ * participantId, q (title), minWords, wiki (one of theirs).
+ */
+async function queue({ contestId, settings, jurorId, wikis = null, after = 0, filters = {} }) {
   const required = Math.max(1, settings.requiredReviews || 1);
+  const mode = ['open', 'mine'].includes(filters.mode) ? filters.mode : 'waiting';
+  const onWikis = filters.wiki && (!wikis || wikis.includes(filters.wiki)) ? [filters.wiki] : wikis;
   const where = {
     contestId,
-    status: { in: REVIEWABLE },
-    ...(wikis && { wiki: { in: wikis } }),
-    reviews: { none: { jurorId } },
-    ...(assignedMode(settings) && { assignments: { some: { jurorId } } }),
+    ...(onWikis && { wiki: { in: onWikis } }),
+    ...(mode === 'mine' ? { reviews: { some: { jurorId } } } : { status: { in: REVIEWABLE } }),
+    ...(mode === 'waiting' && { reviews: { none: { jurorId } } }),
+    ...(mode !== 'mine' && assignedMode(settings) && { assignments: { some: { jurorId } } }),
+    ...(filters.participantId && { participantId: filters.participantId }),
+    ...(filters.q && { title: { contains: filters.q } }),
+    ...(filters.minWords && { wordCount: { gte: filters.minWords } }),
+    NOT: { participantId: jurorId },
   };
+  const order = QUEUE_SORTS[filters.sort] || QUEUE_SORTS.oldest;
   const candidates = await prisma.submission.findMany({
     where,
-    orderBy: { id: 'asc' },
+    orderBy: [...order, { id: 'asc' }],
     select: { id: true, _count: { select: { reviews: true } } },
   });
   // Entries that already have all their reviews are waiting to be decided, not for this person.
-  const open = candidates.filter((c) => c._count.reviews < required);
-  const next = open.find((c) => c.id > after) || open[0] || null;
+  const list = mode === 'waiting' ? candidates.filter((c) => c._count.reviews < required) : candidates;
+  // The next one is the one after "after" in this order (from the start once past the end).
+  const from = after ? list.findIndex((c) => c.id === after) : -1;
+  const next = (from >= 0 ? list[from + 1] : null) || (from >= 0 ? list.find((c) => c.id !== after) : list[0]) || null;
   const reviewedByMe = await prisma.review.count({ where: { contestId, jurorId } });
-  return { nextId: next ? next.id : null, remaining: open.length, reviewedByMe };
+  return { nextId: next ? next.id : null, remaining: list.length, reviewedByMe, mode, ids: list.map((c) => c.id) };
+}
+
+// Orders of the review queue.
+const QUEUE_SORTS = {
+  oldest: [{ submittedAt: 'asc' }],
+  newest: [{ submittedAt: 'desc' }],
+  'words-desc': [{ wordCount: { sort: 'desc', nulls: 'last' } }],
+  'words-asc': [{ wordCount: { sort: 'asc', nulls: 'last' } }],
+  title: [{ title: 'asc' }],
+};
+
+// The strip of entries at the top of the review page: the current one and those around it.
+async function queueStrip({ ids, currentId, jurorId, size = 14 }) {
+  const at = Math.max(0, ids.indexOf(currentId));
+  const start = Math.max(0, Math.min(at - 2, ids.length - size));
+  const window = ids.slice(start, start + size);
+  if (currentId && !window.includes(currentId)) window.unshift(currentId);
+  const rows = await prisma.submission.findMany({
+    where: { id: { in: window } },
+    select: { id: true, title: true, wordCount: true, status: true, participant: { select: { username: true } }, reviews: { where: { jurorId }, select: { decision: true } } },
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return { items: window.map((id) => byId.get(id)).filter(Boolean), position: ids.indexOf(currentId) + 1, total: ids.length };
+}
+
+// Each jury member's work: reviews, accepted and rejected, and when they last reviewed.
+async function juryActivity(contestId, { wiki } = {}) {
+  const where = { contestId, ...(wiki && { submission: { wiki } }) };
+  const [byDecision, last] = await Promise.all([
+    prisma.review.groupBy({ by: ['jurorId', 'decision'], where, _count: { _all: true } }),
+    prisma.review.groupBy({ by: ['jurorId'], where, _max: { updatedAt: true } }),
+  ]);
+  const users = await prisma.user.findMany({ where: { id: { in: last.map((r) => r.jurorId) } }, select: { id: true, username: true } });
+  const name = Object.fromEntries(users.map((u) => [u.id, u.username]));
+  const rows = last.map((r) => {
+    const of = (d) => byDecision.find((x) => x.jurorId === r.jurorId && x.decision === d)?._count._all || 0;
+    return { id: r.jurorId, username: name[r.jurorId], accepted: of('accept'), rejected: of('reject'), reviews: of('accept') + of('reject'), lastAt: r._max.updatedAt };
+  });
+  const most = Math.max(1, ...rows.map((r) => r.reviews));
+  return rows.sort((x, y) => y.reviews - x.reviews).map((r) => ({ ...r, share: Math.round((r.reviews / most) * 100) }));
 }
 
 async function entryForReview(contestId, submissionId) {
@@ -392,7 +447,7 @@ function appeals(contestId) {
   });
 }
 
-module.exports = {
+module.exports = { juryActivity, queueStrip, QUEUE_SORTS,
   REVIEWABLE,
   assignedMode,
   jurorsFor,

@@ -1,60 +1,123 @@
 <%#
-  The review window: one entry at a time. Keys: A accept, R reject, S skip,
-  1–9 choose the values of the first mark, Ctrl+Enter save.
+  The review window: the entry's page fills the left, in its own scrolling frame;
+  everything a jury member needs sits in the panel on the right. After each verdict
+  the next entry matching the same filters comes up.
+  Keys: A accept, R reject, S skip, 1–9 values of the first mark, Ctrl+Enter save.
 %>
 <%
   const total = progress.waiting + progress.decided;
   const done = total ? Math.round((progress.decided / total) * 100) : 0;
   const decisionLabel = { accept: t('Accept'), reject: t('Reject') };
+  const fq = (extra) => filterQuery(filters, extra || {});
+  const filtered = !!(filters.mode || filters.participantId || filters.q || filters.minWords || filters.wiki || filters.sort);
+  const modes = [['', t('Waiting for me')], ['open', t('All not yet decided')], ['mine', t('Reviewed by me')]];
 %>
 <%- include('../../partials/contestHeader', { active: 'review' }) %>
-<div class="page-body"><div class="container-xl">
+<div class="page-body"><div class="container-fluid z-review-wrap">
 
   <div class="z-review-bar">
-    <div>
-      <div class="h3 m-0"><%= t('Review') %></div>
-      <div class="text-secondary small">
-        <%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= tn('{n} review needed per entry', '{n} reviews needed per entry', required) %>
+    <div class="me-auto">
+      <div class="fw-bold"><%= t('{n} waiting for you', { n: queue.remaining }) %> <span class="text-secondary fw-normal">· <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %></span></div>
+      <div class="z-review-progress" title="<%= t('{a} of {b}', { a: progress.decided, b: total }) %>">
+        <div class="progress progress-sm"><div class="progress-bar" style="width: <%= done %>%"></div></div>
+        <span class="small text-secondary text-nowrap"><%= t('{n}% decided', { n: done }) %></span>
       </div>
     </div>
-    <div class="z-review-progress" title="<%= t('{a} of {b}', { a: progress.decided, b: total }) %>">
-      <div class="progress"><div class="progress-bar" style="width: <%= done %>%"></div></div>
-      <span class="small text-secondary"><%= t('{n}% decided', { n: done }) %></span>
-    </div>
+    <form method="get" class="z-go" role="search">
+      <% Object.entries({ mode: filters.mode, participant: filters.participantId, minWords: filters.minWords, wiki: filters.wiki, sort: filters.sort }).forEach(([k, v]) => { if (v) { %><input type="hidden" name="<%= k %>" value="<%= v %>"><% } }) %>
+      <div class="input-icon">
+        <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+        <input class="form-control" type="search" name="go" placeholder="<%= t('Go to an entry: title or #number') %>" aria-label="<%= t('Go to an entry: title or #number') %>">
+      </div>
+    </form>
+    <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters"><i class="ti ti-filter me-1"></i><%= t('Filter') %></button>
     <% if (entry) { %>
-      <a class="btn" href="<%= base %>/review?after=<%= entry.id %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-2">S</kbd></a>
+      <a class="btn" href="<%= base %>/review?<%= fq({ after: entry.id }) %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-1 d-none d-md-inline">S</kbd></a>
     <% } %>
   </div>
+
+  <form method="get" class="collapse z-review-filters" id="review-filters">
+    <div class="row g-2 align-items-end">
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="f-mode"><%= t('Show') %></label>
+        <select class="form-select" id="f-mode" name="mode"><% modes.forEach(([v, label]) => { %><option value="<%= v %>"<%= filters.mode === v ? ' selected' : '' %>><%= label %></option><% }) %></select>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <label class="form-label" for="f-participant"><%= t('Participant') %></label>
+        <select class="form-select" id="f-participant" name="participant">
+          <option value=""><%= t('All participants') %></option>
+          <% writers.forEach((u) => { %><option value="<%= u.id %>"<%= filters.participantId === u.id ? ' selected' : '' %>><%= u.username %></option><% }) %>
+        </select>
+      </div>
+      <% if (reviewWikiList.length > 1) { %>
+        <div class="col-sm-4 col-lg-2">
+          <label class="form-label" for="f-wiki"><%= t('Wiki') %></label>
+          <select class="form-select" id="f-wiki" name="wiki"><option value=""><%= t('All wikis') %></option><% reviewWikiList.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiLocal(w) %></option><% }) %></select>
+        </div>
+      <% } %>
+      <div class="col-sm-4 col-lg-2">
+        <label class="form-label" for="f-q"><%= t('Title contains') %></label>
+        <input class="form-control" id="f-q" name="q" value="<%= filters.q %>" maxlength="100">
+      </div>
+      <% if (settings.wordCountEnabled) { %>
+        <div class="col-sm-4 col-lg-1">
+          <label class="form-label" for="f-words"><%= t('Min. words') %></label>
+          <input class="form-control" id="f-words" name="minWords" type="number" min="0" value="<%= filters.minWords || '' %>">
+        </div>
+      <% } %>
+      <div class="col-sm-4 col-lg-2">
+        <label class="form-label" for="f-sort"><%= t('Order') %></label>
+        <select class="form-select" id="f-sort" name="sort">
+          <% [['', t('Oldest first')], ['newest', t('Newest first')], ...(settings.wordCountEnabled ? [['words-desc', t('Most words')], ['words-asc', t('Fewest words')]] : []), ['title', t('Title')]].forEach(([v, label]) => { %><option value="<%= v %>"<%= filters.sort === v ? ' selected' : '' %>><%= label %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-auto d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><%= t('Apply') %></button>
+        <% if (filtered) { %><a class="btn btn-ghost-secondary" href="<%= base %>/review"><%= t('Clear') %></a><% } %>
+      </div>
+    </div>
+  </form>
+
+  <% if (strip.items.length) { %>
+    <nav class="z-strip" aria-label="<%= t('Entries') %>">
+      <span class="z-strip-pos"><%= t('{a} of {b}', { a: formatNumber(strip.position || 0), b: formatNumber(strip.total) }) %></span>
+      <div class="z-strip-list" data-strip>
+        <% strip.items.forEach((it) => { const my = it.reviews[0]; %>
+          <a class="z-strip-item<%= entry && it.id === entry.id ? ' active' : '' %>" href="<%= base %>/review?<%= fq({ entry: it.id }) %>"<%= entry && it.id === entry.id ? ' aria-current="true"' : '' %>>
+            <span class="z-strip-title"><% if (my) { %><i class="ti ti-<%= my.decision === 'accept' ? 'check text-green' : 'x text-red' %>"></i><% } %><%= it.title %></span>
+            <span class="z-strip-meta"><%= it.participant.username %><%= settings.wordCountEnabled && it.wordCount != null ? ' · ' + formatNumber(it.wordCount) : '' %></span>
+          </a>
+        <% }) %>
+      </div>
+    </nav>
+  <% } %>
 
   <% if (!entry) { %>
     <div class="card">
       <div class="card-body text-center py-6">
         <div class="z-done-icon"><i class="ti ti-circle-check"></i></div>
-        <h3 class="mt-3 mb-1"><%= t('All caught up') %></h3>
-        <p class="text-secondary mb-3"><%= t('There is nothing waiting for your review right now.') %></p>
-        <a class="btn" href="<%= base %>/results"><i class="ti ti-trophy me-1"></i><%= t('See the results') %></a>
+        <h3 class="mt-3 mb-1"><%= filtered ? t('Nothing matches these filters') : t('All caught up') %></h3>
+        <p class="text-secondary mb-3"><%= filtered ? t('Change or clear the filters to see more entries.') : t('There is nothing waiting for your review right now.') %></p>
+        <a class="btn" href="<%= base %>/results"><i class="ti ti-chart-bar me-1"></i><%= t('See the results') %></a>
       </div>
     </div>
   <% } else { %>
-    <div class="row g-4">
-      <div class="col-lg-7 col-xl-8">
-        <div class="card z-review-entry">
-          <div class="card-header">
-            <div class="flex-fill min-w-0">
-              <div class="text-secondary small"><%= wikiName(entry.wiki) %> · <%= entry.entryType %> · #<%= entry.id %></div>
-              <h3 class="card-title text-truncate"><%= entry.title %></h3>
-            </div>
-            <a class="btn btn-sm" href="<%= entry.url %>" rel="noopener" target="_blank"><i class="ti ti-external-link me-1"></i><%= t('Open on wiki') %></a>
+    <% const problems = [...(validation.errors || []), ...(validation.warnings || [])]; %>
+    <div class="z-review-layout">
+      <%# ── The entry itself ── %>
+      <section class="card z-review-entry" aria-label="<%= entry.title %>">
+        <div class="card-header">
+          <div class="flex-fill min-w-0">
+            <div class="text-secondary small text-truncate"><%= wikiLocal(entry.wiki) %> · #<%= entry.id %> · <%= entry.participant.username %></div>
+            <h2 class="card-title h3 text-truncate"><%= entry.title %></h2>
           </div>
+          <a class="btn btn-sm btn-icon" href="<%= entry.url %>" rel="noopener" target="_blank" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
+        </div>
+        <div class="z-review-frame">
           <% if (preview) { %>
-            <div class="z-review-page">
-              <iframe src="<%= preview %>" title="<%= entry.title %>" loading="eager" referrerpolicy="no-referrer"
-                sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>
-            </div>
+            <iframe src="<%= preview %>" title="<%= entry.title %>" loading="eager" referrerpolicy="no-referrer" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>
           <% } else if (meta.file && meta.file.thumbUrl) { %>
             <div class="z-review-media"><img src="<%= meta.file.thumbUrl %>" alt="<%= entry.title %>" referrerpolicy="no-referrer"></div>
-          <% } else if (meta.extract) { %>
-            <div class="card-body z-review-text"><%= meta.extract.slice(0, 1600) %><%= meta.extract.length > 1600 ? '…' : '' %></div>
           <% } else if (meta.entity) { %>
             <div class="card-body">
               <div class="h3 mb-1"><%= meta.entity.label || meta.entity.id %></div>
@@ -64,37 +127,18 @@
           <% } else { %>
             <div class="card-body text-secondary"><i class="ti ti-file-text me-1"></i><%= t('No preview; open the entry on the wiki.') %></div>
           <% } %>
-          <div class="card-body border-top">
-            <div class="datagrid">
-              <div class="datagrid-item"><div class="datagrid-title"><%= t('Participant') %></div><div class="datagrid-content"><%= entry.participant.username %></div></div>
-              <div class="datagrid-item"><div class="datagrid-title"><%= t('Submitted') %></div><div class="datagrid-content"><%= formatDateTime(entry.submittedAt, contest.timezone) %></div></div>
-              <% if (meta.createdAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Created') %></div><div class="datagrid-content"><%= formatDateTime(meta.createdAt, contest.timezone) %></div></div><% } %>
-              <% if (meta.sizeBytes != null) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Size') %></div><div class="datagrid-content"><%= t('{n} bytes', { n: meta.sizeBytes }) %></div></div><% } %>
-              <% if (settings.wordCountEnabled && meta.wordCount != null) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Words') %></div><div class="datagrid-content"><%= formatNumber(meta.wordCount) %></div></div><% } %>
-              <% if (meta.file) { %>
-                <div class="datagrid-item"><div class="datagrid-title"><%= t('Resolution') %></div><div class="datagrid-content"><%= meta.file.width %>×<%= meta.file.height %> (<%= meta.file.megapixels %> MP)</div></div>
-                <% if (meta.file.license) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Licence') %></div><div class="datagrid-content"><%= meta.file.license %></div></div><% } %>
-              <% } %>
-              <% if (meta.proofread) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Proofreading level') %></div><div class="datagrid-content"><%= meta.proofread.label || meta.proofread.level %></div></div><% } %>
-            </div>
-          </div>
-          <% const problems = [...(validation.errors || []), ...(validation.warnings || [])]; %>
-          <div class="card-footer">
-            <% if (!problems.length) { %>
-              <span class="text-success"><i class="ti ti-circle-check me-1"></i><%= t('Passed automatic checks') %></span>
-            <% } else { %>
-              <% (validation.errors || []).forEach((e) => { %><div class="text-danger small"><i class="ti ti-alert-circle me-1"></i><%= e %></div><% }) %>
-              <% (validation.warnings || []).forEach((w) => { %><div class="text-warning small"><i class="ti ti-alert-triangle me-1"></i><%= w %></div><% }) %>
-            <% } %>
-          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="col-lg-5 col-xl-4">
+      <%# ── The jury member's tools ── %>
+      <aside class="z-review-side">
         <form method="post" action="<%= base %>/review/<%= entry.id %>" class="card z-review-panel" data-review-form>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="filters" value="<%= fq() %>">
           <input type="hidden" name="decision" value="<%= mine ? mine.decision : '' %>" data-decision>
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= mine ? t('Your review') : t('Your verdict') %></h3></div>
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= mine ? t('Your review') : t('Your verdict') %></h3>
+            <% if (mine) { %><span class="badge bg-<%= mine.decision === 'accept' ? 'green' : 'red' %>-lt ms-auto"><%= decisionLabel[mine.decision] %></span><% } %>
+          </div>
           <div class="card-body">
             <% const myMarks = mine ? JSON.parse(mine.marks || '{}') : {}; %>
             <% scheme.forEach((mark, mi) => { %>
@@ -104,7 +148,7 @@
                   <% mark.values.forEach((v, vi) => { %>
                     <label class="form-selectgroup-item">
                       <input type="radio" class="form-selectgroup-input" name="mark:<%= mark.name %>" value="<%= v.label %>"<%= myMarks[mark.name] === v.label ? ' checked' : '' %> required>
-                      <span class="form-selectgroup-label"><%= v.label %> <span class="text-secondary small">· <%= v.points %></span><% if (mi === 0 && vi < 9) { %><kbd class="ms-1"><%= vi + 1 %></kbd><% } %></span>
+                      <span class="form-selectgroup-label"><%= v.label %> <span class="text-secondary small">· <%= v.points %></span><% if (mi === 0 && vi < 9) { %><kbd class="ms-1 d-none d-md-inline"><%= vi + 1 %></kbd><% } %></span>
                     </label>
                   <% }) %>
                 </div>
@@ -112,42 +156,70 @@
             <% }) %>
             <div class="mb-3">
               <label class="form-label" for="comment"><%= t('Comment') %> <span class="text-secondary fw-normal"><%= t('(optional)') %></span></label>
-              <textarea class="form-control" id="comment" name="comment" rows="3" maxlength="2000" placeholder="<%= t('What the organizers and other jury members should know') %>"><%= mine ? mine.comment : '' %></textarea>
+              <textarea class="form-control" id="comment" name="comment" rows="2" maxlength="2000" placeholder="<%= t('What the organizers and other jury members should know') %>"><%= mine ? mine.comment : '' %></textarea>
             </div>
             <div class="z-decide">
-              <button type="submit" class="btn btn-success btn-lg" data-decide="accept"><i class="ti ti-check me-1"></i><%= t('Accept') %><kbd class="ms-2">A</kbd></button>
-              <button type="submit" class="btn btn-danger btn-lg" data-decide="reject"><i class="ti ti-x me-1"></i><%= t('Reject') %><kbd class="ms-2">R</kbd></button>
+              <button type="submit" class="btn btn-success" data-decide="accept"><i class="ti ti-check me-1"></i><%= t('Accept') %><kbd class="ms-2 d-none d-md-inline">A</kbd></button>
+              <button type="submit" class="btn btn-danger" data-decide="reject"><i class="ti ti-x me-1"></i><%= t('Reject') %><kbd class="ms-2 d-none d-md-inline">R</kbd></button>
             </div>
           </div>
-          <% if (others.length) { %>
-            <div class="card-footer">
-              <div class="subheader mb-2"><%= t('Other jury members') %></div>
-              <% others.forEach((r) => { %>
-                <div class="d-flex align-items-start gap-2 mb-2">
-                  <span class="z-avatar"><%= r.juror.username.charAt(0).toUpperCase() %></span>
-                  <div class="small">
-                    <strong><%= r.juror.username %></strong>
-                    <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt ms-1"><%= decisionLabel[r.decision] %></span>
-                    <span class="text-secondary"><%= t('{n} points', { n: r.points }) %></span>
-                    <% if (r.comment) { %><div class="text-secondary"><%= r.comment %></div><% } %>
-                  </div>
-                </div>
-              <% }) %>
-            </div>
-          <% } %>
         </form>
 
-        <% if (progress.jurors.length) { %>
-          <div class="card mt-3">
-            <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('Jury progress') %></h3></div>
-            <div class="list-group list-group-flush">
-              <% progress.jurors.forEach((j) => { %>
-                <div class="list-group-item d-flex justify-content-between py-2"><span><%= j.username %></span><span class="text-secondary"><%= t('{n} reviews', { n: j.reviews }) %></span></div>
+        <div class="card">
+          <div class="card-body py-2">
+            <dl class="z-facts-list">
+              <dt><%= t('Participant') %></dt><dd><a href="<%= base %>/review?<%= filterQuery({ ...filters, participantId: entry.participantId }) %>" title="<%= t('Only this participant') %>"><%= entry.participant.username %></a></dd>
+              <dt><%= t('Submitted') %></dt><dd><%= formatDateTime(entry.submittedAt, contest.timezone) %></dd>
+              <% if (meta.createdAt) { %><dt><%= t('Created') %></dt><dd><%= formatDateTime(meta.createdAt, contest.timezone) %></dd><% } %>
+              <% if (meta.sizeBytes != null) { %><dt><%= t('Size') %></dt><dd><%= t('{n} bytes', { n: formatNumber(meta.sizeBytes) }) %></dd><% } %>
+              <% if (settings.wordCountEnabled && meta.wordCount != null) { %><dt><%= t('Words') %></dt><dd><%= formatNumber(meta.wordCount) %></dd><% } %>
+              <% if (meta.file) { %><dt><%= t('Resolution') %></dt><dd><%= meta.file.width %>×<%= meta.file.height %> (<%= meta.file.megapixels %> MP)</dd><% } %>
+              <% if (meta.proofread) { %><dt><%= t('Proofreading level') %></dt><dd><%= meta.proofread.label || meta.proofread.level %></dd><% } %>
+            </dl>
+            <div class="small mt-1">
+              <% if (!problems.length) { %><span class="text-success"><i class="ti ti-circle-check me-1"></i><%= t('Passed automatic checks') %></span><% } %>
+              <% (validation.errors || []).forEach((e) => { %><div class="text-danger"><i class="ti ti-alert-circle me-1"></i><%= e %></div><% }) %>
+              <% (validation.warnings || []).forEach((w) => { %><div class="text-warning"><i class="ti ti-alert-triangle me-1"></i><%= w %></div><% }) %>
+            </div>
+            <div class="d-flex flex-wrap gap-1 mt-2">
+              <a class="btn btn-sm" href="<%= entry.url %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= t('Open on wiki') %></a>
+              <a class="btn btn-sm" href="<%= entry.url.replace(/\/wiki\/(.+)$/, '/w/index.php?title=$1&action=history') %>" target="_blank" rel="noopener"><i class="ti ti-history me-1"></i><%= t('History') %></a>
+              <a class="btn btn-sm" href="<%= base %>/submissions/<%= entry.id %>"><i class="ti ti-file-info me-1"></i><%= t('Entry page') %></a>
+            </div>
+          </div>
+        </div>
+
+        <% if (others.length) { %>
+          <div class="card">
+            <div class="card-header py-2"><h3 class="card-title small text-uppercase text-secondary"><%= t('Other jury members') %></h3></div>
+            <div class="card-body py-2">
+              <% others.forEach((r) => { %>
+                <div class="small mb-2">
+                  <strong><%= r.juror.username %></strong>
+                  <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt ms-1"><%= decisionLabel[r.decision] %></span>
+                  <span class="text-secondary"><%= t('{n} points', { n: r.points }) %></span>
+                  <% if (r.comment) { %><div class="text-secondary"><%= r.comment %></div><% } %>
+                </div>
               <% }) %>
             </div>
           </div>
         <% } %>
-      </div>
+
+        <% if (activity.length) { %>
+          <div class="card">
+            <div class="card-header py-2"><h3 class="card-title small text-uppercase text-secondary"><%= t('Jury activity') %></h3></div>
+            <div class="card-body py-2">
+              <% activity.forEach((j) => { %>
+                <div class="mb-2 small">
+                  <div class="d-flex"><span class="fw-medium<%= j.id === currentUser.id ? ' text-primary' : '' %>"><%= j.username %></span><span class="ms-auto text-secondary"><%= formatNumber(j.reviews) %></span></div>
+                  <div class="progress progress-xs my-1"><div class="progress-bar bg-green" style="width: <%= j.reviews ? Math.round(j.share * j.accepted / j.reviews) : 0 %>%"></div><div class="progress-bar bg-red" style="width: <%= j.reviews ? j.share - Math.round(j.share * j.accepted / j.reviews) : 0 %>%"></div></div>
+                  <div class="text-secondary"><%= t('{a} accepted, {r} rejected', { a: formatNumber(j.accepted), r: formatNumber(j.rejected) }) %><% if (j.lastAt) { %> · <%= formatDate(j.lastAt, contest.timezone) %><% } %></div>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+      </aside>
     </div>
   <% } %>
 </div>

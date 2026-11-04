@@ -266,3 +266,45 @@ test('series: every year at /wam, the next edition from the latest one, and new 
   assert.equal((await admin.post('/series', { slug: 'wlx', title: 'Again' })).status, 400, 'address taken');
   await t.prisma.eventSeries.deleteMany({ where: { slug: 'wlx' } });
 });
+
+test('review page: filters, go to an entry, the next one after a verdict, and correcting your own', async () => {
+  const bn = await session('Bn Admin');
+  const c = await wam();
+  const me = (await t.prisma.user.findFirst({ where: { username: 'Tanvir Hossain' } })).id;
+  const someone = await t.prisma.submission.findFirst({ where: { contestId: c.id, wiki: 'bnwiki', status: 'validated', reviews: { none: { jurorId: me } }, NOT: { participantId: me } } });
+
+  // Only this participant's entries come up.
+  const onlyThem = await bn.get(`/wam/2026/bn/review?participant=${someone.participantId}`);
+  const shown = Number(onlyThem.body.match(/action="\/wam\/2026\/bn\/review\/(\d+)"/)[1]);
+  assert.equal((await t.prisma.submission.findUnique({ where: { id: shown } })).participantId, someone.participantId);
+  assert.match(onlyThem.body, new RegExp(`name="filters" value="participant=${someone.participantId}"`), 'the filter rides along with the verdict');
+
+  // Go to an entry by its number.
+  const go = await bn.get(`/wam/2026/bn/review?go=%23${someone.id}`);
+  assert.equal(go.location, `/wam/2026/bn/review?entry=${someone.id}`);
+
+  // A verdict moves on, keeping the filter.
+  const saved = await bn.post(`/wam/2026/bn/review/${someone.id}`, { decision: 'accept', 'mark:Accepted': 'Yes', 'mark:Quality': '1', filters: `participant=${someone.participantId}` });
+  assert.equal(saved.location, `/wam/2026/bn/review?participant=${someone.participantId}&after=${someone.id}`);
+
+  // "Reviewed by me" brings it back to correct it.
+  const mine = await bn.get(`/wam/2026/bn/review?mode=mine&entry=${someone.id}`);
+  assert.match(mine.body, /Your review/);
+  await bn.post(`/wam/2026/bn/review/${someone.id}`, { decision: 'reject', 'mark:Accepted': 'No', 'mark:Quality': '0', filters: 'mode=mine' });
+  assert.equal((await t.prisma.review.findFirst({ where: { submissionId: someone.id, jurorId: me } })).decision, 'reject');
+
+  // Jury activity is on the page.
+  assert.match(mine.body, /Jury activity/);
+});
+
+test('review queue order: most words first, then the next one in that order', async () => {
+  const bn = await session('Bn Admin');
+  const page = await bn.get('/wam/2026/bn/review?sort=words-desc&mode=open');
+  assert.equal(page.status, 200);
+  assert.match(page.body, /class="z-strip"/, 'the entries are listed above the page');
+  const ids = [...page.body.matchAll(/class="z-strip-item[^"]*" href="\/wam\/2026\/bn\/review\?[^"]*entry=(\d+)"/g)].map((m) => Number(m[1]));
+  const rows = await t.prisma.submission.findMany({ where: { id: { in: ids } }, select: { id: true, wordCount: true } });
+  const words = ids.map((id) => rows.find((r) => r.id === id).wordCount ?? -1);
+  assert.ok(ids.length > 1);
+  assert.deepEqual(words, [...words].sort((a, b) => b - a), 'most words first');
+});
