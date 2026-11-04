@@ -1,15 +1,11 @@
-<%# Expects `s`: a permission subject (platformRoles, adminWikis). %>
+<%# Expects `s`: a permission subject (platformRoles, adminWikis). Roles as badges in one row. %>
 <% const roleColor = { steward: 'red', 'global-sysop': 'orange', 'local-admin': 'yellow', 'event-creator': 'green', 'platform-admin': 'purple', superuser: 'pink' }; %>
 <% if (!s.platformRoles.size) { %>
   <span class="text-secondary"><%= t("No platform roles") %></span>
 <% } else { %>
-  <div class="d-flex flex-column gap-1">
+  <div class="d-flex flex-wrap gap-1 align-items-center">
     <% [...s.platformRoles].forEach((key) => { const role = PLATFORM_ROLES[key]; %>
-      <div>
-        <span class="badge bg-<%= roleColor[key] || 'blue' %>-lt"><i class="ti ti-<%= role.source === 'zury' ? 'shield' : 'world' %> me-1"></i><%= role.label %></span>
-        <% if (role.scope === 'wiki') { %><span class="small">on <%= [...s.adminWikis].join(', ') %></span><% } %>
-        <span class="small text-secondary">· <%= role.source === 'zury' ? 'assigned in Zury' : 'verified from Wikimedia' %></span>
-      </div>
+      <span class="badge bg-<%= roleColor[key] || 'blue' %>-lt" title="<%= t(role.description) %>"><i class="ti ti-<%= role.source === 'zury' ? 'shield' : 'world' %> me-1"></i><%= t(role.label) %><% if (role.scope === 'wiki' && s.adminWikis.size) { %> · <%= [...s.adminWikis].map(wikiLocal).join(', ') %><% } %></span>
     <% }) %>
   </div>
 <% } %>
