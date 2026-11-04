@@ -15,7 +15,7 @@
   // wikiMode: editing one wiki's part of a multi-wiki event; only overridable fields are shown.
   const wikiMode = !!locals.wikiMode;
   const marks = locals.wikiMode ? locals.overridden : new Set();
-  const mark = (key) => (marks.has(key) ? '<span class="badge bg-orange-lt ms-1">this wiki</span>' : '');
+  const mark = (key) => (marks.has(key) ? `<span class="badge bg-orange-lt ms-1">${esc(t('this wiki'))}</span>` : '');
   const creating = action === '/events/create';
   const dateLabel = Object.fromEntries(DATE_FIELDS);
   const origin = 'zury.toolforge.org';
@@ -220,7 +220,7 @@
                 <%- err('minEditCount') %>
               </div>
               <div class="col-sm-6 col-lg-3">
-                <label class="form-label" for="participantLimit">Participant limit<%- mark('settings.participantLimit') %></label>
+                <label class="form-label" for="participantLimit"><%= t('Participant limit') %><%- mark('settings.participantLimit') %></label>
                 <input type="number" min="1" class="form-control<%= inv('participantLimit') %>" id="participantLimit" name="participantLimit" value="<%= v('participantLimit') %>" placeholder="<%= t("No limit") %>">
                 <%- err('participantLimit') %>
               </div>

@@ -29,7 +29,7 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="userId" value="<%= u.id %>">
                 <button type="submit" class="btn btn-link w-100 h-100 py-3 text-decoration-none<%= current ? ' disabled' : '' %>">
-                  <i class="ti ti-login me-1"></i><%= current ? 'Current user' : 'Log in as ' + u.username %>
+                  <i class="ti ti-login me-1"></i><%= current ? t('Current user') : t('Log in as {name}', { name: u.username }) %>
                 </button>
               </form>
             </div>

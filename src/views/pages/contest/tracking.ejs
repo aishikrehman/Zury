@@ -1,6 +1,6 @@
 <%
   const n = formatNumber;
-  const on = [tracking.participants && "participants' edits", ...tracking.hashtags.map((h) => '#' + h), ...tracking.categories.map((c) => 'Category:' + c)].filter(Boolean);
+  const on = [tracking.participants && t("participants' edits"), ...tracking.hashtags.map((h) => '#' + h), ...tracking.categories.map((c) => 'Category:' + c)].filter(Boolean);
 %>
 <%- include('../../partials/contestHeader', { active: 'tracking' }) %>
 <div class="page-body"><div class="container-xl">

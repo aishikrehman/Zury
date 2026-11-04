@@ -49,7 +49,7 @@
           <div class="card mb-3">
             <div class="card-header"><h3 class="card-title"><span class="avatar avatar-xs bg-<%= g.color %>-lt me-2"><i class="ti ti-<%= g.icon %>"></i></span><%= g.heading %></h3><div class="card-actions text-secondary"><%= g.items.length %></div></div>
             <% if (!g.items.length) { %>
-              <div class="card-body text-secondary"><%= g.empty %></div>
+              <div class="card-body text-secondary"><%= t(g.empty) %></div>
             <% } else { %>
               <div class="list-group list-group-flush">
                 <% g.items.forEach(({ contest: c }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>

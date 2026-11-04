@@ -187,7 +187,7 @@ const SORTS = {
 
 async function list({ contestId, user, can, status, q, mine, participant, wiki, sort = 'submitted', dir = 'desc', page = 1, perPage = 25 }) {
   let base = visibilityWhere({ contestId, user, can });
-  if (!base) return { items: [], total: 0, page, perPage, counts: {} };
+  if (!base) return { items: [], total: 0, page, perPage, counts: {}, words: 0, participants: [] };
   if (wiki) base = { AND: [base, { wiki }] };
   const where = { AND: [base] };
   if (STATUSES.includes(status)) where.AND.push({ status });

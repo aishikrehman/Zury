@@ -349,3 +349,8 @@ test('series management in three levels: all series, one series, one edition', a
   assert.equal((await (await session('Participant')).get('/series/wam')).status, 403);
   assert.equal((await organizer.get('/series/wam/1999')).status, 404);
 });
+
+test('visitors who are not logged in can open the submissions list', async () => {
+  const r = await t.request('/wam/2026/submissions');
+  assert.equal(r.status, 200);
+});

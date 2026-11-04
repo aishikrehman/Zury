@@ -1,15 +1,15 @@
 <%
   const okCount = items ? items.filter((i) => i.ok).length : 0;
   const rules = [];
-  if (typeConfig.maxEntriesPerParticipant) rules.push(`At most ${typeConfig.maxEntriesPerParticipant} entries per participant`);
-  if (typeConfig.minResolutionMegapixels) rules.push(`At least ${typeConfig.minResolutionMegapixels} MP`);
-  if (typeConfig.requiredCategory) rules.push(`In “${typeConfig.requiredCategory}”`);
-  if (typeConfig.uploadedDuringEventOnly) rules.push('Uploaded during the event');
-  if (typeConfig.minWordCount) rules.push(`At least ${typeConfig.minWordCount} words`);
-  if (typeConfig.minBytes) rules.push(`At least ${typeConfig.minBytes} bytes`);
-  if (typeConfig.createdDuringEventOnly) rules.push(typeConfig.allowExpansions ? 'Created or expanded during the event' : 'Created during the event');
-  if (typeConfig.requiredProperties && typeConfig.requiredProperties.length) rules.push(`Required properties: ${typeConfig.requiredProperties.join(', ')}`);
-  if (typeConfig.minStatements) rules.push(`At least ${typeConfig.minStatements} statements`);
+  if (typeConfig.maxEntriesPerParticipant) rules.push(t('At most {n} entries per participant', { n: typeConfig.maxEntriesPerParticipant }));
+  if (typeConfig.minResolutionMegapixels) rules.push(t('At least {n} MP', { n: typeConfig.minResolutionMegapixels }));
+  if (typeConfig.requiredCategory) rules.push(t('In “{category}”', { category: typeConfig.requiredCategory }));
+  if (typeConfig.uploadedDuringEventOnly) rules.push(t('Uploaded during the event'));
+  if (typeConfig.minWordCount) rules.push(t('At least {n} words', { n: typeConfig.minWordCount }));
+  if (typeConfig.minBytes) rules.push(t('At least {n} bytes', { n: typeConfig.minBytes }));
+  if (typeConfig.createdDuringEventOnly) rules.push(t(typeConfig.allowExpansions ? 'Created or expanded during the event' : 'Created during the event'));
+  if (typeConfig.requiredProperties && typeConfig.requiredProperties.length) rules.push(t('Required properties: {list}', { list: typeConfig.requiredProperties.join(', ') }));
+  if (typeConfig.minStatements) rules.push(t('At least {n} statements', { n: typeConfig.minStatements }));
 %>
 <%- include('../../partials/contestHeader', { active: 'submit' }) %>
 <div class="page-body"><div class="container-xl">
@@ -23,7 +23,7 @@
           <% if (error) { %><div class="alert alert-danger" role="alert"><i class="ti ti-alert-circle me-1"></i><%= error %></div><% } %>
           <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= window.reason %><%= canOthers ? ' As an organizer you can still submit for participants.' : '' %></div><% } %>
           <div class="mb-3">
-            <label class="form-label" for="entries"><%= mass ? 'URLs or titles, one per line' : 'URL or title' %></label>
+            <label class="form-label" for="entries"><%= t(mass ? 'URLs or titles, one per line' : 'URL or title') %></label>
             <% if (mass) { %>
               <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="https://commons.wikimedia.org/wiki/File:Example.jpg&#10;File:Another example.jpg"><%= text %></textarea>
             <% } else { %>
@@ -71,7 +71,7 @@
                     </td>
                     <td class="small">
                       <% if (i.ok) { %><span class="text-green"><%= t("Ready") %></span><% } %>
-                      <% i.reasons.forEach((r) => { %><div class="text-red"><%= r %></div><% }) %>
+                      <% i.reasons.forEach((r) => { %><div class="text-red"><%= t(r) %></div><% }) %>
                       <% i.warnings.forEach((w) => { %><div class="text-yellow"><i class="ti ti-alert-triangle"></i> <%= w %></div><% }) %>
                     </td>
                   </tr>

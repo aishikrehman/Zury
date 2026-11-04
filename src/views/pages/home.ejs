@@ -63,7 +63,7 @@
           <div class="col-6 col-md-3 py-4<%= i < 3 ? ' border-end' : '' %><%= i < 2 ? ' border-bottom border-md-bottom-0' : '' %>">
             <span class="avatar avatar-sm bg-<%= color %>-lt mb-2"><i class="ti ti-<%= icon %>"></i></span>
             <div class="h1 mb-0"><%= fmt(value) %></div>
-            <div class="text-secondary"><%= label %></div>
+            <div class="text-secondary"><%= t(label) %></div>
           </div>
         <% }) %>
       </div>

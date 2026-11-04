@@ -7,7 +7,7 @@
   const path = typeof currentPath !== 'undefined' ? currentPath : '/';
   const ev = typeof contest !== 'undefined' && contest && contest.title ? contest : null;
   const desc = String((typeof metaDescription !== 'undefined' && metaDescription) || (ev && ev.description) || t('Contests, edit-a-thons and community events for Wikipedia, Commons, Wikidata and the other Wikimedia projects.')).replace(/\s+/g, ' ').trim().slice(0, 160);
-  const pageTitle = typeof title !== 'undefined' ? t(title) : 'Zury';
+  const pageTitle = typeof title !== 'undefined' ? String(title).split(' — ').map((part) => t(part)).join(' — ') : 'Zury';
   const privatePath = /^\/(admin|settings|dashboard|submissions|review|demo|login|series(\/new)?$)|\/(config|participants|assignments|activity|message|review|submit|appeals)(\/|$)/.test(path);
   const hidden = privatePath || (ev && ev.visibility === 'private');
 %>
