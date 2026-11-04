@@ -175,7 +175,15 @@ function visibilityWhere({ contestId, user, can }) {
 }
 
 // wiki: limit to one wiki of a multi-wiki event.
-async function list({ contestId, user, can, status, q, mine, wiki, page = 1, perPage = 25 }) {
+// Columns the submissions table can be sorted by.
+const SORTS = {
+  title: (dir) => [{ title: dir }],
+  participant: (dir) => [{ participant: { username: dir } }],
+  status: (dir) => [{ status: dir }],
+  submitted: (dir) => [{ submittedAt: dir }],
+};
+
+async function list({ contestId, user, can, status, q, mine, wiki, sort = 'submitted', dir = 'desc', page = 1, perPage = 25 }) {
   let base = visibilityWhere({ contestId, user, can });
   if (!base) return { items: [], total: 0, page, perPage, counts: {} };
   if (wiki) base = { AND: [base, { wiki }] };
@@ -186,7 +194,7 @@ async function list({ contestId, user, can, status, q, mine, wiki, page = 1, per
   const [items, total, grouped] = await Promise.all([
     prisma.submission.findMany({
       where,
-      orderBy: { submittedAt: 'desc' },
+      orderBy: [...(SORTS[sort] || SORTS.submitted)(dir === 'asc' ? 'asc' : 'desc'), { id: 'desc' }],
       skip: (page - 1) * perPage,
       take: perPage,
       include: { participant: { select: { username: true } } },
@@ -280,7 +288,7 @@ function listMine(userId) {
   });
 }
 
-module.exports = {
+module.exports = { SORTS,
   MAX_BATCH,
   STATUSES,
   WITHDRAWABLE,

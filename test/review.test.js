@@ -175,3 +175,26 @@ test('assignments: entries are shared out evenly and jury members see only their
   assert.equal(await t.prisma.reviewAssignment.count({ where: { submissionId: entry.id, jurorId: ids['Platform Admin'] } }), 1);
   await t.prisma.contestSettings.update({ where: { contestId: c.id }, data: { reviewAssignment: 'open' } });
 });
+
+test('submissions table: sortable columns, wiki only on the whole event, quick actions return to the list', async () => {
+  const organizer = await session('Organizer');
+  const asc = await organizer.get('/wam/2026/submissions?sort=title&dir=asc');
+  assert.equal(asc.status, 200);
+  const titles = [...asc.body.matchAll(/<a href="\/wam\/2026\/submissions\/\d+">([^<]+)<\/a>/g)].map((m) => m[1]);
+  assert.ok(titles.length > 1);
+  assert.deepEqual(titles, [...titles].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)), 'sorted by title');
+  assert.match(asc.body, /sort=title&amp;dir=desc/, 'a second click turns the order round');
+  assert.match(asc.body, /page=2[^"]*sort=title|sort=title[^"]*page=2/, 'pages keep the order');
+  assert.match(asc.body, /href="\/users\//, 'participants are linked');
+  assert.match(asc.body, /z-entry-wiki/, 'several wikis: the wiki is shown');
+  assert.doesNotMatch((await organizer.get("/wam/2026/bn/submissions")).body, /z-entry-wiki/, "one wiki: no wiki name");
+
+  const c = await wam();
+  const entry = await t.prisma.submission.findFirst({ where: { contestId: c.id, status: 'validated' } });
+  const back = '/wam/2026/submissions?sort=title&dir=asc&page=2';
+  const res = await organizer.post(`/wam/2026/submissions/${entry.id}/status`, { status: 'disqualified', back });
+  assert.equal(res.location, back);
+  assert.equal((await t.prisma.submission.findUnique({ where: { id: entry.id } })).status, 'disqualified');
+  const outside = await organizer.post(`/wam/2026/submissions/${entry.id}/status`, { status: 'validated', back: 'https://example.org/' });
+  assert.equal(outside.location, `/wam/2026/submissions/${entry.id}`, 'no leaving the event');
+});

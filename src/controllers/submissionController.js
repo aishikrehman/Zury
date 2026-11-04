@@ -138,6 +138,8 @@ async function index(req, res, next) {
       status: submissionService.STATUSES.includes(req.query.status) ? req.query.status : '',
       q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
       mine: req.query.mine === '1',
+      sort: Object.keys(submissionService.SORTS).includes(req.query.sort) ? req.query.sort : 'submitted',
+      dir: req.query.dir === 'asc' ? 'asc' : 'desc',
     };
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
     const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki, page, ...filters });
@@ -147,10 +149,30 @@ async function index(req, res, next) {
       filters,
       showNames: !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
       statuses: submissionService.STATUSES,
+      // The wiki under each title only helps when entries come from several wikis.
+      showWiki: !req.wikiScope && (req.eventWikis || []).length > 1,
+      reviewWikis: reviewWikis(req),
+      withdrawable: submissionService.WITHDRAWABLE,
+      back: req.originalUrl,
     });
   } catch (err) {
     next(err);
   }
+}
+
+// Wikis whose entries this person may review here: null means all, [] none.
+function reviewWikis(req) {
+  try {
+    return require('./reviewController').judgedWikis(req);
+  } catch {
+    return [];
+  }
+}
+
+// After an action from the list, go back to the same list page (only within this event).
+function backTo(req, fallback) {
+  const back = typeof req.body.back === 'string' ? req.body.back : '';
+  return back.startsWith(`${req.base}/`) && !back.startsWith('//') && !/[\r\n]/.test(back) ? back : fallback;
 }
 
 async function load(req) {
@@ -196,7 +218,7 @@ function action(fn, successMessage) {
       if (err.status === 403) return next(err);
       req.flash('danger', err.message);
     }
-    res.redirect(`${req.base}/submissions/${req.params.submissionId}`);
+    res.redirect(backTo(req, `${req.base}/submissions/${req.params.submissionId}`));
   };
 }
 

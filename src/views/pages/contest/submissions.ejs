@@ -4,12 +4,23 @@
     if (filters.status) p.set('status', filters.status);
     if (filters.q) p.set('q', filters.q);
     if (filters.mine) p.set('mine', '1');
+    if (filters.sort !== 'submitted' || filters.dir !== 'desc') { p.set('sort', filters.sort); p.set('dir', filters.dir); }
     Object.entries(extra).forEach(([k, v]) => (v === null ? p.delete(k) : p.set(k, v)));
     const s = p.toString();
     return s ? `?${s}` : '';
   };
   const pages = Math.max(1, Math.ceil(result.total / result.perPage));
   const totalAll = Object.values(result.counts).reduce((a, b) => a + b, 0);
+  // A header that sorts by its column; a second click turns the order round.
+  const sortHead = (key, label, cls = '') => {
+    const on = filters.sort === key;
+    const dir = on ? (filters.dir === 'asc' ? 'desc' : 'asc') : key === 'submitted' ? 'desc' : 'asc';
+    const icon = on ? (filters.dir === 'asc' ? 'chevron-up' : 'chevron-down') : 'selector';
+    return `<th class="${cls}"${on ? ` aria-sort="${filters.dir === 'asc' ? 'ascending' : 'descending'}"` : ''}><a class="z-sort${on ? ' active' : ''}" href="${h(qs({ sort: key, dir, page: null }))}">${h(label)} <i class="ti ti-${icon}"></i></a></th>`;
+  };
+  const canManage = can('manageEvent');
+  const canReview = (s) => reviewWikis === null || (reviewWikis || []).includes(s.wiki);
+  const hidden = `<input type="hidden" name="_csrf" value="${h(csrfToken)}"><input type="hidden" name="back" value="${h(back)}">`;
 %>
 <%- include('../../partials/contestHeader', { active: 'submissions' }) %>
 <div class="page-body"><div class="container-xl">
@@ -24,6 +35,7 @@
       </ul>
       <form class="ms-auto d-flex gap-2" method="get">
         <% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
+        <% if (filters.sort !== 'submitted' || filters.dir !== 'desc') { %><input type="hidden" name="sort" value="<%= filters.sort %>"><input type="hidden" name="dir" value="<%= filters.dir %>"><% } %>
         <% if (currentUser) { %>
           <label class="form-check form-switch m-0 align-self-center">
             <input class="form-check-input" type="checkbox" name="mine" value="1"<%= filters.mine ? ' checked' : '' %> data-autosubmit>
@@ -47,7 +59,7 @@
     <% } else { %>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th><%= t("Entry") %></th><th><%= t("Participant") %></th><th><%= t("Type") %></th><th><%= t("Status") %></th><th><%= t("Submitted") %></th></tr></thead>
+          <thead><tr><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
           <tbody>
             <% result.items.forEach((s) => { const meta = JSON.parse(s.metadata); %>
               <tr>
@@ -60,14 +72,41 @@
                     <% } %>
                     <div>
                       <a href="<%= base %>/submissions/<%= s.id %>"><%= s.title %></a>
-                      <div class="text-secondary small"><%= wikiName(s.wiki) %></div>
+                      <% if (showWiki) { %><div class="text-secondary small z-entry-wiki"><%= wikiName(s.wiki) %></div><% } %>
                     </div>
                   </div>
                 </td>
-                <td><%= showNames || (currentUser && currentUser.id === s.participantId) ? s.participant.username : 'Anonymous' %></td>
-                <td class="text-secondary text-capitalize"><%= s.entryType %></td>
+                <td>
+                  <% if (showNames || (currentUser && currentUser.id === s.participantId)) { %>
+                    <a href="/users/<%= encodeURIComponent(s.participant.username) %>"><%= s.participant.username %></a>
+                  <% } else { %><span class="text-secondary"><%= t('Anonymous') %></span><% } %>
+                </td>
                 <td><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
                 <td class="text-secondary text-nowrap"><%= formatDateTime(s.submittedAt, contest.timezone) %></td>
+                <td>
+                  <div class="z-row-actions">
+                    <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= base %>/submissions/<%= s.id %>" title="<%= t('View') %>" aria-label="<%= t('View') %>"><i class="ti ti-eye"></i></a>
+                    <% if (currentUser && canReview(s) && ['pending', 'validated', 'under_review'].includes(s.status)) { %>
+                      <a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a>
+                    <% } %>
+                    <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= s.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
+                    <% if (canManage) { %>
+                      <form method="post" action="<%= base %>/submissions/<%= s.id %>/revalidate"><%- hidden %>
+                        <button class="btn btn-sm btn-ghost-secondary btn-icon" type="submit" title="<%= t('Check again') %>" aria-label="<%= t('Check again') %>"><i class="ti ti-refresh"></i></button>
+                      </form>
+                      <% if (s.status !== 'disqualified') { %>
+                        <form method="post" action="<%= base %>/submissions/<%= s.id %>/status" data-confirm="<%= t('Remove this entry from the event?') %>"><%- hidden %>
+                          <input type="hidden" name="status" value="disqualified">
+                          <button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Remove') %>" aria-label="<%= t('Remove') %>"><i class="ti ti-trash"></i></button>
+                        </form>
+                      <% } %>
+                    <% } else if (currentUser && currentUser.id === s.participantId && withdrawable.includes(s.status)) { %>
+                      <form method="post" action="<%= base %>/submissions/<%= s.id %>/withdraw" data-confirm="<%= t('Withdraw this entry?') %>"><%- hidden %>
+                        <button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Withdraw') %>" aria-label="<%= t('Withdraw') %>"><i class="ti ti-arrow-back-up"></i></button>
+                      </form>
+                    <% } %>
+                  </div>
+                </td>
               </tr>
             <% }) %>
           </tbody>

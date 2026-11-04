@@ -964,5 +964,11 @@
   "Event settings": "ইভেন্টের সেটিংস",
   "No description yet.": "এখনো কোনো বিবরণ নেই।",
   "{n} participant": "{n} জন অংশগ্রহণকারী",
-  "{n} participants": "{n} জন অংশগ্রহণকারী"
+  "{n} participants": "{n} জন অংশগ্রহণকারী",
+  "Anonymous": "নাম প্রকাশে অনিচ্ছুক",
+  "Check again": "আবার যাচাই করুন",
+  "Remove this entry from the event?": "ইভেন্ট থেকে এই জমাটি সরাবেন?",
+  "View": "দেখুন",
+  "Withdraw": "প্রত্যাহার করুন",
+  "Withdraw this entry?": "এই জমাটি প্রত্যাহার করবেন?"
 }

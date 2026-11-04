@@ -135,7 +135,9 @@ test('organizers message their wiki through Wikimedia; demo accounts are told to
   assert.deepEqual(bn.map((u) => u.username), expected.map((m) => m.user.username).sort());
   assert.ok(bn.length > 0);
   const jury = await recipients({ contestId: c.id, audience: 'jury', wiki: 'bnwiki' });
-  assert.deepEqual(jury.map((u) => u.username), [NAME['Bn Admin']]);
+  const juryRows = await t.prisma.contestMembership.findMany({ where: { contestId: c.id, role: 'jury', status: 'active', wiki: 'bnwiki' }, include: { user: true } });
+  assert.deepEqual(jury.map((u) => u.username), juryRows.map((m) => m.user.username).sort());
+  assert.ok(jury.some((u) => u.username === NAME['Bn Admin']));
 
   const bnAdmin = await session('Bn Admin');
   const page = await bnAdmin.get('/wam/2026/bn/message');

@@ -78,16 +78,27 @@ async function seedFountain(prisma, users) {
     });
   }
 
-  // ── WAM 2026: real articles waiting for the jury on each wiki ──
+  // ── WAM 2026: real articles with Fountain's jury on each wiki ──
+  // Their reviews come along; the newest ones on bn and en still wait for the jury.
   const wam26 = await prisma.contest.findUnique({ where: { slug: 'wam-2026' } });
   const start = wam26.startDate.getTime();
   const span = Math.max(86400000, Math.min(Date.now(), wam26.endDate.getTime()) - start);
+  const sources = { bn, en: byCode('asian-month-2025-en'), hi: byCode('asian-month-2025-hi') };
   const entries = [
-    ...bn.articles.slice(-40).map((a) => ['bn', a]),
-    ...byCode('asian-month-2025-en').articles.slice(0, 40).map((a) => ['en', a]),
-    ...byCode('asian-month-2025-hi').articles.map((a) => ['hi', a]),
+    ...bn.articles.slice(-40).map((a, i) => ['bn', a, i < 20]),
+    ...sources.en.articles.slice(0, 40).map((a, i) => ['en', a, i < 30]),
+    ...sources.hi.articles.map((a) => ['hi', a, false]),
   ];
-  const rows = entries.map(([lang, a], i) => {
+  for (const [lang, e] of Object.entries(sources)) {
+    for (const name of e.jury) {
+      await prisma.contestMembership.upsert({
+        where: { contestId_userId_role_wiki: { contestId: wam26.id, userId: who[name].id, role: 'jury', wiki: WIKI[lang] } },
+        update: {},
+        create: { contestId: wam26.id, userId: who[name].id, role: 'jury', wiki: WIKI[lang], assignedById: users.organizer.id },
+      });
+    }
+  }
+  const rows = entries.map(([lang, a, reviewed], i) => {
     const wiki = WIKI[lang];
     const submittedAt = new Date(start + ((i * 7919) % 1000) / 1000 * span);
     return {
@@ -97,7 +108,26 @@ async function seedFountain(prisma, users) {
       validation: JSON.stringify({ errors: [], warnings: [] }), checkedAt: submittedAt, submittedAt,
     };
   });
-  await prisma.submission.createMany({ data: rows });
+  // Reviewed entries carry Fountain's verdicts in WAM 2026's marks ("Accepted").
+  for (const [i, row] of rows.entries()) {
+    const [, a, reviewed] = entries[i];
+    const verdicts = reviewed ? a.marks : [];
+    const accepted = verdicts.filter((m) => m.marks['0'] > 0).length;
+    const status = !verdicts.length ? row.status : accepted * 2 > verdicts.length ? 'approved' : 'rejected';
+    await prisma.submission.create({
+      data: {
+        ...row,
+        status,
+        score: verdicts.length ? accepted / verdicts.length : null,
+        reviews: {
+          create: verdicts.map((m) => ({
+            contestId: wam26.id, jurorId: who[m.user].id, decision: m.marks['0'] > 0 ? 'accept' : 'reject',
+            marks: JSON.stringify({ Accepted: m.marks['0'] > 0 ? 'Yes' : 'No' }), points: m.marks['0'] > 0 ? 1 : 0, comment: m.comment,
+          })),
+        },
+      },
+    });
+  }
   return bn.articles.length + rows.length;
 }
 
