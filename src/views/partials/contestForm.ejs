@@ -20,11 +20,11 @@
   const dateLabel = Object.fromEntries(DATE_FIELDS);
   const origin = 'zury.toolforge.org';
   const steps = [
-    ['basics', 'Basic info', wikiMode ? 'Description, contact and dates' : 'Type, project, name, address and dates'],
-    ['rules', 'Submission rules', 'Who can take part and what counts'],
-    ['judging', 'Interaction and judging', 'Review, appeals, results and features'],
-    ...(wikiMode ? [] : [['access', 'User access levels', 'Visibility, organizers and jury']]),
-    ...(creating ? [['review', 'Review', 'Check everything, then create']] : []),
+    ['basics', t('Basic info'), wikiMode ? t('Description, contact and dates') : t('Type, project, name, address and dates')],
+    ['rules', t('Submission rules'), t('Who can take part and what counts')],
+    ['judging', t('Interaction and judging'), t('Review, appeals, results and features')],
+    ...(wikiMode ? [] : [['access', t('User access levels'), t('Visibility, organizers and jury')]]),
+    ...(creating ? [['review', t('Review'), t('Check everything, then create')]] : []),
   ];
   const dateInput = (key) => `
     <label class="form-label" for="${key}">${esc(dateLabel[key])}${mark('contest.' + key)}</label>
@@ -49,7 +49,7 @@
     <div class="col-lg-3">
       <div class="card sticky-lg-top" style="top: 1rem; z-index: 1">
         <div class="card-body">
-          <h3 class="card-title mb-3"><%= creating ? 'Create new event' : (wikiMode ? 'Settings for this wiki' : 'Event settings') %></h3>
+          <h3 class="card-title mb-3"><%= creating ? t('Create new event') : (wikiMode ? t('Settings for this wiki') : t('Event settings')) %></h3>
           <ul class="steps steps-vertical steps-blue">
             <% steps.forEach(([key, label, hint], i) => { %>
               <li class="step-item<%= i === 0 ? ' active' : '' %>">
