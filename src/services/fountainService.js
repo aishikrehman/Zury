@@ -10,6 +10,7 @@ const users = require('./userDirectoryService');
 const eventService = require('./eventService');
 const eventWikiService = require('./eventWikiService');
 const audit = require('./auditService');
+const lifecycle = require('./lifecycleService');
 
 const API = 'https://fountain.toolforge.org/api/editathons';
 
@@ -164,9 +165,15 @@ async function importEvent({ actorId, input, type = 'writing' }) {
         submissionOpensAt: start,
         submissionDeadline: finish,
       },
-      settings: {},
+      // Fountain's jury decides the entries, so Zury's own review stays off.
+      settings: { juryReviewEnabled: false },
     },
   });
+  // The editathon is already running on Fountain: publish it straight away.
+  if (start && finish) {
+    const status = lifecycle.computeAutoStatus({ startDate: start, endDate: finish, submissionDeadline: finish }, { juryReviewEnabled: false });
+    await prisma.contest.update({ where: { id: contest.id }, data: { status, statusMode: 'auto' } });
+  }
   const eventWiki = await prisma.contestWiki.findFirst({ where: { contestId: contest.id, wiki } });
   await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: code } });
   await audit.record({ actorId, contestId: contest.id, action: 'fountain.imported', entityType: 'Contest', entityId: contest.id, details: { code } });
