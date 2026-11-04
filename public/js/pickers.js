@@ -3,6 +3,14 @@
 (function () {
   if (!window.TomSelect) return;
 
+  // A single-choice picker shows its value until you start typing a search.
+  const typing = (e) => {
+    const w = e.target.closest && e.target.closest('.ts-wrapper.single');
+    if (w) w.classList.toggle('z-typing', e.type === 'input' && e.target.value !== '');
+  };
+  document.addEventListener('input', typing);
+  document.addEventListener('focusout', typing);
+
   const ENDPOINT = { language: '/api/languages', user: '/api/users', series: '/api/series', community: '/api/communities' };
   // Pickers that also accept a new value typed in.
   const CREATABLE = ['user', 'series', 'community'];

@@ -602,3 +602,9 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 .z-pill-x { display: inline-flex; align-items: center; margin: 0 -4px 0 2px; padding: 0; color: inherit; background: none; border: 0; opacity: 0.6; }
 .z-pill-x:hover { opacity: 1; }
 .z-pill-x .ti { font-size: 13px; }
+
+/* Single-choice pickers behave like a normal select: the chosen value stays
+   visible while the box has focus, and only gives way once you type. */
+.ts-wrapper.single.input-active:not(.z-typing) .ts-control > .item:not(:only-child) { display: flex !important; }
+.ts-wrapper.single.input-active:not(.z-typing) .ts-control { position: relative; }
+.ts-wrapper.single.input-active:not(.z-typing) .ts-control > input { position: absolute !important; inset: 0; opacity: 0; }
