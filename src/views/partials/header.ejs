@@ -1,9 +1,17 @@
 <%# The slim top bar: menu button (small screens), search, create, language and account. %>
 <header class="z-topbar d-print-none">
-  <button class="z-icon-btn z-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#z-menu" aria-controls="z-menu" aria-label="<%= t('Toggle primary navigation') %>">
-    <i class="ti ti-menu-2"></i>
-  </button>
-  <a href="/" class="z-brand z-brand-compact" aria-label="Zury"><img src="/images/zury-logo.svg" width="28" height="28" alt=""></a>
+  <% if (hasSidebar) { %>
+    <button class="z-icon-btn z-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#z-menu" aria-controls="z-menu" aria-label="<%= t('Toggle primary navigation') %>">
+      <i class="ti ti-menu-2"></i>
+    </button>
+    <a href="/dashboard" class="z-brand z-brand-compact" aria-label="Zury"><img src="/images/zury-logo.svg" width="28" height="28" alt=""></a>
+  <% } else { %>
+    <a href="/" class="z-brand z-brand-top" aria-label="Zury"><img src="/images/zury-logo.svg" width="30" height="30" alt=""><span>Zury</span></a>
+    <nav class="z-toplinks" aria-label="<%= t('Primary') %>">
+      <a href="/events" class="<%= isActive('/events') ? 'active' : '' %>"><%= t('Events') %></a>
+      <a href="/about" class="<%= isActive('/about') ? 'active' : '' %>"><%= t('About') %></a>
+    </nav>
+  <% } %>
 
   <form action="/events" method="get" role="search" class="z-search">
     <i class="ti ti-search"></i>

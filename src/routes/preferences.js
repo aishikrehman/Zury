@@ -14,6 +14,7 @@ async function save(req, changes) {
     const data = {};
     if ('wide' in changes) data.uiWide = changes.wide;
     if ('textLarge' in changes) data.uiTextLarge = changes.textLarge;
+    if ('sidebar' in changes) data.uiSidebarCollapsed = changes.sidebar;
     await prisma.user.update({ where: { id: req.user.id }, data });
   } else {
     req.session.ui = { ...(req.session.ui || {}), ...changes };
@@ -23,10 +24,12 @@ async function save(req, changes) {
 router.get('/preferences/display', async (req, res, next) => {
   try {
     const changes = {};
-    for (const key of ['wide', 'textLarge']) {
+    for (const key of ['wide', 'textLarge', 'sidebar']) {
       if (req.query[key] === '1' || req.query[key] === '0') changes[key] = req.query[key] === '1';
     }
     await save(req, changes);
+    // The sidebar toggle saves in the background and needs no page load.
+    if (req.query.quiet === '1') return res.status(204).end();
     res.redirect(safeNext(req.query.next, '/'));
   } catch (err) {
     next(err);

@@ -2,19 +2,19 @@
   The app navigation, shown as the left sidebar on wide screens and in the
   slide-out menu on small ones. Expects: navGroups ([{ title, items }]).
 %>
-<a href="/" class="z-brand" aria-label="Zury">
+<a href="<%= currentUser ? '/dashboard' : '/' %>" class="z-brand" aria-label="Zury">
   <img src="/images/zury-logo.svg" width="32" height="32" alt="">
   <span>Zury</span>
 </a>
 <% if (can('createEvent')) { %>
-  <a href="/events/create" class="btn btn-primary w-100 z-create"><i class="ti ti-plus me-1"></i><%= t('Create an event') %></a>
+  <a href="/events/create" class="btn btn-primary w-100 z-create" title="<%= t('Create an event') %>"><i class="ti ti-plus me-1"></i><%= t('Create an event') %></a>
 <% } %>
 <% navGroups.forEach((group) => { %>
   <% if (group.items.length) { %>
     <div class="z-nav-title"><%= group.title %></div>
     <nav class="z-nav" aria-label="<%= group.title %>">
       <% group.items.forEach((item) => { %>
-        <a href="<%= item.href %>" class="<%= item.active ? 'active' : '' %>"<%= item.active ? ' aria-current="page"' : '' %><%= item.external ? ' rel="noopener"' : '' %>>
+        <a href="<%= item.href %>" class="<%= item.active ? 'active' : '' %>"<%= item.active ? ' aria-current="page"' : '' %><%= item.external ? ' rel="noopener"' : '' %> title="<%= item.label %>">
           <i class="ti ti-<%= item.icon %>"></i><span><%= item.label %></span>
           <% if (item.count) { %><span class="z-nav-count"><%= formatNumber(item.count) %></span><% } %>
         </a>

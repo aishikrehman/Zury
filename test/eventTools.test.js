@@ -220,3 +220,23 @@ test('sessions: registration, waiting list, attendance and certificate', async (
   const ok = await organizer.post(`${base}/sessions`, { title: 'Week 5: Wikidata', mode: 'online', startsAt: '2026-12-01T10:00', meetingUrl: 'https://meet.jit.si/x', capacity: '10' });
   assert.equal(ok.status, 302);
 });
+
+test('logged-in people start on their dashboard and can collapse the sidebar; visitors have none', async () => {
+  const visitor = await t.request('/');
+  assert.equal(visitor.status, 200);
+  assert.doesNotMatch(visitor.body, /class="z-sidebar/, 'no sidebar for visitors');
+
+  const organizer = await session('Organizer');
+  const home = await organizer.get('/');
+  assert.equal(home.status, 302);
+  assert.equal(home.location, '/dashboard');
+  assert.equal((await organizer.get('/?home=1')).status, 200, 'the home page can still be opened');
+
+  const dash = await organizer.get('/dashboard');
+  assert.match(dash.body, /class="z-sidebar/);
+  assert.doesNotMatch(dash.body, /class="[^"]*z-collapsed/);
+  assert.equal((await organizer.get('/preferences/display?sidebar=1&quiet=1')).status, 204);
+  assert.equal((await t.prisma.user.findUnique({ where: { id: ids.Organizer } })).uiSidebarCollapsed, true);
+  assert.match((await organizer.get('/dashboard')).body, /<html[^>]*class="[^"]*z-collapsed/);
+  await organizer.get('/preferences/display?sidebar=0&quiet=1');
+});

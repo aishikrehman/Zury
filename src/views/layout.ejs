@@ -1,26 +1,17 @@
 <%
   const isActive = (prefix, exact = false) => (exact ? currentPath === prefix : currentPath === prefix || currentPath.startsWith(prefix + '/'));
+  // Logged-in people get the sidebar; their own pages (profile, submissions,
+  // preferences) live in the account menu at the top right.
   const navGroups = [
     {
       title: t('Explore'),
       items: [
-        { href: '/', icon: 'home', label: t('Home'), active: isActive('/', true) },
+        { href: '/dashboard', icon: 'layout-dashboard', label: t('Dashboard'), active: isActive('/dashboard') },
         { href: '/events', icon: 'calendar-event', label: t('All events'), active: currentPath === '/events' },
         { href: '/events/active', icon: 'player-play', label: t('Active'), active: isActive('/events/active') },
         { href: '/events/upcoming', icon: 'clock', label: t('Upcoming'), active: isActive('/events/upcoming') },
         { href: '/events/completed', icon: 'flag', label: t('Completed'), active: isActive('/events/completed') },
       ],
-    },
-    {
-      title: t('You'),
-      items: currentUser
-        ? [
-            { href: '/dashboard', icon: 'layout-dashboard', label: t('Dashboard'), active: isActive('/dashboard') },
-            { href: '/submissions', icon: 'files', label: t('My submissions'), active: isActive('/submissions') },
-            { href: userPath(currentUser.username), icon: 'user', label: t('Profile'), active: isActive(userPath(currentUser.username)) },
-            { href: '/settings', icon: 'settings', label: t('Preferences'), active: isActive('/settings') },
-          ]
-        : [],
     },
     {
       title: t('Administration'),
@@ -42,7 +33,8 @@
       ],
     },
   ];
-  const htmlClasses = [ui.wide && 'zury-wide', ui.textLarge && 'zury-text-lg'].filter(Boolean).join(' ');
+  const hasSidebar = !!currentUser;
+  const htmlClasses = [ui.wide && 'zury-wide', ui.textLarge && 'zury-text-lg', hasSidebar && 'z-has-sidebar', hasSidebar && ui.sidebarCollapsed && 'z-collapsed'].filter(Boolean).join(' ');
 %>
 <!DOCTYPE html>
 <html lang="<%= lang.code %>" dir="<%= lang.dir %>"<% if (htmlClasses) { %> class="<%= htmlClasses %>"<% } %>>
@@ -63,12 +55,18 @@
 <body>
   <a href="#content" class="visually-hidden-focusable skip-link"><%= t("Skip to main content") %></a>
   <div class="z-app">
-    <aside class="z-sidebar d-print-none" aria-label="<%= t('Primary') %>">
-      <%- include('partials/nav', { navGroups }) %>
-    </aside>
+    <% if (hasSidebar) { %>
+      <aside class="z-sidebar d-print-none" aria-label="<%= t('Primary') %>">
+        <%- include('partials/nav', { navGroups }) %>
+        <a href="/preferences/display?sidebar=<%= ui.sidebarCollapsed ? 0 : 1 %>&next=<%= encodeURIComponent(currentPath) %>" class="z-collapse-btn" data-sidebar-toggle
+          aria-label="<%= t('Collapse or expand the sidebar') %>" title="<%= t('Collapse or expand the sidebar') %>">
+          <i class="ti ti-layout-sidebar-left-collapse"></i><span><%= t('Collapse sidebar') %></span>
+        </a>
+      </aside>
+    <% } %>
 
     <div class="z-content">
-      <%- include('partials/header') %>
+      <%- include('partials/header', { hasSidebar, isActive }) %>
 
       <main id="content" class="z-main">
         <% if (demoMode || (typeof flash !== 'undefined' && flash)) { %>
@@ -94,10 +92,12 @@
     </div>
   </div>
 
+  <% if (hasSidebar) { %>
   <div class="offcanvas offcanvas-start z-drawer d-print-none" tabindex="-1" id="z-menu" aria-label="<%= t('Primary') %>">
     <button type="button" class="z-icon-btn z-drawer-close" data-bs-dismiss="offcanvas" aria-label="<%= t('Close') %>"><i class="ti ti-x"></i></button>
     <div class="offcanvas-body"><%- include('partials/nav', { navGroups }) %></div>
   </div>
+  <% } %>
 
   <%- include('partials/a11y') %>
   <script type="application/json" id="zury-i18n"><%- clientStrings %></script>

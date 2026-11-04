@@ -5,6 +5,8 @@ const { ensureCsrfToken } = require('../middleware/csrf');
 const env = require('../config/env');
 
 async function index(req, res, next) {
+  // Like GitHub: the home page is for visitors; people who are logged in start on their dashboard.
+  if (req.user && req.query.home !== '1') return res.redirect('/dashboard');
   try {
     const [active, upcoming, completed, stats, platform] = await Promise.all([
       contestService.listByGroup('active'),

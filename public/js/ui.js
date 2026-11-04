@@ -16,3 +16,12 @@ document.addEventListener('keydown', (e) => {
     search.focus();
   }
 });
+
+// Sidebar collapse: switch at once and save the choice on the account in the background.
+document.addEventListener('click', (e) => {
+  const toggle = e.target.closest('[data-sidebar-toggle]');
+  if (!toggle) return;
+  e.preventDefault();
+  const collapsed = document.documentElement.classList.toggle('z-collapsed');
+  fetch(`/preferences/display?sidebar=${collapsed ? 1 : 0}&quiet=1`, { credentials: 'same-origin' }).catch(() => {});
+});
