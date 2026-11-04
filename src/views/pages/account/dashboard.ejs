@@ -9,10 +9,10 @@
   ];
   const actions = [
     can('createEvent') ? `<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>${h(t('Create event'))}</a>` : '',
-    can('accessAdmin') ? '<a class="btn btn-dark" href="/admin"><i class="ti ti-shield-lock me-1"></i>Administration</a>' : '',
+    can('accessAdmin') ? '<a class="btn btn-dark" href="/admin"><i class="ti ti-shield-lock me-1"></i>' + h(t('Administration')) + '</a>' : '',
   ].join('');
 %>
-<%- include('../../partials/pageHeader', { pretitle: t('Overview'), heading: t('Dashboard'), actions }) %>
+<%- include('../../partials/accountHeader', { tab: 'dashboard', actions }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="row row-deck row-cards mb-4">

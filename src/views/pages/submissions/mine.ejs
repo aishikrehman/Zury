@@ -20,7 +20,7 @@
     if (s.status === 'approved') g.approved += 1;
   });
 %>
-<%- include('../../partials/pageHeader', { pretitle: t('Account'), heading: t('My submissions') }) %>
+<%- include('../../partials/accountHeader', { tab: 'submissions' }) %>
 <div class="page-body"><div class="container-xl">
   <% if (!mine.total) { %>
     <div class="card">

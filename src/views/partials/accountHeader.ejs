@@ -1,0 +1,27 @@
+<%# Your own pages share one header: avatar, name, and tabs. Expects: tab; optional actions (trusted HTML), person (defaults to you). %>
+<%
+  const who = typeof person !== 'undefined' && person ? person : currentUser;
+  const tabs = [
+    ['profile', userPath(currentUser.username), 'user', t('Profile')],
+    ['dashboard', '/dashboard', 'layout-dashboard', t('Dashboard')],
+    ['submissions', '/submissions', 'files', t('My submissions')],
+    ['settings', '/settings', 'settings', t('Preferences')],
+  ];
+%>
+<div class="page-header d-print-none z-account-header">
+  <div class="container-xl">
+    <div class="row g-3 align-items-center">
+      <div class="col-auto"><%- include('./avatar', { u: who, size: 'lg' }) %></div>
+      <div class="col min-w-0">
+        <div class="page-pretitle"><%= who.homeWiki ? wikiLocal(who.homeWiki) : 'Wikimedia' %></div>
+        <h1 class="page-title text-truncate"><%= who.username %></h1>
+      </div>
+      <% if (typeof actions !== 'undefined' && actions) { %><div class="col-auto ms-auto"><div class="btn-list"><%- actions %></div></div><% } %>
+    </div>
+    <nav class="z-account-tabs" aria-label="<%= t('Account') %>">
+      <% tabs.forEach(([key, href, icon, label]) => { %>
+        <a href="<%= href %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-1"></i><%= label %></a>
+      <% }) %>
+    </nav>
+  </div>
+</div>

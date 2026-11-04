@@ -6,6 +6,7 @@
     { heading: t('Participated'), icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
   ];
 %>
+<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', person: profileUser, actions: '<a class="btn btn-outline-secondary" href="' + h(wikiUserUrl) + '" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i>' + h(t('Wikimedia account')) + '</a>' }) %><% } else { %>
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-3 align-items-center">
@@ -21,6 +22,7 @@
     </div>
   </div>
 </div>
+<% } %>
 <div class="page-body">
   <div class="container-xl">
     <div class="row row-cards">
