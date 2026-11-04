@@ -1004,5 +1004,21 @@
   "{n} jury members": "{n} জন জুরি",
   "{n} selected": "{n}টি বাছাই করা হয়েছে",
   "Leave": "ছেড়ে দিন",
-  "Leave this event?": "এই ইভেন্ট ছেড়ে দেবেন?"
+  "Leave this event?": "এই ইভেন্ট ছেড়ে দেবেন?",
+  "A series groups the yearly editions of one event, such as Wiki Loves Monuments: /wlm shows every year, /wlm/2026 one edition, /wlm/2026/bn one wiki of it.": "সিরিজ একটি ইভেন্টের বার্ষিক সংস্করণগুলো একসাথে রাখে, যেমন উইকি লাভস মনুমেন্টস: /wlm-এ সব বছর, /wlm/2026-এ একটি সংস্করণ, /wlm/2026/bn-এ তার একটি উইকি।",
+  "Create next edition": "পরের সংস্করণ তৈরি করুন",
+  "Create series": "সিরিজ তৈরি করুন",
+  "Description": "বিবরণ",
+  "Editions": "সংস্করণ",
+  "Entries per edition": "সংস্করণ অনুযায়ী জমা",
+  "Give the series a name.": "সিরিজের একটি নাম দিন।",
+  "Make next year’s edition from the latest one?": "সর্বশেষ সংস্করণ থেকে আগামী বছরের সংস্করণ তৈরি করবেন?",
+  "Name": "নাম",
+  "New series": "নতুন সিরিজ",
+  "Series created. Create its first edition with “Part of” set to it.": "সিরিজ তৈরি হয়েছে। “অংশ” ঘরে এটি বেছে নিয়ে প্রথম সংস্করণ তৈরি করুন।",
+  "That address is reserved.": "এই ঠিকানাটি সংরক্ষিত।",
+  "The next edition is ready as a draft: check its dates and settings, then publish it.": "পরের সংস্করণ খসড়া হিসেবে তৈরি: তারিখ ও সেটিংস দেখে নিয়ে প্রকাশ করুন।",
+  "This series has no edition to start from.": "এই সিরিজে শুরু করার মতো কোনো সংস্করণ নেই।",
+  "Use lowercase letters, numbers and single hyphens (max 40).": "ছোট হাতের অক্ষর, সংখ্যা ও একক হাইফেন ব্যবহার করুন (সর্বোচ্চ ৪০)।",
+  "Words accepted": "গৃহীত শব্দ"
 }

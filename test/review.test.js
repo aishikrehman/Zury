@@ -236,3 +236,33 @@ test('review links on the submissions page, bulk verdicts, and results with stat
   const people = await organizer.get('/wam/2026/participants');
   assert.match(people.body, /href="\/wam\/2026\/assignments"/, 'assignments sit under People');
 });
+
+test('series: every year at /wam, the next edition from the latest one, and new series', async () => {
+  const page = await t.request('/wam');
+  assert.equal(page.status, 200);
+  assert.match(page.body, /Entries per edition|Edition/);
+  assert.match(page.body, /href="\/wam\/2026"/);
+
+  const participant = await session('Participant');
+  assert.equal((await participant.post('/wam/next-edition')).status, 403, 'only organizers');
+
+  const organizer = await session('Organizer');
+  assert.match((await organizer.get('/wam')).body, /Create next edition/);
+  const res = await organizer.post('/wam/next-edition');
+  assert.equal(res.location, '/wam/2027/config');
+  const next = await t.prisma.contest.findFirst({ where: { edition: '2027', series: { slug: 'wam' } }, include: { wikis: true, settings: true } });
+  const last = await t.prisma.contest.findFirst({ where: { edition: '2026', series: { slug: 'wam' } }, include: { wikis: true, settings: true } });
+  assert.equal(next.status, 'draft');
+  assert.equal(next.title, 'Wikipedia Asian Month 2027');
+  assert.equal(next.startDate.getUTCFullYear(), last.startDate.getUTCFullYear() + 1);
+  assert.deepEqual(next.wikis.map((w) => w.wiki).sort(), last.wikis.map((w) => w.wiki).sort(), 'same wikis');
+  assert.equal(next.settings.marks, last.settings.marks, 'same marks');
+  assert.equal((await organizer.post('/wam/next-edition')).location, '/wam', 'not while the new one is a draft');
+  await t.prisma.contest.delete({ where: { id: next.id } });
+
+  const admin = await session('Steward');
+  const made = await admin.post('/series', { slug: 'wlx', title: 'Wiki Loves X' });
+  assert.equal(made.location, '/wlx');
+  assert.equal((await admin.post('/series', { slug: 'wlx', title: 'Again' })).status, 400, 'address taken');
+  await t.prisma.eventSeries.deleteMany({ where: { slug: 'wlx' } });
+});

@@ -40,8 +40,4 @@ async function index(req, res, next) {
   }
 }
 
-function about(req, res) {
-  res.render('pages/about', { title: 'About — Zury' });
-}
-
-module.exports = { index, about };
+module.exports = { index };

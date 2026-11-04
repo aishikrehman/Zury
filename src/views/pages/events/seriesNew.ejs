@@ -1,0 +1,26 @@
+<div class="page-header d-print-none"><div class="container-xl"><div class="page-pretitle"><%= t('Event series') %></div><h2 class="page-title"><%= t('New series') %></h2></div></div>
+<div class="page-body">
+  <div class="container-xl">
+    <form method="post" action="/series" class="card" style="max-width: 40rem">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-body">
+        <p class="text-secondary"><%= t('A series groups the yearly editions of one event, such as Wiki Loves Monuments: /wlm shows every year, /wlm/2026 one edition, /wlm/2026/bn one wiki of it.') %></p>
+        <div class="mb-3">
+          <label class="form-label required" for="title"><%= t('Name') %></label>
+          <input class="form-control<%= errors.title ? ' is-invalid' : '' %>" id="title" name="title" value="<%= form.title %>" required maxlength="120" placeholder="Wiki Loves Monuments">
+          <% if (errors.title) { %><div class="invalid-feedback"><%= t(errors.title) %></div><% } %>
+        </div>
+        <div class="mb-3">
+          <label class="form-label required" for="slug"><%= t('Address') %></label>
+          <div class="input-group"><span class="input-group-text">zury.toolforge.org/</span><input class="form-control<%= errors.slug ? ' is-invalid' : '' %>" id="slug" name="slug" value="<%= form.slug %>" required maxlength="40" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="wlm"></div>
+          <% if (errors.slug) { %><div class="invalid-feedback d-block"><%= t(errors.slug) %></div><% } %>
+        </div>
+        <div>
+          <label class="form-label" for="description"><%= t('Description') %></label>
+          <textarea class="form-control" id="description" name="description" rows="3" maxlength="2000"><%= form.description %></textarea>
+        </div>
+      </div>
+      <div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t('Create series') %></button></div>
+    </form>
+  </div>
+</div>

@@ -109,6 +109,50 @@ async function create(req, res, next) {
 }
 
 // /<series>: every edition of a recurring event. Unknown slugs fall through to 404.
+// Organizers of any edition, and people who manage every event, can start the next edition.
+async function canRunSeries(req, seriesId) {
+  if (!req.user) return false;
+  if (req.permissions.has('manageAnyEvent')) return true;
+  return !!(await prisma.contestMembership.findFirst({ where: { userId: req.user.id, role: 'organizer', status: 'active', contest: { seriesId } } }));
+}
+
+function seriesForm(req, res) {
+  res.render('pages/events/seriesNew', { title: 'New series — Zury', form: { slug: '', title: '', description: '' }, errors: {} });
+}
+
+async function createSeries(req, res, next) {
+  const seriesService = require('../services/seriesService');
+  try {
+    const created = await seriesService.create({ actorId: req.user.id, slug: req.body.slug, title: req.body.title, description: req.body.description });
+    req.flash('success', 'Series created. Create its first edition with “Part of” set to it.');
+    res.redirect(`/${created.slug}`);
+  } catch (err) {
+    if (!(err instanceof seriesService.SeriesError)) return next(err);
+    res.status(400).render('pages/events/seriesNew', { title: 'New series — Zury', form: req.body, errors: { [err.field || 'title']: err.message } });
+  }
+}
+
+async function nextEdition(req, res, next) {
+  const seriesService = require('../services/seriesService');
+  try {
+    const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!found) return next();
+    if (!(await canRunSeries(req, found.id))) {
+      const err = new Error("You don't have permission to do that.");
+      err.status = 403;
+      return next(err);
+    }
+    const created = await seriesService.nextEdition({ actorId: req.user.id, series: found });
+    req.flash('success', 'The next edition is ready as a draft: check its dates and settings, then publish it.');
+    res.redirect(`/${found.slug}/${created.edition}/config`);
+  } catch (err) {
+    const seriesService = require('../services/seriesService');
+    if (!(err instanceof seriesService.SeriesError)) return next(err);
+    req.flash('danger', err.message);
+    res.redirect(`/${req.params.series}`);
+  }
+}
+
 async function series(req, res, next) {
   try {
     const { RESERVED } = require('../middleware/permissions');
@@ -120,10 +164,16 @@ async function series(req, res, next) {
       orderBy: { edition: 'desc' },
       select: { ...contestService.CARD_SELECT, edition: true },
     });
-    res.render('pages/events/series', { title: `${found.title} — Zury`, series: found, editions });
+    res.render('pages/events/series', {
+      title: `${found.title} — Zury`,
+      series: found,
+      editions,
+      summary: await require('../services/seriesService').summary(found.id),
+      canRun: await canRunSeries(req, found.id),
+    });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { index, createForm, create, series };
+module.exports = { index, createForm, create, series, seriesForm, createSeries, nextEdition };

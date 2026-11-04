@@ -9,6 +9,7 @@ router.get('/', (req, res, next) => {
   if (req.query.oauth_verifier && req.query.oauth_token) return authController.callback(req, res, next);
   return homeController.index(req, res, next);
 });
-router.get('/about', homeController.about);
+// There is no About page any more; old links go home.
+router.get('/about', (req, res) => res.redirect(301, '/'));
 
 module.exports = router;

@@ -12,6 +12,13 @@ const { loadContest, loadSeriesEvent, loadSlugEvent, requirePermission, requireE
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
+// Making series is for people who may create events.
+const requireCreate = (req, res, next) => {
+  if (req.permissions.has('createEvent')) return next();
+  const err = new Error("You don't have permission to do that.");
+  err.status = 403;
+  next(err);
+};
 
 // Some pages only exist for some event types.
 const notFound = (res) => res.status(404).render('pages/404', { title: 'Page Not Found' });
@@ -111,6 +118,9 @@ const mount = (loader) => (req, res, next) => {
   });
 };
 
+router.get('/series/new', requireAuth, requireCreate, eventsController.seriesForm);
+router.post('/series', requireAuth, requireCreate, eventsController.createSeries);
+router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 router.use(`/:series(${SLUG})/:edition(${SLUG})`, mount(loadSeriesEvent({ withWiki: false })));
 router.use(`/:series(${SLUG})/:edition(${SLUG})/:code(${SLUG})`, mount(loadSeriesEvent({ withWiki: true })));

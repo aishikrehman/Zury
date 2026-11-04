@@ -156,6 +156,9 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
 
 /* Top bar */
 .z-topbar {
+  /* Above the sticky navigation bar, so its menus (language, account) open over it. */
+  position: relative;
+  z-index: 1030;
   background: var(--z-surface);
   border-bottom: 1px solid var(--z-border);
 }
@@ -633,3 +636,6 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 
 
 .z-bulkbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; position: sticky; bottom: 0; z-index: 2; background: var(--z-surface, #fff); box-shadow: 0 -6px 16px -10px rgba(0,0,0,.25); }
+
+/* Search pickers open on the page body: keep them above the sticky bars. */
+.ts-dropdown { z-index: 1060; }

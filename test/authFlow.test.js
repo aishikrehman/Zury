@@ -56,7 +56,7 @@ async function logIn(startPath = '/dashboard') {
 }
 
 test('anonymous visitors see public pages without getting a session', async () => {
-  for (const page of ['/', '/about', '/events']) {
+  for (const page of ['/', '/events', '/events/active']) {
     const res = await t.request(page);
     assert.equal(res.status, 200, page);
     assert.equal(res.cookie, null, page);

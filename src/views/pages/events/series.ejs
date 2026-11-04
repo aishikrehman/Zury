@@ -1,28 +1,69 @@
-<%- include('../../partials/pageHeader', { pretitle: t('Event series'), heading: series.title }) %>
+<%
+  // The series across the years: one row per edition, and the totals.
+  const total = summary.reduce((acc, e) => ({ entries: acc.entries + e.entries, approved: acc.approved + e.approved, words: acc.words + e.approvedWords }), { entries: 0, approved: 0, words: 0 });
+  const chartYears = [...summary].reverse();
+%>
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <div class="page-pretitle"><%= t('Event series') %></div>
+        <h2 class="page-title"><%= series.title %></h2>
+        <% if (series.description) { %><div class="text-secondary mt-1"><%= series.description %></div><% } %>
+      </div>
+      <% if (canRun) { %>
+        <div class="col-auto">
+          <form method="post" action="/<%= series.slug %>/next-edition" data-confirm="<%= t('Make next year’s edition from the latest one?') %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-primary" type="submit"><i class="ti ti-calendar-plus me-1"></i><%= t('Create next edition') %></button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
 <div class="page-body">
   <div class="container-xl">
-    <% if (series.description) { %><p class="text-secondary fs-3 mb-4"><%= series.description %></p><% } %>
     <% if (!editions.length) { %>
       <div class="card"><%- include('../../partials/emptyArt', { title: t('No editions yet') }) %></div>
     <% } else { %>
-      <div class="row row-cards">
-        <% editions.forEach((c) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-          <div class="col-md-6 col-lg-4">
-            <a href="<%= eventPath(c) %>" class="card card-link card-link-pop h-100">
-              <div class="card-status-top bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>"></div>
-              <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                  <div class="h1 m-0"><%= c.edition %></div>
-                  <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt ms-auto"><%= st.label %></span>
-                </div>
-                <div class="text-secondary mb-2"><%= c.title %></div>
-                <div class="d-flex flex-wrap gap-1">
-                  <% (c.wikis || []).forEach((w) => { %><span class="badge bg-blue-lt"><%= w.code %></span><% }) %>
-                </div>
-              </div>
-            </a>
+      <div class="row row-cards mb-3">
+        <% [[t('Editions'), summary.length, 'calendar'], [t('Entries'), total.entries, 'files'], [t('Approved'), total.approved, 'circle-check'], [t('Words accepted'), total.words, 'letter-case']].forEach(([label, value, icon]) => { %>
+          <div class="col-6 col-lg-3">
+            <div class="card card-sm"><div class="card-body d-flex align-items-center">
+              <span class="avatar bg-primary-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
+              <div><div class="h2 m-0"><%= formatNumber(value) %></div><div class="text-secondary small"><%= label %></div></div>
+            </div></div>
           </div>
         <% }) %>
+      </div>
+
+      <% if (chartYears.length > 1) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><%= t('Entries per edition') %></h3></div>
+          <div class="card-body"><%- include('../../partials/chart', { spec: { type: 'bar', height: 220, series: [{ name: t('Entries'), data: chartYears.map((e) => e.entries) }, { name: t('Approved'), data: chartYears.map((e) => e.approved) }], labels: chartYears.map((e) => e.edition), colors: ['primary', 'green'] }, label: t('Entries per edition') }) %></div>
+        </div>
+      <% } %>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead><tr><th><%= t('Edition') %></th><th><%= t('Wikis') %></th><th class="text-end"><%= t('Participants') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Approved') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead>
+            <tbody>
+              <% summary.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
+                <tr>
+                  <td><a href="/<%= series.slug %>/<%= e.edition %>" class="fw-bold"><%= e.edition %></a><div class="text-secondary small"><%= e.title %></div></td>
+                  <td><div class="d-flex flex-wrap gap-1"><% e.wikis.forEach((w) => { %><a class="badge bg-blue-lt" href="/<%= series.slug %>/<%= e.edition %>/<%= w.code %>" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></a><% }) %></div></td>
+                  <td class="text-end"><%= formatNumber(e.participants) %></td>
+                  <td class="text-end"><%= formatNumber(e.entries) %></td>
+                  <td class="text-end"><%= formatNumber(e.approved) %></td>
+                  <td class="text-end"><%= formatNumber(e.approvedWords) %></td>
+                  <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
       </div>
     <% } %>
   </div>
