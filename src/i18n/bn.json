@@ -1158,5 +1158,9 @@
   "The database is not empty; restore only into an empty one.": "ডাটাবেজ খালি নয়; শুধু খালি ডাটাবেজে ফেরত আনা যায়।",
   "Filters": "ফিল্টার",
   "all wikis (global)": "সব উইকি (বৈশ্বিক)",
-  "Verified on Wikimedia": "উইকিমিডিয়ায় যাচাইকৃত"
+  "Verified on Wikimedia": "উইকিমিডিয়ায় যাচাইকৃত",
+  "My roles in events": "ইভেন্টে আমার ভূমিকা",
+  "My events by status": "অবস্থা অনুযায়ী আমার ইভেন্ট",
+  "Welcome back, {name}": "আবার স্বাগতম, {name}",
+  "Find an event": "ইভেন্ট খুঁজুন"
 }

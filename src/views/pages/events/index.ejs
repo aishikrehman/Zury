@@ -93,7 +93,7 @@
                         <td class="text-secondary"><%= CONTEST_TYPES[c.type] %></td>
                         <td class="text-secondary text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) + ' – ' + formatDate(c.endDate, c.timezone) : '—' %></td>
                         <td class="text-end"><%= formatNumber(c._count ? c._count.memberships : 0) %></td>
-                        <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
+                        <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></td>
                       </tr>
                     <% }) %>
                   </tbody>
