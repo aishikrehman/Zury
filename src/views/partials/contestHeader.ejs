@@ -96,9 +96,12 @@
       const shownWikis = wikiScope ? [wikiScope] : eventWikis;
       const facts = [
         contest.organizingCommunity,
-        shownWikis.length ? shownWikis.map((w) => wikiLocal(w.wiki)).join(', ') : wikiLocal(contest.primaryWiki),
-        contest.language ? langLocal(contest.language) : '',
+        // One wiki: its name. Several: how many (the wiki menu lists them).
+        shownWikis.length > 1 ? tn('{n} wiki', '{n} wikis', shownWikis.length) : wikiLocal((shownWikis[0] || {}).wiki || contest.primaryWiki),
+        // A multi-wiki event has no single language.
+        shownWikis.length > 1 ? '' : null,
       ].filter(Boolean);
+      if (shownWikis.length <= 1 && contest.language) facts.push(langLocal(contest.language));
     %>
     <p class="gh-repohead-sub"><% if (contest.title && series) { %><span class="text-body"><%= contest.title %></span> · <% } %><%= facts.join(' · ') %></p>
     <nav class="nav nav-tabs" aria-label="<%= t('Event') %>">

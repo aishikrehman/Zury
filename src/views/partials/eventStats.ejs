@@ -88,90 +88,33 @@
 
   <% } %>
   <% if (statsPart !== 'summary') { %>
-  <div class="row row-cards">
-    <div class="col-lg-8">
-      <div class="card">
-        <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
-            <li class="nav-item" role="presentation"><a href="#tab-top" class="nav-link active" data-bs-toggle="tab" role="tab" aria-selected="true"><i class="ti ti-trophy me-1"></i><%= t("Top participants") %></a></li>
-            <li class="nav-item" role="presentation"><a href="#tab-wikis" class="nav-link" data-bs-toggle="tab" role="tab" aria-selected="false" tabindex="-1"><i class="ti ti-world me-1"></i><%= t("By wiki") %></a></li>
-            <li class="nav-item" role="presentation"><a href="#tab-types" class="nav-link" data-bs-toggle="tab" role="tab" aria-selected="false" tabindex="-1"><i class="ti ti-category me-1"></i><%= t("By type") %></a></li>
-          </ul>
-        </div>
-        <div class="tab-content">
-          <div class="tab-pane active show" id="tab-top" role="tabpanel">
-            <% if (!s.topParticipants.length) { %>
-              <div class="card-body text-secondary"><%= t("No entries yet.") %></div>
-            <% } else { %>
-              <div class="table-responsive">
-                <table class="table table-vcenter card-table">
-                  <thead><tr><th class="w-1">#</th><th><%= t("Participant") %></th><th><%= t("Entries") %></th><th><%= t("Approved") %></th><th class="w-50"></th></tr></thead>
-                  <tbody>
-                    <% s.topParticipants.forEach((p, i) => { %>
-                      <tr>
-                        <td class="text-secondary"><%= i + 1 %></td>
-                        <td>
-                          <div class="d-flex align-items-center">
-                            <span class="avatar avatar-xs me-2"><%= showNames ? p.username.charAt(0).toUpperCase() : '?' %></span>
-                            <%= showNames ? p.username : `Participant ${i + 1}` %>
-                          </div>
-                        </td>
-                        <td><%= p.count %></td>
-                        <td><span class="badge bg-green-lt"><%= p.approved %></span></td>
-                        <td>
-                          <div class="progress progress-xs">
-                            <div class="progress-bar bg-primary" style="width: <%= Math.round((p.count / maxTop) * 100) %>%"></div>
-                          </div>
-                        </td>
-                      </tr>
-                    <% }) %>
-                  </tbody>
-                </table>
-              </div>
-            <% } %>
-          </div>
-          <div class="tab-pane" id="tab-wikis" role="tabpanel">
-            <div class="card-body">
-              <% const wikis = Object.entries(s.byWiki).sort((a, b) => b[1] - a[1]); %>
-              <% if (!wikis.length) { %><p class="text-secondary mb-0"><%= t("No entries yet.") %></p><% } else { %>
-                <%- include('./chart', { spec: { type: 'bar', height: 240, distributed: true, series: [{ name: 'Entries', data: wikis.map((w) => w[1]) }], labels: wikis.map((w) => w[0]), colors: ['primary', 'green', 'orange', 'purple', 'azure', 'pink'] }, label: t('Entries by wiki') }) %>
-              <% } %>
+    <%# With the results: only what the ranking doesn't already say. Wikis and types appear
+        only when there is more than one of them. %>
+    <% const wikis = Object.entries(s.byWiki).sort((a, b) => b[1] - a[1]); const types = Object.entries(s.byType); %>
+    <% if (wikis.length > 1 || types.length > 1) { %>
+      <div class="row row-cards">
+        <% if (wikis.length > 1) { %>
+          <div class="col-lg-<%= types.length > 1 ? 7 : 12 %>">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t('By wiki') %></h3></div>
+              <div class="card-body"><%- include('./chart', { spec: { type: 'bar', height: 240, distributed: true, series: [{ name: 'Entries', data: wikis.map((w) => w[1]) }], labels: wikis.map((w) => wikiLocal(w[0])), colors: ['primary', 'green', 'orange', 'purple', 'azure', 'pink'] }, label: t('Entries by wiki') }) %></div>
             </div>
           </div>
-          <div class="tab-pane" id="tab-types" role="tabpanel">
-            <div class="card-body">
-              <% const types = Object.entries(s.byType); %>
-              <% if (!types.length) { %><p class="text-secondary mb-0"><%= t("No entries yet.") %></p><% } %>
-              <% types.forEach(([type, n]) => { const pct = Math.round((n / Math.max(1, s.active)) * 100); %>
-                <div class="row align-items-center mb-3">
-                  <div class="col-auto"><span class="avatar bg-primary-lt"><i class="ti ti-<%= typeIcons[type] || 'file' %>"></i></span></div>
-                  <div class="col">
-                    <div class="d-flex mb-1"><span class="text-capitalize"><%= type %></span><span class="ms-auto text-secondary"><%= n %> · <%= pct %>%</span></div>
-                    <div class="progress progress-sm"><div class="progress-bar" style="width: <%= pct %>%"></div></div>
-                  </div>
-                </div>
-              <% }) %>
+        <% } %>
+        <% if (types.length > 1) { %>
+          <div class="col-lg-<%= wikis.length > 1 ? 5 : 12 %>">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title"><i class="ti ti-category me-2"></i><%= t('By type') %></h3></div>
+              <div class="card-body">
+                <% types.forEach(([type, n]) => { const pct = Math.round((n / Math.max(1, s.active)) * 100); %>
+                  <div class="d-flex mb-1"><span class="text-capitalize"><i class="ti ti-<%= typeIcons[type] || 'file' %> me-1"></i><%= type %></span><span class="ms-auto text-secondary"><%= n %> · <%= pct %>%</span></div>
+                  <div class="progress progress-sm mb-3"><div class="progress-bar" style="width: <%= pct %>%"></div></div>
+                <% }) %>
+              </div>
             </div>
           </div>
-        </div>
+        <% } %>
       </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="card">
-        <div class="card-header"><h3 class="card-title"><%= t("Jury progress") %></h3></div>
-        <div class="card-body">
-          <%- include('./chart', { spec: { type: 'radialBar', height: 220, series: [s.reviewProgress], label: t('Decided'), colors: ['primary'] }, label: `${s.reviewProgress}% of entries decided` }) %>
-          <div class="row text-center mt-2">
-            <% [['approved', 'green'], ['rejected', 'orange'], ['under_review', 'yellow']].forEach(([k, c]) => { %>
-              <div class="col">
-                <div class="h3 mb-0"><span class="status-dot status-dot-animated bg-<%= c %> me-1"></span><%= s.status[k] || 0 %></div>
-                <div class="text-secondary small"><%= SUBMISSION_STATUSES[k].label %></div>
-              </div>
-            <% }) %>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    <% } %>
   <% } %>
 </section>

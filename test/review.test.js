@@ -231,8 +231,9 @@ test('review links on the submissions page, bulk verdicts, and results with stat
   const organizer = await session('Organizer');
   const results = await organizer.get('/wam/2026/results');
   assert.match(results.body, /Results and statistics/);
-  assert.match(results.body, /id="tab-top"/, 'top participants are with the results');
-  assert.doesNotMatch((await organizer.get('/wam/2026')).body, /id="tab-top"/, 'not repeated on the overview');
+  assert.match(results.body, /By wiki/, 'a multi-wiki event shows entries by wiki with the results');
+  assert.doesNotMatch(results.body, /Top participants/, 'the leaderboard is the only ranking');
+  assert.doesNotMatch((await organizer.get('/wam/2026')).body, /By wiki/, 'not on the overview');
   const people = await organizer.get('/wam/2026/participants');
   assert.match(people.body, /href="\/wam\/2026\/assignments"/, 'assignments sit under People');
 });
