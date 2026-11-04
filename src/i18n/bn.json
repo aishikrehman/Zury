@@ -1210,5 +1210,10 @@
   "Message people in this event": "এই ইভেন্টের মানুষদের বার্তা পাঠান",
   "Platform administrators": "প্ল্যাটফর্ম প্রশাসক",
   "Audit log entries": "অডিট লগ এন্ট্রি",
-  "Message people on {wiki}": "{wiki}-এর মানুষদের বার্তা পাঠান"
+  "Message people on {wiki}": "{wiki}-এর মানুষদের বার্তা পাঠান",
+  "Latest: {edition}": "সর্বশেষ: {edition}",
+  "Public page": "সবার জন্য পাতা",
+  "Series details": "সিরিজের বিবরণ",
+  "edition": "সংস্করণ",
+  "editions": "সংস্করণ"
 }

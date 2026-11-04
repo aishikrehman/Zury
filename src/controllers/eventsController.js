@@ -168,6 +168,53 @@ async function manageSeries(req, res, next) {
   }
 }
 
+// /series/<series>: one series, its details and its editions.
+async function manageOneSeries(req, res, next) {
+  try {
+    const sr = (await require('../services/seriesService').listAll()).find((x) => x.slug === req.params.series);
+    if (!sr) return next();
+    if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
+    const summary = await require('../services/seriesService').summary(sr.id);
+    res.render('pages/events/seriesManageOne', { title: `${sr.title} — Zury`, sr, summary });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// /series/<series>/<edition>: one edition, its wikis and numbers, and the way into its settings.
+async function manageEdition(req, res, next) {
+  try {
+    const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!sr) return next();
+    if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
+    const edition = await prisma.contest.findFirst({
+      where: { seriesId: sr.id, edition: req.params.edition, deletedAt: null },
+      include: { settings: true, wikis: { orderBy: { code: 'asc' } }, _count: { select: { submissions: true, memberships: true, reviews: true } } },
+    });
+    if (!edition) return next();
+    const byWiki = await prisma.submission.groupBy({ by: ['wiki'], where: { contestId: edition.id }, _count: { _all: true } });
+    const people = await prisma.contestMembership.groupBy({ by: ['wiki', 'role'], where: { contestId: edition.id, status: 'active' }, _count: { _all: true } });
+    const wikis = edition.wikis.map((w) => ({
+      ...w,
+      entries: byWiki.find((b) => b.wiki === w.wiki)?._count._all || 0,
+      organizers: people.filter((g) => g.wiki === w.wiki && g.role === 'organizer').reduce((n, g) => n + g._count._all, 0),
+      jury: people.filter((g) => g.wiki === w.wiki && g.role === 'jury').reduce((n, g) => n + g._count._all, 0),
+      participants: people.filter((g) => g.wiki === w.wiki && g.role === 'participant').reduce((n, g) => n + g._count._all, 0),
+      own: Object.values(JSON.parse(w.overrides || '{}')).reduce((n, o) => n + Object.keys(o || {}).length, 0),
+    }));
+    const others = await prisma.contest.findMany({ where: { seriesId: sr.id, deletedAt: null }, orderBy: { edition: 'desc' }, select: { edition: true } });
+    res.render('pages/events/editionManage', { title: `${edition.title} — Zury`, sr, edition, wikis, others: others.map((o) => o.edition) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function forbiddenPage(next) {
+  const err = new Error("You don't have permission to do that.");
+  err.status = 403;
+  return next(err);
+}
+
 async function seriesAction(req, res, next) {
   const seriesService = require('../services/seriesService');
   try {
@@ -189,7 +236,7 @@ async function seriesAction(req, res, next) {
     if (!(err instanceof seriesService.SeriesError)) return next(err);
     req.flash('danger', err.message);
   }
-  res.redirect('/series');
+  res.redirect(req.params.action === 'delete' ? '/series' : `/series/${req.params.series}`);
 }
 
 async function series(req, res, next) {
@@ -215,4 +262,4 @@ async function series(req, res, next) {
   }
 }
 
-module.exports = { index, createForm, create, series, seriesForm, createSeries, nextEdition, manageSeries, seriesAction };
+module.exports = { index, createForm, create, series, seriesForm, createSeries, nextEdition, manageSeries, seriesAction, manageOneSeries, manageEdition };

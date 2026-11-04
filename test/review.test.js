@@ -332,3 +332,20 @@ test('event data: download in CSV, Excel, wikitext and Markdown; clear the activ
   assert.equal(await t.prisma.auditLog.count({ where: { contestId: c.id } }), 0, 'the event activity is gone');
   assert.ok(await t.prisma.auditLog.findFirst({ where: { action: 'eventData.cleared.activity' } }), 'but the clearing itself is recorded');
 });
+
+test('series management in three levels: all series, one series, one edition', async () => {
+  const organizer = await session('Organizer');
+  const all = await organizer.get('/series');
+  assert.equal(all.status, 200);
+  assert.match(all.body, /href="\/series\/wam"/, 'each series leads to its own page');
+  const one = await organizer.get('/series/wam');
+  assert.equal(one.status, 200);
+  assert.match(one.body, /href="\/series\/wam\/2026"/, 'each edition leads to its own page');
+  assert.match(one.body, /name="title"/, 'series details can be edited');
+  const ed = await organizer.get('/series/wam/2026');
+  assert.equal(ed.status, 200);
+  assert.match(ed.body, /\/wam\/2026\/bn\/config/, 'each wiki has its own settings');
+  assert.match(ed.body, /href="\/wam\/2026\/config"/);
+  assert.equal((await (await session('Participant')).get('/series/wam')).status, 403);
+  assert.equal((await organizer.get('/series/wam/1999')).status, 404);
+});

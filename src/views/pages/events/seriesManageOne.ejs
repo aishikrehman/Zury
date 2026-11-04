@@ -1,0 +1,54 @@
+<%# Level 2: one series. Its name and description, and its editions, each leading to its own page. %>
+<div class="page-header d-print-none"><div class="container-xl">
+  <ol class="breadcrumb mb-1"><li class="breadcrumb-item"><a href="/series"><%= t('Series and editions') %></a></li><li class="breadcrumb-item active"><%= sr.title %></li></ol>
+  <div class="row g-2 align-items-center">
+    <div class="col"><h2 class="page-title"><%= sr.title %></h2><div class="text-secondary small">/<%= sr.slug %> · <a href="/<%= sr.slug %>"><%= t('Public page') %></a></div></div>
+    <div class="col-auto btn-list">
+      <% if (sr.editions.length) { %>
+        <form method="post" action="/<%= sr.slug %>/next-edition" data-confirm="<%= t('Make next year’s edition from the latest one?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-primary" type="submit"><i class="ti ti-calendar-plus me-1"></i><%= t('Create next edition') %></button></form>
+      <% } else { %>
+        <a class="btn btn-primary" href="/events/create"><i class="ti ti-calendar-plus me-1"></i><%= t('Create the first edition') %></a>
+      <% } %>
+    </div>
+  </div>
+</div></div>
+<div class="page-body"><div class="container-xl">
+  <div class="row row-cards">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3></div>
+        <% if (!sr.editions.length) { %><div class="card-body text-secondary"><%= t('No editions yet') %></div><% } else { %>
+          <div class="list-group list-group-flush">
+            <% sr.editions.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; const sum = summary.find((x) => x.id === e.id) || {}; %>
+              <a class="list-group-item list-group-item-action" href="/series/<%= sr.slug %>/<%= e.edition %>">
+                <div class="row align-items-center">
+                  <div class="col-auto"><div class="h2 m-0"><%= e.edition %></div></div>
+                  <div class="col min-w-0">
+                    <div class="text-truncate"><%= e.title %></div>
+                    <div class="text-secondary small"><%= tn('{n} wiki', '{n} wikis', e.wikis.length) %> · <%= tn('{n} entry', '{n} entries', sum.entries || 0) %> · <%= tn('{n} participant', '{n} participants', sum.participants || 0) %></div>
+                  </div>
+                  <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></div>
+                  <div class="col-auto text-secondary"><i class="ti ti-chevron-right"></i></div>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <form method="post" action="/series/<%= sr.slug %>/update" class="card">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-pencil me-2"></i><%= t('Series details') %></h3></div>
+        <div class="card-body">
+          <div class="mb-3"><label class="form-label" for="title"><%= t('Name') %></label><input class="form-control" id="title" name="title" value="<%= sr.title %>" required maxlength="120"></div>
+          <div><label class="form-label" for="description"><%= t('Description') %></label><textarea class="form-control" id="description" name="description" rows="3" maxlength="2000"><%= sr.description %></textarea></div>
+        </div>
+        <div class="card-footer d-flex gap-2">
+          <button class="btn btn-primary" type="submit"><%= t('Save') %></button>
+          <% if (!sr.editions.length) { %><button class="btn btn-ghost-danger ms-auto" type="submit" formaction="/series/<%= sr.slug %>/delete" data-confirm="<%= t('Delete this series?') %>"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button><% } %>
+        </div>
+      </form>
+    </div>
+  </div>
+</div></div>
