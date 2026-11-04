@@ -535,6 +535,13 @@ async function seedReviews(prisma, users) {
   }
 
   const wlm = await prisma.contest.findUnique({ where: { slug: 'wlm-bangladesh-2026' } });
+  // WLM shares its entries out: two reviews each, split between its two jury members.
+  await prisma.contestSettings.update({ where: { contestId: wlm.id }, data: { reviewAssignment: 'assigned', requiredReviews: 2 } });
+  const waiting = await prisma.submission.findMany({ where: { contestId: wlm.id, status: { in: ['validated', 'under_review'] } }, select: { id: true, participantId: true } });
+  const wlmJury = [users.juror.id, users.bnadmin.id];
+  await prisma.reviewAssignment.createMany({
+    data: waiting.flatMap((e) => wlmJury.filter((j) => j !== e.participantId).map((jurorId) => ({ contestId: wlm.id, submissionId: e.id, jurorId, assignedById: users.organizer.id }))),
+  });
   const rejected = await prisma.submission.findFirst({ where: { contestId: wlm.id, participantId: users.participant.id, status: 'rejected' } });
   if (rejected) {
     await prisma.appeal.create({ data: { contestId: wlm.id, submissionId: rejected.id, userId: users.participant.id, reason: 'The monument is listed in the national heritage register; the category was added the day after uploading.' } });

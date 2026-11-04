@@ -597,3 +597,8 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 .z-bronze { --medal: #c8783a; }
 .z-rank { display: inline-flex; align-items: center; justify-content: center; min-width: 1.8rem; height: 1.8rem; padding: 0 6px; font-weight: 700; border-radius: 999px; background: var(--z-hover); }
 .z-rank.z-gold, .z-rank.z-silver, .z-rank.z-bronze { color: #fff; background: var(--medal); }
+
+/* Remove button inside a label (assignments) */
+.z-pill-x { display: inline-flex; align-items: center; margin: 0 -4px 0 2px; padding: 0; color: inherit; background: none; border: 0; opacity: 0.6; }
+.z-pill-x:hover { opacity: 1; }
+.z-pill-x .ti { font-size: 13px; }

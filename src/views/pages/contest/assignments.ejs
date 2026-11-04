@@ -1,0 +1,112 @@
+<%
+  const jurorName = Object.fromEntries(overview.jurors.map((j) => [j.id, j.username]));
+  const needs = (e) => overview.required - e.assignees.length;
+%>
+<%- include('../../partials/contestHeader', { active: 'assignments' }) %>
+<div class="page-body"><div class="container-xl">
+
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <div>
+      <div class="h3 m-0"><%= t('Assignments') %></div>
+      <div class="text-secondary small">
+        <%= tn('{n} review needed per entry', '{n} reviews needed per entry', overview.required) %> ·
+        <% if (assignedMode) { %><%= t('Only assigned jury members') %><% } else { %><%= t('Any jury member of the wiki') %><% } %>
+      </div>
+    </div>
+    <form method="post" action="<%= base %>/assignments/distribute" class="ms-auto">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-primary" type="submit"<%= overview.unassigned && overview.jurors.length ? '' : ' disabled' %>><i class="ti ti-arrows-split me-1"></i><%= t('Share out {n} entries', { n: overview.unassigned }) %></button>
+    </form>
+  </div>
+
+  <% if (!assignedMode) { %>
+    <div class="alert alert-info mb-3"><i class="ti ti-info-circle"></i><div><%= t('Right now any jury member of the wiki can review any entry, so assignments are a guide. To limit each jury member to their assigned entries, choose “Only assigned jury members” in Configuration → Interaction and judging.') %></div></div>
+  <% } %>
+
+  <div class="row row-cards mb-3">
+    <% if (!overview.jurors.length) { %>
+      <div class="col-12"><div class="card"><%- include('../../partials/emptyArt', { title: t('No jury members yet'), text: t('Add jury members on the People page first.') }) %></div></div>
+    <% } %>
+    <% overview.jurors.forEach((j) => { const pct = j.assigned ? Math.round((j.reviewed / j.assigned) * 100) : 0; %>
+      <div class="col-sm-6 col-lg-4 col-xl-3">
+        <div class="card card-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <span class="z-avatar me-2"><%= j.username.charAt(0).toUpperCase() %></span>
+              <div class="min-w-0">
+                <div class="fw-bold text-truncate"><%= j.username %></div>
+                <div class="text-secondary small text-truncate"><%= j.wikis.includes('') ? t('Whole event') : j.wikis.map(wikiName).join(', ') %></div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span><%= t('{a} of {b}', { a: j.reviewed, b: j.assigned }) %></span>
+              <span class="text-secondary"><%= t('{n} left', { n: j.remaining }) %></span>
+            </div>
+            <div class="progress"><div class="progress-bar" style="width: <%= pct %>%"></div></div>
+          </div>
+          <% if (j.remaining) { %>
+            <div class="card-footer py-2">
+              <form method="post" action="<%= base %>/assignments/release/<%= j.id %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-sm btn-ghost-danger w-100" type="submit"><i class="ti ti-arrow-back-up me-1"></i><%= t('Take back unreviewed entries') %></button>
+              </form>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t('Entries waiting for the jury') %></h3>
+      <div class="card-actions"><span class="badge bg-<%= overview.unassigned ? 'yellow' : 'green' %>-lt"><%= t('{n} need jury members', { n: overview.unassigned }) %></span></div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead><tr><th><%= t('Entry') %></th><th><%= t('Participant') %></th><th><%= t('Jury') %></th><th class="w-1"></th></tr></thead>
+        <tbody>
+          <% if (!overview.entries.length) { %><tr><td colspan="4" class="text-secondary"><%= t('Nothing is waiting for the jury.') %></td></tr><% } %>
+          <% overview.entries.forEach((e) => { const assignedIds = e.assignees.map((a) => a.jurorId); const free = overview.jurors.filter((j) => !assignedIds.includes(j.id) && (j.wikis.includes('') || j.wikis.includes(e.wiki))); %>
+            <tr>
+              <td>
+                <a href="<%= base %>/submissions/<%= e.id %>"><%= e.title %></a>
+                <div class="text-secondary small"><%= wikiName(e.wiki) %></div>
+              </td>
+              <td class="text-secondary"><%= e.participant.username %></td>
+              <td>
+                <div class="d-flex flex-wrap gap-1 align-items-center">
+                  <% e.assignees.forEach((a) => { %>
+                    <span class="badge bg-<%= a.done ? 'green' : 'blue' %>-lt">
+                      <%= a.username %>
+                      <% if (!a.done) { %>
+                        <form method="post" action="<%= base %>/assignments/<%= a.id %>/remove" class="d-inline">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <button class="z-pill-x" type="submit" aria-label="<%= t('Remove') %> <%= a.username %>" title="<%= t('Remove') %>"><i class="ti ti-x"></i></button>
+                        </form>
+                      <% } %>
+                    </span>
+                  <% }) %>
+                  <% if (needs(e) > 0) { %><span class="badge bg-yellow-lt"><%= t('{n} more needed', { n: needs(e) }) %></span><% } %>
+                </div>
+              </td>
+              <td>
+                <% if (free.length) { %>
+                  <form method="post" action="<%= base %>/assignments/add" class="d-flex gap-1">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="submissionId" value="<%= e.id %>">
+                    <select name="jurorId" class="form-select form-select-sm" aria-label="<%= t('Jury member') %>">
+                      <% free.forEach((j) => { %><option value="<%= j.id %>"><%= j.username %></option><% }) %>
+                    </select>
+                    <button class="btn btn-sm" type="submit"><i class="ti ti-plus"></i><span class="visually-hidden"><%= t('Assign') %></span></button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>

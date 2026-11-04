@@ -52,6 +52,7 @@ model User {
   eventBlocksMade      EventBlock[]        @relation("BlockedBy")
   attendances          SessionAttendance[]
   reviews              Review[]            @relation("Reviewer")
+  assignments          ReviewAssignment[]  @relation("AssignedJuror")
   appeals              Appeal[]            @relation("Appellant")
   appealsResolved      Appeal[]            @relation("AppealResolver")
 }
@@ -151,6 +152,7 @@ model Contest {
   blocks              EventBlock[]
   reviews             Review[]
   appeals             Appeal[]
+  assignments         ReviewAssignment[]
   sessions            EventSession[]
   contributions       Contribution[]
 
@@ -228,6 +230,9 @@ model ContestSettings {
   marks                       String  @default("[]")
   // Reviews an entry needs before it is decided; the majority decides.
   requiredReviews             Int     @default(1)
+  // open: any jury member of the entry's wiki may review it.
+  // assigned: jury members review only the entries assigned to them.
+  reviewAssignment            String  @default("open")
   trackedAt                   DateTime?
 
   updatedAt DateTime @updatedAt
@@ -300,6 +305,7 @@ model Submission {
   history     SubmissionHistory[]
   reviews     Review[]
   appeals     Appeal[]
+  assignments ReviewAssignment[]
 
   // Average points of its reviews, set when the entry is decided.
   score       Float?
@@ -528,4 +534,21 @@ model Appeal {
   resolvedBy User?      @relation("AppealResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
 
   @@index([contestId, status])
+}
+
+// An entry given to a jury member to review (when the event assigns entries).
+model ReviewAssignment {
+  id           Int      @id @default(autoincrement())
+  contestId    Int
+  submissionId Int
+  jurorId      Int
+  assignedById Int?
+  createdAt    DateTime @default(now())
+
+  contest    Contest    @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  juror      User       @relation("AssignedJuror", fields: [jurorId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, jurorId])
+  @@index([contestId, jurorId])
 }

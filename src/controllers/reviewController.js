@@ -164,4 +164,62 @@ async function myQueue(req, res, next) {
   }
 }
 
-module.exports = { window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+// ── Assignments (organizers) ─────────────────────────────────────────────────
+
+async function assignments(req, res, next) {
+  try {
+    res.render('pages/contest/assignments', {
+      title: `Assignments — ${req.contest.title}`,
+      overview: await reviewService.assignmentOverview({ contestId: req.contest.id, settings: req.eventSettings, wiki: req.wikiScope?.wiki }),
+      assignedMode: reviewService.assignedMode(req.settings),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+function assignmentAction(fn) {
+  return async (req, res, next) => {
+    try {
+      req.flash('success', await fn(req));
+    } catch (err) {
+      if (!(err instanceof ReviewError)) return next(err);
+      req.flash('danger', err.message);
+    }
+    res.redirect(`${req.base}/assignments`);
+  };
+}
+
+// Inside one wiki's page, an organizer works on that wiki's entries only.
+async function entryInScope(req, submissionId) {
+  const entry = await prisma.submission.findFirst({ where: { id: submissionId, contestId: req.contest.id }, select: { wiki: true } });
+  if (!entry || (req.wikiScope && entry.wiki !== req.wikiScope.wiki)) throw new ReviewError('That entry is not part of this wiki.');
+}
+
+const distribute = assignmentAction(async (req) => {
+  const { created, unfilled } = await reviewService.distribute({ actor: req.user, contest: req.contest, settings: req.eventSettings, wiki: req.wikiScope?.wiki });
+  return unfilled
+    ? req.t('{n} assignments made; {m} entries still need more jury members.', { n: created, m: unfilled })
+    : req.t('{n} assignments made.', { n: created });
+});
+
+const addAssignment = assignmentAction(async (req) => {
+  const submissionId = Number(req.body.submissionId);
+  await entryInScope(req, submissionId);
+  await reviewService.assign({ actor: req.user, contest: req.contest, submissionId, jurorId: Number(req.body.jurorId) });
+  return 'Assigned.';
+});
+
+const removeAssignment = assignmentAction(async (req) => {
+  const a = await prisma.reviewAssignment.findFirst({ where: { id: Number(req.params.assignmentId), contestId: req.contest.id }, select: { submissionId: true } });
+  if (a) await entryInScope(req, a.submissionId);
+  await reviewService.unassign({ actor: req.user, contest: req.contest, assignmentId: Number(req.params.assignmentId) });
+  return 'Assignment removed.';
+});
+
+const releaseJuror = assignmentAction(async (req) => {
+  const n = await reviewService.releaseJuror({ actor: req.user, contest: req.contest, jurorId: Number(req.params.jurorId), wiki: req.wikiScope?.wiki });
+  return req.t('{n} unreviewed entries taken back.', { n });
+});
+
+module.exports = { assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };

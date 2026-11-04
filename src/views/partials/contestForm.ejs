@@ -315,6 +315,20 @@
                 <div class="form-hint"><%= t('When an entry has this many reviews, the majority decides and its score is the average.') %></div>
                 <%- err('requiredReviews') %>
               </div>
+              <div class="col-sm-6 col-lg-8">
+                <span class="form-label d-block"><%= t('Who reviews which entry') %><%- mark('settings.reviewAssignment') %></span>
+                <div class="form-selectgroup">
+                  <label class="form-selectgroup-item">
+                    <input type="radio" name="reviewAssignment" value="open" class="form-selectgroup-input"<%= v('reviewAssignment') !== 'assigned' ? ' checked' : '' %>>
+                    <span class="form-selectgroup-label"><i class="ti ti-users me-1"></i><%= t('Any jury member of the wiki') %></span>
+                  </label>
+                  <label class="form-selectgroup-item">
+                    <input type="radio" name="reviewAssignment" value="assigned" class="form-selectgroup-input"<%= v('reviewAssignment') === 'assigned' ? ' checked' : '' %>>
+                    <span class="form-selectgroup-label"><i class="ti ti-arrows-split me-1"></i><%= t('Only assigned jury members') %></span>
+                  </label>
+                </div>
+                <div class="form-hint"><%= t('With assignments, organizers share the entries out on the Assignments page.') %></div>
+              </div>
             </div>
             <h4 class="mb-1"><%= t("Marks") %></h4>
             <p class="text-secondary small mb-3"><%= t("What the jury give each entry, and the points each value is worth. Points add up to the leaderboard.") %></p>

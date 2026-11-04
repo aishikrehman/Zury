@@ -65,6 +65,11 @@ contest.post('/tracking/refresh', requirePermission('manageEvent'), trackingCont
 // Jury review, results and appeals.
 contest.get('/review', entriesOnly, requireAuth, reviewController.window);
 contest.post('/review/:submissionId(\\d+)', entriesOnly, requireAuth, reviewController.save);
+contest.get('/assignments', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.assignments);
+contest.post('/assignments/distribute', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.distribute);
+contest.post('/assignments/add', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.addAssignment);
+contest.post('/assignments/:assignmentId(\\d+)/remove', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.removeAssignment);
+contest.post('/assignments/release/:jurorId(\\d+)', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.releaseJuror);
 contest.get('/results', reviewController.results);
 contest.post('/results/publish', requireEventWide('publishResults'), reviewController.publish);
 contest.post('/submissions/:submissionId(\\d+)/appeal', entriesOnly, requireAuth, reviewController.appeal);

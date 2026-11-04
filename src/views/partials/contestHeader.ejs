@@ -16,6 +16,7 @@
   if (typeDef.entries !== false && settings.juryReviewEnabled && (can('reviewAssignedEntry') || (scope.wikisWith && scope.wikisWith('reviewAssignedEntry').length))) {
     tabs.push(['review', t('Review'), '/review', 'gavel']);
   }
+  if (typeDef.entries !== false && settings.juryReviewEnabled && (can('assignJury') || can('manageAssignments'))) tabs.push(['assignments', t('Assignments'), '/assignments', 'arrows-split']);
   if (typeDef.entries !== false && (contest.resultsPublishedAt || can('reviewEvent') || can('manageEvent'))) tabs.push(['results', t('Results'), '/results', 'trophy']);
   if (settings.appealsEnabled && (can('reviewAppeal') || can('manageAppeals'))) tabs.push(['appeals', t('Appeals'), '/appeals', 'scale']);
   if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', t('People'), '/participants', 'users']);
