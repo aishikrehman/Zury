@@ -32,7 +32,7 @@
                     </div>
                   </div>
                 </td>
-                <td><%- include('../../partials/accessSummary', { s }) %></td>
+                <td><%- include('../../partials/accessSummary', { s, compact: true }) %></td>
                 <td class="text-secondary text-nowrap"><%= u.lastLoginAt ? formatDate(u.lastLoginAt) : t('Never') %></td>
                 <td>
                   <% if (can('managePlatformRoles')) { %>

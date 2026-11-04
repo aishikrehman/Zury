@@ -821,3 +821,6 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-account-tabs a:hover{color:var(--tblr-body-color);background:var(--tblr-bg-surface-secondary)}
 .z-account-tabs a.active{color:var(--tblr-primary);font-weight:600;box-shadow:inset 0 -2px 0 var(--tblr-primary)}
 .z-account-header{border-bottom:1px solid var(--tblr-border-color);padding-bottom:0}
+.z-role-list li{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem 0}
+.z-role-list li+li{border-top:1px solid var(--tblr-border-color)}
+.z-role-list .ti{font-size:1.1rem;margin-top:.1rem}
