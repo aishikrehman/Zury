@@ -6,7 +6,7 @@
     { heading: t('Participated'), icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
   ];
 %>
-<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', person: profileUser, actions: '<a class="btn btn-outline-secondary" href="' + h(wikiUserUrl) + '" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i>' + h(t('Wikimedia account')) + '</a>' }) %><% } else { %>
+<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', eventCount: organized.length + judged.length + participated.length, actions: '<a class="btn btn-outline-secondary" href="' + h(wikiUserUrl) + '" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i>' + h(t('Wikimedia account')) + '</a>' }) %><% } else { %>
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-3 align-items-center">
@@ -26,6 +26,7 @@
   <div class="container-xl">
 <% } %>
     <div class="row row-cards">
+      <% if (!isOwnProfile) { %>
       <div class="col-lg-4">
         <div class="card">
           <div class="card-body p-4 text-center">
@@ -46,7 +47,8 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-8">
+      <% } %>
+      <div class="<%= isOwnProfile ? 'col-12' : 'col-lg-8' %>">
         <% groups.forEach((g) => { %>
           <div class="card mb-3">
             <div class="card-header"><h3 class="card-title"><span class="avatar avatar-xs bg-<%= g.color %>-lt me-2"><i class="ti ti-<%= g.icon %>"></i></span><%= g.heading %></h3><div class="card-actions text-secondary"><%= g.items.length %></div></div>
