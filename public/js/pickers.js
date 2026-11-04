@@ -64,12 +64,13 @@
     });
   }
 
-  // Wiki: first the language (or "Commons, Wikidata and other wikis"), then that
-  // language's wikis. Both show the English name with the local one beside it.
+  // Wiki: first the language (or a multilingual wiki such as Commons), then that
+  // language's wikis. Only the local name is shown ("বাংলা", "উইকিসংকলন"), but the
+  // English name and the code find it too.
+  const label = (item) => item.localName || item.text;
   const withLocal = (item) =>
-    `<div class="d-flex align-items-baseline gap-2"><span>${esc(item.text)}${item.localName ? ` <span class="text-secondary">${esc(item.localName)}</span>` : ''}</span>` +
+    `<div class="d-flex align-items-baseline gap-2"><span>${esc(label(item))}</span>` +
     `<span class="ms-auto text-secondary small">${esc(item.hint || '')}</span></div>`;
-  const label = (item) => (item.localName ? `${item.text} · ${item.localName}` : item.text);
 
   function wiki(el) {
     const row = document.createElement('div');
@@ -92,7 +93,7 @@
     const wikis = new window.TomSelect(el, { ...ON_TOP,
       valueField: 'value',
       labelField: 'label',
-      searchField: ['text', 'localName', 'value'],
+      searchField: ['localName', 'text', 'name', 'value'],
       maxOptions: 500,
       onItemAdd() { setTimeout(() => this.blur()); },
       render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>` },
@@ -124,7 +125,7 @@
     const languages = new window.TomSelect(langSelect, { ...ON_TOP,
       valueField: 'value',
       labelField: 'label',
-      searchField: ['text', 'localName', 'value'],
+      searchField: ['localName', 'text', 'name', 'value'],
       maxOptions: 600,
       optgroupField: 'group',
       lockOptgroupOrder: true,
