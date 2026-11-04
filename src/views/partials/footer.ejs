@@ -1,52 +1,14 @@
-<footer class="footer footer-transparent d-print-none border-top mt-auto">
+<footer class="gh-footer d-print-none">
   <div class="container-xl">
-    <div class="row g-4 py-4">
-      <div class="col-lg-4">
-        <a href="/" class="d-inline-flex align-items-center gap-2 text-reset text-decoration-none mb-3">
-          <img src="/images/zury-logo.svg" width="32" height="32" alt="">
-          <span class="h3 m-0"><%= t("Zury") %></span>
-        </a>
-        <p class="text-secondary mb-3"><%= t("Contests, edit-a-thons and community events for Wikipedia, Commons, Wikidata and the other Wikimedia projects.") %></p>
-        <div class="btn-list">
-          <a href="https://github.com/aishikrehman/Zury" class="btn btn-icon" rel="noopener" aria-label="<%= t("Source code on GitHub") %>"><i class="ti ti-brand-github"></i></a>
-          <a href="https://meta.wikimedia.org/" class="btn btn-icon" rel="noopener" aria-label="<%= t("Wikimedia Meta-Wiki") %>"><i class="ti ti-world"></i></a>
-        </div>
-      </div>
-      <div class="col-6 col-md-4 col-lg-2 offset-lg-1">
-        <h4 class="subheader"><%= t("Explore") %></h4>
-        <ul class="list-unstyled mb-0">
-          <li class="mb-2"><a href="/events" class="link-secondary"><%= t("All events") %></a></li>
-          <li class="mb-2"><a href="/events/active" class="link-secondary"><%= t("Active") %></a></li>
-          <li class="mb-2"><a href="/events/upcoming" class="link-secondary"><%= t("Upcoming") %></a></li>
-          <li class="mb-2"><a href="/events/completed" class="link-secondary"><%= t("Completed") %></a></li>
-        </ul>
-      </div>
-      <div class="col-6 col-md-4 col-lg-2">
-        <h4 class="subheader"><%= t("Account") %></h4>
-        <ul class="list-unstyled mb-0">
-          <% if (currentUser) { %>
-            <li class="mb-2"><a href="/dashboard" class="link-secondary"><%= t("Dashboard") %></a></li>
-            <li class="mb-2"><a href="/submissions" class="link-secondary"><%= t("My submissions") %></a></li>
-            <li class="mb-2"><a href="<%= userPath(currentUser.username) %>" class="link-secondary"><%= t("Profile") %></a></li>
-            <li class="mb-2"><a href="/settings" class="link-secondary"><%= t("Preferences") %></a></li>
-          <% } else { %>
-            <li class="mb-2"><a href="/login" class="link-secondary"><%= t("Log in with Wikipedia") %></a></li>
-          <% } %>
-        </ul>
-      </div>
-      <div class="col-6 col-md-4 col-lg-3">
-        <h4 class="subheader"><%= t("Project") %></h4>
-        <ul class="list-unstyled mb-0">
-          <li class="mb-2"><a href="/about" class="link-secondary"><%= t("About Zury") %></a></li>
-          <li class="mb-2"><a href="https://github.com/aishikrehman/Zury" class="link-secondary" rel="noopener"><%= t("Source code") %></a></li>
-          <li class="mb-2"><a href="https://github.com/aishikrehman/Zury/issues" class="link-secondary" rel="noopener"><%= t("Report an issue") %></a></li>
-          <li class="mb-2"><a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy" class="link-secondary" rel="noopener"><%= t("Wikimedia privacy policy") %></a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="row align-items-center border-top py-3 g-2 small">
-      <div class="col-md text-secondary">© <%= new Date().getFullYear() %> Zury contributors · Open source under the MIT license</div>
-      <div class="col-md-auto text-secondary"><%= t("Not affiliated with or endorsed by the Wikimedia Foundation.") %></div>
-    </div>
+    <a href="/" class="gh-footer-brand" aria-label="Zury"><img src="/images/zury-logo.svg" width="24" height="24" alt=""></a>
+    <span>© <%= new Date().getFullYear() %> Zury</span>
+    <nav aria-label="<%= t('Footer') %>">
+      <a href="/about"><%= t('About') %></a>
+      <a href="/events"><%= t('Events') %></a>
+      <a href="https://github.com/aishikrehman/Zury" rel="noopener"><%= t('Source code') %></a>
+      <a href="https://github.com/aishikrehman/Zury/issues" rel="noopener"><%= t('Report an issue') %></a>
+      <a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy" rel="noopener"><%= t('Wikimedia privacy policy') %></a>
+    </nav>
+    <span class="gh-footer-note"><%= t('Not affiliated with or endorsed by the Wikimedia Foundation.') %></span>
   </div>
 </footer>

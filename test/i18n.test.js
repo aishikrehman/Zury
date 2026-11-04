@@ -45,7 +45,6 @@ function allKeys() {
   const reg = require('../src/permissions/registry');
   for (const o of [...Object.values(reg.EVENT_ROLES), ...Object.values(reg.PLATFORM_ROLES)]) [o.label, o.plural, o.description].forEach(add);
   Object.values(reg.PERMISSIONS).forEach(add);
-  Object.values(require('../src/utils/layouts').LAYOUTS).forEach((o) => add(o.label));
   for (const type of Object.values(require('../src/events/eventTypes').EVENT_TYPES)) {
     [type.label, type.description, ...Object.values(type.guide || {})].forEach(add);
     for (const f of type.fields) [f.label, f.help, ...Object.values(f.choices || {})].forEach(add);

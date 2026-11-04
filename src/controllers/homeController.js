@@ -2,7 +2,6 @@ const prisma = require('../config/prisma');
 const contestService = require('../services/contestService');
 const statsService = require('../services/statsService');
 const { ensureCsrfToken } = require('../middleware/csrf');
-const { PUBLIC_LAYOUT } = require('../utils/layouts');
 const env = require('../config/env');
 
 async function index(req, res, next) {
@@ -25,7 +24,6 @@ async function index(req, res, next) {
       ensureCsrfToken(req, res);
       demoUsers = await prisma.user.findMany({ where: { isDemo: true }, select: { id: true, username: true }, orderBy: { wikimediaId: 'desc' } });
     }
-    res.locals.layoutKey = PUBLIC_LAYOUT;
     res.render('pages/home', {
       title: 'Zury — Wikimedia Contests & Events',
       stats: { events: stats[0], submissions: stats[1], users: stats[2], wikis: stats[3] },
@@ -41,7 +39,6 @@ async function index(req, res, next) {
 }
 
 function about(req, res) {
-  res.locals.layoutKey = PUBLIC_LAYOUT;
   res.render('pages/about', { title: 'About — Zury' });
 }
 

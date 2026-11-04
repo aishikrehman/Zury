@@ -1,112 +1,97 @@
 <%#
-  Top navbar, as in Tabler's layout-navbar-*.html / layout-horizontal.html.
-  Tabler's CSS hides it in vertical layouts.
+  GitHub-style global header: menu button, logo, main links, search, create,
+  language and account. The slide-out menu holds everything on small screens.
 %>
-<%
-  const menu = navItems.filter((i) => !i.section);
-%>
-<% const menuList = () => { %>
-  <nav aria-label="<%= t("Primary") %>" class="nav-overflow" data-bs-toggle="nav-overflow">
-    <ul class="navbar-nav">
-      <% menu.forEach((item) => { %>
-        <% if (item.children) { %>
-          <li class="nav-item dropdown<%= item.active ? ' active' : '' %>">
-            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon"><i class="ti ti-<%= item.icon %> icon"></i></span>
-              <span class="nav-link-title"><%= item.label %></span>
-            </a>
-            <div class="dropdown-menu">
-              <% item.children.forEach((c) => { %><a class="dropdown-item<%= c.active ? ' active' : '' %>" href="<%= c.href %>"><%= c.label %></a><% }) %>
-            </div>
-          </li>
-        <% } else { %>
-          <li class="nav-item<%= item.active ? ' active' : '' %>">
-            <a class="nav-link" href="<%= item.href %>">
-              <span class="nav-link-icon"><i class="ti ti-<%= item.icon %> icon"></i></span>
-              <span class="nav-link-title"><%= item.label %></span>
-            </a>
-          </li>
-        <% } %>
-      <% }) %>
-    </ul>
+<header class="gh-header d-print-none">
+  <button class="gh-icon-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#gh-menu" aria-controls="gh-menu" aria-label="<%= t('Toggle primary navigation') %>">
+    <i class="ti ti-menu-2"></i>
+  </button>
+  <a href="/" class="gh-logo" aria-label="Zury">
+    <img src="/images/zury-logo.svg" width="32" height="32" alt="">
+    <span>Zury</span>
+  </a>
+  <nav class="gh-nav d-none d-md-flex" aria-label="<%= t('Primary') %>">
+    <% navItems.filter((i) => i.href !== '/').forEach((item) => { %>
+      <a href="<%= item.href %>" class="gh-nav-link<%= item.active ? ' active' : '' %>"<%= item.active ? ' aria-current="page"' : '' %>><%= item.label %></a>
+    <% }) %>
   </nav>
-<% } %>
-<header class="navbar navbar-expand-md d-print-none">
-  <div class="container-xl">
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="<%= t("Toggle primary navigation") %>">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="navbar-brand pe-0 pe-md-3">
-      <a href="/" aria-label="<%= t("Zury") %>" class="d-flex align-items-center gap-2 text-reset text-decoration-none">
-        <img src="/images/zury-logo.svg" width="32" height="32" alt="" class="navbar-brand-image">
-        <span><%= t("Zury") %></span>
-      </a>
-    </div>
-    <div class="navbar-nav flex-row order-md-last align-items-center">
-      <div class="nav-item dropdown me-2">
-        <a href="#" class="nav-link px-2" data-bs-toggle="dropdown" aria-label="<%= t('Language') %>" title="<%= t('Language') %>">
-          <i class="ti ti-language me-1"></i><span class="d-none d-sm-inline"><%= lang.native %></span>
-        </a>
-        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-          <% Object.values(LANGUAGES).forEach((l) => { %>
-            <a href="/preferences/language/<%= l.code %>?next=<%= encodeURIComponent(currentPath) %>" class="dropdown-item<%= l.code === lang.code ? ' active' : '' %>" lang="<%= l.code %>"><%= l.native %><% if (l.native !== l.name) { %><span class="text-secondary ms-auto ps-3 small"><%= l.name %></span><% } %></a>
-          <% }) %>
-        </div>
-      </div>
-      <% if (!currentUser && demoMode) { %>
-        <div class="nav-item d-none d-md-flex me-3"><a href="/demo" class="btn"><i class="ti ti-users-group me-1"></i><%= t("Try a demo user") %></a></div>
-      <% } %>
-      <% if (currentUser) { %>
-        <div class="nav-item dropdown">
-          <a href="#" class="nav-link d-flex lh-1 p-0 px-2" data-bs-toggle="dropdown" aria-label="<%= t("Open user menu") %>">
-            <span class="avatar avatar-sm"><%= currentUser.username.charAt(0).toUpperCase() %></span>
-            <div class="d-none d-xl-block ps-2">
-              <div><%= currentUser.username %></div>
-              <div class="mt-1 small text-secondary"><%= currentUser.homeWiki ? wikiName(currentUser.homeWiki) : 'Wikimedia' %></div>
-            </div>
+
+  <div class="gh-header-end">
+    <form action="/events" method="get" role="search" class="gh-search d-none d-sm-block">
+      <i class="ti ti-search"></i>
+      <input type="search" name="q" placeholder="<%= t('Search events…') %>" aria-label="<%= t('Search events') %>" data-hotkey="/">
+      <kbd>/</kbd>
+    </form>
+
+    <% if (can('createEvent')) { %>
+      <a href="/events/create" class="gh-icon-btn" title="<%= t('Create an event') %>" aria-label="<%= t('Create an event') %>"><i class="ti ti-plus"></i></a>
+    <% } %>
+
+    <div class="dropdown">
+      <button class="gh-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Language') %>" title="<%= t('Language') %>">
+        <i class="ti ti-language"></i>
+      </button>
+      <div class="dropdown-menu dropdown-menu-end">
+        <% Object.values(LANGUAGES).forEach((l) => { %>
+          <a href="/preferences/language/<%= l.code %>?next=<%= encodeURIComponent(currentPath) %>" class="dropdown-item<%= l.code === lang.code ? ' active' : '' %>" lang="<%= l.code %>">
+            <%= l.native %><% if (l.native !== l.name) { %><span class="text-secondary ms-auto ps-3 small"><%= l.name %></span><% } %>
           </a>
-          <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-            <a href="/dashboard" class="dropdown-item"><%= t("Dashboard") %></a>
-            <a href="<%= userPath(currentUser.username) %>" class="dropdown-item"><%= t("Profile") %></a>
-            <a href="/settings" class="dropdown-item"><%= t("Preferences") %></a>
-            <div class="dropdown-divider"></div>
-            <form action="/logout" method="post" class="m-0">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit" class="dropdown-item"><%= t("Log out") %></button>
-            </form>
-          </div>
-        </div>
-      <% } else { %>
-        <div class="nav-item"><a href="/login" class="btn btn-primary"><i class="ti ti-brand-wikipedia me-1"></i><%= t("Log in") %></a></div>
-      <% } %>
-    </div>
-    <% if (layout.menuInHeader) { %>
-      <div class="collapse navbar-collapse" id="navbar-menu">
-        <% menuList() %>
+        <% }) %>
       </div>
+    </div>
+
+    <% if (currentUser) { %>
+      <div class="dropdown">
+        <button class="gh-avatar-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Open user menu') %>">
+          <span class="avatar avatar-sm rounded-circle"><%= currentUser.username.charAt(0).toUpperCase() %></span>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end">
+          <div class="dropdown-header">
+            <strong class="d-block text-body"><%= currentUser.username %></strong>
+            <span class="text-secondary"><%= currentUser.homeWiki ? wikiName(currentUser.homeWiki) : 'Wikimedia' %></span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <a href="<%= userPath(currentUser.username) %>" class="dropdown-item"><i class="ti ti-user me-2"></i><%= t('Profile') %></a>
+          <a href="/dashboard" class="dropdown-item"><i class="ti ti-layout-dashboard me-2"></i><%= t('Dashboard') %></a>
+          <a href="/submissions" class="dropdown-item"><i class="ti ti-files me-2"></i><%= t('My submissions') %></a>
+          <a href="/settings" class="dropdown-item"><i class="ti ti-settings me-2"></i><%= t('Preferences') %></a>
+          <div class="dropdown-divider"></div>
+          <form action="/logout" method="post" class="m-0">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="dropdown-item"><i class="ti ti-logout me-2"></i><%= t('Log out') %></button>
+          </form>
+        </div>
+      </div>
+    <% } else { %>
+      <% if (demoMode) { %><a href="/demo" class="btn btn-sm d-none d-md-inline-flex"><%= t('Try a demo user') %></a><% } %>
+      <a href="/login" class="btn btn-sm btn-primary"><%= t('Log in') %></a>
     <% } %>
   </div>
 </header>
-<% if (!layout.menuInHeader) { %>
-  <div class="navbar-expand-md">
-    <div class="collapse navbar-collapse" id="navbar-menu">
-      <div class="navbar">
-        <div class="container-xl">
-          <div class="row flex-column flex-md-row flex-fill align-items-center">
-            <div class="col">
-              <% menuList() %>
-            </div>
-            <div class="col col-md-auto">
-              <form action="/events" method="get" role="search" class="my-2 my-md-0">
-                <div class="input-icon">
-                  <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-                  <input type="search" name="q" class="form-control" placeholder="<%= t("Search events…") %>" aria-label="<%= t("Search events") %>">
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
+<div class="offcanvas offcanvas-start gh-menu" tabindex="-1" id="gh-menu" aria-labelledby="gh-menu-title">
+  <div class="offcanvas-header">
+    <a href="/" class="gh-logo" id="gh-menu-title"><img src="/images/zury-logo.svg" width="32" height="32" alt=""><span>Zury</span></a>
+    <button type="button" class="gh-icon-btn ms-auto" data-bs-dismiss="offcanvas" aria-label="<%= t('Close') %>"><i class="ti ti-x"></i></button>
   </div>
-<% } %>
+  <div class="offcanvas-body">
+    <nav class="gh-menu-list" aria-label="<%= t('Primary') %>">
+      <% navItems.forEach((item) => { %>
+        <a href="<%= item.href %>" class="<%= item.active ? 'active' : '' %>"><i class="ti ti-<%= item.icon %>"></i><%= item.label %></a>
+      <% }) %>
+      <% if (can('createEvent')) { %><a href="/events/create" class="<%= currentPath === '/events/create' ? 'active' : '' %>"><i class="ti ti-circle-plus"></i><%= t('Create an event') %></a><% } %>
+    </nav>
+    <% if (adminItems.length) { %>
+      <div class="gh-menu-heading"><%= t('Administration') %></div>
+      <nav class="gh-menu-list">
+        <% adminItems.forEach((item) => { %><a href="<%= item.href %>" class="<%= item.active ? 'active' : '' %>"><i class="ti ti-<%= item.icon %>"></i><%= item.label %></a><% }) %>
+      </nav>
+    <% } %>
+    <div class="gh-menu-heading">Zury</div>
+    <nav class="gh-menu-list">
+      <% if (demoMode) { %><a href="/demo"><i class="ti ti-users-group"></i><%= t('Demo users') %></a><% } %>
+      <a href="/about" class="<%= currentPath === '/about' ? 'active' : '' %>"><i class="ti ti-info-circle"></i><%= t('About') %></a>
+      <a href="https://github.com/aishikrehman/Zury" rel="noopener"><i class="ti ti-brand-github"></i><%= t('Source code') %></a>
+    </nav>
+  </div>
+</div>

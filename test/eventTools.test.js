@@ -36,7 +36,7 @@ async function session(label) {
     async flash(path, form) {
       const res = await this.post(path, form);
       const page = await t.request(res.location, { cookie });
-      return ((page.body.match(/class="alert alert-\w+[^"]*" role="(?:status|alert)">([\s\S]*?)<\/div>/) || [])[1] || '').replace(/<[^>]+>/g, '').trim();
+      return ((page.body.match(/class="flash flash-\w+[^"]*" role="(?:status|alert)">([\s\S]*?)<\/div>/) || [])[1] || '').replace(/<[^>]+>/g, '').trim();
     },
   };
 }

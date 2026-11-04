@@ -25,6 +25,6 @@ body > .ts-dropdown { z-index: 1060; }
    pushing the typing cursor onto a second line. */
 .ts-wrapper.single .ts-control { flex-wrap: nowrap; }
 .ts-wrapper.single .ts-control > .item { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ts-wrapper.single .ts-control > input { flex: 0 0 auto; width: 1px; min-width: 1px; }
+.ts-wrapper.single.has-items .ts-control > input { flex: 0 0 auto; width: 1px; min-width: 1px; }
 .ts-wrapper.single.input-active .ts-control > .item:not(:only-child) { display: none; }
 .ts-wrapper.single.input-active .ts-control > input { flex: 1 1 auto; width: auto; }

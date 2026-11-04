@@ -1,6 +1,6 @@
 <% const back = encodeURIComponent(currentPath); %>
 <div class="zury-a11y dropup d-print-none">
-  <button type="button" class="btn btn-primary btn-icon" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t("Display and accessibility settings") %>">
+  <button type="button" class="btn btn-icon" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t("Display and accessibility settings") %>">
     <i class="ti ti-accessible" style="font-size: 1.5rem"></i>
   </button>
   <div class="dropdown-menu dropdown-menu-end dropdown-menu-card">
@@ -15,11 +15,6 @@
           <i class="ti ti-text-size me-2"></i><%= t("Larger text") %>
           <span class="form-check form-switch m-0 ms-auto"><input class="form-check-input" type="checkbox" tabindex="-1" aria-hidden="true"<%= ui.textLarge ? ' checked' : '' %> disabled></span>
         </a>
-      </div>
-      <div class="card-footer">
-        <button type="button" class="btn w-100" data-bs-toggle="offcanvas" data-bs-target="#offcanvas-settings" aria-controls="offcanvas-settings">
-          <i class="ti ti-layout me-1"></i>Layout: <%= layout.label %>
-        </button>
       </div>
     </div>
   </div>

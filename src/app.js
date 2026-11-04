@@ -8,7 +8,6 @@ const format = require('./utils/format');
 const contestLabels = require('./utils/contestLabels');
 const { PLATFORM_ROLES, EVENT_ROLES } = require('./permissions/registry');
 const { TIMEZONES } = require('./utils/time');
-const layouts = require('./utils/layouts');
 const { FEATURE_FIELDS, DATE_FIELDS, PARTICIPATION_MODES, defaultSettings } = require('./services/contestFormService');
 const { EVENT_TYPES } = require('./events/eventTypes');
 
@@ -75,8 +74,6 @@ Object.assign(app.locals, format, contestLabels, { EVENT_TYPES, FEATURE_DEFAULTS
   DATE_FIELDS,
   PARTICIPATION_MODES,
   eventWikiScope,
-  LAYOUTS: layouts.LAYOUTS,
-  layoutHtmlAttributes: layouts.htmlAttributes,
   demoMode: env.demoMode,
 });
 
@@ -96,7 +93,6 @@ app.use((req, res, next) => {
   res.locals.csrfToken = '';
   res.locals.can = () => false;
   res.locals.currentPath = req.path;
-  res.locals.layoutKey = layouts.DEFAULT_LAYOUT;
   res.locals.ui = { wide: false, textLarge: false };
   next();
 });

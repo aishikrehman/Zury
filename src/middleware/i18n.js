@@ -5,7 +5,6 @@ const contestLabels = require('../utils/contestLabels');
 const { EVENT_TYPES } = require('../events/eventTypes');
 const { PLATFORM_ROLES, EVENT_ROLES, PERMISSIONS } = require('../permissions/registry');
 const { FEATURE_FIELDS, DATE_FIELDS, PARTICIPATION_MODES } = require('../services/contestFormService');
-const { LAYOUTS } = require('../utils/layouts');
 const { clientDictionary } = require('../i18n/client');
 
 const clientCache = {};
@@ -29,7 +28,6 @@ function labelTables(code) {
     EVENT_ROLES: mapValues(EVENT_ROLES, withLabel),
     PLATFORM_ROLES: mapValues(PLATFORM_ROLES, withLabel),
     PERMISSION_LABELS: mapValues(PERMISSIONS, t),
-    LAYOUTS: mapValues(LAYOUTS, withLabel),
     EVENT_TYPES: mapValues(EVENT_TYPES, (type) => ({
       ...type,
       label: t(type.label),

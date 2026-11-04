@@ -60,7 +60,7 @@ test('anonymous visitors see public pages without getting a session', async () =
     const res = await t.request(page);
     assert.equal(res.status, 200, page);
     assert.equal(res.cookie, null, page);
-    assert.match(res.body, /Log in with Wikimedia/);
+    assert.match(res.body, /href="\/login"/, 'a way to log in');
   }
 });
 
