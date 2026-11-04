@@ -31,7 +31,8 @@
   --gh-shadow: 0 1px 0 #1f23280a;
   --gh-overlay-shadow: 0 1px 1px #1f23280a, 0 8px 24px #42474e33;
   --gh-radius: 6px;
-  --gh-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Noto Sans Bengali", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  /* System font first, as on GitHub; Bangla letters come from the bundled Noto Sans Bengali. */
+  --gh-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Bengali Variable", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --gh-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
@@ -422,3 +423,32 @@ html { overflow-x: hidden; }
 /* The display-settings button: quiet, like GitHub's floating controls. */
 .zury-a11y > .btn { background: var(--gh-canvas); color: var(--gh-fg-muted); border-color: var(--gh-border); box-shadow: var(--gh-overlay-shadow); }
 .zury-a11y > .btn:hover { color: var(--gh-fg); background: var(--gh-canvas-subtle); }
+
+/* Bangla reads small at 14px: one step up, with room for its taller letters. */
+html[lang="bn"] body { font-size: 15px; line-height: 1.6; }
+html[lang="bn"] .btn { font-size: 14px; }
+html[lang="bn"] .badge, html[lang="bn"] .small, html[lang="bn"] small { font-size: 12.5px; }
+
+/* Headings: GitHub's weight and tighter letters, not Tabler's heavy display type. */
+.display-1, .display-2, .display-3, .display-4, .display-5, .display-6 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+h1, h2, .h1, .h2 { letter-spacing: -0.01em; }
+.lead { font-size: 1.125rem; color: var(--gh-fg-muted); }
+
+/* Side lists (filters, settings): GitHub's side navigation, a bar marks the current item. */
+.list-group-transparent .list-group-item,
+.list-group-transparent .list-group-item-action { border: 0; border-radius: var(--gh-radius); margin: 1px 0; padding: 6px 8px; background: transparent; color: var(--gh-fg); }
+.list-group-transparent .list-group-item:hover { background: var(--gh-btn-hover); text-decoration: none; }
+.list-group-item.active, .list-group-transparent .list-group-item.active {
+  position: relative; z-index: 1; color: var(--gh-fg); font-weight: 600;
+  background: var(--gh-btn-hover); border-color: transparent;
+}
+.list-group-item.active::before {
+  content: ""; position: absolute; left: -8px; top: 6px; bottom: 6px; width: 4px;
+  background: var(--gh-accent); border-radius: 6px;
+}
+.list-group-item.active .ti { color: var(--gh-fg); }
+
+/* Page titles: GitHub's size and weight. */
+.page-title { font-size: 20px; font-weight: 600; letter-spacing: 0; }
+.page-header { border-bottom: 1px solid var(--gh-border); margin-bottom: 1.5rem; padding-bottom: 1rem; }
+.page-header + .page-body { margin-top: 0; }

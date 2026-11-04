@@ -22,7 +22,7 @@
           <div class="list-group list-group-transparent mb-3">
             <a class="list-group-item list-group-item-action d-flex align-items-center<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>"><i class="ti ti-calendar me-2"></i><%= t("All events") %></a>
             <% groups.forEach((g) => { %>
-              <a class="list-group-item list-group-item-action d-flex align-items-center text-capitalize<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><i class="ti ti-<%= groupIcons[g] %> me-2"></i><%= g %></a>
+              <a class="list-group-item list-group-item-action d-flex align-items-center<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><i class="ti ti-<%= groupIcons[g] %> me-2"></i><%= t({ active: 'Active', upcoming: 'Upcoming', completed: 'Completed' }[g]) %></a>
             <% }) %>
           </div>
           <div class="subheader mb-2"><%= t("Search") %></div>

@@ -21,6 +21,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@fontsource-variable/noto-sans-bengali": "^5.3.0",
     "@prisma/client": "^5.20.0",
     "@tabler/core": "^1.7.1",
     "@tabler/icons-webfont": "^3.49.0",
