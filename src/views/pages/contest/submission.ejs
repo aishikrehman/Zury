@@ -2,8 +2,8 @@
   const tz = contest.timezone;
   const actionLabel = { submitted: 'submitted the entry', status_changed: 'changed the status', revalidated: 'checked it again', withdrawn: 'withdrew the entry' };
 %>
+<%- include('../../partials/contestHeader', { active: 'submissions' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'submissions' }) %>
 
   <div class="row row-cards">
     <div class="col-lg-8">

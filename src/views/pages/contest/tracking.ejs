@@ -2,8 +2,8 @@
   const n = formatNumber;
   const on = [tracking.participants && "participants' edits", ...tracking.hashtags.map((h) => '#' + h), ...tracking.categories.map((c) => 'Category:' + c)].filter(Boolean);
 %>
+<%- include('../../partials/contestHeader', { active: 'tracking' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'tracking' }) %>
 
   <div class="card mb-3">
     <div class="card-body d-flex flex-wrap align-items-center gap-2">

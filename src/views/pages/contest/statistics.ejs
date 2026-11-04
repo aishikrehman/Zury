@@ -6,8 +6,8 @@
   const maxTop = Math.max(1, ...s.topParticipants.map((p) => p.count));
   const sum7 = s.last7.reduce((a, b) => a + b, 0);
 %>
+<%- include('../../partials/contestHeader', { active: 'statistics' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'statistics' }) %>
 
   <div class="row row-deck row-cards mb-3">
     <div class="col-sm-6 col-lg-3">

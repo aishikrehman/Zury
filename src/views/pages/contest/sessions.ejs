@@ -10,8 +10,8 @@
   const past = sessions.filter((s) => s.status === 'held' || s.status === 'cancelled');
   const me = currentUser && summary.find((s) => s.userId === currentUser.id);
 %>
+<%- include('../../partials/contestHeader', { active: 'sessions' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'sessions' }) %>
 
   <div class="row row-cards">
     <div class="col-lg-8">

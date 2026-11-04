@@ -11,8 +11,8 @@
     !['cancelled', 'archived'].includes(contest.status) && action('cancel', 'Cancel event', 'outline-danger', 'ban'),
   ].filter(Boolean);
 %>
+<%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 
   <% if (can('manageEvent') && !wikiMode) { %>
     <div class="card mb-4">

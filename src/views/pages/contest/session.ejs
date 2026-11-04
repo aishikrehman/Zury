@@ -5,8 +5,8 @@
   const active = session.attendances.filter((a) => a.status !== 'cancelled');
   const canRegister = ['planned', 'open'].includes(session.status) && session.startsAt > new Date();
 %>
+<%- include('../../partials/contestHeader', { active: 'sessions' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'sessions' }) %>
 
   <div class="row row-cards">
     <div class="col-lg-8">

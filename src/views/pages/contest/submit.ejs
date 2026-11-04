@@ -11,8 +11,8 @@
   if (typeConfig.requiredProperties && typeConfig.requiredProperties.length) rules.push(`Required properties: ${typeConfig.requiredProperties.join(', ')}`);
   if (typeConfig.minStatements) rules.push(`At least ${typeConfig.minStatements} statements`);
 %>
+<%- include('../../partials/contestHeader', { active: 'submit' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'submit' }) %>
 
   <div class="row row-cards">
     <div class="col-lg-8">

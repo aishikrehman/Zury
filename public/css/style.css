@@ -1,21 +1,5 @@
 .ti.icon { font-size: 1.25rem; }
 
-/* Comfortable reading width by default; "wide pages" restores Tabler's full width. */
-html:not(.zury-wide):not([data-bs-layout="fluid"]) .container-xl { max-width: 1140px; }
-
-/* Larger text option (Tabler sizes are rem-based). */
-html.zury-text-lg { font-size: 112.5%; }
-
-.zury-a11y {
-  position: fixed;
-  right: 1.25rem;
-  bottom: 1.25rem;
-  z-index: 1040;
-}
-[dir="rtl"] .zury-a11y { right: auto; left: 1.25rem; }
-.zury-a11y > .btn { width: 3rem; height: 3rem; border-radius: 50%; box-shadow: var(--tblr-box-shadow-dropdown, 0 .5rem 1rem rgba(0,0,0,.15)); }
-.zury-a11y .dropdown-menu { min-width: 16rem; }
-
 /* Long menus (wiki switcher, language list) scroll instead of running off the page. */
 .dropdown-menu { max-height: min(60vh, 28rem); overflow-y: auto; }
 /* Picker lists drawn on top of the page sit above modals' and headers' layers. */

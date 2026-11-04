@@ -84,6 +84,8 @@ app.use('/vendor/tabler', vendor('@tabler/core'));
 app.use('/vendor/tabler-icons', vendor('@tabler/icons-webfont'));
 app.use('/vendor/apexcharts', vendor('apexcharts'));
 app.use('/vendor/tom-select', vendor('tom-select'));
+// Inter for Latin text.
+app.use('/vendor/inter', express.static(path.join(__dirname, '..', 'node_modules', '@fontsource-variable', 'inter'), { maxAge: '30d' }));
 // Bangla font (Google's Noto Serif Bengali, served here), used only for Bangla letters (system fonts like Segoe UI have none).
 app.use('/vendor/noto-bengali', express.static(path.join(__dirname, '..', 'node_modules', '@fontsource-variable', 'noto-serif-bengali'), { maxAge: '30d' }));
 

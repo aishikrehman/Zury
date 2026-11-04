@@ -1,11 +1,10 @@
 <% const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
 <% const typeIcon = TYPE_ICONS[c.type] || 'calendar'; %>
-<div class="card card-link card-link-pop h-100">
-  <div class="card-status-top bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>"></div>
+<div class="card card-link card-link-pop h-100 z-event-card" data-type-color="<%= TYPE_COLORS[c.type] || 'blue' %>">
   <div class="card-body d-flex flex-column">
     <div class="d-flex align-items-center mb-2">
-      <span class="avatar avatar-sm bg-primary-lt me-2"><i class="ti ti-<%= typeIcon %>"></i></span>
-      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] || c.type %> · <%= c.wikis && c.wikis.length > 1 ? c.wikis.length + ' wikis' : wikiName(c.primaryWiki) %></div>
+      <span class="avatar avatar-sm z-type-icon me-2"><i class="ti ti-<%= typeIcon %>"></i></span>
+      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] || c.type %> · <%= c.wikis && c.wikis.length > 1 ? t('{n} wikis', { n: c.wikis.length }) : wikiName(c.primaryWiki) %></div>
       <div class="ms-auto d-flex gap-1">
         <% if (c.visibility === 'private') { %><span class="badge bg-yellow-lt"><%= t("Private") %></span><% } %>
         <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
@@ -14,7 +13,7 @@
     <h3 class="card-title mb-2"><a href="<%= eventPath(c) %>" class="stretched-link text-reset"><%= c.title %></a></h3>
     <div class="text-secondary small mt-auto">
       <i class="ti ti-calendar me-1"></i><% if (c.startDate) { %><%= formatDate(c.startDate, c.timezone) %> – <%= formatDate(c.endDate, c.timezone) %><% } else { %><%= t('Dates not set') %><% } %>
-      <% if (c._count) { %><span class="ms-2"><i class="ti ti-users me-1"></i><%= c._count.memberships %></span><% } %>
+      <% if (c._count) { %><span class="ms-2"><i class="ti ti-users me-1"></i><%= formatNumber(c._count.memberships) %></span><% } %>
     </div>
     <% if (typeof roles !== 'undefined' && roles.length) { %>
       <div class="mt-2">

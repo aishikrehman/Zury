@@ -11,8 +11,8 @@
   const pages = Math.max(1, Math.ceil(result.total / result.perPage));
   const totalAll = Object.values(result.counts).reduce((a, b) => a + b, 0);
 %>
+<%- include('../../partials/contestHeader', { active: 'submissions' }) %>
 <div class="page-body"><div class="container-xl">
-  <%- include('../../partials/contestHeader', { active: 'submissions' }) %>
 
   <div class="card">
     <div class="card-header flex-wrap gap-2">

@@ -1,22 +1,47 @@
 <%
   const isActive = (prefix, exact = false) => (exact ? currentPath === prefix : currentPath === prefix || currentPath.startsWith(prefix + '/'));
-  // The global navigation: links in the header bar and the slide-out menu.
-  const navItems = [
-    { href: '/', icon: 'home', label: t('Home'), active: isActive('/', true) },
-    { href: '/events', icon: 'calendar-event', label: t('Events'), active: isActive('/events') && !isActive('/events/create') },
+  const navGroups = [
+    {
+      title: t('Explore'),
+      items: [
+        { href: '/', icon: 'home', label: t('Home'), active: isActive('/', true) },
+        { href: '/events', icon: 'calendar-event', label: t('All events'), active: currentPath === '/events' },
+        { href: '/events/active', icon: 'player-play', label: t('Active'), active: isActive('/events/active') },
+        { href: '/events/upcoming', icon: 'clock', label: t('Upcoming'), active: isActive('/events/upcoming') },
+        { href: '/events/completed', icon: 'flag', label: t('Completed'), active: isActive('/events/completed') },
+      ],
+    },
+    {
+      title: t('You'),
+      items: currentUser
+        ? [
+            { href: '/dashboard', icon: 'layout-dashboard', label: t('Dashboard'), active: isActive('/dashboard') },
+            { href: '/submissions', icon: 'files', label: t('My submissions'), active: isActive('/submissions') },
+            { href: userPath(currentUser.username), icon: 'user', label: t('Profile'), active: isActive(userPath(currentUser.username)) },
+            { href: '/settings', icon: 'settings', label: t('Preferences'), active: isActive('/settings') },
+          ]
+        : [],
+    },
+    {
+      title: t('Administration'),
+      items: can('accessAdmin')
+        ? [
+            { href: '/admin', icon: 'shield-lock', label: t('Overview'), active: isActive('/admin', true) },
+            { href: '/admin/users', icon: 'users', label: t('Users'), active: isActive('/admin/users') },
+            { href: '/admin/permissions', icon: 'key', label: t('Permissions'), active: isActive('/admin/permissions') },
+            ...(can('viewAuditLog') ? [{ href: '/admin/logs', icon: 'history', label: t('Audit log'), active: isActive('/admin/logs') }] : []),
+          ]
+        : [],
+    },
+    {
+      title: 'Zury',
+      items: [
+        ...(demoMode ? [{ href: '/demo', icon: 'users-group', label: t('Demo users'), active: isActive('/demo') }] : []),
+        { href: '/about', icon: 'info-circle', label: t('About'), active: isActive('/about') },
+        { href: 'https://github.com/aishikrehman/Zury', icon: 'brand-github', label: t('Source code'), external: true },
+      ],
+    },
   ];
-  if (currentUser) {
-    navItems.push({ href: '/dashboard', icon: 'layout-dashboard', label: t('Dashboard'), active: isActive('/dashboard') });
-    navItems.push({ href: '/submissions', icon: 'files', label: t('My submissions'), active: isActive('/submissions') });
-  }
-  const adminItems = can('accessAdmin')
-    ? [
-        { href: '/admin', icon: 'shield-lock', label: t('Overview'), active: isActive('/admin', true) },
-        { href: '/admin/users', icon: 'users', label: t('Users'), active: isActive('/admin/users') },
-        { href: '/admin/permissions', icon: 'key', label: t('Permissions'), active: isActive('/admin/permissions') },
-        ...(can('viewAuditLog') ? [{ href: '/admin/logs', icon: 'history', label: t('Audit log'), active: isActive('/admin/logs') }] : []),
-      ]
-    : [];
   const htmlClasses = [ui.wide && 'zury-wide', ui.textLarge && 'zury-text-lg'].filter(Boolean).join(' ');
 %>
 <!DOCTYPE html>
@@ -30,35 +55,50 @@
   <link rel="stylesheet" href="/css/tabler.css">
   <link rel="stylesheet" href="/vendor/tom-select/css/tom-select.bootstrap5.min.css">
   <link rel="stylesheet" href="/vendor/tabler-icons/tabler-icons.min.css">
+  <link rel="stylesheet" href="/vendor/inter/index.css">
   <link rel="stylesheet" href="/vendor/noto-bengali/wght.css">
-  <link rel="stylesheet" href="/css/github.css">
+  <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <a href="#content" class="visually-hidden-focusable skip-link"><%= t("Skip to main content") %></a>
-  <%- include('partials/header', { navItems, adminItems }) %>
+  <div class="z-app">
+    <aside class="z-sidebar d-print-none" aria-label="<%= t('Primary') %>">
+      <%- include('partials/nav', { navGroups }) %>
+    </aside>
 
-  <main id="content" class="gh-main">
-    <% if (demoMode || (typeof flash !== 'undefined' && flash)) { %>
-      <div class="container-xl pt-3">
-        <% if (demoMode) { %>
-          <div class="flash flash-warn mb-2" role="note">
-            <i class="ti ti-flask"></i><span><strong><%= t("Demo mode.") %></strong> <%= t("Everything here is sample data.") %></span>
-            <a href="/demo" class="ms-auto"><%= t("Switch demo user") %></a>
+    <div class="z-content">
+      <%- include('partials/header') %>
+
+      <main id="content" class="z-main">
+        <% if (demoMode || (typeof flash !== 'undefined' && flash)) { %>
+          <div class="container-xl pt-3">
+            <% if (demoMode) { %>
+              <div class="flash flash-warn mb-2" role="note">
+                <i class="ti ti-flask"></i><span><strong><%= t("Demo mode.") %></strong> <%= t("Everything here is sample data.") %></span>
+                <a href="/demo" class="ms-auto"><%= t("Switch demo user") %></a>
+              </div>
+            <% } %>
+            <% if (typeof flash !== 'undefined' && flash) { %>
+              <div class="flash flash-<%= flash.type === 'danger' ? 'error' : flash.type === 'warning' ? 'warn' : 'success' %>" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
+                <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : flash.type === 'warning' ? 'alert-triangle' : 'circle-check' %>"></i><span><%= t(flash.message) %></span>
+              </div>
+            <% } %>
           </div>
         <% } %>
-        <% if (typeof flash !== 'undefined' && flash) { %>
-          <div class="flash flash-<%= flash.type === 'danger' ? 'error' : flash.type === 'warning' ? 'warn' : 'success' %>" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
-            <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : flash.type === 'warning' ? 'alert-triangle' : 'circle-check' %>"></i><span><%= t(flash.message) %></span>
-          </div>
-        <% } %>
-      </div>
-    <% } %>
 
-    <%- body %>
-  </main>
+        <%- body %>
+      </main>
 
-  <%- include('partials/footer') %>
+      <%- include('partials/footer') %>
+    </div>
+  </div>
+
+  <div class="offcanvas offcanvas-start z-drawer d-print-none" tabindex="-1" id="z-menu" aria-label="<%= t('Primary') %>">
+    <button type="button" class="z-icon-btn z-drawer-close" data-bs-dismiss="offcanvas" aria-label="<%= t('Close') %>"><i class="ti ti-x"></i></button>
+    <div class="offcanvas-body"><%- include('partials/nav', { navGroups }) %></div>
+  </div>
+
   <%- include('partials/a11y') %>
   <script type="application/json" id="zury-i18n"><%- clientStrings %></script>
   <script src="/js/i18n.js"></script>
