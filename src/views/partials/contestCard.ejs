@@ -1,10 +1,11 @@
 <% const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-<% const typeIcon = TYPE_ICONS[c.type] || 'calendar'; %>
-<div class="card card-link card-link-pop h-100 z-event-card" data-type-color="<%= TYPE_COLORS[c.type] || 'blue' %>">
+<% const typeIcon = TYPE_ICONS[c.type] || 'calendar'; const proj = eventProject(c); %>
+<div class="card card-link card-link-pop h-100 z-event-card z-proj" style="--z-proj: <%= proj.color %>" data-type-color="<%= TYPE_COLORS[c.type] || 'blue' %>">
+  <div class="z-proj-strip"></div>
   <div class="card-body d-flex flex-column">
     <div class="d-flex align-items-center mb-2">
-      <span class="avatar avatar-sm z-type-icon me-2"><i class="ti ti-<%= typeIcon %>"></i></span>
-      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] || c.type %> · <%= c.wikis && c.wikis.length > 1 ? t('{n} wikis', { n: c.wikis.length }) : wikiName(c.primaryWiki) %></div>
+      <span class="avatar avatar-sm z-proj-icon me-2" title="<%= proj.label %>"><i class="ti ti-<%= proj.icon %>"></i></span>
+      <div class="text-secondary small"><span class="z-proj-name"><%= proj.label %></span> · <%= CONTEST_TYPES[c.type] || c.type %> · <%= c.wikis && c.wikis.length > 1 ? t('{n} wikis', { n: c.wikis.length }) : wikiName(c.primaryWiki) %></div>
       <div class="ms-auto d-flex gap-1">
         <% if (c.visibility === 'private') { %><span class="badge bg-yellow-lt"><%= t("Private") %></span><% } %>
         <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>

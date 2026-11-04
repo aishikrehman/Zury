@@ -23,6 +23,7 @@ const CARD_SELECT = {
   status: true,
   visibility: true,
   primaryWiki: true,
+  language: true,
   timezone: true,
   startDate: true,
   endDate: true,

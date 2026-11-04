@@ -12,9 +12,8 @@
   if (typeDef.entries !== false) tabs.push(['submissions', t(typeDef.activity ? 'Uploads' : 'Submissions'), '/submissions', 'files']);
   const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
   if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', t('Contributions'), '/tracking', 'activity']);
-  if (typeDef.entries !== false && settings.juryReviewEnabled && (can('reviewAssignedEntry') || (scope.wikisWith && scope.wikisWith('reviewAssignedEntry').length))) {
-    tabs.push(['review', t('Review'), '/review', 'gavel']);
-  }
+  // The jury's way in is a button in the header, not a tab.
+  const canReview = typeDef.entries !== false && settings.juryReviewEnabled && (can('reviewAssignedEntry') || (scope.wikisWith && scope.wikisWith('reviewAssignedEntry').length));
   if (typeDef.entries !== false && (contest.resultsPublishedAt || can('reviewEvent') || can('manageEvent') || settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['results', t('Results and statistics'), '/results', 'chart-bar']);
   if (settings.appealsEnabled && (can('reviewAppeal') || can('manageAppeals'))) tabs.push(['appeals', t('Appeals'), '/appeals', 'scale']);
   // People and the jury's assignments share one tab.
@@ -31,7 +30,8 @@
       <% if (contest.logoUrl) { %>
         <span class="avatar avatar-xs rounded" style="background-image: url('<%= contest.logoUrl %>'); background-size: contain"></span>
       <% } else { %>
-        <i class="ti ti-<%= TYPE_ICONS[contest.type] || 'calendar' %>" title="<%= CONTEST_TYPES[contest.type] %>"></i>
+        <% const headProj = eventProject({ wikis: eventWikis, primaryWiki: contest.primaryWiki }); %>
+        <i class="ti ti-<%= headProj.icon %> z-proj-tile" style="--z-proj: <%= headProj.color %>" title="<%= headProj.label %> · <%= CONTEST_TYPES[contest.type] %>"></i>
       <% } %>
       <a href="/events"><%= t('Events') %></a>
       <span class="sep">/</span>
@@ -63,7 +63,7 @@
         %>
         <% if (!currentUser && joinable) { %>
           <a href="/login" class="btn btn-primary"><i class="ti ti-login me-1"></i><%= t("Log in to join") %></a>
-        <% } else if (currentUser && !isParticipant && joinable && !(typeof eligibility !== 'undefined' && !eligibility.eligible)) { %>
+        <% } else if (currentUser && !(scope.eventRoles || []).length && joinable && !(typeof eligibility !== 'undefined' && !eligibility.eligible)) { %>
           <% if (joinWikis.length) { %>
             <div class="dropdown">
               <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></button>
@@ -81,6 +81,9 @@
               <button class="btn btn-primary" type="submit"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></button>
             </form>
           <% } %>
+        <% } %>
+        <% if (canReview) { %>
+          <a href="<%= base %>/review" class="btn btn-outline-primary"><i class="ti ti-gavel me-1"></i><%= t('Review') %></a>
         <% } %>
         <% if (canSubmit && (isParticipant || can('submitOnBehalf') || can('manageEvent'))) { %>
           <a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>

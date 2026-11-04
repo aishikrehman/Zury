@@ -7,7 +7,7 @@
           <h3 class="card-title"><%= t("Role permission matrix") %></h3>
         </div>
         <div class="card-actions small text-secondary">
-          <span class="me-3"><i class="ti ti-circle-filled text-green"></i> <%= t("granted") %></span>
+          <span class="me-3"><i class="ti ti-circle-check text-green"></i> <%= t("granted") %></span>
           <span class="me-3"><i class="ti ti-circle text-azure"></i> <%= t("implied") %></span>
           <span><span class="badge bg-purple-lt">G</span> <%= t("everywhere (wiki-scoped role)") %></span>
         </div>
@@ -27,7 +27,7 @@
                 <% roles.forEach((r) => { %>
                   <td>
                     <% if (r.viaGlobal.has(key)) { %><span class="badge bg-purple-lt">G</span>
-                    <% } else if (r.permissions.includes(key)) { %><i class="ti ti-circle-filled text-green" aria-label="<%= t("granted") %>"></i>
+                    <% } else if (r.permissions.includes(key)) { %><i class="ti ti-circle-check text-green" aria-label="<%= t("granted") %>"></i>
                     <% } else if (r.effective.has(key)) { %><i class="ti ti-circle text-azure" aria-label="<%= t("implied") %>"></i><% } %>
                   </td>
                 <% }) %>

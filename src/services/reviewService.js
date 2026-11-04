@@ -227,7 +227,7 @@ async function progress(contestId, { wiki } = {}) {
 async function leaderboard({ contest, settings, wiki }) {
   const where = { contestId: contest.id, ...(wiki && { wiki }) };
   const typeConfig = readTypeConfig(contest.type, settings.typeConfig);
-  const byWords = !!settings.wordCountEnabled;
+  let byWords = !!settings.wordCountEnabled;
   let entries;
   let pointsOf;
   if (contest.type === 'proofread') {
@@ -248,18 +248,26 @@ async function leaderboard({ contest, settings, wiki }) {
     }
   } else {
     // Added up by the database, one row per person: fast with 100,000+ entries.
+    // Everyone who submitted is listed; points and words come from the accepted entries.
     const jury = settings.juryReviewEnabled;
     const hasMarks = jury && markScheme(settings).length > 0;
-    const grouped = await prisma.submission.groupBy({
-      by: ['participantId'],
-      where: { ...where, status: jury ? 'approved' : { in: ['validated', 'approved'] } },
-      _count: { _all: true },
-      _sum: { score: true, wordCount: true },
-    });
-    for (const g of grouped) {
-      rows.set(g.participantId, { participantId: g.participantId, entries: g._count._all, points: hasMarks ? g._sum.score || 0 : g._count._all, words: g._sum.wordCount || 0 });
+    const [all, counted] = await Promise.all([
+      prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: { notIn: ['withdrawn'] } }, _count: { _all: true } }),
+      prisma.submission.groupBy({
+        by: ['participantId'],
+        where: { ...where, status: jury ? 'approved' : { in: ['validated', 'approved'] } },
+        _count: { _all: true },
+        _sum: { score: true, wordCount: true },
+      }),
+    ]);
+    for (const g of all) rows.set(g.participantId, { participantId: g.participantId, submitted: g._count._all, entries: 0, points: 0, words: 0 });
+    for (const g of counted) {
+      const row = rows.get(g.participantId) || { participantId: g.participantId, submitted: g._count._all };
+      rows.set(g.participantId, { ...row, entries: g._count._all, points: hasMarks ? g._sum.score || 0 : g._count._all, words: g._sum.wordCount || 0 });
     }
   }
+  // Ranking by words only means something when the entries have word counts.
+  if (byWords && ![...rows.values()].some((r) => r.words > 0)) byWords = false;
   const users = await prisma.user.findMany({ where: { id: { in: [...rows.keys()] } }, select: { id: true, username: true } });
   const name = Object.fromEntries(users.map((u) => [u.id, u.username]));
   const sorted = [...rows.values()]
@@ -268,10 +276,12 @@ async function leaderboard({ contest, settings, wiki }) {
   // Equal scores share a rank.
   const key = (r) => (byWords ? r.words : r.points);
   let rank = 0;
-  return sorted.map((r, i) => {
+  const ranked = sorted.map((r, i) => {
     if (i === 0 || key(r) !== key(sorted[i - 1])) rank = i + 1;
     return { ...r, rank };
   });
+  ranked.byWords = byWords;
+  return ranked;
 }
 
 async function setResultsPublished({ actor, contest, published }) {

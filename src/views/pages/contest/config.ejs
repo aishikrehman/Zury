@@ -47,7 +47,8 @@
     </div>
   <% } %>
 
-  <% if (canManageWikis) { const wikiActions = { pending: [['approve', 'Approve', 'primary']], active: [['pause', 'Pause', 'outline-secondary'], ['remove', 'Remove', 'ghost-danger']], paused: [['resume', 'Resume', 'outline-primary'], ['remove', 'Remove', 'ghost-danger']] }; %>
+  <%# A single-wiki event is just that wiki: no wiki list to manage. %>
+  <% if (canManageWikis && allWikis.length > 1) { const wikiActions = { pending: [['approve', 'Approve', 'primary']], active: [['pause', 'Pause', 'outline-secondary'], ['remove', 'Remove', 'ghost-danger']], paused: [['resume', 'Resume', 'outline-primary'], ['remove', 'Remove', 'ghost-danger']] }; %>
     <div class="card mb-4" id="wikis">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3></div>
       <div class="table-responsive">

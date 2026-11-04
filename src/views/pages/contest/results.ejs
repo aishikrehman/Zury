@@ -1,6 +1,7 @@
 <%
+  const byWords = !!rows.byWords;
   const medal = { 1: 'gold', 2: 'silver', 3: 'bronze' };
-  const podium = rows.filter((r) => r.rank <= 3).slice(0, 3);
+  const podium = rows.filter((r) => r.rank <= 3 && (r.points > 0 || r.words > 0)).slice(0, 3);
 %>
 <%- include('../../partials/contestHeader', { active: 'results' }) %>
 <div class="page-body"><div class="container-xl">
@@ -46,7 +47,7 @@
           <div class="z-podium-place z-<%= medal[r.rank] %>">
             <div class="z-podium-medal"><i class="ti ti-trophy"></i><span><%= formatNumber(r.rank) %></span></div>
             <div class="z-podium-name"><%= showNames ? r.username : t('Participant') %></div>
-            <div class="z-podium-points"><%= settings.wordCountEnabled ? t('{n} words', { n: formatNumber(r.words) }) : t('{n} points', { n: r.points }) %></div>
+            <div class="z-podium-points"><%= byWords ? t('{n} words', { n: formatNumber(r.words) }) : t('{n} points', { n: r.points }) %></div>
             <div class="text-secondary small"><%= tn('{n} entry', '{n} entries', r.entries) %></div>
           </div>
         <% }) %>
@@ -56,15 +57,16 @@
       <div class="card-header"><h3 class="card-title"><i class="ti ti-list-numbers me-2"></i><%= t('Leaderboard') %></h3></div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Points') %></th><% if (settings.wordCountEnabled) { %><th class="text-end"><%= t('Words') %></th><% } %></tr></thead>
+          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Submitted') %></th><th class="text-end"><%= t('Accepted') %></th><th class="text-end"><%= t('Points') %></th><% if (byWords) { %><th class="text-end"><%= t('Words') %></th><% } %></tr></thead>
           <tbody>
             <% rows.forEach((r) => { %>
               <tr>
                 <td><span class="z-rank<%= medal[r.rank] ? ' z-' + medal[r.rank] : '' %>"><%= formatNumber(r.rank) %></span></td>
                 <td><% if (showNames) { %><a href="<%= userPath(r.username) %>"><%= r.username %></a><% } else { %><span class="text-secondary"><%= t('Participant') %></span><% } %></td>
+                <td class="text-end text-secondary"><%= formatNumber(r.submitted ?? r.entries) %></td>
                 <td class="text-end"><%= formatNumber(r.entries) %></td>
-                <td class="text-end<%= settings.wordCountEnabled ? '' : ' fw-bold' %>"><%= formatNumber(r.points) %></td>
-                <% if (settings.wordCountEnabled) { %><td class="text-end fw-bold"><%= formatNumber(r.words) %></td><% } %>
+                <td class="text-end<%= byWords ? '' : ' fw-bold' %>"><%= formatNumber(r.points) %></td>
+                <% if (byWords) { %><td class="text-end fw-bold"><%= formatNumber(r.words) %></td><% } %>
               </tr>
             <% }) %>
           </tbody>

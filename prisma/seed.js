@@ -75,7 +75,7 @@ async function seedDemoData(prisma, now = new Date()) {
     dates.resultsAnnouncedAt = new Date(dates.reviewDeadline.getTime() + 7 * day);
     const settings = {
       ...defaultSettings('writing'),
-      wordCountEnabled: true,
+      wordCountEnabled: parts.some((pt) => pt.articles.some((a) => a.words != null)),
       marks: JSON.stringify(scheme),
       requiredReviews: main.minMarks || 1,
       typeConfig: JSON.stringify({ ...readTypeConfig('writing', '{}'), createdDuringEventOnly: true }),

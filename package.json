@@ -18,7 +18,8 @@
     "admin:grant": "node scripts/grant-platform-admin.js",
     "wikis:sync": "node scripts/sync-wikis.js",
     "start:server": "node src/server.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "build:assets": "node scripts/build-assets.js"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -44,5 +45,8 @@
   },
   "prisma": {
     "seed": "node prisma/seed.js"
+  },
+  "devDependencies": {
+    "subset-font": "^2.9.0"
   }
 }

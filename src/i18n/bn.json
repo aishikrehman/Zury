@@ -1098,5 +1098,14 @@
   "With warnings": "সতর্কতাসহ",
   "in {n} day": "{n} দিন পর",
   "in {n} days": "{n} দিন পর",
-  "{n} wiki": "{n}টি উইকি"
+  "{n} wiki": "{n}টি উইকি",
+  "+{n} more": "আরও {n}টি",
+  "Next month": "পরের মাস",
+  "No events here.": "এখানে কোনো ইভেন্ট নেই।",
+  "No events this month.": "এ মাসে কোনো ইভেন্ট নেই।",
+  "Only {lang} and multi-wiki events": "শুধু {lang} ও বহু-উইকির ইভেন্ট",
+  "Previous month": "আগের মাস",
+  "Running": "চলমান",
+  "Show all": "সব দেখান",
+  "{lang} and multi-wiki events": "{lang} ও বহু-উইকির ইভেন্ট"
 }

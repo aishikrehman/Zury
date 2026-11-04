@@ -1,0 +1,168 @@
+// Trims Tabler's stylesheet and icon font to what Zury uses.
+//   assets/tabler.css               → public/css/tabler.css (rules whose classes appear in the code)
+//   @tabler/icons-webfont           → public/icons/ (only the icons the code names)
+// Run after changing views or scripts: npm run build:assets
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+
+// ── Words used in the code: views, scripts and server code (class names are built there too) ──
+function sourceFiles(dir, exts) {
+  const out = [];
+  for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+    const rel = path.join(dir, e.name);
+    if (e.isDirectory()) out.push(...sourceFiles(rel, exts));
+    else if (exts.some((x) => e.name.endsWith(x))) out.push(rel);
+  }
+  return out;
+}
+const SOURCES = [...sourceFiles('src', ['.ejs', '.js']), ...sourceFiles('public/js', ['.js']), 'public/css/theme.css', 'public/css/style.css'];
+const text = SOURCES.map(read).join('\n');
+const words = new Set(text.match(/[A-Za-z0-9_-]+/g));
+// Classes made from pieces, e.g. bg-<%= color %>-lt or `btn-${kind}`: keep every class with that start.
+const dynamicPrefixes = [...new Set([...text.matchAll(/([a-z][a-z0-9-]*-)(?:<%[=-]|\$\{|'\s*\+|"\s*\+)/g)].map((m) => m[1]))];
+// Classes that Bootstrap's and Tabler's scripts add or need at run time.
+const RUNTIME = ['show', 'showing', 'hiding', 'collapsing', 'collapse', 'fade', 'active', 'disabled', 'dropdown-menu-end', 'dropdown-menu-start', 'dropstart', 'dropend', 'dropup',
+  'modal', 'modal-open', 'modal-backdrop', 'modal-static', 'offcanvas', 'offcanvas-backdrop', 'tooltip', 'tooltip-inner', 'tooltip-arrow', 'bs-tooltip-auto', 'popover', 'is-invalid', 'is-valid', 'was-validated',
+  'focus', 'input-active', 'has-items', 'single', 'multi', 'ts-wrapper', 'ts-control', 'ts-dropdown', 'form-select', 'form-control', 'plugin-remove_button', 'tab-pane', 'nav-link'];
+const runtimePrefixes = ['bs-', 'apexcharts', 'ts-', 'tooltip', 'popover', 'offcanvas', 'modal'];
+const used = (cls) => words.has(cls) || RUNTIME.includes(cls) || dynamicPrefixes.some((p) => cls.startsWith(p)) || runtimePrefixes.some((p) => cls.startsWith(p));
+
+// ── A small CSS reader: rules and at-rules, nested as written ──
+function parse(css) {
+  let i = 0;
+  const skipComment = () => {
+    if (css.startsWith('/*', i)) {
+      const end = css.indexOf('*/', i + 2);
+      i = end < 0 ? css.length : end + 2;
+      return true;
+    }
+    return false;
+  };
+  function block() {
+    const nodes = [];
+    let buf = '';
+    while (i < css.length) {
+      if (skipComment()) continue;
+      const c = css[i];
+      if (c === '"' || c === "'") {
+        const q = c;
+        let j = i + 1;
+        while (j < css.length && css[j] !== q) j += css[j] === '\\' ? 2 : 1;
+        buf += css.slice(i, j + 1);
+        i = j + 1;
+        continue;
+      }
+      if (c === '{') {
+        i += 1;
+        const head = buf.trim();
+        buf = '';
+        if (/^@(media|supports|layer|container|document)\b/.test(head)) nodes.push({ type: 'group', head, children: block() });
+        else {
+          // A declaration block (keep it as written), possibly with nested blocks (@keyframes).
+          let depth = 1;
+          const start = i;
+          while (i < css.length && depth) {
+            if (skipComment()) continue;
+            if (css[i] === '{') depth += 1;
+            else if (css[i] === '}') depth -= 1;
+            i += 1;
+          }
+          nodes.push({ type: head.startsWith('@') ? 'at' : 'rule', head, body: css.slice(start, i - 1) });
+        }
+        continue;
+      }
+      if (c === '}') {
+        i += 1;
+        return nodes;
+      }
+      if (c === ';' && buf.trim().startsWith('@')) {
+        nodes.push({ type: 'statement', head: buf.trim() });
+        buf = '';
+        i += 1;
+        continue;
+      }
+      buf += c;
+      i += 1;
+    }
+    return nodes;
+  }
+  return block();
+}
+
+// Splits "a, b:is(c, d)" at top-level commas only.
+function splitSelectors(sel) {
+  const parts = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of sel) {
+    if (ch === '(' || ch === '[') depth += 1;
+    if (ch === ')' || ch === ']') depth -= 1;
+    if (ch === ',' && depth === 0) {
+      parts.push(cur.trim());
+      cur = '';
+    } else cur += ch;
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
+}
+
+const classesIn = (sel) => [...sel.replace(/:(not|where|is|has)\([^)]*\)/g, '').matchAll(/\.((?:\\.|[A-Za-z0-9_-])+)/g)].map((m) => m[1].replace(/\\/g, ''));
+
+let kept = 0;
+let dropped = 0;
+function emit(nodes) {
+  let out = '';
+  for (const n of nodes) {
+    if (n.type === 'statement') out += `${n.head};`;
+    else if (n.type === 'at') out += `${n.head}{${n.body}}`;
+    else if (n.type === 'group') {
+      const inner = emit(n.children);
+      if (inner) out += `${n.head}{${inner}}`;
+    } else {
+      const sels = splitSelectors(n.head).filter((s) => classesIn(s).every(used));
+      if (sels.length) {
+        kept += 1;
+        out += `${sels.join(',')}{${n.body.trim()}}`;
+      } else dropped += 1;
+    }
+  }
+  return out;
+}
+
+const source = read('assets/tabler.css');
+const trimmed = emit(parse(source))
+  .replace(/\s*\n\s*/g, '')
+  .replace(/;\s*}/g, '}')
+  .replace(/:\s+/g, ':')
+  .replace(/\s*([{};,>])\s*/g, '$1');
+const banner = '/* Tabler 1.7.1 (MIT, https://tabler.io), trimmed to what Zury uses by scripts/build-assets.js */\n';
+fs.writeFileSync(path.join(ROOT, 'public/css/tabler.css'), banner + trimmed);
+console.log(`tabler.css: ${Math.round(source.length / 1024)} KB → ${Math.round(trimmed.length / 1024)} KB (${kept} rules kept, ${dropped} dropped)`);
+
+module.exports = { words, used };
+
+// ── Icons: only the ones named in the code, in a small font of their own ──
+async function icons() {
+  const subsetFont = require('subset-font');
+  const dist = path.join(ROOT, 'node_modules/@tabler/icons-webfont/dist');
+  const css = fs.readFileSync(path.join(dist, 'tabler-icons.min.css'), 'utf8');
+  const all = [...css.matchAll(/\.ti-([a-z0-9-]+):before\{content:"\\([0-9a-f]+)"\}/g)].map((m) => ({ name: m[1], code: m[2] }));
+  const keep = all.filter((i) => words.has(i.name) || words.has(`ti-${i.name}`));
+  const font = await subsetFont(fs.readFileSync(path.join(dist, 'fonts/tabler-icons.woff2')), keep.map((i) => String.fromCodePoint(parseInt(i.code, 16))).join(''), { targetFormat: 'woff2' });
+  fs.mkdirSync(path.join(ROOT, 'public/icons'), { recursive: true });
+  fs.writeFileSync(path.join(ROOT, 'public/icons/tabler-icons.woff2'), font);
+  const base = css.slice(css.indexOf('.ti{'), css.indexOf('}', css.indexOf('.ti{')) + 1);
+  const out = `/* Tabler Icons 3.49.0 (MIT, https://tabler.io/icons): the ${keep.length} icons Zury uses, by scripts/build-assets.js */\n`
+    + `@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;font-display:block;src:url("tabler-icons.woff2") format("woff2")}`
+    + base + keep.map((i) => `.ti-${i.name}:before{content:"\\${i.code}"}`).join('');
+  fs.writeFileSync(path.join(ROOT, 'public/icons/tabler-icons.css'), out);
+  console.log(`icons: ${all.length} → ${keep.length} (${Math.round(font.length / 1024)} KB font, ${Math.round(out.length / 1024)} KB css)`);
+}
+
+icons().catch((err) => {
+  console.error(err);
+  process.exitCode = 1;
+});

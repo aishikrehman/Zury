@@ -699,3 +699,25 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 .z-stop-label { font-size: .8rem; color: var(--z-fg-muted); line-height: 1.3; }
 .z-stop-next .z-stop-date { color: var(--z-fg-muted); }
 .z-stop-when { font-size: .72rem; color: var(--z-brand); font-weight: 600; }
+
+/* Home calendar: a month of days, each with its events as short bars. */
+.z-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.z-cal-head { padding: .5rem; font-size: .75rem; font-weight: 600; text-transform: uppercase; color: var(--z-fg-muted); border-bottom: 1px solid var(--z-border); text-align: center; }
+.z-cal-day { min-height: 6.5rem; padding: .35rem; border-right: 1px solid var(--z-border); border-bottom: 1px solid var(--z-border); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.z-cal-day:nth-child(7n) { border-right: 0; }
+.z-cal-empty { background: color-mix(in srgb, var(--z-border) 25%, transparent); }
+.z-cal-num { font-size: .8rem; font-weight: 600; color: var(--z-fg-muted); }
+.z-cal-today .z-cal-num { color: #fff; background: var(--z-brand); border-radius: 999px; width: 1.6rem; height: 1.6rem; display: inline-flex; align-items: center; justify-content: center; }
+.z-cal-ev { display: block; font-size: .72rem; line-height: 1.25; padding: 2px 5px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; color: inherit; }
+.z-cal-ev:hover { text-decoration: none; filter: brightness(.95); }
+.z-cal-more { font-size: .7rem; color: var(--z-fg-muted); }
+@media (max-width: 575.98px) { .z-cal-day { min-height: 3.75rem; padding: .2rem; } .z-cal-ev { font-size: 0; height: 5px; padding: 0; } .z-cal-more { display: none; } }
+
+/* Project colours: a strip on event cards, the icon tile, calendar bars. */
+.z-proj { position: relative; overflow: hidden; }
+.z-proj-strip { height: 4px; background: var(--z-proj); }
+.z-proj-icon { background: color-mix(in srgb, var(--z-proj) 14%, transparent); color: var(--z-proj); }
+.z-proj-name { color: var(--z-proj); font-weight: 600; }
+.gh-repohead-title > .ti.z-proj-tile { background: linear-gradient(135deg, var(--z-proj), color-mix(in srgb, var(--z-proj) 70%, #000)); box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--z-proj) 70%, transparent); }
+.z-cal-ev { background: color-mix(in srgb, var(--z-proj) 14%, var(--z-surface)); border-left: 3px solid var(--z-proj); }
+.z-cal-ev .ti { color: var(--z-proj); }
