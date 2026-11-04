@@ -37,8 +37,11 @@ async function people(prisma) {
   return out;
 }
 
+// The wiki page ID when the copy found it; otherwise Fountain's own article number.
+const pageKeyOf = (wiki, a) => (a.pageId ? `${wiki}:${a.pageId}` : `${wiki}:fountain-${a.id}`);
+
 const articleMeta = (wiki, a, pageUrl, createdAt) => ({
-  exists: true, wiki, pageId: a.id, ns: 0, title: a.name, url: pageUrl(wiki, a.name), entryType: 'article', creator: a.user, categories: [], createdAt,
+  exists: true, wiki, pageId: a.pageId ?? null, ns: 0, title: a.name, url: pageUrl(wiki, a.name), entryType: 'article', creator: a.user, categories: [], createdAt,
   // Measured from the live article when the copy was made.
   ...(a.words != null && { wordCount: a.words }),
   ...(a.bytes != null && { sizeBytes: a.bytes }),
@@ -71,7 +74,7 @@ async function seedFountain(prisma, users) {
     await prisma.submission.create({
       data: {
         contestId: wam25.id, participantId: who[a.user].id, submittedById: who[a.user].id, wiki: 'bnwiki', title: a.name,
-        url: pageUrl('bnwiki', a.name), pageKey: `bnwiki:${a.id}`, entryType: 'article', status,
+        url: pageUrl('bnwiki', a.name), pageKey: pageKeyOf("bnwiki", a), entryType: 'article', status,
         score: decided ? reviews.reduce((s, r) => s + r.points, 0) / reviews.length : null,
         metadata: JSON.stringify(articleMeta('bnwiki', a, pageUrl, a.dateAdded)),
         validation: JSON.stringify({ errors: [], warnings: [] }), checkedAt: submittedAt, submittedAt,
@@ -106,7 +109,7 @@ async function seedFountain(prisma, users) {
     const submittedAt = new Date(start + ((i * 7919) % 1000) / 1000 * span);
     return {
       contestId: wam26.id, participantId: who[a.user].id, submittedById: who[a.user].id, wiki, title: a.name,
-      url: pageUrl(wiki, a.name), pageKey: `${wiki}:${a.id}`, entryType: 'article', status: i % 9 === 4 ? 'pending' : 'validated',
+      url: pageUrl(wiki, a.name), pageKey: pageKeyOf(wiki, a), entryType: 'article', status: i % 9 === 4 ? 'pending' : 'validated',
       metadata: JSON.stringify(articleMeta(wiki, a, pageUrl, new Date(submittedAt.getTime() - 3600000).toISOString())),
       validation: JSON.stringify({ errors: [], warnings: [] }), checkedAt: submittedAt, submittedAt,
     };

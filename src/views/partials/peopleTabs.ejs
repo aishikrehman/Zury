@@ -1,0 +1,9 @@
+<%# People and the jury's assignments live together under one tab of the event. %>
+<% const showAssign = settings.juryReviewEnabled && EVENT_TYPES[contest.type].entries !== false && (can('assignJury') || can('manageAssignments')); %>
+<% const showPeople = can('manageParticipants') || can('manageJury') || can('manageEvent'); %>
+<% if (showAssign && showPeople) { %>
+  <ul class="nav nav-pills mb-3">
+    <li class="nav-item"><a class="nav-link<%= tab === 'people' ? ' active' : '' %>" href="<%= base %>/participants"><i class="ti ti-users me-1"></i><%= t('People') %></a></li>
+    <li class="nav-item"><a class="nav-link<%= tab === 'assignments' ? ' active' : '' %>" href="<%= base %>/assignments"><i class="ti ti-arrows-split me-1"></i><%= t('Assignments') %></a></li>
+  </ul>
+<% } %>

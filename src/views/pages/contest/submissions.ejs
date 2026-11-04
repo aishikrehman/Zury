@@ -21,6 +21,8 @@
   };
   const canManage = can('manageEvent');
   const canReview = (s) => reviewWikis === null || (reviewWikis || []).includes(s.wiki);
+  const reviewable = (s) => juryOn && currentUser && canReview(s) && ['pending', 'validated', 'under_review'].includes(s.status);
+  const bulk = juryOn && currentUser && reviewWikis !== undefined && (reviewWikis === null || reviewWikis.length > 0) && result.items.some(reviewable);
   const hidden = `<input type="hidden" name="_csrf" value="${h(csrfToken)}"><input type="hidden" name="back" value="${h(back)}">`;
 %>
 <%- include('../../partials/contestHeader', { active: 'submissions' }) %>
@@ -79,10 +81,11 @@
     <% } else { %>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><% if (settings.wordCountEnabled) { %><%- sortHead('words', t('Words'), 'text-end') %><% } %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
+          <thead><tr><% if (bulk) { %><th class="w-1"><input class="form-check-input m-0" type="checkbox" data-check-all="bulk-ids" aria-label="<%= t('Select all') %>"></th><% } %><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><% if (settings.wordCountEnabled) { %><%- sortHead('words', t('Words'), 'text-end') %><% } %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
           <tbody>
             <% result.items.forEach((s) => { const meta = JSON.parse(s.metadata); %>
               <tr>
+                <% if (bulk) { %><td><% if (reviewable(s)) { %><input class="form-check-input m-0" type="checkbox" name="ids" value="<%= s.id %>" form="bulk-review" data-check="bulk-ids" aria-label="<%= t('Select') %> <%= s.title %>"><% } %></td><% } %>
                 <td>
                   <div class="d-flex align-items-center">
                     <% if (meta.file && meta.file.thumbUrl) { %>
@@ -133,6 +136,21 @@
           </tbody>
         </table>
       </div>
+      <% if (bulk) { %>
+        <form method="post" action="<%= base %>/review/bulk" id="bulk-review" class="card-footer z-bulkbar" data-bulk-bar="bulk-ids" hidden>
+          <%- hidden %>
+          <span class="fw-medium" data-bulk-count></span>
+          <% marks.forEach((m) => { %>
+            <select class="form-select form-select-sm w-auto" name="mark:<%= m.name %>" aria-label="<%= m.name %>" required>
+              <option value=""><%= m.name %>…</option>
+              <% m.values.forEach((v) => { %><option value="<%= v.label %>"><%= v.label %> (<%= v.points %>)</option><% }) %>
+            </select>
+          <% }) %>
+          <input class="form-control form-control-sm w-auto flex-fill" name="comment" maxlength="2000" placeholder="<%= t('Comment (optional)') %>" aria-label="<%= t('Comment (optional)') %>">
+          <button class="btn btn-sm btn-success" type="submit" name="decision" value="accept"><i class="ti ti-check me-1"></i><%= t('Accept selected') %></button>
+          <button class="btn btn-sm btn-danger" type="submit" name="decision" value="reject"><i class="ti ti-x me-1"></i><%= t('Reject selected') %></button>
+        </form>
+      <% } %>
       <% if (pages > 1) { %>
         <div class="card-footer d-flex align-items-center">
           <p class="m-0 text-secondary"><%= t('Page {page} of {pages}', { page: result.page, pages }) %> · <%= tn('{n} entry', '{n} entries', result.total) %></p>
@@ -145,3 +163,4 @@
   </div>
 </div>
 </div>
+

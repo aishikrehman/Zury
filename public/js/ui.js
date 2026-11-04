@@ -36,3 +36,21 @@ document.addEventListener('input', (e) => {
     if (next && !next.dataset.filterText && next.classList.contains('collapse')) next.hidden = hide;
   });
 });
+
+
+// Row checkboxes with a "select all" box and a bar that appears when something is picked.
+document.addEventListener('change', (e) => {
+  const box = e.target;
+  if (!(box instanceof HTMLInputElement)) return;
+  const group = box.dataset.checkAll || box.dataset.check;
+  if (!group) return;
+  const boxes = [...document.querySelectorAll(`[data-check="${group}"]`)];
+  if (box.dataset.checkAll) boxes.forEach((b) => { b.checked = box.checked; });
+  const n = boxes.filter((b) => b.checked).length;
+  const bar = document.querySelector(`[data-bulk-bar="${group}"]`);
+  if (bar) {
+    bar.hidden = n === 0;
+    const count = bar.querySelector('[data-bulk-count]');
+    if (count) count.textContent = zt('{n} selected', { n });
+  }
+});

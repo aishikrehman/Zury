@@ -991,5 +991,16 @@
   "Only this participant": "শুধু এই অংশগ্রহণকারী",
   "{n} accepted": "{n} গৃহীত",
   "Details and rules": "বিস্তারিত ও নিয়মাবলী",
-  "Participant limit": "অংশগ্রহণকারীর সীমা"
+  "Participant limit": "অংশগ্রহণকারীর সীমা",
+  "Accept selected": "বাছাইকৃতগুলো গ্রহণ করুন",
+  "Comment (optional)": "মন্তব্য (ঐচ্ছিক)",
+  "Reject selected": "বাছাইকৃতগুলো বাতিল করুন",
+  "Results and statistics": "ফলাফল ও পরিসংখ্যান",
+  "Select": "বাছাই",
+  "Select all": "সব বাছাই",
+  "The ranking is published when the jury has finished.": "জুরির কাজ শেষ হলে র‍্যাংকিং প্রকাশ করা হবে।",
+  "{n} entries reviewed.": "{n}টি জমা পর্যালোচনা করা হয়েছে।",
+  "{n} jury member": "{n} জন জুরি",
+  "{n} jury members": "{n} জন জুরি",
+  "{n} selected": "{n}টি বাছাই করা হয়েছে"
 }

@@ -83,7 +83,11 @@ test('participants cannot review; the jury queue lists their events', async () =
 });
 
 test('results are private until published, then public', async () => {
-  assert.equal((await t.request('/wam/2026/results')).status, 403);
+  // Statistics are public here, so visitors see the page, but not the ranking.
+  const before = await t.request('/wam/2026/results');
+  assert.equal(before.status, 200);
+  assert.doesNotMatch(before.body, /Leaderboard/);
+  assert.match(before.body, /The ranking is published when the jury has finished/);
   const organizer = await session('Organizer');
   const page = await organizer.get('/wam/2026/results');
   assert.equal(page.status, 200);
@@ -205,4 +209,30 @@ test('submissions table: sortable columns, wiki only on the whole event, quick a
   assert.equal((await t.prisma.submission.findUnique({ where: { id: entry.id } })).status, 'disqualified');
   const outside = await organizer.post(`/wam/2026/submissions/${entry.id}/status`, { status: 'validated', back: 'https://example.org/' });
   assert.equal(outside.location, `/wam/2026/submissions/${entry.id}`, 'no leaving the event');
+});
+
+test('review links on the submissions page, bulk verdicts, and results with statistics', async () => {
+  const bn = await session('Bn Admin');
+  const list = await bn.get('/wam/2026/bn/submissions?status=validated');
+  assert.match(list.body, /href="\/wam\/2026\/bn\/review\?entry=\d+"/, 'the gavel opens the review page');
+  const ids = [...list.body.matchAll(/name="ids" value="(\d+)"/g)].map((m) => m[1]).slice(0, 2);
+  assert.equal(ids.length, 2, 'rows can be picked for a bulk verdict');
+  const c = await wam();
+  const res = await bn.post('/wam/2026/bn/review/bulk', { ids, decision: 'accept', 'mark:Accepted': 'Yes', 'mark:Quality': '2', back: '/wam/2026/bn/submissions?status=validated' });
+  assert.equal(res.location, '/wam/2026/bn/submissions?status=validated');
+  const reviewed = await t.prisma.review.count({ where: { contestId: c.id, submissionId: { in: ids.map(Number) }, jurorId: ids && (await t.prisma.user.findFirst({ where: { username: 'Tanvir Hossain' } })).id } });
+  assert.equal(reviewed, 2);
+
+  // An English entry is not the bn jury's to judge, even in bulk.
+  const en = await t.prisma.submission.findFirst({ where: { contestId: c.id, wiki: 'enwiki', status: 'validated' } });
+  await bn.post('/wam/2026/bn/review/bulk', { ids: [String(en.id)], decision: 'accept', 'mark:Accepted': 'Yes', 'mark:Quality': '2' });
+  assert.equal(await t.prisma.review.count({ where: { submissionId: en.id } }), 0);
+
+  const organizer = await session('Organizer');
+  const results = await organizer.get('/wam/2026/results');
+  assert.match(results.body, /Results and statistics/);
+  assert.match(results.body, /id="tab-top"/, 'top participants are with the results');
+  assert.doesNotMatch((await organizer.get('/wam/2026')).body, /id="tab-top"/, 'not repeated on the overview');
+  const people = await organizer.get('/wam/2026/participants');
+  assert.match(people.body, /href="\/wam\/2026\/assignments"/, 'assignments sit under People');
 });

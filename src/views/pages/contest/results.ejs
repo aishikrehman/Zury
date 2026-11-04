@@ -7,7 +7,7 @@
 
   <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <div>
-      <div class="h3 m-0"><%= t('Results') %></div>
+      <div class="h3 m-0"><%= t('Results and statistics') %></div>
       <div class="text-secondary small">
         <% if (published) { %><i class="ti ti-world me-1"></i><%= t('Published {date}', { date: formatDateTime(published, contest.timezone) }) %>
         <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and jury see this page.') %><% } %>
@@ -35,7 +35,9 @@
     </div>
   <% } %>
 
-  <% if (!rows.length) { %>
+  <% if (!showRanking) { %>
+    <div class="alert alert-info"><i class="ti ti-lock"></i><div><%= t('The ranking is published when the jury has finished.') %></div></div>
+  <% } else if (!rows.length) { %>
     <div class="card"><%- include('../../partials/emptyArt', { title: t('No results yet'), text: t('The ranking fills in as entries are decided.') }) %></div>
   <% } else { %>
     <% if (podium.length) { %>
@@ -70,5 +72,7 @@
       </div>
     </div>
   <% } %>
+
+  <% if (stats) { %><div class="mt-3"><%- include('../../partials/eventStats', { stats, part: 'breakdown' }) %></div><% } %>
 </div>
 </div>

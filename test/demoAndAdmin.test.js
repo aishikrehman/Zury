@@ -97,14 +97,13 @@ test('each demo user gets exactly the access their roles allow', async () => {
   }
 });
 
-test('overrides show up in the event access panel', async () => {
+test('permission changes are managed on People, not listed on the overview', async () => {
   const wlm = `/contest/${ids.contest['wlm-bangladesh-2026']}`;
   const juror = await t.request(wlm, { cookie: await loginAs(NAME.Juror) });
-  assert.match(juror.body, /exportData/);
-  const editathon = `/contest/${ids.contest['liberation-war-editathon']}`;
-  const organizer = await t.request(editathon, { cookie: await loginAs(NAME.Organizer) });
-  assert.match(organizer.body, /− sendMassMessage/);
-  assert.doesNotMatch(organizer.body, /Send MassMessage campaigns/, 'denied permission is not listed as held');
+  assert.doesNotMatch(juror.body, /exportData/, 'no permission lists on the overview');
+  const people = await t.request(`${wlm}/participants`, { cookie: await loginAs(NAME.Organizer) });
+  assert.match(people.body, /permission change/, 'the juror row shows their permission change');
+  assert.match(people.body, /name="permission"/, 'and it can be managed from the row');
 });
 
 test('platform admins grant and revoke roles with an audit trail', async () => {

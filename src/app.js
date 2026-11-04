@@ -139,6 +139,9 @@ app.use(async (req, res, next) => {
     Object.assign(res.locals, {
       wikiName: (db) => (db ? names.wiki(db).name : ''),
       langName: (code) => (code ? names.language(code).name : ''),
+      // The name in its own language when there is one ("বাংলা উইকিপিডিয়া").
+      wikiLocal: (db) => (db ? names.wiki(db).localName || names.wiki(db).name : ''),
+      langLocal: (code) => (code ? names.language(code).localName || names.language(code).name : ''),
       // Plain text: "Bangla Wikipedia · বাংলা উইকিপিডিয়া".
       wikiText: (db) => (db ? both(names.wiki(db)) : ''),
       langText: (code) => (code ? both(names.language(code)) : ''),

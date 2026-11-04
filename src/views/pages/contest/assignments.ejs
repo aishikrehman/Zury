@@ -2,8 +2,9 @@
   const jurorName = Object.fromEntries(overview.jurors.map((j) => [j.id, j.username]));
   const needs = (e) => overview.required - e.assignees.length;
 %>
-<%- include('../../partials/contestHeader', { active: 'assignments' }) %>
+<%- include('../../partials/contestHeader', { active: 'people' }) %>
 <div class="page-body"><div class="container-xl">
+  <%- include('../../partials/peopleTabs', { tab: 'assignments' }) %>
 
   <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <div>

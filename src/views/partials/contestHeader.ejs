@@ -15,10 +15,12 @@
   if (typeDef.entries !== false && settings.juryReviewEnabled && (can('reviewAssignedEntry') || (scope.wikisWith && scope.wikisWith('reviewAssignedEntry').length))) {
     tabs.push(['review', t('Review'), '/review', 'gavel']);
   }
-  if (typeDef.entries !== false && settings.juryReviewEnabled && (can('assignJury') || can('manageAssignments'))) tabs.push(['assignments', t('Assignments'), '/assignments', 'arrows-split']);
-  if (typeDef.entries !== false && (contest.resultsPublishedAt || can('reviewEvent') || can('manageEvent'))) tabs.push(['results', t('Results'), '/results', 'trophy']);
+  if (typeDef.entries !== false && (contest.resultsPublishedAt || can('reviewEvent') || can('manageEvent') || settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['results', t('Results and statistics'), '/results', 'chart-bar']);
   if (settings.appealsEnabled && (can('reviewAppeal') || can('manageAppeals'))) tabs.push(['appeals', t('Appeals'), '/appeals', 'scale']);
+  // People and the jury's assignments share one tab.
+  const canAssign = typeDef.entries !== false && settings.juryReviewEnabled && (can('assignJury') || can('manageAssignments'));
   if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', t('People'), '/participants', 'users']);
+  else if (canAssign) tabs.push(['people', t('Assignments'), '/assignments', 'arrows-split']);
   if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'settings']);
   if (can('manageEvent')) tabs.push(['activity', t('Activity'), '/activity', 'history']);
   const canSubmit = currentUser && contest.status === 'active' && active !== 'submit' && typeDef.entries !== false;
@@ -43,7 +45,7 @@
       <div class="gh-repohead-actions">
         <% if (allWikis.length > 1) { %>
           <div class="dropdown">
-            <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-world me-1"></i><%= wikiScope ? '/' + wikiScope.code : t('All wikis') %></button>
+            <button class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-world me-1"></i><%= wikiScope ? '/' + wikiScope.code : t('All wikis') %></button>
             <div class="dropdown-menu dropdown-menu-end">
               <a class="dropdown-item<%= wikiScope ? '' : ' active' %>" href="<%= eventBase %>"><%= t("All wikis") %></a>
               <div class="dropdown-divider"></div>
@@ -54,11 +56,26 @@
           </div>
         <% } %>
         <% if (canSubmit) { %>
-          <a href="<%= base %>/submit" class="btn btn-sm btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
+          <a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
         <% } %>
       </div>
     </div>
-    <% if (contest.title && series) { %><p class="text-secondary mt-n2 mb-3"><%= contest.title %></p><% } %>
+    <% if (contest.title && series) { %><p class="gh-repohead-sub"><%= contest.title %></p><% } %>
+    <%# The event at a glance: who runs it, where, in what language, the jury and how to reach them. %>
+    <% const shownWikis = wikiScope ? [wikiScope] : eventWikis; %>
+    <ul class="z-facts">
+      <% if (contest.organizingCommunity) { %><li title="<%= t('Organized by') %>"><i class="ti ti-users-group"></i><%= contest.organizingCommunity %></li><% } %>
+      <li title="<%= t('Wikis') %>"><i class="ti ti-world"></i><%= shownWikis.length ? shownWikis.map((w) => wikiLocal(w.wiki)).join(', ') : wikiLocal(contest.primaryWiki) %></li>
+      <% if (contest.language) { %><li title="<%= t('Language') %>"><i class="ti ti-language"></i><%= langLocal(contest.language) %></li><% } %>
+      <% if (headerPeople && settings.juryReviewEnabled && typeDef.entries !== false) { %><li title="<%= t('Jury') %>"><i class="ti ti-gavel"></i><%= tn('{n} jury member', '{n} jury members', headerPeople.jury) %></li><% } %>
+      <% if (contest.contactInfo) { %><li title="<%= t('Contact') %>"><i class="ti ti-message-circle"></i><span class="text-truncate"><%= contest.contactInfo %></span></li><% } %>
+      <% if (headerPeople && headerPeople.organizers.length) { %>
+        <li title="<%= t('Organizers') %>">
+          <span class="avatar-list avatar-list-stacked"><% headerPeople.organizers.forEach((u) => { %><a href="<%= userPath(u) %>" class="avatar avatar-xs" title="<%= u %>"><%= u.charAt(0).toUpperCase() %></a><% }) %></span>
+          <span class="text-secondary"><%= t('Organizers') %></span>
+        </li>
+      <% } %>
+    </ul>
     <nav class="nav nav-tabs" aria-label="<%= t('Event') %>">
       <% tabs.forEach(([key, label, suffix, icon]) => { %>
         <a class="nav-link<%= active === key ? ' active' : '' %>" href="<%= base %><%= suffix %>"<%= active === key ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %>"></i><%= label %></a>

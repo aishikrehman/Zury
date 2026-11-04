@@ -33,7 +33,7 @@ async function startTestApp(extraEnv = {}) {
         ...(cookie && { Cookie: cookie }),
         ...(form && { 'Content-Type': 'application/x-www-form-urlencoded' }),
       },
-      body: form && new URLSearchParams(form).toString(),
+      body: form && new URLSearchParams(Object.entries(form).flatMap(([k, v]) => [].concat(v).map((x) => [k, x]))).toString(),
     });
     const setCookie = res.headers.getSetCookie().find((c) => c.startsWith('zury.sid='));
     return {

@@ -156,6 +156,8 @@ async function index(req, res, next) {
       // The wiki under each title only helps when entries come from several wikis.
       showWiki: !req.wikiScope && (req.eventWikis || []).length > 1,
       reviewWikis: reviewWikis(req),
+      marks: require('../services/reviewService').markScheme(req.eventSettings),
+      juryOn: !!req.settings.juryReviewEnabled,
       withdrawable: submissionService.WITHDRAWABLE,
       back: req.originalUrl,
     });

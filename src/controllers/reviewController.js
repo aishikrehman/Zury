@@ -83,19 +83,54 @@ async function save(req, res, next) {
   }
 }
 
-// Results: public once published; organizers and jury see them before that.
+// One verdict for many entries, chosen on the submissions table. Each entry is
+// checked as if reviewed alone (the person's wikis, assignments, own entries).
+async function bulkSave(req, res, next) {
+  const ids = [].concat(req.body.ids || []).map(Number).filter(Boolean).slice(0, 200);
+  const marks = {};
+  for (const [key, value] of Object.entries(req.body)) if (key.startsWith('mark:')) marks[key.slice(5)] = value;
+  let saved = 0;
+  const problems = new Set();
+  try {
+    for (const id of ids) {
+      const entry = await reviewService.entryForReview(req.contest.id, id);
+      if (!entry || !canJudge(req, entry)) { problems.add('Some entries are not yours to review.'); continue; }
+      try {
+        await reviewService.saveReview({ actor: req.user, contest: req.contest, settings: req.eventSettings, submission: entry, decision: req.body.decision, marks, comment: req.body.comment });
+        saved += 1;
+      } catch (err) {
+        if (!(err instanceof ReviewError)) throw err;
+        problems.add(err.message);
+      }
+    }
+    const text = [saved ? req.t('{n} entries reviewed.', { n: saved }) : '', ...[...problems].map((m) => req.t(m))].filter(Boolean).join(' ');
+    if (text) req.flash(problems.size ? (saved ? 'warning' : 'danger') : 'success', text);
+    const back = typeof req.body.back === 'string' && req.body.back.startsWith(`${req.base}/`) && !/[\r\n]/.test(req.body.back) ? req.body.back : `${req.base}/submissions`;
+    res.redirect(back);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Results and statistics: the ranking is public once published (organizers and jury
+// see it before that); the statistics follow the event's statistics setting.
 async function results(req, res, next) {
   try {
     const insider = req.permissions.has('reviewEvent') || req.permissions.has('manageEvent');
-    if (!req.contest.resultsPublishedAt && !insider) {
+    const showRanking = !!req.contest.resultsPublishedAt || insider;
+    const showStats = req.settings.publicStatisticsEnabled || req.permissions.has('viewStatistics');
+    if (!showRanking && !showStats) {
       const err = new Error('The results have not been published yet.');
       err.status = 403;
       return next(err);
     }
+    const wiki = req.wikiScope?.wiki;
     res.render('pages/contest/results', {
-      title: `Results — ${req.contest.title}`,
-      rows: await reviewService.leaderboard({ contest: req.contest, settings: req.eventSettings, wiki: req.wikiScope?.wiki }),
-      progress: insider ? await reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }) : null,
+      title: `Results and statistics — ${req.contest.title}`,
+      rows: showRanking ? await reviewService.leaderboard({ contest: req.contest, settings: req.eventSettings, wiki }) : [],
+      showRanking,
+      progress: insider ? await reviewService.progress(req.contest.id, { wiki }) : null,
+      stats: showStats ? await require('../services/statsService').eventStats(req.contest, { wiki }) : null,
       published: req.contest.resultsPublishedAt,
       showNames: !req.settings.anonymousParticipants || insider || !!req.contest.resultsPublishedAt,
     });
@@ -232,4 +267,4 @@ const releaseJuror = assignmentAction(async (req) => {
   return req.t('{n} unreviewed entries taken back.', { n });
 });
 
-module.exports = { assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+module.exports = { bulkSave, assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };

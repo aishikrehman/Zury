@@ -518,7 +518,7 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
 .gh-repohead-title .sep { color: var(--z-border-strong); font-weight: 300; }
 .gh-repohead-title .badge { margin-left: 0.25rem; }
 .gh-repohead-actions { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.gh-repohead > .container-xl > p { margin-left: 2.75rem; }
+.gh-repohead-sub { margin: -0.15rem 0 0.35rem 2.75rem; color: var(--z-fg-muted); font-size: 0.95rem; }
 .gh-repohead .nav-tabs { border-bottom: 0; margin-top: 0.75rem !important; }
 
 /* ── Event cards: a colour per event type ─────────────────────────────────── */
@@ -564,7 +564,7 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
   .z-brand span, .z-lang-code { display: none; }
   .z-topbar .btn-primary .ti { margin: 0 !important; }
   .gh-repohead-title { font-size: 1.15rem; }
-  .gh-repohead > .container-xl > p { margin-left: 0; }
+  .gh-repohead-sub, .z-facts { margin-left: 0 !important; }
 }
 
 /* ── Review window ───────────────────────────────────────────────────────── */
@@ -629,3 +629,11 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 #statistics { scroll-margin-top: 6rem; }
 /* People page: the per-person panel opened from a row. */
 .z-person-panel > td { background: var(--z-bg-subtle, rgba(0, 0, 0, .02)); padding: 1rem 1.25rem; }
+
+/* Event header facts: one calm line of icons and short text under the title. */
+.z-facts { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1.1rem; margin: 0.2rem 0 0 2.75rem; padding: 0; font-size: 0.85rem; color: var(--z-fg-muted); }
+.z-facts li { display: inline-flex; align-items: center; gap: 0.35rem; max-width: 22rem; min-width: 0; }
+.z-facts .ti { font-size: 1rem; opacity: 0.7; }
+.z-facts .avatar-list .avatar { width: 1.35rem; height: 1.35rem; font-size: 0.65rem; }
+
+.z-bulkbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; position: sticky; bottom: 0; z-index: 2; background: var(--z-surface, #fff); box-shadow: 0 -6px 16px -10px rgba(0,0,0,.25); }

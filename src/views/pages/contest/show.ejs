@@ -90,22 +90,6 @@
               <% if (!scope.eventRoles.length) { %><span class="text-secondary"><%= t("none") %></span><% } %>
               <% scope.eventRoles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r].label %></span><% }) %>
             </p>
-            <p class="small mb-2"><strong><%= t("Platform authority here:") %></strong>
-              <% const here = scope.platformRoles.filter((r) => r !== 'local-admin' || scope.isLocalAdminHere).filter((r) => PLATFORM_ROLES[r].source === 'wikimedia'); %>
-              <% if (!here.length) { %><span class="text-secondary"><%= t("none") %></span><% } %>
-              <% here.forEach((r) => { %><span class="badge bg-orange-lt me-1"><%= PLATFORM_ROLES[r].label %></span><% }) %>
-            </p>
-            <% if (scope.overrides.length) { %>
-              <p class="small mb-2"><strong><%= t("Overrides:") %></strong>
-                <% scope.overrides.forEach((o) => { %><span class="badge bg-<%= o.allowed ? 'green' : 'red' %>-lt me-1"><%= o.allowed ? '+' : '−' %> <%= o.permission %></span><% }) %>
-              </p>
-            <% } %>
-            <details class="small">
-              <summary><%= tn('{n} permission', '{n} permissions', permissionList.length) %></summary>
-              <ul class="mt-2 mb-0 ps-3">
-                <% permissionList.forEach((p) => { %><li><%= permissionLabels[p] %> <code class="text-secondary"><%= p %></code></li><% }) %>
-              </ul>
-            </details>
           </div>
         <% } %>
       </div>
@@ -114,7 +98,7 @@
   </div>
 
   <%# ── Numbers ── %>
-  <% if (stats) { %><%- include('../../partials/eventStats', { stats }) %><% } %>
+  <% if (stats) { %><%- include('../../partials/eventStats', { stats, part: 'summary' }) %><% } %>
 
   <%# ── Wikis, then the details and rules in one card ── %>
   <div class="row row-cards">
@@ -142,22 +126,8 @@
         </div>
       <% } %>
       <div class="card">
-            <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t("Details and rules") %></h3></div>
-            <div class="card-body">
-              <div class="datagrid">
-                <% if (contest.organizingCommunity) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Organized by") %></div><div class="datagrid-content"><%= contest.organizingCommunity %></div></div><% } %>
-                <div class="datagrid-item"><div class="datagrid-title"><%= t("Wikis") %></div><div class="datagrid-content"><%- wikiScope ? wikiLabel(wikiScope.wiki) : (eventWikis.length ? eventWikis.map((w) => wikiLabel(w.wiki)).join('<br>') : wikiLabel(contest.primaryWiki)) %></div></div>
-                <div class="datagrid-item"><div class="datagrid-title"><%= t("Language") %></div><div class="datagrid-content"><%- langLabel(contest.language) %></div></div>
-                <% if (settings.participantLimit) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Participant limit") %></div><div class="datagrid-content"><%= formatNumber(settings.participantLimit) %></div></div><% } %>
-                <% if (settings.juryReviewEnabled) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Jury") %></div><div class="datagrid-content"><%= tn('{n} member', '{n} members', jury.length) %></div></div><% } %>
-                <% if (contest.contactInfo) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Contact") %></div><div class="datagrid-content"><%= contest.contactInfo %></div></div><% } %>
-                <div class="datagrid-item"><div class="datagrid-title"><%= t("Organizers") %></div><div class="datagrid-content">
-                  <% if (!organizers.length) { %><span class="text-secondary"><%= t("None listed") %></span><% } %>
-                  <div class="avatar-list avatar-list-stacked"><% organizers.forEach((u) => { %><a href="<%= userPath(u.username) %>" class="avatar avatar-xs" title="<%= u.username %>"><%= u.username.charAt(0).toUpperCase() %></a><% }) %></div>
-                </div></div>
-              </div>
-            </div>
-            <div class="card-body border-top pb-0"><div class="subheader"><%= t("Rules") %></div></div>
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t("Rules") %></h3></div>
+
         <div class="list-group list-group-flush">
           <div class="list-group-item py-2"><%= PARTICIPATION_MODES[settings.participationMode] %></div>
           <% if (settings.minAccountAgeDays) { %><div class="list-group-item py-2"><%= t('Wikimedia account at least {n} days old', { n: settings.minAccountAgeDays }) %></div><% } %>

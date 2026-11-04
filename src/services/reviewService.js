@@ -120,10 +120,8 @@ async function saveReview({ actor, contest, settings, submission, decision, mark
         },
       });
     }
-    await audit.record(
-      { actorId: actor.id, contestId: contest.id, action: 'submission.reviewed', entityType: 'Submission', entityId: submission.id, details: { title: submission.title, decision, points: scored.points } },
-      tx,
-    );
+    // No activity-log row per review: the review and the entry's history already record it,
+    // and big events have hundreds of thousands of them.
     return { status, decided: status !== 'under_review' };
   });
 }
