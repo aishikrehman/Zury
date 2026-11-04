@@ -7,5 +7,6 @@ const router = express.Router();
 router.get('/dashboard', requireAuth, accountController.dashboard);
 router.get('/settings', requireAuth, accountController.showSettings);
 router.post('/settings', requireAuth, accountController.updateSettings);
+router.post('/settings/avatar', requireAuth, accountController.updateAvatar);
 
 module.exports = router;

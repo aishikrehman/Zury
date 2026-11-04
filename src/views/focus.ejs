@@ -23,7 +23,7 @@
       <div class="fw-bold text-truncate"><%= typeof contest !== 'undefined' ? contest.title : '' %></div>
       <div class="text-secondary small text-truncate"><%= t('Review') %><%= typeof wikiScope !== 'undefined' && wikiScope ? ' · ' + wikiLocal(wikiScope.wiki) : '' %></div>
     </div>
-    <% if (currentUser) { %><span class="z-avatar" title="<%= currentUser.username %>"><%= currentUser.username.charAt(0).toUpperCase() %></span><% } %>
+    <% if (currentUser) { %><%- include('partials/avatar', { u: currentUser, size: 'sm' }) %><% } %>
   </header>
   <main id="content" class="z-focus-main">
     <% if (typeof flash !== 'undefined' && flash) { %>

@@ -9,7 +9,7 @@
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-3 align-items-center">
-      <div class="col-auto"><span class="avatar avatar-lg rounded"><%= profileUser.username.charAt(0).toUpperCase() %></span></div>
+      <div class="col-auto"><%- include('../../partials/avatar', { u: profileUser, size: 'lg' }) %></div>
       <div class="col">
         <div class="page-pretitle"><%= t("Profile") %></div>
         <h2 class="page-title"><%= profileUser.username %></h2>
@@ -27,7 +27,7 @@
       <div class="col-lg-4">
         <div class="card">
           <div class="card-body p-4 text-center">
-            <span class="avatar avatar-xl mb-3 rounded"><%= profileUser.username.charAt(0).toUpperCase() %></span>
+            <div class="mb-3"><%- include('../../partials/avatar', { u: profileUser, size: 'xl' }) %></div>
             <h3 class="m-0 mb-1"><%= profileUser.username %></h3>
             <div class="text-secondary"><%- profileUser.homeWiki ? wikiLabel(profileUser.homeWiki) : 'Wikimedia' %></div>
           </div>

@@ -35,7 +35,7 @@
       <% if (currentUser) { %>
         <div class="dropdown">
           <button class="z-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Open user menu') %>">
-            <span class="z-avatar"><%= currentUser.username.charAt(0).toUpperCase() %></span>
+            <%- include('./avatar', { u: currentUser, size: 'sm' }) %>
             <span class="d-none d-md-inline text-truncate"><%= currentUser.username %></span>
             <i class="ti ti-chevron-down d-none d-md-inline"></i>
           </button>

@@ -109,7 +109,7 @@
             <tr data-filter-text="<%= u.username.toLowerCase() %>">
               <td>
                 <div class="d-flex align-items-center">
-                  <span class="avatar avatar-sm me-2"><%= u.username.charAt(0).toUpperCase() %></span>
+                  <span class="me-2"><%- include('../../partials/avatar', { u, size: 'sm' }) %></span>
                   <div class="min-w-0">
                     <a href="<%= userPath(u.username) %>" class="fw-medium"><%= u.username %></a>
                     <div class="text-secondary small"><%= u.homeWiki ? wikiName(u.homeWiki) : '' %></div>

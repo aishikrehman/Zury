@@ -1,0 +1,4 @@
+<%# A person's picture from Commons, or their first letter. u: { username, avatarUrl }, size: xs | sm | md | lg | xl. %>
+<% const sz = typeof size !== 'undefined' ? size : 'sm'; %>
+<% if (u.avatarUrl) { %><span class="avatar avatar-<%= sz %> rounded-circle" style="background-image: url('<%= u.avatarUrl %>')" title="<%= u.username %>" role="img" aria-label="<%= u.username %>"></span>
+<% } else { %><span class="avatar avatar-<%= sz %> rounded-circle bg-primary-lt" title="<%= u.username %>"><%= u.username.charAt(0).toUpperCase() %></span><% } %>

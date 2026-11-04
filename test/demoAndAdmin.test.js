@@ -165,3 +165,23 @@ test('maintenance: superusers see the database, download a backup without sessio
   assert.equal(clean.status, 302);
   await t.prisma.userGlobalRole.deleteMany({ where: { userId: user.id, role: 'superuser' } });
 });
+
+test('superusers change what a role may do on the Permissions page; Superuser stays whole', async () => {
+  const user = await t.prisma.user.findFirst({ where: { username: NAME['Platform Admin'] } });
+  await t.prisma.userGlobalRole.create({ data: { userId: user.id, role: 'superuser' } });
+  const cookie = await loginAs(NAME['Platform Admin']);
+  const page = await t.request('/admin/permissions', { cookie });
+  assert.match(page.body, /z-perm-cell/, 'cells can be switched');
+  const csrf = csrfFrom(page.body);
+  const { EVENT_ROLES } = require('../src/permissions/registry');
+  assert.ok(!EVENT_ROLES.jury.permissions.includes('exportData'));
+  await t.request('/admin/permissions', { cookie, method: 'POST', form: { _csrf: csrf, kind: 'event', role: 'jury', permission: 'exportData', allowed: '1' } });
+  assert.ok(EVENT_ROLES.jury.permissions.includes('exportData'), 'applies at once');
+  assert.equal(await t.prisma.rolePermissionChange.count(), 1);
+  await t.request('/admin/permissions', { cookie, method: 'POST', form: { _csrf: csrf, kind: 'platform', role: 'superuser', permission: 'maintainSite', allowed: '0' } });
+  const { PLATFORM_ROLES } = require('../src/permissions/registry');
+  assert.ok(PLATFORM_ROLES.superuser.permissions.includes('maintainSite'), 'superuser cannot be changed');
+  await t.request('/admin/permissions/reset', { cookie, method: 'POST', form: { _csrf: csrf } });
+  assert.ok(!EVENT_ROLES.jury.permissions.includes('exportData'), 'back to the built-in roles');
+  await t.prisma.userGlobalRole.deleteMany({ where: { userId: user.id, role: 'superuser' } });
+});

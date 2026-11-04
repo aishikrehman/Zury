@@ -32,6 +32,8 @@ async function trackingSweep() {
   }
 }
 
+// Superusers' changes to the roles apply from the first request.
+require('./services/rolePermissionService').load().catch((err) => console.error('Role permissions not loaded:', err.message));
 const server = app.listen(env.port, () => {
   console.log(`Zury is running at http://127.0.0.1:${env.port}`);
   ensureFresh()

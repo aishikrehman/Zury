@@ -1,50 +1,54 @@
+<%# Everyone who has used Zury: who they are, their roles, when they last came, and a menu to change Zury roles. %>
 <%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Users') }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="card">
-      <div class="card-header">
-        <h3 class="card-title"><%= t("All users") %></h3>
-        <div class="card-actions">
-          <form method="get" action="/admin/users">
-            <div class="input-icon">
-              <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-              <input class="form-control" type="search" name="q" value="<%= q %>" placeholder="<%= t("Search usernames") %>" aria-label="<%= t("Search usernames") %>">
-            </div>
-          </form>
-        </div>
+      <div class="card-header flex-wrap gap-2">
+        <form method="get" action="/admin/users" class="d-flex flex-wrap gap-2 w-100">
+          <div class="input-icon flex-fill" style="max-width: 22rem">
+            <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+            <input class="form-control" type="search" name="q" value="<%= q %>" placeholder="<%= t("Search usernames") %>" aria-label="<%= t("Search usernames") %>">
+          </div>
+          <select class="form-select w-auto" name="role" aria-label="<%= t('Roles') %>" data-autosubmit>
+            <option value=""><%= t('Everyone') %></option>
+            <% Object.entries(PLATFORM_ROLES).forEach(([key, r]) => { %><option value="<%= key %>"<%= roleFilter === key ? ' selected' : '' %>><%= t(r.label) %></option><% }) %>
+          </select>
+          <span class="ms-auto align-self-center text-secondary small"><%= tn('{n} user', '{n} users', total) %></span>
+        </form>
       </div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th><%= t("User") %></th><th><%= t("Roles") %></th><th><%= t("Last login") %></th><th class="w-1"><%= t("Zury roles") %></th></tr></thead>
+          <thead><tr><th><%= t("User") %></th><th><%= t("Roles") %></th><th><%= t("Last login") %></th><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
           <tbody>
             <% if (!rows.length) { %><tr><td colspan="4" class="text-secondary"><%= t("No users found.") %></td></tr><% } %>
             <% rows.forEach(({ user: u, subject: s }) => { %>
               <tr>
                 <td>
-                  <div class="d-flex py-1 align-items-center">
-                    <span class="avatar me-2"><%= u.username.charAt(0).toUpperCase() %></span>
-                    <div class="flex-fill">
-                      <div class="font-weight-medium"><a href="<%= userPath(u.username) %>" class="text-reset"><%= u.username %></a></div>
-                      <div class="text-secondary small"><%= u.homeWiki ? wikiName(u.homeWiki) : '—' %></div>
+                  <div class="d-flex align-items-center">
+                    <%- include('../../partials/avatar', { u, size: 'sm' }) %>
+                    <div class="ms-2 min-w-0">
+                      <a href="<%= userPath(u.username) %>" class="fw-medium text-reset"><%= u.username %></a>
+                      <div class="text-secondary small"><%= u.homeWiki ? wikiLocal(u.homeWiki) : '' %><% if (u.isDemo) { %> · <span class="text-warning"><%= t('demo') %></span><% } %></div>
                     </div>
                   </div>
                 </td>
                 <td><%- include('../../partials/accessSummary', { s }) %></td>
-                <td class="text-secondary text-nowrap"><%= u.lastLoginAt ? formatDateTime(u.lastLoginAt) : 'Never' %></td>
+                <td class="text-secondary text-nowrap"><%= u.lastLoginAt ? formatDate(u.lastLoginAt) : t('Never') %></td>
                 <td>
                   <% if (can('managePlatformRoles')) { %>
-                    <div class="btn-list flex-nowrap">
-                      <% assignableRoles.forEach(([key, role]) => { const has = u.globalRoles.some((g) => g.role === key); %>
-                        <form method="post" action="/admin/users/<%= u.id %>/roles<%= has ? '/revoke' : '' %>">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <input type="hidden" name="role" value="<%= key %>">
-                          <% if (has) { %>
-                            <button class="btn btn-sm btn-outline-danger" type="submit"<%= u.id === currentUser.id ? ' disabled title="You can\'t remove your own role"' : '' %>><i class="ti ti-minus me-1"></i><%= role.label %></button>
-                          <% } else { %>
-                            <button class="btn btn-sm btn-outline-primary" type="submit"><i class="ti ti-plus me-1"></i><%= role.label %></button>
-                          <% } %>
-                        </form>
-                      <% }) %>
+                    <div class="dropdown">
+                      <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-shield me-1"></i><%= t('Roles') %></button>
+                      <div class="dropdown-menu dropdown-menu-end">
+                        <% assignableRoles.forEach(([key, role]) => { const has = u.globalRoles.some((g) => g.role === key); const self = has && u.id === currentUser.id; %>
+                          <form method="post" action="/admin/users/<%= u.id %>/roles<%= has ? '/revoke' : '' %>">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <input type="hidden" name="role" value="<%= key %>">
+                            <button class="dropdown-item d-flex align-items-center gap-2" type="submit"<%= self ? ' disabled' : '' %> title="<%= self ? t("You can't remove your own role") : t(role.description) %>">
+                              <i class="ti ti-<%= has ? 'square-check text-primary' : 'square' %>"></i><%= t(role.label) %>
+                            </button>
+                          </form>
+                        <% }) %>
+                      </div>
                     </div>
                   <% } %>
                 </td>
@@ -53,12 +57,12 @@
           </tbody>
         </table>
       </div>
-      <div class="card-footer d-flex align-items-center">
+      <div class="card-footer d-flex flex-wrap align-items-center gap-2">
         <p class="m-0 text-secondary small"><i class="ti ti-info-circle me-1"></i><%= t("Steward, Global Sysop and Local Admin come from verified Wikimedia groups and can't be granted here.") %></p>
         <% if (pages > 1) { %>
           <ul class="pagination m-0 ms-auto">
             <% for (let i = 1; i <= pages; i++) { %>
-              <li class="page-item<%= i === page ? ' active' : '' %>"><a class="page-link" href="/admin/users?page=<%= i %><%= q ? '&q=' + encodeURIComponent(q) : '' %>"><%= i %></a></li>
+              <li class="page-item<%= i === page ? ' active' : '' %>"><a class="page-link" href="/admin/users?page=<%= i %><%= q ? '&q=' + encodeURIComponent(q) : '' %><%= roleFilter ? '&role=' + roleFilter : '' %>"><%= i %></a></li>
             <% } %>
           </ul>
         <% } %>

@@ -1,39 +1,56 @@
+<%# What each role may do. Superusers can switch any cell; changes from the built-in roles are marked. %>
 <%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Permissions') }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title"><%= t("Role permission matrix") %></h3>
+      <div class="card-header flex-wrap gap-2">
+        <div class="small text-secondary d-flex flex-wrap gap-3">
+          <span><i class="ti ti-circle-check text-green"></i> <%= t("granted") %></span>
+          <span><i class="ti ti-circle-dot text-azure"></i> <%= t("comes with another permission") %></span>
+          <span><span class="z-perm-changed-key"></span> <%= t("changed here") %></span>
         </div>
-        <div class="card-actions small text-secondary">
-          <span class="me-3"><i class="ti ti-circle-check text-green"></i> <%= t("granted") %></span>
-          <span class="me-3"><i class="ti ti-circle text-azure"></i> <%= t("implied") %></span>
-          <span><span class="badge bg-purple-lt">G</span> <%= t("everywhere (wiki-scoped role)") %></span>
-        </div>
+        <% if (canEdit && changed.size) { %>
+          <form method="post" action="/admin/permissions/reset" class="ms-auto" data-confirm="<%= t('Undo every change and use the built-in roles again?') %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-sm btn-ghost-danger" type="submit"><i class="ti ti-arrow-back-up me-1"></i><%= t('Undo {n} changes', { n: changed.size }) %></button>
+          </form>
+        <% } %>
       </div>
-      <div class="table-responsive">
-        <table class="table table-vcenter card-table table-striped text-center">
+      <% if (canEdit) { %><div class="card-body py-2 small text-secondary border-bottom"><%= t('Click a cell to give or take away that permission. Superusers always have everything.') %></div><% } %>
+      <div class="table-responsive z-perm-wrap">
+        <table class="table table-vcenter card-table text-center z-perm">
           <thead>
             <tr>
               <th class="text-start"><%= t("Permission") %></th>
-              <% roles.forEach((r) => { %><th title="<%= r.description %>"><%= r.label %><div class="text-secondary fw-normal text-lowercase"><%= r.kind %><%= r.scope === 'wiki' ? ', own wikis' : '' %></div></th><% }) %>
+              <% roles.forEach((r) => { %><th title="<%= t(r.description) %>"><div><%= t(r.label) %></div><div class="text-secondary fw-normal small"><%= t(r.kindLabel) %></div></th><% }) %>
             </tr>
           </thead>
-          <tbody>
-            <% Object.entries(PERMISSIONS).forEach(([key, label]) => { %>
-              <tr>
-                <td class="text-start"><div><%= label %></div><code class="small"><%= key %></code></td>
-                <% roles.forEach((r) => { %>
-                  <td>
-                    <% if (r.viaGlobal.has(key)) { %><span class="badge bg-purple-lt">G</span>
-                    <% } else if (r.permissions.includes(key)) { %><i class="ti ti-circle-check text-green" aria-label="<%= t("granted") %>"></i>
-                    <% } else if (r.effective.has(key)) { %><i class="ti ti-circle text-azure" aria-label="<%= t("implied") %>"></i><% } %>
-                  </td>
-                <% }) %>
-              </tr>
-            <% }) %>
-          </tbody>
+          <% groups.forEach((g) => { %>
+            <tbody>
+              <tr class="z-perm-group"><th class="text-start" colspan="<%= roles.length + 1 %>"><%= t(g.label) %></th></tr>
+              <% g.keys.forEach((key) => { %>
+                <tr id="perm-<%= key %>">
+                  <td class="text-start"><div title="<%= key %>"><%= t(PERMISSIONS[key]) %></div></td>
+                  <% roles.forEach((r) => { const has = r.permissions.includes(key) || r.viaGlobal.has(key); const implied = !has && r.effective.has(key); const isChanged = changed.has(r.kind + ':' + r.key + ':' + key); %>
+                    <td class="<%= isChanged ? 'z-perm-changed' : '' %>">
+                      <% if (canEdit && !r.locked && !r.viaGlobal.has(key)) { %>
+                        <form method="post" action="/admin/permissions">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <input type="hidden" name="kind" value="<%= r.kind %>"><input type="hidden" name="role" value="<%= r.key %>"><input type="hidden" name="permission" value="<%= key %>">
+                          <input type="hidden" name="allowed" value="<%= has ? '0' : '1' %>">
+                          <button class="z-perm-cell" type="submit" aria-label="<%= t(r.label) %>: <%= t(PERMISSIONS[key]) %>" title="<%= has ? t('Take away') : t('Give') %>">
+                            <% if (has) { %><i class="ti ti-circle-check text-green"></i><% } else if (implied) { %><i class="ti ti-circle-dot text-azure"></i><% } else { %><span class="z-perm-empty"></span><% } %>
+                          </button>
+                        </form>
+                      <% } else { %>
+                        <% if (has) { %><i class="ti ti-circle-check text-green"></i><% } else if (implied) { %><i class="ti ti-circle-dot text-azure"></i><% } %>
+                      <% } %>
+                    </td>
+                  <% }) %>
+                </tr>
+              <% }) %>
+            </tbody>
+          <% }) %>
         </table>
       </div>
     </div>

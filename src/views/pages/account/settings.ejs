@@ -21,7 +21,7 @@
               <% if (saved) { %><div class="alert alert-success" role="status"><i class="ti ti-circle-check me-1"></i><%= t("Preferences saved.") %></div><% } %>
               <h3 class="card-title"><%= t("Wikimedia account") %></h3>
               <div class="row align-items-center mb-4">
-                <div class="col-auto"><span class="avatar avatar-xl"><%= currentUser.username.charAt(0).toUpperCase() %></span></div>
+                <div class="col-auto"><%- include('../../partials/avatar', { u: currentUser, size: 'xl' }) %></div>
                 <div class="col">
                   <div class="fw-bold"><%= currentUser.username %></div>
                   <div class="text-secondary">Home wiki: <%- currentUser.homeWiki ? wikiLabel(currentUser.homeWiki) : 'unknown' %></div>
@@ -53,6 +53,16 @@
                 <a href="/dashboard" class="btn btn-1"><%= t("Cancel") %></a>
                 <button type="submit" class="btn btn-primary btn-2"><%= t("Save preferences") %></button>
               </div>
+            </div>
+          </form>
+          <form action="/settings/avatar" method="post" class="card-body border-top">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <h3 class="card-title"><%= t('Profile picture') %></h3>
+            <p class="text-secondary small"><%= t('Use a picture from Wikimedia Commons: type its file name, e.g. Example.jpg.') %></p>
+            <div class="d-flex flex-wrap gap-2">
+              <input class="form-control flex-fill" style="max-width: 26rem" name="file" placeholder="File:Example.jpg" aria-label="<%= t('File name on Commons') %>" maxlength="250">
+              <button class="btn btn-primary" type="submit"><%= t('Use this picture') %></button>
+              <% if (currentUser.avatarUrl) { %><button class="btn btn-ghost-danger" type="submit" name="remove" value="1"><%= t('Remove picture') %></button><% } %>
             </div>
           </form>
         </div>

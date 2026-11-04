@@ -21,6 +21,7 @@ async function startTestApp(extraEnv = {}) {
 
   const app = require('../../src/app');
   const prisma = require('../../src/config/prisma');
+  await require('../../src/services/rolePermissionService').load();
   const server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   const baseUrl = `http://127.0.0.1:${server.address().port}`;

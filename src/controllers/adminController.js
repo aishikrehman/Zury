@@ -27,7 +27,14 @@ async function users(req, res, next) {
     const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 85) : '';
     const page = pageParam(req);
     const perPage = 50;
-    const where = q ? { username: { contains: q } } : {};
+    const roleFilter = typeof req.query.role === 'string' && PLATFORM_ROLES[req.query.role] ? req.query.role : '';
+    // Wikimedia-derived roles live in wikiRoles; Zury's own in globalRoles.
+    const byRole = {
+      steward: { wikiRoles: { some: { wiki: '*', rightName: 'steward' } } },
+      'global-sysop': { wikiRoles: { some: { wiki: '*', rightName: 'global-sysop' } } },
+      'local-admin': { wikiRoles: { some: { rightName: 'sysop', NOT: { wiki: '*' } } } },
+    }[roleFilter] || (roleFilter ? { globalRoles: { some: { role: roleFilter } } } : {});
+    const where = { ...(q && { username: { contains: q } }), ...byRole };
     const [list, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -41,6 +48,8 @@ async function users(req, res, next) {
     res.render('pages/admin/users', {
       title: 'Users — Administration',
       q,
+      roleFilter,
+      total,
       page,
       pages: Math.max(1, Math.ceil(total / perPage)),
       rows: list.map((u) => ({ user: u, subject: buildSubject(u) })),
@@ -69,12 +78,54 @@ async function revokeRole(req, res, next) {
   }
 }
 
+const rolePermissions = require('../services/rolePermissionService');
+
+// Permissions in groups, for the matrix.
+const PERMISSION_GROUPS = [
+  ['Events', /Event$|^createEvent$|Series|Wiki/],
+  ['Entries', /Submission|Entry|Entries|Submit|Appeal|Contribution|exportData/],
+  ['Jury and results', /Review|review|Jury|Assignment|Results|Score|massReview/],
+  ['People', /Participant|Member|Role|Block|Notification|Message|Organizer/],
+  ['Site', /.*/],
+];
+
 function permissions(req, res) {
   const roles = [
-    ...Object.entries(PLATFORM_ROLES).map(([key, r]) => ({ key, kind: 'Platform', ...r })),
-    ...Object.entries(EVENT_ROLES).map(([key, r]) => ({ key, kind: 'Event', ...r })),
-  ].map((r) => ({ ...r, effective: expand(r.permissions), viaGlobal: new Set(r.globalPermissions || []) }));
-  res.render('pages/admin/permissions', { title: 'Permissions — Administration', roles, PERMISSIONS, IMPLIES });
+    ...Object.entries(PLATFORM_ROLES).map(([key, r]) => ({ key, kind: 'platform', kindLabel: 'Platform', ...r })),
+    ...Object.entries(EVENT_ROLES).map(([key, r]) => ({ key, kind: 'event', kindLabel: 'Event', ...r })),
+  ].map((r) => ({ ...r, effective: expand(r.permissions), viaGlobal: new Set(r.globalPermissions || []), locked: rolePermissions.LOCKED(r.kind, r.key) }));
+  const groups = PERMISSION_GROUPS.map(([label]) => ({ label, keys: [] }));
+  for (const key of Object.keys(PERMISSIONS)) groups[PERMISSION_GROUPS.findIndex(([, re]) => re.test(key))].keys.push(key);
+  res.render('pages/admin/permissions', {
+    title: 'Permissions — Administration',
+    roles,
+    groups: groups.filter((g) => g.keys.length),
+    PERMISSIONS,
+    IMPLIES,
+    changed: new Set(rolePermissions.changes().map((c) => `${c.kind}:${c.role}:${c.permission}`)),
+    canEdit: req.permissions.has('maintainSite'),
+  });
+}
+
+async function setRolePermission(req, res, next) {
+  try {
+    await rolePermissions.set({ actor: req.user, kind: req.body.kind, role: req.body.role, permission: req.body.permission, allowed: req.body.allowed === '1' });
+    req.flash('success', 'Saved.');
+  } catch (err) {
+    if (!(err instanceof rolePermissions.RolePermissionError)) return next(err);
+    req.flash('danger', err.message);
+  }
+  res.redirect(`/admin/permissions#perm-${req.body.permission}`);
+}
+
+async function resetRolePermissions(req, res, next) {
+  try {
+    const n = await rolePermissions.resetAll(req.user);
+    req.flash('success', req.t('{n} changes undone.', { n }));
+    res.redirect('/admin/permissions');
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function logs(req, res, next) {
@@ -116,4 +167,4 @@ async function cleanUp(req, res, next) {
   }
 }
 
-module.exports = { maintenancePage, downloadBackup, cleanUp, index, users, grantRole, revokeRole, permissions, logs };
+module.exports = { setRolePermission, resetRolePermissions, maintenancePage, downloadBackup, cleanUp, index, users, grantRole, revokeRole, permissions, logs };

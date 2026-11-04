@@ -560,3 +560,18 @@ model ReviewAssignment {
   @@unique([submissionId, jurorId])
   @@index([contestId, jurorId])
 }
+
+// A change to what a role may do, made by a superuser on the Permissions page.
+// Roles keep their built-in permissions; these rows add (allowed) or take away (not allowed) one.
+model RolePermissionChange {
+  id          Int      @id @default(autoincrement())
+  // platform | event
+  kind        String
+  role        String
+  permission  String
+  allowed     Boolean
+  changedById Int?
+  changedAt   DateTime @default(now())
+
+  @@unique([kind, role, permission])
+}

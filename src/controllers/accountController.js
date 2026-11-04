@@ -57,4 +57,23 @@ async function updateSettings(req, res, next) {
   }
 }
 
-module.exports = { dashboard, showSettings, updateSettings };
+// Profile picture: a file on Commons, or none.
+async function updateAvatar(req, res, next) {
+  const { thumbnailFor, AvatarError } = require('../services/commonsAvatarService');
+  try {
+    if (req.body.remove === '1') {
+      await prisma.user.update({ where: { id: req.user.id }, data: { avatarUrl: null } });
+      req.flash('success', 'Profile picture removed.');
+    } else {
+      const { url } = await thumbnailFor(req.body.file);
+      await prisma.user.update({ where: { id: req.user.id }, data: { avatarUrl: url } });
+      req.flash('success', 'Profile picture saved.');
+    }
+  } catch (err) {
+    if (!(err instanceof AvatarError)) return next(err);
+    req.flash('danger', err.message);
+  }
+  res.redirect('/settings');
+}
+
+module.exports = { dashboard, showSettings, updateSettings, updateAvatar };
