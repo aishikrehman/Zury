@@ -47,18 +47,22 @@
         </div>
       </div>
     </div>
+    <%# One wiki (a single-wiki event, or one wiki's page): no "by wiki" list. %>
+    <% const manyWikis = !wikiScope && eventWikis.length > 1; %>
+    <% if (manyWikis) { %>
     <div class="col-lg-4">
       <div class="card h-100">
         <div class="card-header"><h3 class="card-title"><%= t("By wiki") %></h3></div>
         <div class="list-group list-group-flush">
           <% if (!summary.byWiki.length) { %><div class="list-group-item text-secondary"><%= t("Nothing yet.") %></div><% } %>
           <% summary.byWiki.forEach((w) => { %>
-            <div class="list-group-item d-flex justify-content-between"><span><%- wikiLabel(w.wiki) %></span><span><strong><%= n(w.count) %></strong> <span class="text-secondary small">· <%= t('{n} bytes', { n: w.bytes }) %></span></span></div>
+            <div class="list-group-item d-flex justify-content-between"><span><%= wikiLocal(w.wiki) %></span><span><strong><%= n(w.count) %></strong> <span class="text-secondary small">· <%= t('{n} bytes', { n: w.bytes }) %></span></span></div>
           <% }) %>
         </div>
       </div>
     </div>
-    <div class="col-lg-4">
+    <% } %>
+    <div class="col-lg-<%= manyWikis ? 4 : 8 %>">
       <div class="card h-100">
         <div class="card-header"><h3 class="card-title"><%= t("Top contributors") %></h3></div>
         <div class="list-group list-group-flush">
@@ -75,15 +79,15 @@
     <div class="card-header"><h3 class="card-title"><%= t("Latest") %></h3></div>
     <div class="table-responsive">
       <table class="table table-vcenter card-table">
-        <thead><tr><th><%= t("Page") %></th><th><%= t("User") %></th><th><%= t("Wiki") %></th><th><%= t("Found by") %></th><th class="text-end"><%= t("Bytes") %></th><th><%= t("When") %></th></tr></thead>
+        <thead><tr><th><%= t("Page") %></th><th><%= t("User") %></th><% if (manyWikis) { %><th><%= t("Wiki") %></th><% } %><th><%= t("Found by") %></th><th class="text-end"><%= t("Bytes") %></th><th><%= t("When") %></th></tr></thead>
         <tbody>
-          <% if (!summary.recent.length) { %><tr><td colspan="6" class="text-secondary"><%= t("No contributions found yet.") %></td></tr><% } %>
+          <% if (!summary.recent.length) { %><tr><td colspan="<%= manyWikis ? 6 : 5 %>" class="text-secondary"><%= t("No contributions found yet.") %></td></tr><% } %>
           <% summary.recent.forEach((c) => { %>
             <tr>
               <td><%= c.pageTitle %><% if (c.isNew) { %> <span class="badge bg-green-lt"><%= t("new") %></span><% } %></td>
               <td><%= c.username || '—' %></td>
-              <td class="text-secondary"><%= wikiName(c.wiki) %></td>
-              <td><span class="badge bg-secondary-lt"><%= sources[c.source] %></span></td>
+              <% if (manyWikis) { %><td class="text-secondary"><%= wikiLocal(c.wiki) %></td><% } %>
+              <td><span class="badge bg-secondary-lt"><%= t(sources[c.source]) %></span></td>
               <td class="text-end <%= c.sizeDiff < 0 ? 'text-danger' : '' %>"><%= c.revId ? (c.sizeDiff > 0 ? '+' : '') + n(c.sizeDiff) : '—' %></td>
               <td class="text-secondary text-nowrap"><%= formatDateTime(c.timestamp, contest.timezone) %></td>
             </tr>

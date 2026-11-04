@@ -1209,5 +1209,6 @@
   "Completed events": "সম্পন্ন ইভেন্ট",
   "Message people in this event": "এই ইভেন্টের মানুষদের বার্তা পাঠান",
   "Platform administrators": "প্ল্যাটফর্ম প্রশাসক",
-  "Audit log entries": "অডিট লগ এন্ট্রি"
+  "Audit log entries": "অডিট লগ এন্ট্রি",
+  "Message people on {wiki}": "{wiki}-এর মানুষদের বার্তা পাঠান"
 }

@@ -15,7 +15,7 @@
         <div class="datagrid-item"><div class="datagrid-title"><%= t("Tracked edits") %></div><div class="datagrid-content"><%= plan.counts.contributions %></div></div>
       </div>
       <ul class="text-secondary">
-        <li><%= t('Participants take part in “{event}” from {wiki}; organizers and jury run that wiki.', { event: target.title, wiki: wikiName(plan.wiki) }) %></li>
+        <li><%= t('Participants take part in “{event}” from {wiki}; organizers and jury run that wiki.', { event: target.title, wiki: wikiLocal(plan.wiki) }) %></li>
         <li><%= t("This event's own dates, rules and type settings are kept as that wiki's settings.") %></li>
         <li><%- th('This event closes, and {address} will lead to its new place.', { address: '<code>' + h(base) + '</code>' }) %></li>
         <li><%= t('People blocked in “{event}” are not moved.', { event: target.title }) %></li>

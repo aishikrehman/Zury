@@ -58,7 +58,7 @@
                     <td>
                       <% if (i.meta && i.meta.exists) { %>
                         <a href="<%= i.meta.url %>" rel="noopener" target="_blank"><%= i.meta.title %></a>
-                        <div class="text-secondary small"><%= wikiName(i.meta.wiki) %> · <%= i.meta.entryType %></div>
+                        <div class="text-secondary small"><%= eventWikis.length > 1 ? wikiLocal(i.meta.wiki) + ' · ' : '' %><%= i.meta.entryType %></div>
                       <% } else { %>
                         <span class="font-monospace small"><%= i.input %></span>
                       <% } %>
@@ -95,7 +95,7 @@
       <div class="card">
         <div class="card-header"><h3 class="card-title"><%= t("What's accepted") %></h3></div>
         <div class="list-group list-group-flush">
-          <div class="list-group-item"><%= t('{type} on {wikis}', { type: EVENT_TYPES[contest.type].label, wikis: (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiName).join(', ') }) %></div>
+          <div class="list-group-item"><%= t('{type} on {wikis}', { type: EVENT_TYPES[contest.type].label, wikis: (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiLocal).join(', ') }) %></div>
           <% rules.forEach((r) => { %><div class="list-group-item"><i class="ti ti-check text-green me-1"></i><%= r %></div><% }) %>
         </div>
       </div>

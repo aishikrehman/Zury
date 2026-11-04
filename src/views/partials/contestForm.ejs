@@ -84,7 +84,7 @@
                   </select>
                   <input type="hidden" name="language" id="language" value="<%= v('language') %>">
                   <% if (wikiScope) { %>
-                    <div class="form-hint">You can use: <%= wikiScope.length ? wikiScope.map(wikiName).join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.</div>
+                    <div class="form-hint">You can use: <%= wikiScope.length ? wikiScope.map(wikiLocal).join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.</div>
                   <% } %>
                   <%- err('primaryWiki') %><%- err('language') %>
                 </div>

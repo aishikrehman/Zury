@@ -112,14 +112,14 @@
                   <span class="me-2"><%- include('../../partials/avatar', { u, size: 'sm' }) %></span>
                   <div class="min-w-0">
                     <a href="<%= userPath(u.username) %>" class="fw-medium"><%= u.username %></a>
-                    <div class="text-secondary small"><%= u.homeWiki ? wikiName(u.homeWiki) : '' %></div>
+                    <div class="text-secondary small"><%= u.homeWiki ? wikiLocal(u.homeWiki) : '' %></div>
                   </div>
                 </div>
               </td>
               <td>
                 <div class="d-flex flex-wrap gap-1">
                   <% p.roles.forEach((m) => { %>
-                    <span class="badge bg-<%= roleColor[m.role] %>-lt"><%= EVENT_ROLES[m.role].label %><%= m.wiki ? ` · ${wikiName(m.wiki)}` : '' %>
+                    <span class="badge bg-<%= roleColor[m.role] %>-lt"><%= t(EVENT_ROLES[m.role].label) %><%= m.wiki && !wikiScope ? ` · ${wikiLocal(m.wiki)}` : '' %>
                       <% if (canRemove(m)) { %>
                         <form method="post" action="<%= base %>/members/<%= m.id %>/remove" class="d-inline" data-confirm="<%= t('Remove {user} as {role}?', { user: u.username, role: EVENT_ROLES[m.role].label }) %>"><%- csrf %>
                           <button class="z-pill-x" type="submit" aria-label="<%= t('Remove') %>" title="<%= t('Remove') %>"><i class="ti ti-x"></i></button>
@@ -172,7 +172,7 @@
                           <% if (memberWikis.length) { %>
                             <select class="form-select form-select-sm" name="wiki" aria-label="<%= t('For') %>">
                               <option value=""><%= t('Whole event') %></option>
-                              <% memberWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= wikiName(w.wiki) %></option><% }) %>
+                              <% memberWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= wikiLocal(w.wiki) %></option><% }) %>
                             </select>
                           <% } %>
                           <button class="btn btn-sm btn-primary" type="submit"><%= t('Add') %></button>

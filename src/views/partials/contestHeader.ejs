@@ -50,7 +50,7 @@
               <a class="dropdown-item<%= wikiScope ? '' : ' active' %>" href="<%= eventBase %>"><%= t("All wikis") %></a>
               <div class="dropdown-divider"></div>
               <% allWikis.filter((w) => w.status !== 'pending' || scope.isGlobalController).forEach((w) => { %>
-                <a class="dropdown-item d-flex<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= eventBase %>/<%= w.code %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? wikiName(w.wiki) : t(w.status === 'paused' ? 'Paused' : 'Waiting for approval') %></span></a>
+                <a class="dropdown-item d-flex<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= eventBase %>/<%= w.code %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? wikiLocal(w.wiki) : t(w.status === 'paused' ? 'Paused' : 'Waiting for approval') %></span></a>
               <% }) %>
             </div>
           </div>

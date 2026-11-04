@@ -58,10 +58,10 @@ const SUBMISSION_STATUSES = {
   invalid: { label: 'Invalid', color: 'red' },
   under_review: { label: 'Under review', color: 'yellow' },
   approved: { label: 'Approved', color: 'green' },
-  rejected: { label: 'Rejected', color: 'orange' },
+  rejected: { label: 'Rejected', color: 'red' },
   disqualified: { label: 'Disqualified', color: 'red' },
   withdrawn: { label: 'Withdrawn', color: 'secondary' },
-  appealed: { label: 'Appealed', color: 'purple' },
+  appealed: { label: 'Appealed', color: 'yellow' },
 };
 
 module.exports = { PROJECT_CATEGORIES, CONTEST_TYPES, TYPE_ICONS, TYPE_COLORS, ACTIVITY_TYPES, CONTEST_STATUSES, STATUS_GROUPS, SUBMISSION_STATUSES };

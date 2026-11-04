@@ -36,7 +36,7 @@
               <span class="z-avatar me-2"><%= j.username.charAt(0).toUpperCase() %></span>
               <div class="min-w-0">
                 <div class="fw-bold text-truncate"><%= j.username %></div>
-                <div class="text-secondary small text-truncate"><%= j.wikis.includes('') ? t('Whole event') : j.wikis.map(wikiName).join(', ') %></div>
+                <% if (eventWikis.length > 1 && !wikiScope) { %><div class="text-secondary small text-truncate"><%= j.wikis.includes('') ? t('Whole event') : j.wikis.map(wikiLocal).join(', ') %></div><% } %>
               </div>
             </div>
             <div class="d-flex justify-content-between small mb-1">
@@ -72,7 +72,7 @@
             <tr>
               <td>
                 <a href="<%= base %>/submissions/<%= e.id %>"><%= e.title %></a>
-                <div class="text-secondary small"><%= wikiName(e.wiki) %></div>
+                <% if (eventWikis.length > 1 && !wikiScope) { %><div class="text-secondary small"><%= wikiLocal(e.wiki) %></div><% } %>
               </td>
               <td class="text-secondary"><%= e.participant.username %></td>
               <td>

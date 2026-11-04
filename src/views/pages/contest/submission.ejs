@@ -11,7 +11,7 @@
         <div class="card-header">
           <div>
             <h3 class="card-title"><%= submission.title %></h3>
-            <div class="card-subtitle"><%= wikiName(submission.wiki) %> · <span class="text-capitalize"><%= submission.entryType %></span></div>
+            <div class="card-subtitle"><%= eventWikis.length > 1 ? wikiLocal(submission.wiki) + ' · ' : '' %><span class="text-capitalize"><%= submission.entryType %></span></div>
           </div>
           <div class="card-actions btn-list">
             <%- include('../../partials/submissionStatus', { s: submission.status }) %>
