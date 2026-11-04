@@ -12,17 +12,16 @@
     const s = p.toString();
     return s ? `?${s}` : '';
   };
-  const groupIcons = { active: 'player-play', upcoming: 'clock', completed: 'flag-check' };
+  const more = filters.type || filters.wiki || filters.project || filters.sort !== 'newest';
 %>
-<%- include('../../partials/pageHeader', { pretitle: t('Events'), heading, actions: can('createEvent') ? `<a class="btn" href="/series/new"><i class="ti ti-stack-2 me-1"></i>${h(t('New series'))}</a> <a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>${h(t('Create event'))}</a>` : '' }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Events'), heading, actions: can('createEvent') ? `<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>${h(t('Create event'))}</a>` : '' }) %>
 <div class="page-body">
   <div class="container-xl">
-    <%# Filters in one bar across the top. %>
-    <div class="card mb-3">
+        <div class="card mb-3">
       <div class="card-header flex-wrap gap-2">
         <ul class="nav nav-pills card-header-pills">
           <li class="nav-item"><a class="nav-link<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>"><%= t("All") %></a></li>
-          <% groups.forEach((g) => { %><li class="nav-item"><a class="nav-link<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><i class="ti ti-<%= groupIcons[g] %> me-1"></i><%= t({ active: 'Active', upcoming: 'Upcoming', completed: 'Completed' }[g]) %></a></li><% }) %>
+          <% groups.forEach((g) => { %><li class="nav-item"><a class="nav-link<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><%= t({ active: 'Active', upcoming: 'Upcoming', completed: 'Completed' }[g]) %></a></li><% }) %>
         </ul>
         <div class="ms-auto btn-group" role="group" aria-label="<%= t('View') %>">
           <a class="btn btn-sm btn-icon<%= filters.view === 'grid' ? ' active' : '' %>" href="<%= base %><%= qs({ view: 'grid' }).replace('view=grid', '').replace(/[?&]$/, '') %>" title="<%= t('Cards') %>" aria-label="<%= t('Cards') %>"><i class="ti ti-layout-grid"></i></a>
@@ -32,33 +31,36 @@
       <form method="get" action="<%= base %>" class="card-body py-2">
         <% if (filters.view !== 'grid') { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
         <div class="row g-2 align-items-center">
-          <div class="col-12 col-md">
+          <div class="col">
             <div class="input-icon"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t("Title or community") %>" aria-label="<%= t("Search events") %>"></div>
           </div>
-          <div class="col-6 col-md-auto">
+          <div class="col-auto"><button class="btn<%= more ? ' active' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#z-more-filters" aria-expanded="<%= more %>"><%= t('Filters') %></button></div>
+          <% if (filters.type || filters.wiki || filters.q || filters.project) { %><div class="col-auto"><a class="btn btn-ghost-secondary" href="<%= base %>"><%= t("Reset") %></a></div><% } %>
+        </div>
+        <div class="row g-2 mt-0 collapse<%= more ? ' show' : '' %>" id="z-more-filters">
+          <div class="col-6 col-md">
             <select name="project" class="form-select" aria-label="<%= t('Project') %>" data-autosubmit>
               <option value=""><%= t('All projects') %></option>
               <% Object.entries(PROJECTS).forEach(([key, pr]) => { %><option value="<%= key %>"<%= filters.project === key ? ' selected' : '' %>><%= pr.label %></option><% }) %>
             </select>
           </div>
-          <div class="col-6 col-md-auto">
+          <div class="col-6 col-md">
             <select name="type" class="form-select" aria-label="<%= t('Type') %>" data-autosubmit>
               <option value=""><%= t("All types") %></option>
               <% Object.entries(CONTEST_TYPES).forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.type === key ? ' selected' : '' %>><%= label %></option><% }) %>
             </select>
           </div>
-          <div class="col-6 col-md-auto">
+          <div class="col-6 col-md">
             <select name="wiki" class="form-select" aria-label="<%= t("Wiki") %>" data-autosubmit>
               <option value=""><%= t("All wikis") %></option>
               <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiLocal(w) %></option><% }) %>
             </select>
           </div>
-          <div class="col-6 col-md-auto">
+          <div class="col-6 col-md">
             <select name="sort" class="form-select" aria-label="<%= t("Sort") %>" data-autosubmit>
               <% [['newest', 'Newest first'], ['soonest', 'Oldest first'], ['title', 'Title']].forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
             </select>
           </div>
-          <% if (filters.type || filters.wiki || filters.q || filters.project) { %><div class="col-auto"><a class="btn btn-ghost-secondary" href="<%= base %>"><%= t("Reset") %></a></div><% } %>
         </div>
       </form>
     </div>
