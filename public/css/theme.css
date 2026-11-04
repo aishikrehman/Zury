@@ -829,3 +829,13 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-account-facts>*{display:flex;align-items:center;gap:.5rem;color:var(--tblr-secondary)}
 .z-account-facts .ti{font-size:1rem;width:1rem}
 .z-account-facts a{color:var(--tblr-primary);text-decoration:none}
+.z-toast{position:fixed;z-index:1090;top:5rem;right:1rem;max-width:min(26rem,calc(100vw - 2rem));display:flex;align-items:center;gap:.6rem;margin:0;padding:.7rem .75rem .7rem 1rem;border-radius:12px;background:var(--z-surface);color:var(--z-fg);border:1px solid var(--z-border);box-shadow:0 12px 32px -12px rgba(16,24,40,.35);font-size:.9rem;animation:z-toast-in .25s ease-out;transition:opacity .3s,transform .3s}
+.z-toast>.ti{font-size:1.15rem;flex:none}
+.z-toast.flash-success>.ti{color:var(--z-green)}
+.z-toast.flash-warn>.ti{color:var(--z-amber)}
+.z-toast.flash-error>.ti{color:#d73333}
+.z-toast.is-hiding{opacity:0;transform:translateY(-6px)}
+.z-toast-close{margin-left:auto;border:0;background:none;color:var(--z-fg-muted);padding:.15rem;line-height:1;border-radius:6px}
+.z-toast-close:hover{background:var(--z-hover);color:var(--z-fg)}
+@keyframes z-toast-in{from{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.z-toast{animation:none;transition:none}}

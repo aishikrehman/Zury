@@ -80,3 +80,21 @@ document.addEventListener('click', (e) => {
   }
   fetch(`/preferences/display?${query}`, { headers: { 'X-Requested-With': 'zury' }, credentials: 'same-origin' }).catch(() => {});
 });
+
+// Messages after an action float in a corner; good news fades by itself.
+(function () {
+  const toast = document.querySelector('.z-toast');
+  if (!toast) return;
+  const hide = () => { toast.classList.add('is-hiding'); setTimeout(() => toast.remove(), 300); };
+  toast.querySelector('[data-toast-close]').addEventListener('click', hide);
+  if (toast.hasAttribute('data-autohide')) setTimeout(hide, 5000);
+})();
+
+// Messages after an action float in a corner; good news fades by itself.
+(function () {
+  const toast = document.querySelector('.z-toast');
+  if (!toast) return;
+  const hide = () => { toast.classList.add('is-hiding'); setTimeout(() => toast.remove(), 300); };
+  toast.querySelector('[data-toast-close]').addEventListener('click', hide);
+  if (toast.hasAttribute('data-autohide')) setTimeout(hide, 5000);
+})();

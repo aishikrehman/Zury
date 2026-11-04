@@ -64,13 +64,10 @@
   <%- include('partials/header', { navItems }) %>
 
   <main id="content" class="z-main">
-    <% if (typeof flash !== 'undefined' && flash) { %>
-      <div class="container-xl pt-3">
-        <% if (typeof flash !== 'undefined' && flash) { %>
-          <div class="flash flash-<%= flash.type === 'danger' ? 'error' : flash.type === 'warning' ? 'warn' : 'success' %>" role="<%= flash.type === 'danger' ? 'alert' : 'status' %>">
-            <i class="ti ti-<%= flash.type === 'danger' ? 'alert-circle' : flash.type === 'warning' ? 'alert-triangle' : 'circle-check' %>"></i><span><%= t(flash.message) %></span>
-          </div>
-        <% } %>
+    <% if (typeof flash !== 'undefined' && flash) { const kind = flash.type === 'danger' ? 'error' : flash.type === 'warning' ? 'warn' : 'success'; %>
+      <div class="z-toast flash-<%= kind %>" role="<%= kind === 'error' ? 'alert' : 'status' %>"<%- kind === 'success' ? ' data-autohide' : '' %>>
+        <i class="ti ti-<%= kind === 'error' ? 'alert-circle' : kind === 'warn' ? 'alert-triangle' : 'circle-check' %>"></i><span><%= t(flash.message) %></span>
+        <button type="button" class="z-toast-close" aria-label="<%= t('Close') %>" data-toast-close><i class="ti ti-x"></i></button>
       </div>
     <% } %>
 
