@@ -51,7 +51,7 @@
             <% } else { %>
               <div class="list-group list-group-flush">
                 <% timeline.forEach((item) => { %>
-                  <div class="list-group-item py-2 d-flex justify-content-between"><span><%= item.label %></span><span class="text-secondary"><%= formatDateTime(item.at, tz) %></span></div>
+                  <div class="list-group-item py-2 d-flex justify-content-between gap-3"><span><%= item.label %></span><span class="text-secondary"><%= formatDateTime(item.at, tz) %></span></div>
                 <% }) %>
               </div>
             <% } %>

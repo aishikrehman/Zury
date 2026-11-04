@@ -31,8 +31,8 @@
   --gh-shadow: 0 1px 0 #1f23280a;
   --gh-overlay-shadow: 0 1px 1px #1f23280a, 0 8px 24px #42474e33;
   --gh-radius: 6px;
-  /* System font first, as on GitHub; Bangla letters come from the bundled Noto Sans Bengali. */
-  --gh-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Bengali Variable", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  /* System font first, as on GitHub; Bangla letters come from the bundled Noto Serif Bengali. */
+  --gh-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Serif Bengali Variable", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --gh-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 

@@ -84,8 +84,8 @@ app.use('/vendor/tabler', vendor('@tabler/core'));
 app.use('/vendor/tabler-icons', vendor('@tabler/icons-webfont'));
 app.use('/vendor/apexcharts', vendor('apexcharts'));
 app.use('/vendor/tom-select', vendor('tom-select'));
-// Bangla font, used only for Bangla letters (system fonts like Segoe UI have none).
-app.use('/vendor/noto-bengali', express.static(path.join(__dirname, '..', 'node_modules', '@fontsource-variable', 'noto-sans-bengali'), { maxAge: '30d' }));
+// Bangla font (Google's Noto Serif Bengali, served here), used only for Bangla letters (system fonts like Segoe UI have none).
+app.use('/vendor/noto-bengali', express.static(path.join(__dirname, '..', 'node_modules', '@fontsource-variable', 'noto-serif-bengali'), { maxAge: '30d' }));
 
 // Defaults so the layout can always render, even for early errors.
 app.use((req, res, next) => {
