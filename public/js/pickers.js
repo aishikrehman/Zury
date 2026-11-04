@@ -84,7 +84,7 @@
     const langSelect = document.createElement('select');
     langSelect.appendChild(new Option('', ''));
     langSelect.setAttribute('aria-label', 'Language of the wiki');
-    langSelect.setAttribute('placeholder', zt('Choose a language…'));
+    langSelect.setAttribute('placeholder', zt('Choose a language or Commons, Wikidata…'));
     row.children[0].appendChild(langSelect);
     el.setAttribute('placeholder', zt('Then choose the wiki…'));
     row.children[1].appendChild(el);
@@ -97,9 +97,22 @@
       onItemAdd() { setTimeout(() => this.blur()); },
       render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>` },
     });
+    // Commons, Wikidata, Meta… have no language: they are listed in the first box
+    // and picking one fills in the wiki directly; the second box is not needed.
+    const MULTI = 'wiki:';
+    const single = (on) => {
+      row.children[1].hidden = on;
+      row.querySelectorAll('label')[0].textContent = on ? el.dataset.siteLabel || zt('Wiki') : el.dataset.languageLabel || zt('Language');
+    };
     const loadWikis = (code, keep) => {
       wikis.clear(true);
       wikis.clearOptions();
+      single(!!code && code.startsWith(MULTI));
+      if (code && code.startsWith(MULTI)) {
+        const w = multiWikis.find((m) => m.value === code.slice(MULTI.length));
+        if (w) { wikis.addOption(w); wikis.setValue(w.value, true); }
+        return;
+      }
       if (!code) return wikis.disable();
       wikis.enable();
       json(`/api/wiki-languages/${encodeURIComponent(code)}`).then((list) => {
@@ -112,13 +125,21 @@
       valueField: 'value',
       labelField: 'label',
       searchField: ['text', 'localName', 'value'],
-      maxOptions: 500,
+      maxOptions: 600,
+      optgroupField: 'group',
+      lockOptgroupOrder: true,
+      optgroups: [{ value: 'multi', label: zt('Multilingual wikis') }, { value: 'lang', label: zt('Languages') }],
       onItemAdd() { setTimeout(() => this.blur()); },
-      render: { option: withLocal, item: (item) => `<div>${esc(item.label)}</div>`, no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>` },
+      render: {
+        option: withLocal,
+        item: (item) => `<div>${esc(item.label)}</div>`,
+        optgroup_header: (g) => `<div class="optgroup-header">${esc(g.label)}</div>`,
+        no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>`,
+      },
       onChange: (code) => {
         // The event's language follows the project language (not for Commons and the like).
         const hidden = document.getElementById('language');
-        if (hidden) hidden.value = code && code !== 'special' ? code : '';
+        if (hidden) hidden.value = code && code !== 'special' && !code.startsWith(MULTI) ? code : '';
         loadWikis(code);
         el.dispatchEvent(new Event('change'));
       },
@@ -126,14 +147,18 @@
 
     const initial = el.value;
     wikis.disable();
-    json('/api/wiki-languages').then((list) => {
-      languages.addOptions(list.map((l) => ({ ...l, label: label(l), hint: l.value === 'special' ? '' : `${l.value} · ${l.count}` })));
+    let multiWikis = [];
+    Promise.all([json('/api/wiki-languages'), json('/api/wiki-languages/special')]).then(([list, multi]) => {
+      multiWikis = multi.map((w) => ({ ...w, label: label(w), hint: w.value }));
+      languages.addOptions(multiWikis.map((w) => ({ ...w, value: MULTI + w.value, group: 'multi' })));
+      languages.addOptions(list.filter((l) => l.value !== 'special').map((l) => ({ ...l, group: 'lang', label: label(l), hint: `${l.value} · ${l.count}` })));
       // Nothing is chosen for the person: a plain <select> would otherwise take the first option.
       if (!initial) return languages.clear(true);
       json(`/api/wiki-of?db=${encodeURIComponent(initial)}`).then(({ language }) => {
         if (!language) return;
-        languages.setValue(language, true);
-        loadWikis(language, initial);
+        const code = language === 'special' ? MULTI + initial : language;
+        languages.setValue(code, true);
+        loadWikis(code, initial);
       });
     });
   }

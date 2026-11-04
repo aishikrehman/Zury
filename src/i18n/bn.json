@@ -949,5 +949,8 @@
   "{n} need jury members": "{n}টিতে জুরি সদস্য দরকার",
   "{n} more needed": "আরও {n} জন দরকার",
   "Assigned.": "দায়িত্ব দেওয়া হয়েছে।",
-  "Assignment removed.": "দায়িত্ব সরানো হয়েছে।"
+  "Assignment removed.": "দায়িত্ব সরানো হয়েছে।",
+  "Multilingual wikis": "বহুভাষিক উইকি",
+  "Languages": "ভাষা",
+  "Choose a language or Commons, Wikidata…": "একটি ভাষা বা কমন্স, উইকিউপাত্ত… বেছে নিন"
 }
