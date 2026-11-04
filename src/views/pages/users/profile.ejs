@@ -22,9 +22,9 @@
     </div>
   </div>
 </div>
-<% } %>
 <div class="page-body">
   <div class="container-xl">
+<% } %>
     <div class="row row-cards">
       <div class="col-lg-4">
         <div class="card">
@@ -69,5 +69,7 @@
         <% }) %>
       </div>
     </div>
+<% if (isOwnProfile) { %><%- include('../../partials/accountEnd') %><% } else { %>
   </div>
 </div>
+<% } %>

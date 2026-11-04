@@ -21,7 +21,6 @@
   });
 %>
 <%- include('../../partials/accountHeader', { tab: 'submissions' }) %>
-<div class="page-body"><div class="container-xl">
   <% if (!mine.total) { %>
     <div class="card">
       <div class="empty">
@@ -113,4 +112,5 @@
       </div>
     <% }) %>
   <% } %>
-</div></div>
+<%- include('../../partials/accountEnd') %>
+

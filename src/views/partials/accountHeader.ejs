@@ -1,4 +1,4 @@
-<%# Your own pages share one header: avatar, name, and tabs. Expects: tab; optional actions (trusted HTML), person (defaults to you). %>
+<%# Your own pages: a header, then a sidebar; close with accountEnd. Expects: tab; optional actions (trusted HTML), person (defaults to you). %>
 <%
   const who = typeof person !== 'undefined' && person ? person : currentUser;
   const tabs = [
@@ -17,10 +17,18 @@
       </div>
       <% if (typeof actions !== 'undefined' && actions) { %><div class="col-auto ms-auto"><div class="btn-list"><%- actions %></div></div><% } %>
     </div>
-    <nav class="z-account-tabs" aria-label="<%= t('Account') %>">
-      <% tabs.forEach(([key, href, icon, label]) => { %>
-        <a href="<%= href %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-1"></i><%= label %></a>
-      <% }) %>
-    </nav>
   </div>
 </div>
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row g-4">
+      <aside class="col-lg-3">
+        <nav class="card z-account-nav" aria-label="<%= t('Account') %>">
+          <div class="list-group list-group-flush">
+            <% tabs.forEach(([key, href, icon, label]) => { %>
+              <a href="<%= href %>" class="list-group-item list-group-item-action d-flex align-items-center<%= key === tab ? ' active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-2"></i><%= label %></a>
+            <% }) %>
+          </div>
+        </nav>
+      </aside>
+      <div class="col-lg-9">

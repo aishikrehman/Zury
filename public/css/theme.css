@@ -816,11 +816,7 @@ html.zury-targets .btn, html.zury-targets .nav-link, html.zury-targets .dropdown
 html.zury-targets .btn-sm { min-height: 40px; }
 html.zury-still *, html.zury-still *::before, html.zury-still *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
 .z-a11y-menu { min-width: 19rem; }
-.z-account-tabs{display:flex;gap:.25rem;margin-top:1rem;overflow-x:auto;scrollbar-width:none}
-.z-account-tabs a{display:inline-flex;align-items:center;padding:.5rem .75rem;color:var(--tblr-secondary);text-decoration:none;white-space:nowrap;border-radius:var(--tblr-border-radius) var(--tblr-border-radius) 0 0}
-.z-account-tabs a:hover{color:var(--tblr-body-color);background:var(--tblr-bg-surface-secondary)}
-.z-account-tabs a.active{color:var(--tblr-primary);font-weight:600;box-shadow:inset 0 -2px 0 var(--tblr-primary)}
-.z-account-header{border-bottom:1px solid var(--tblr-border-color);padding-bottom:0}
 .z-role-list li{display:flex;gap:.5rem;align-items:center;padding:.3rem 0}
 .z-role-list li+li{border-top:1px solid var(--tblr-border-color)}
 .z-role-list .ti{font-size:1rem}
+.z-account-nav .list-group-item.active{font-weight:600}
