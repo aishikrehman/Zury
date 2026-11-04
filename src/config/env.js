@@ -1,5 +1,11 @@
 require('dotenv').config();
 
+// On Toolforge the tool may already keep its secrets under other names (SECRET_KEY,
+// WIKI_CONSUMER_KEY, WIKI_CONSUMER_SECRET): use those when Zury's own names are unset.
+for (const [ours, theirs] of [['SESSION_SECRET', 'SECRET_KEY'], ['WIKIMEDIA_CONSUMER_KEY', 'WIKI_CONSUMER_KEY'], ['WIKIMEDIA_CONSUMER_SECRET', 'WIKI_CONSUMER_SECRET']]) {
+  if (!process.env[ours] && process.env[theirs]) process.env[ours] = process.env[theirs];
+}
+
 const nodeEnv = process.env.NODE_ENV || 'development';
 
 // Demo login lets anyone become any demo user, so it can never run in production.
