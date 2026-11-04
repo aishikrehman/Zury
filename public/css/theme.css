@@ -612,3 +612,10 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 /* Review window: the entry's wiki page, read in place. */
 .z-review-page { border-top: 1px solid var(--z-border, #e5e7eb); background: #fff; }
 .z-review-page iframe { display: block; width: 100%; height: min(75vh, 900px); min-height: 420px; border: 0; resize: vertical; }
+
+/* Event overview */
+.z-about .z-lead { font-size: 1.02rem; line-height: 1.65; }
+.z-phases { overflow-x: auto; padding-bottom: 2px; }
+.z-phases .step-item { min-width: 7.5rem; }
+.z-takepart { border-top: 3px solid var(--z-brand); }
+#statistics { scroll-margin-top: 6rem; }

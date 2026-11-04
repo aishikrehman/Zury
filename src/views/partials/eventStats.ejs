@@ -6,9 +6,7 @@
   const maxTop = Math.max(1, ...s.topParticipants.map((p) => p.count));
   const sum7 = s.last7.reduce((a, b) => a + b, 0);
 %>
-<%- include('../../partials/contestHeader', { active: 'statistics' }) %>
-<div class="page-body"><div class="container-xl">
-
+<section id="statistics" aria-label="<%= t('Statistics') %>">
   <div class="row row-deck row-cards mb-3">
     <div class="col-sm-6 col-lg-3">
       <div class="card">
@@ -19,7 +17,7 @@
             <div class="me-auto"><span class="text-<%= sum7 ? 'green' : 'secondary' %> d-inline-flex align-items-center lh-1"><%= t('{n} this week', { n: sum7 }) %> <i class="ti ti-trending-up ms-1"></i></span></div>
           </div>
         </div>
-        <%- include('../../partials/chart', { spec: { type: 'area', sparkline: true, height: 40, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: t('Daily submissions') }) %>
+        <%- include('./chart', { spec: { type: 'area', sparkline: true, height: 40, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: t('Daily submissions') }) %>
       </div>
     </div>
     <div class="col-sm-6 col-lg-3">
@@ -60,9 +58,9 @@
         <div class="card-header"><h3 class="card-title"><%= t("Submissions per day") %></h3><div class="card-actions text-secondary small"><%= contest.timezone %></div></div>
         <div class="card-body">
           <% if (!s.total) { %>
-            <%- include('../../partials/emptyArt', { title: t('No submissions yet'), text: t('The chart fills in as entries arrive.') }) %>
+            <%- include('./emptyArt', { title: t('No submissions yet'), text: t('The chart fills in as entries arrive.') }) %>
           <% } else { %>
-            <%- include('../../partials/chart', { spec: { type: 'area', height: 260, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: t('Submissions per day') }) %>
+            <%- include('./chart', { spec: { type: 'area', height: 260, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: t('Submissions per day') }) %>
           <% } %>
         </div>
       </div>
@@ -74,7 +72,7 @@
           <% if (!s.total) { %>
             <p class="text-secondary mb-0"><%= t("No entries yet.") %></p>
           <% } else { %>
-            <%- include('../../partials/chart', { spec: { type: 'donut', height: 260, series: statusKeys.map((k) => s.status[k]), labels: statusKeys.map((k) => SUBMISSION_STATUSES[k].label), colors: statusKeys.map((k) => SUBMISSION_STATUSES[k].color), totalLabel: 'Entries' }, label: t('Submissions by status') }) %>
+            <%- include('./chart', { spec: { type: 'donut', height: 260, series: statusKeys.map((k) => s.status[k]), labels: statusKeys.map((k) => SUBMISSION_STATUSES[k].label), colors: statusKeys.map((k) => SUBMISSION_STATUSES[k].color), totalLabel: 'Entries' }, label: t('Submissions by status') }) %>
           <% } %>
         </div>
       </div>
@@ -127,7 +125,7 @@
             <div class="card-body">
               <% const wikis = Object.entries(s.byWiki).sort((a, b) => b[1] - a[1]); %>
               <% if (!wikis.length) { %><p class="text-secondary mb-0"><%= t("No entries yet.") %></p><% } else { %>
-                <%- include('../../partials/chart', { spec: { type: 'bar', height: 240, distributed: true, series: [{ name: 'Entries', data: wikis.map((w) => w[1]) }], labels: wikis.map((w) => w[0]), colors: ['primary', 'green', 'orange', 'purple', 'azure', 'pink'] }, label: t('Entries by wiki') }) %>
+                <%- include('./chart', { spec: { type: 'bar', height: 240, distributed: true, series: [{ name: 'Entries', data: wikis.map((w) => w[1]) }], labels: wikis.map((w) => w[0]), colors: ['primary', 'green', 'orange', 'purple', 'azure', 'pink'] }, label: t('Entries by wiki') }) %>
               <% } %>
             </div>
           </div>
@@ -153,7 +151,7 @@
       <div class="card">
         <div class="card-header"><h3 class="card-title"><%= t("Jury progress") %></h3></div>
         <div class="card-body">
-          <%- include('../../partials/chart', { spec: { type: 'radialBar', height: 220, series: [s.reviewProgress], label: t('Decided'), colors: ['primary'] }, label: `${s.reviewProgress}% of entries decided` }) %>
+          <%- include('./chart', { spec: { type: 'radialBar', height: 220, series: [s.reviewProgress], label: t('Decided'), colors: ['primary'] }, label: `${s.reviewProgress}% of entries decided` }) %>
           <div class="row text-center mt-2">
             <% [['approved', 'green'], ['rejected', 'orange'], ['under_review', 'yellow']].forEach(([k, c]) => { %>
               <div class="col">
@@ -166,5 +164,4 @@
       </div>
     </div>
   </div>
-</div>
-</div>
+</section>

@@ -961,5 +961,8 @@
   "Who can take part and what counts": "কারা অংশ নিতে পারবেন ও কী গণ্য হবে",
   "Create new event": "নতুন ইভেন্ট তৈরি",
   "Settings for this wiki": "এই উইকির সেটিংস",
-  "Event settings": "ইভেন্টের সেটিংস"
+  "Event settings": "ইভেন্টের সেটিংস",
+  "No description yet.": "এখনো কোনো বিবরণ নেই।",
+  "{n} participant": "{n} জন অংশগ্রহণকারী",
+  "{n} participants": "{n} জন অংশগ্রহণকারী"
 }

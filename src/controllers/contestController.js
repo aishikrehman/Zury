@@ -82,6 +82,9 @@ async function show(req, res, next) {
       featureFields: contestForm.FEATURE_FIELDS,
       permissionList: Object.keys(PERMISSIONS).filter((p) => req.scope.permissions.has(p)),
       permissionLabels: PERMISSIONS,
+      // Statistics sit on the overview for whoever may see them.
+      stats: canSeeStats(req) && EVENT_TYPES[req.contest.type]?.entries !== false ? await statsService.eventStats(req.contest, { wiki: req.wikiScope?.wiki }) : null,
+      showNames: !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
     });
   } catch (err) {
     next(err);
@@ -386,21 +389,11 @@ async function unblockUser(req, res, next) {
   res.redirect(back(req, '/participants#blocks'));
 }
 
-async function statistics(req, res, next) {
-  if (!req.settings.publicStatisticsEnabled && !req.permissions.has('viewStatistics')) {
-    const err = new Error("This event's statistics aren't public.");
-    err.status = 403;
-    return next(err);
-  }
-  try {
-    res.render('pages/contest/statistics', {
-      title: `Statistics — ${req.contest.title}`,
-      stats: await statsService.eventStats(req.contest, { wiki: req.wikiScope?.wiki }),
-      showNames: !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
-    });
-  } catch (err) {
-    next(err);
-  }
+const canSeeStats = (req) => req.settings.publicStatisticsEnabled || req.permissions.has('viewStatistics');
+
+// Statistics are part of the overview now; old links land there.
+function statistics(req, res) {
+  res.redirect(301, `${req.base || '/'}#statistics`);
 }
 
 async function activity(req, res, next) {

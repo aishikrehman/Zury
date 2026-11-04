@@ -10,7 +10,6 @@
   const tabs = [['overview', t('Overview'), '', 'info-circle']];
   if (typeDef.activity) tabs.push(['sessions', t('Sessions'), '/sessions', 'calendar-event']);
   if (typeDef.entries !== false) tabs.push(['submissions', t(typeDef.activity ? 'Uploads' : 'Submissions'), '/submissions', 'files']);
-  if (settings.publicStatisticsEnabled || can('viewStatistics')) tabs.push(['statistics', t('Statistics'), '/statistics', 'graph']);
   const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
   if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', t('Contributions'), '/tracking', 'activity']);
   if (typeDef.entries !== false && settings.juryReviewEnabled && (can('reviewAssignedEntry') || (scope.wikisWith && scope.wikisWith('reviewAssignedEntry').length))) {
