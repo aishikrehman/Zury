@@ -138,6 +138,7 @@ router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('delet
 router.get(`/series/:series(${SLUG})`, requirePermission('importEvents'), eventsController.manageOneSeries);
 router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requirePermission('importEvents'), eventsController.manageEdition);
 router.post('/series', requirePermission('importEvents'), eventsController.createSeries);
+router.post(`/series/:series(${SLUG})/first-edition`, requirePermission('importEvents'), eventsController.firstEdition);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 router.use(`/:series(${SLUG})/:edition(${SLUG})`, mount(loadSeriesEvent({ withWiki: false })));

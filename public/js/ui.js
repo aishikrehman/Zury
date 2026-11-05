@@ -132,3 +132,24 @@ document.addEventListener('click', (e) => {
   });
   window.addEventListener('popstate', (e) => { if (e.state && e.state.swap) swap(location.href, e.state.swap, false); });
 })();
+
+// In-place editing: [data-inline] forms show their value with a pencil; the pencil turns
+// them into fields, Cancel puts the value back. One pattern for every such field.
+document.addEventListener('click', (e) => {
+  const open = e.target.closest('[data-inline-open]');
+  const cancel = e.target.closest('[data-inline-cancel]');
+  const form = (open || cancel)?.closest('[data-inline]');
+  if (!form) return;
+  if (open) {
+    form.classList.add('is-editing');
+    form.querySelector('.z-inline-edit input, .z-inline-edit textarea, .z-inline-edit select')?.focus();
+  } else {
+    form.reset();
+    form.classList.remove('is-editing');
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const form = e.target.closest && e.target.closest('[data-inline].is-editing');
+  if (form) { form.reset(); form.classList.remove('is-editing'); }
+});

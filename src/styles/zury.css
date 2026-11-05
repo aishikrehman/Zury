@@ -918,3 +918,8 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-avatar-edit{position:relative;border:0;background:none;padding:0;border-radius:50%;cursor:pointer}
 .z-avatar-edit-icon{position:absolute;right:-2px;bottom:-2px;width:1.75rem;height:1.75rem;border-radius:50%;background:var(--z-surface);border:1px solid var(--z-border);display:inline-flex;align-items:center;justify-content:center;color:var(--z-fg-muted);box-shadow:0 2px 6px rgba(16,24,40,.12)}
 .z-avatar-edit:hover .z-avatar-edit-icon{color:var(--z-brand)}
+.z-inline .z-inline-edit{display:none}
+.z-inline.is-editing .z-inline-view{display:none}
+.z-inline.is-editing .z-inline-edit{display:block}
+.z-inline-view [data-inline-open]{opacity:.45;transition:opacity .15s}
+.z-inline-view:hover [data-inline-open],.z-inline-view [data-inline-open]:focus{opacity:1}

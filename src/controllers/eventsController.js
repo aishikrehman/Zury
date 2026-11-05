@@ -279,3 +279,43 @@ async function series(req, res, next) {
 }
 
 module.exports = { index, createForm, create, series, seriesForm, createSeries, nextEdition, manageSeries, seriesAction, manageOneSeries, manageEdition };
+
+// A series' first edition from a few fields: edition, type, wiki and dates. The rest has
+// sensible defaults; the organizer fine-tunes it in the edition's settings afterwards.
+async function firstEdition(req, res, next) {
+  const series = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } }).catch(() => null);
+  if (!series) return next();
+  const back = (msg) => { req.flash('danger', req.t(msg)); res.redirect(`/series/${series.slug}`); };
+  try {
+    const edition = String(req.body.edition || '').trim().toLowerCase();
+    const type = String(req.body.type || 'writing');
+    // No wiki chosen: an umbrella edition on Meta-Wiki; wikis join it afterwards.
+    const wiki = String(req.body.wiki || '').trim() || 'metawiki';
+    const day = (v, end) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? new Date(`${v}T${end ? '23:59:59' : '00:00:00'}Z`) : null);
+    const startDate = day(req.body.startDate);
+    const endDate = day(req.body.endDate, true);
+    if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) return back('Give the edition a short name, such as 2026.');
+    if (!EVENT_TYPES[type]) return back('Choose the type of event.');
+    const catalog = await catalogService.validators();
+    if (!/^[a-z][a-z0-9_]*$/.test(wiki) || !catalog.known(wiki)) return back('Choose an existing wiki.');
+    if (!canUseWikiForEvents(req.subject, wiki)) return back('You cannot create events on that wiki.');
+    if (!startDate || !endDate || endDate < startDate) return back('Set a start date and an end date after it.');
+    const language = (await catalogService.languageOf(wiki)) || 'en';
+    const contest = await eventService.create({
+      actorId: req.user.id,
+      type,
+      autoSlug: true,
+      parsed: {
+        contest: { slug: `${series.slug}-${edition}`, title: `${series.title} ${edition}`, primaryWiki: wiki, language: language === 'special' ? 'en' : language, timezone: 'UTC', startDate, endDate },
+        series: { slug: series.slug, edition, title: series.title },
+        settings: {},
+      },
+    });
+    req.flash('success', req.t('The first edition is ready as a draft: check its settings, then publish it.'));
+    res.redirect(`/${series.slug}/${contest.edition || edition}/config`);
+  } catch (err) {
+    if (err instanceof eventService.EventError) return back(err.message);
+    next(err);
+  }
+}
+module.exports.firstEdition = firstEdition;

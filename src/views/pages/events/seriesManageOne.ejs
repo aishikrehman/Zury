@@ -2,21 +2,57 @@
 <div class="page-header d-print-none"><div class="container-xl">
   <ol class="breadcrumb mb-1"><li class="breadcrumb-item"><a href="/series"><%= t('Series and editions') %></a></li><li class="breadcrumb-item active"><%= sr.title %></li></ol>
   <div class="row g-2 align-items-center">
-    <div class="col"><h2 class="page-title"><%= sr.title %></h2><div class="text-secondary small">/<%= sr.slug %> · <a href="/<%= sr.slug %>"><%= t('Public page') %></a></div></div>
-    <div class="col-auto btn-list">
-      <% if (sr.editions.length) { %>
-        <form method="post" action="/<%= sr.slug %>/next-edition" data-confirm="<%= t('Make next year’s edition from the latest one?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-primary" type="submit"><i class="ti ti-calendar-plus me-1"></i><%= t('Create next edition') %></button></form>
-      <% } else { %>
-        <a class="btn btn-primary" href="/events/create"><i class="ti ti-calendar-plus me-1"></i><%= t('Create the first edition') %></a>
-      <% } %>
-    </div>
+    <div class="col">
+      <%# Name and description, edited where they are shown. %>
+      <form method="post" action="/series/<%= sr.slug %>/update" class="z-inline" data-inline>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="z-inline-view">
+          <h2 class="page-title"><%= sr.title %><button class="btn btn-sm btn-icon btn-ghost-secondary ms-1" type="button" data-inline-open title="<%= t('Edit') %>" aria-label="<%= t('Edit') %>"><i class="ti ti-pencil"></i></button></h2>
+          <% if (sr.description) { %><p class="text-secondary m-0 mt-1" style="white-space: pre-line"><%= sr.description %></p><% } %>
+        </div>
+        <div class="z-inline-edit">
+          <input class="form-control form-control-lg mb-2" name="title" value="<%= sr.title %>" required maxlength="120" aria-label="<%= t('Name') %>">
+          <textarea class="form-control mb-2" name="description" rows="2" maxlength="2000" placeholder="<%= t('Description') %>" aria-label="<%= t('Description') %>"><%= sr.description %></textarea>
+          <div class="d-flex gap-2"><button class="btn btn-sm btn-primary" type="submit"><%= t('Save') %></button><button class="btn btn-sm" type="button" data-inline-cancel><%= t('Cancel') %></button>
+            <% if (!sr.editions.length && can('deleteAnyEvent')) { %><button class="btn btn-sm btn-ghost-danger ms-auto" type="submit" formaction="/series/<%= sr.slug %>/delete" data-confirm="<%= t('Delete this series?') %>"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button><% } %>
+          </div>
+        </div>
+      </form>
+      <div class="text-secondary small">/<%= sr.slug %> · <a href="/<%= sr.slug %>"><%= t('Public page') %></a></div></div>
   </div>
 </div></div>
 <div class="page-body"><div class="container-xl">
+
   <div class="row row-cards">
-    <div class="col-lg-8">
+    <div class="col-12">
       <div class="card">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3></div>
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3><div class="card-actions">
+      <% if (sr.editions.length) { %>
+        <form method="post" action="/<%= sr.slug %>/next-edition" data-confirm="<%= t('Make next year’s edition from the latest one?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-primary" type="submit"><i class="ti ti-calendar-plus me-1"></i><%= t('Create next edition') %></button></form>
+      <% } else { %>
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#first-edition" aria-expanded="false"><i class="ti ti-calendar-plus me-1"></i><%= t('Create the first edition') %></button>
+      <% } %>
+</div></div>
+  <% if (!sr.editions.length) { %>
+    <form method="post" action="/series/<%= sr.slug %>/first-edition" class="collapse border-bottom" id="first-edition">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+          <div class="col-6 col-md-2"><label class="form-label" for="fe-edition"><%= t('Edition') %></label><input class="form-control" id="fe-edition" name="edition" value="<%= new Date().getFullYear() %>" maxlength="20" required></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="fe-type"><%= t('Type of event') %></label><select class="form-select" id="fe-type" name="type"><% Object.entries(EVENT_TYPES).forEach(([key, td]) => { %><option value="<%= key %>"<%= key === 'writing' ? ' selected' : '' %>><%= t(td.label) %></option><% }) %></select></div>
+          <div class="col-md-7"><select class="form-select" id="fe-wiki" name="wiki" data-picker="wiki" data-language-label="<%= t('Project language') %>" data-site-label="<%= t('Project site') %>" placeholder="<%= t('Choose a wiki…') %>"></select></div>
+        </div>
+        <div class="row g-3 align-items-end mt-0">
+          <div class="col-6 col-md-2"><label class="form-label" for="fe-start"><%= t('Starts') %></label><input class="form-control" type="date" id="fe-start" name="startDate" required></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="fe-end"><%= t('Ends') %></label><input class="form-control" type="date" id="fe-end" name="endDate" required></div>
+        </div>
+        <div class="d-flex align-items-center gap-3 mt-3">
+          <span class="text-secondary small flex-fill"><%= t('Title: {title}. Everything else can be set in its settings afterwards.', { title: sr.title + ' ' + new Date().getFullYear() }) %></span>
+          <button class="btn btn-primary" type="submit"><%= t('Create') %></button>
+        </div>
+      </div>
+    </form>
+  <% } %>
         <% if (!sr.editions.length) { %><div class="card-body text-secondary"><%= t('No editions yet') %></div><% } else { %>
           <div class="list-group list-group-flush">
             <% sr.editions.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; const sum = summary.find((x) => x.id === e.id) || {}; %>
@@ -35,20 +71,6 @@
           </div>
         <% } %>
       </div>
-    </div>
-    <div class="col-lg-4">
-      <form method="post" action="/series/<%= sr.slug %>/update" class="card">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-pencil me-2"></i><%= t('Series details') %></h3></div>
-        <div class="card-body">
-          <div class="mb-3"><label class="form-label" for="title"><%= t('Name') %></label><input class="form-control" id="title" name="title" value="<%= sr.title %>" required maxlength="120"></div>
-          <div><label class="form-label" for="description"><%= t('Description') %></label><textarea class="form-control" id="description" name="description" rows="3" maxlength="2000"><%= sr.description %></textarea></div>
-        </div>
-        <div class="card-footer d-flex gap-2">
-          <button class="btn btn-primary" type="submit"><%= t('Save') %></button>
-          <% if (!sr.editions.length && can('deleteAnyEvent')) { %><button class="btn btn-ghost-danger ms-auto" type="submit" formaction="/series/<%= sr.slug %>/delete" data-confirm="<%= t('Delete this series?') %>"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button><% } %>
-        </div>
-      </form>
     </div>
   </div>
 </div></div>

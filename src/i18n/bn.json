@@ -1244,5 +1244,12 @@
   "Organizing": "আয়োজন",
   "No public event participation.": "কোনো সর্বজনীন ইভেন্টে অংশ নেওয়া হয়নি।",
   "Change picture": "ছবি বদলান",
-  "A picture from Wikimedia Commons, by its file name.": "উইকিমিডিয়া কমন্সের একটি ছবি, তার ফাইল নাম দিয়ে।"
+  "A picture from Wikimedia Commons, by its file name.": "উইকিমিডিয়া কমন্সের একটি ছবি, তার ফাইল নাম দিয়ে।",
+  "Give the edition a short name, such as 2026.": "সংস্করণের একটি ছোট নাম দিন, যেমন ২০২৬।",
+  "Choose the type of event.": "ইভেন্টের ধরন বেছে নিন।",
+  "You cannot create events on that wiki.": "ওই উইকিতে আপনি ইভেন্ট তৈরি করতে পারবেন না।",
+  "Set a start date and an end date after it.": "শুরুর তারিখ এবং তার পরের একটি শেষের তারিখ দিন।",
+  "The first edition is ready as a draft: check its settings, then publish it.": "প্রথম সংস্করণ খসড়া হিসেবে তৈরি: সেটিংস দেখে প্রকাশ করুন।",
+  "Choose a wiki…": "একটি উইকি বেছে নিন…",
+  "Title: {title}. Everything else can be set in its settings afterwards.": "শিরোনাম: {title}। বাকি সব পরে এর সেটিংসে ঠিক করা যাবে।"
 }
