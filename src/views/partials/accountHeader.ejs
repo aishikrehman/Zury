@@ -24,7 +24,18 @@
         <aside class="col-lg-3">
           <div class="card z-account-nav">
             <div class="card-body text-center">
-              <div class="mb-2"><%- include('./avatar', { u: me, size: 'xl' }) %></div>
+              <% const mine = typeof prefs !== 'undefined' && prefs; %>
+              <% if (mine) { %>
+                <button class="z-avatar-edit mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#change-picture" aria-expanded="false" aria-controls="change-picture" title="<%= t('Change picture') %>"><%- include('./avatar', { u: me, size: 'xl' }) %><span class="z-avatar-edit-icon"><i class="ti ti-camera"></i></span></button>
+                <form action="/settings/avatar" method="post" class="collapse text-start mb-2" id="change-picture">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input class="form-control form-control-sm mb-2" name="file" placeholder="File:Example.jpg" aria-label="<%= t('File name on Commons') %>" maxlength="250">
+                  <div class="form-hint mb-2"><%= t('A picture from Wikimedia Commons, by its file name.') %></div>
+                  <div class="d-flex gap-2"><button class="btn btn-sm btn-primary flex-fill" type="submit"><%= t('Use this picture') %></button><% if (me.avatarUrl) { %><button class="btn btn-sm btn-ghost-danger" type="submit" name="remove" value="1" title="<%= t('Remove picture') %>"><i class="ti ti-trash"></i></button><% } %></div>
+                </form>
+              <% } else { %>
+                <div class="mb-2"><%- include('./avatar', { u: me, size: 'xl' }) %></div>
+              <% } %>
               <div class="h3 m-0"><%= me.username %></div>
               <div class="text-secondary small"><%= me.homeWiki ? wikiLocal(me.homeWiki) : 'Wikimedia' %></div>
             </div>
@@ -39,6 +50,24 @@
                 <div class="subheader mb-1"><%= t('Roles') %></div>
                 <%- include('./accessSummary', { s: subject }) %>
               </div>
+            <% } %>
+            <% if (mine) { %>
+              <form action="/settings" method="post" novalidate class="card-body" id="preferences">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="subheader mb-2"><%= t('Language and time') %></div>
+                <% if (prefs.saved) { %><div class="text-green small mb-2"><i class="ti ti-circle-check me-1"></i><%= t('Preferences saved.') %></div><% } %>
+                <label for="preferredLanguage" class="form-label small mb-1"><%= t('Preferred language') %></label>
+                <select id="preferredLanguage" name="preferredLanguage" data-picker="language" placeholder="<%= t('Search languages…') %>" class="form-select form-select-sm mb-2">
+                  <option value=""><%= t('Default') %></option>
+                  <% if (prefs.values.preferredLanguage) { %><option value="<%= prefs.values.preferredLanguage %>" selected><%= prefs.values.preferredLanguage %></option><% } %>
+                </select>
+                <label for="timezone" class="form-label small mb-1"><%= t('Timezone') %></label>
+                <select id="timezone" name="timezone" class="form-select form-select-sm mb-2">
+                  <option value=""><%= t('Not set') %></option>
+                  <% prefs.timezones.forEach((tz) => { %><option value="<%= tz %>"<%= prefs.values.timezone === tz ? ' selected' : '' %>><%= tz %></option><% }) %>
+                </select>
+                <button type="submit" class="btn btn-sm w-100"><%= t('Save') %></button>
+              </form>
             <% } %>
           </div>
         </aside>

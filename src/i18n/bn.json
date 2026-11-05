@@ -1242,5 +1242,7 @@
   "{n} to review": "{n}টি পর্যালোচনা বাকি",
   "Approve": "অনুমোদন",
   "Organizing": "আয়োজন",
-  "No public event participation.": "কোনো সর্বজনীন ইভেন্টে অংশ নেওয়া হয়নি।"
+  "No public event participation.": "কোনো সর্বজনীন ইভেন্টে অংশ নেওয়া হয়নি।",
+  "Change picture": "ছবি বদলান",
+  "A picture from Wikimedia Commons, by its file name.": "উইকিমিডিয়া কমন্সের একটি ছবি, তার ফাইল নাম দিয়ে।"
 }

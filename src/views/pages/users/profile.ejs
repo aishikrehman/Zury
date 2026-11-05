@@ -6,7 +6,7 @@
     { heading: t('Participated'), icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
   ];
 %>
-<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', eventCount: organized.length + judged.length + participated.length }) %><% } else { %>
+<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', prefs, eventCount: organized.length + judged.length + participated.length }) %><% } else { %>
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-3 align-items-center">
@@ -72,7 +72,7 @@
         <% }) %>
       </div>
     </div>
-<% if (isOwnProfile) { %><%- include('../../partials/preferences', prefs) %><%- include('../../partials/accountEnd') %><% } else { %>
+<% if (isOwnProfile) { %><%- include('../../partials/accountEnd') %><% } else { %>
   </div>
 </div>
 <% } %>
