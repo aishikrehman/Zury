@@ -7,12 +7,7 @@
   <meta name="color-scheme" content="light dark">
   <title><%= typeof title !== 'undefined' ? String(title).split(' — ').map((part) => t(part)).join(' — ') : 'Zury' %></title>
   <link rel="icon" type="image/svg+xml" href="/images/zury-logo.svg">
-  <link rel="stylesheet" href="/css/tabler.css">
-  <link rel="stylesheet" href="/vendor/tom-select/css/tom-select.bootstrap5.min.css">
-  <link rel="stylesheet" href="/icons/tabler-icons.css">
-  <link rel="stylesheet" href="/vendor/inter/index.css">
-  <link rel="stylesheet" href="/vendor/noto-bengali/wght.css">
-  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/style.css?v=<%= assetV %>">
 </head>
 <body>
   <header class="z-focusbar">
@@ -33,10 +28,9 @@
     <%- body %>
   </main>
   <script type="application/json" id="zury-i18n"><%- clientStrings %></script>
-  <script src="/js/i18n.js"></script>
-  <script src="/vendor/tabler/js/tabler.min.js"></script>
-  <script src="/vendor/tom-select/js/tom-select.complete.min.js" defer></script>
-  <script src="/js/ui.js" defer></script>
-  <script src="/js/review.js" defer></script>
+  <script src="/js/i18n.js?v=<%= assetV %>"></script>
+  <script src="/vendor/tabler/js/tabler.min.js" defer></script>
+  <script src="/js/ui.js?v=<%= assetV %>" defer></script>
+  <script src="/js/load.js?v=<%= assetV %>" data-v="<%= assetV %>" defer></script>
 </body>
 </html>

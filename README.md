@@ -47,7 +47,7 @@ Set `NODE_ENV=production`, `SESSION_SECRET`, `WIKIMEDIA_CALLBACK_URL` and the OA
 | --- | --- |
 | `npm start` | Backup, migrate, start |
 | `npm run dev` | Start with reload |
-| `npm run build:assets` | Rebuild the icon font subset |
+| `npm run build:assets` | Build `public/css/style.css` (from `src/styles/zury.css` and trimmed Tabler) and the icon font |
 | `npm run admin:grant` | Grant the superuser role |
 | `npm run wikis:sync` | Refresh the list of Wikimedia wikis |
 | `npm run db:setup-local` | Create the local MariaDB user and database |

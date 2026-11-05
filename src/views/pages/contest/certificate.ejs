@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= title %></title>
-  <link rel="stylesheet" href="/css/tabler.css">
-  <link rel="stylesheet" href="/icons/tabler-icons.css">
+  <link rel="stylesheet" href="/css/style.css?v=<%= assetV %>">
   <style>
     body { background: #f6f8fb; }
     .certificate { max-width: 900px; margin: 3rem auto; border: 6px double var(--tblr-primary); }
@@ -29,6 +28,6 @@
     <button class="btn btn-primary" data-print><i class="ti ti-printer me-1"></i><%= t("Print or save as PDF") %></button>
     <a class="btn ms-2" href="<%= base %>/sessions"><%= t("Back") %></a>
   </div>
-  <script src="/js/ui.js"></script>
+  <script src="/js/ui.js?v=<%= assetV %>"></script>
 </body>
 </html>

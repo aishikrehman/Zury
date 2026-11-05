@@ -43,11 +43,7 @@
   <title><%= typeof title !== 'undefined' ? String(title).split(' — ').map((part) => t(part)).join(' — ') : 'Zury' %></title>
   <link rel="icon" type="image/svg+xml" href="/images/zury-logo.svg">
 <%- include('partials/seo') %>
-  <link rel="stylesheet" href="/css/tabler.css?v=<%= assetV %>">
-  <link rel="stylesheet" href="/icons/tabler-icons.css?v=<%= assetV %>">
-  <link rel="stylesheet" href="/vendor/inter/index.css">
-  <link rel="stylesheet" href="/vendor/noto-bengali/wght.css">
-  <link rel="stylesheet" href="/css/theme.css?v=<%= assetV %>">
+  <link rel="stylesheet" href="/css/style.css?v=<%= assetV %>">
 </head>
 <body>
   <a href="#content" class="visually-hidden-focusable skip-link"><%= t("Skip to main content") %></a>

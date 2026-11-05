@@ -1,7 +1,8 @@
-// Trims Tabler's stylesheet and icon font to what Zury uses.
-//   @tabler/core's tabler.css       → public/css/tabler.css (rules whose classes appear in the code)
-//   @tabler/icons-webfont           → public/icons/ (only the icons the code names)
-// Run after changing views or scripts: npm run build:assets
+// Builds the one stylesheet, public/css/style.css, and the icon font. Run after changing
+// views, scripts or src/styles/zury.css: npm run build:assets
+//   style.css = fonts (Inter, Noto Serif Bengali) + @tabler/core trimmed to the classes the code
+//               uses + the icons the code names + src/styles/zury.css (its unused rules dropped too)
+//   public/icons/tabler-icons.woff2 = only the icons the code names
 const fs = require('fs');
 const path = require('path');
 
@@ -18,7 +19,7 @@ function sourceFiles(dir, exts) {
   }
   return out;
 }
-const SOURCES = [...sourceFiles('src', ['.ejs', '.js']), ...sourceFiles('public/js', ['.js']), 'public/css/theme.css'];
+const SOURCES = [...sourceFiles('src', ['.ejs', '.js']), ...sourceFiles('public/js', ['.js'])];
 const text = SOURCES.map(read).join('\n');
 const words = new Set(text.match(/[A-Za-z0-9_-]+/g));
 // Classes made from pieces, e.g. bg-<%= color %>-lt or `btn-${kind}`: keep every class with that start.
@@ -111,38 +112,47 @@ function splitSelectors(sel) {
 
 const classesIn = (sel) => [...sel.replace(/:(not|where|is|has)\([^)]*\)/g, '').matchAll(/\.((?:\\.|[A-Za-z0-9_-])+)/g)].map((m) => m[1].replace(/\\/g, ''));
 
-let kept = 0;
-let dropped = 0;
-function emit(nodes) {
+// Keeps the rules whose classes all appear in the code; counts what it keeps and drops.
+function trim(nodes, stats) {
   let out = '';
   for (const n of nodes) {
     if (n.type === 'statement') out += `${n.head};`;
     else if (n.type === 'at') out += `${n.head}{${n.body}}`;
     else if (n.type === 'group') {
-      const inner = emit(n.children);
+      const inner = trim(n.children, stats);
       if (inner) out += `${n.head}{${inner}}`;
     } else {
       const sels = splitSelectors(n.head).filter((s) => classesIn(s).every(used));
       if (sels.length) {
-        kept += 1;
+        stats.kept += 1;
         out += `${sels.join(',')}{${n.body.trim()}}`;
-      } else dropped += 1;
+      } else stats.dropped += 1;
     }
   }
   return out;
 }
 
-const source = read('node_modules/@tabler/core/dist/css/tabler.css');
-const trimmed = emit(parse(source))
-  .replace(/\s*\n\s*/g, '')
+const squeeze = (css) => css
+  .replace(/\/\*[^]*?\*\//g, '')
+  .replace(/\s*\n\s*/g, ' ')
   .replace(/;\s*}/g, '}')
-  .replace(/:\s+/g, ':')
-  .replace(/\s*([{};,>])\s*/g, '$1');
-const banner = '/* Tabler 1.7.1 (MIT, https://tabler.io), trimmed to what Zury uses by scripts/build-assets.js */\n';
-fs.writeFileSync(path.join(ROOT, 'public/css/tabler.css'), banner + trimmed);
-console.log(`tabler.css: ${Math.round(source.length / 1024)} KB → ${Math.round(trimmed.length / 1024)} KB (${kept} rules kept, ${dropped} dropped)`);
+  .replace(/\s*([{};,>])\s*/g, '$1')
+  .trim();
 
-module.exports = { words, used };
+function build(file, label) {
+  const source = read(file);
+  const stats = { kept: 0, dropped: 0 };
+  const out = squeeze(trim(parse(source), stats));
+  console.log(`${label}: ${Math.round(source.length / 1024)} KB → ${Math.round(out.length / 1024)} KB (${stats.kept} rules kept, ${stats.dropped} dropped)`);
+  return out;
+}
+
+// Self-hosted fonts; their files are served from /vendor/<name>/files.
+function fonts() {
+  return [['inter', 'inter', 'index.css'], ['noto-bengali', 'noto-serif-bengali', 'wght.css']]
+    .map(([at, pkg, file]) => squeeze(read(`node_modules/@fontsource-variable/${pkg}/${file}`).replace(/url\(\.\/files\//g, `url(/vendor/${at}/files/`)))
+    .join('');
+}
 
 // ── Icons: only the ones named in the code, in a small font of their own ──
 async function icons() {
@@ -154,15 +164,24 @@ async function icons() {
   const font = await subsetFont(fs.readFileSync(path.join(dist, 'fonts/tabler-icons.woff2')), keep.map((i) => String.fromCodePoint(parseInt(i.code, 16))).join(''), { targetFormat: 'woff2' });
   fs.mkdirSync(path.join(ROOT, 'public/icons'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'public/icons/tabler-icons.woff2'), font);
+  console.log(`icons: ${all.length} → ${keep.length} (${Math.round(font.length / 1024)} KB font)`);
   const base = css.slice(css.indexOf('.ti{'), css.indexOf('}', css.indexOf('.ti{')) + 1);
-  const out = `/* Tabler Icons 3.49.0 (MIT, https://tabler.io/icons): the ${keep.length} icons Zury uses, by scripts/build-assets.js */\n`
-    + `@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;font-display:block;src:url("tabler-icons.woff2") format("woff2")}`
+  return '@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;font-display:block;src:url("/icons/tabler-icons.woff2") format("woff2")}'
     + base + keep.map((i) => `.ti-${i.name}:before{content:"\\${i.code}"}`).join('');
-  fs.writeFileSync(path.join(ROOT, 'public/icons/tabler-icons.css'), out);
-  console.log(`icons: ${all.length} → ${keep.length} (${Math.round(font.length / 1024)} KB font, ${Math.round(out.length / 1024)} KB css)`);
 }
 
-icons().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
-});
+async function main() {
+  const banner = '/* Zury. Includes Tabler 1.7.1 and Tabler Icons 3.49.0 (MIT, https://tabler.io), Inter and Noto Serif Bengali (OFL). Built by scripts/build-assets.js from src/styles/zury.css; edit that, not this. */\n';
+  const style = banner + fonts() + build('node_modules/@tabler/core/dist/css/tabler.css', 'tabler') + (await icons()) + build('src/styles/zury.css', 'zury');
+  fs.writeFileSync(path.join(ROOT, 'public/css/style.css'), style);
+  console.log(`style.css: ${Math.round(style.length / 1024)} KB`);
+}
+
+module.exports = { words, used };
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
+}
