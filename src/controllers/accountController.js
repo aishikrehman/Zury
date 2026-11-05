@@ -4,7 +4,6 @@ const contestService = require('../services/contestService');
 const statsService = require('../services/statsService');
 const catalogService = require('../wiki/catalogService');
 
-const { TIMEZONES } = require('../utils/time');
 
 async function dashboard(req, res, next) {
   try {
@@ -32,21 +31,12 @@ async function dashboard(req, res, next) {
   }
 }
 
-function renderSettings(res, { values, errors = {}, saved = false, status = 200 }) {
-  res.status(status).render('pages/account/settings', {
-    title: 'Settings — Zury',
-    values,
-    errors,
-    saved,
-    timezones: TIMEZONES,
-  });
-}
+const { userPath } = require('../utils/format');
+const prefsUrl = (req, query = '') => `${userPath(req.user.username)}${query}#preferences`;
 
+// Preferences live on your own profile.
 function showSettings(req, res) {
-  renderSettings(res, {
-    values: { preferredLanguage: req.user.preferredLanguage, timezone: req.user.timezone },
-    saved: req.query.saved === '1',
-  });
+  res.redirect(prefsUrl(req, req.query.saved === '1' ? '?saved=1' : ''));
 }
 
 async function updateSettings(req, res, next) {
@@ -54,10 +44,11 @@ async function updateSettings(req, res, next) {
     const catalog = await catalogService.validators();
     const { errors, values } = userService.validatePreferences(req.body, catalog.language);
     if (Object.keys(errors).length) {
-      return renderSettings(res, { values: req.body, errors, status: 422 });
+      req.flash('danger', req.t(Object.values(errors)[0]));
+      return res.redirect(prefsUrl(req));
     }
     await userService.updatePreferences(req.user.id, values);
-    res.redirect('/settings?saved=1');
+    res.redirect(prefsUrl(req, '?saved=1'));
   } catch (err) {
     next(err);
   }
@@ -79,7 +70,7 @@ async function updateAvatar(req, res, next) {
     if (!(err instanceof AvatarError)) return next(err);
     req.flash('danger', err.message);
   }
-  res.redirect('/settings');
+  res.redirect(prefsUrl(req));
 }
 
 module.exports = { dashboard, showSettings, updateSettings, updateAvatar };

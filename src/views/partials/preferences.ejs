@@ -1,4 +1,6 @@
-<%- include('../../partials/accountHeader', { tab: 'settings' }) %>
+<%# Your preferences (picture, language and time), shown on your own profile. Expects values, errors, saved, timezones. %>
+<section id="preferences" class="mt-4">
+  <h2 class="h3 mb-3"><i class="ti ti-settings me-2 text-secondary"></i><%= t("Preferences") %></h2>
     <% if (saved) { %><div class="alert alert-success" role="status"><i class="ti ti-circle-check me-1"></i><%= t("Preferences saved.") %></div><% } %>
 
     <div class="card mb-3">
@@ -6,7 +8,7 @@
       <form action="/settings/avatar" method="post" class="card-body">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="row g-3 align-items-center">
-          <div class="col-auto"><%- include('../../partials/avatar', { u: currentUser, size: 'xl' }) %></div>
+          <div class="col-auto"><%- include('./avatar', { u: currentUser, size: 'xl' }) %></div>
           <div class="col">
             <p class="text-secondary small mb-2"><%= t('Use a picture from Wikimedia Commons: type its file name, e.g. Example.jpg.') %></p>
             <div class="d-flex flex-wrap gap-2">
@@ -48,4 +50,4 @@
         <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i><%= t("Save preferences") %></button>
       </div>
     </form>
-<%- include('../../partials/accountEnd') %>
+</section>

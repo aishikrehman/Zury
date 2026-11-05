@@ -72,7 +72,7 @@
         <% }) %>
       </div>
     </div>
-<% if (isOwnProfile) { %><%- include('../../partials/accountEnd') %><% } else { %>
+<% if (isOwnProfile) { %><%- include('../../partials/preferences', prefs) %><%- include('../../partials/accountEnd') %><% } else { %>
   </div>
 </div>
 <% } %>

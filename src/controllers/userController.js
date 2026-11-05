@@ -21,6 +21,7 @@ async function showProfile(req, res, next) {
       organized: events.filter((e) => e.roles.includes('organizer')),
       judged: events.filter((e) => e.roles.includes('jury')),
       participated: events.filter((e) => e.roles.includes('participant')),
+      prefs: req.user?.id === profileUser.id ? { values: { preferredLanguage: req.user.preferredLanguage, timezone: req.user.timezone }, errors: {}, saved: req.query.saved === '1', timezones: require('../utils/time').TIMEZONES } : null,
     });
   } catch (err) {
     next(err);
