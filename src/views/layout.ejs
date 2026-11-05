@@ -30,16 +30,7 @@
     });
   }
   if (can('accessAdmin')) {
-    navItems.push({
-      icon: 'shield-lock', label: t('Administration'), active: isActive('/admin'),
-      children: [
-        { href: '/admin', icon: 'chart-dots', label: t('Overview'), active: isActive('/admin', true) },
-        { href: '/admin/users', icon: 'users', label: t('Users'), active: isActive('/admin/users') },
-        { href: '/admin/permissions', icon: 'key', label: t('Permissions'), active: isActive('/admin/permissions') },
-        ...(can('viewAuditLog') ? [{ href: '/admin/logs', icon: 'history', label: t('Audit log'), active: isActive('/admin/logs') }] : []),
-        ...(can('maintainSite') ? [{ href: '/admin/maintenance', icon: 'database', label: t('Maintenance'), active: isActive('/admin/maintenance') }] : []),
-      ],
-    });
+    navItems.push({ href: '/admin', icon: 'shield-lock', label: t('Administration'), active: isActive('/admin') });
   }
   const htmlClasses = uiClasses;
 %>
@@ -52,12 +43,11 @@
   <title><%= typeof title !== 'undefined' ? String(title).split(' — ').map((part) => t(part)).join(' — ') : 'Zury' %></title>
   <link rel="icon" type="image/svg+xml" href="/images/zury-logo.svg">
 <%- include('partials/seo') %>
-  <link rel="stylesheet" href="/css/tabler.css">
-  <link rel="stylesheet" href="/vendor/tom-select/css/tom-select.bootstrap5.min.css">
-  <link rel="stylesheet" href="/icons/tabler-icons.css">
+  <link rel="stylesheet" href="/css/tabler.css?v=<%= assetV %>">
+  <link rel="stylesheet" href="/icons/tabler-icons.css?v=<%= assetV %>">
   <link rel="stylesheet" href="/vendor/inter/index.css">
   <link rel="stylesheet" href="/vendor/noto-bengali/wght.css">
-  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/theme.css?v=<%= assetV %>">
 </head>
 <body>
   <a href="#content" class="visually-hidden-focusable skip-link"><%= t("Skip to main content") %></a>
@@ -77,14 +67,9 @@
   <%- include('partials/footer') %>
   <%- include('partials/a11y') %>
   <script type="application/json" id="zury-i18n"><%- clientStrings %></script>
-  <script src="/js/i18n.js"></script>
-  <script src="/vendor/tabler/js/tabler.min.js"></script>
-  <script src="/vendor/tom-select/js/tom-select.complete.min.js" defer></script>
-  <script src="/js/pickers.js" defer></script>
-  <script src="/js/charts.js" defer></script>
-  <script src="/js/ui.js" defer></script>
-  <script src="/js/wizard.js" defer></script>
-  <script src="/js/eventForm.js" defer></script>
-  <script src="/js/review.js" defer></script>
+  <script src="/js/i18n.js?v=<%= assetV %>"></script>
+  <script src="/vendor/tabler/js/tabler.min.js" defer></script>
+  <script src="/js/ui.js?v=<%= assetV %>" defer></script>
+  <script src="/js/load.js?v=<%= assetV %>" data-v="<%= assetV %>" defer></script>
 </body>
 </html>

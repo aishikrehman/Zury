@@ -2,7 +2,7 @@
   const mb = (b) => (b / 1048576).toFixed(1);
   const up = (sec) => (sec >= 86400 ? t('{n} days', { n: Math.floor(sec / 86400) }) : sec >= 3600 ? t('{n} hours', { n: Math.floor(sec / 3600) }) : t('{n} minutes', { n: Math.floor(sec / 60) }));
 %>
-<%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Maintenance') }) %>
+<%- include('../../partials/adminHeader', { tab: 'maintenance' }) %>
 <div class="page-body"><div class="container-xl">
   <div class="row row-cards">
     <div class="col-lg-7">

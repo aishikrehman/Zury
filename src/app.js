@@ -76,7 +76,16 @@ Object.assign(app.locals, format, contestLabels, { EVENT_TYPES, FEATURE_DEFAULTS
   eventWikiScope,
 });
 
-app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: env.nodeEnv === 'production' ? '1d' : 0 }));
+// Pages and text files go out compressed; Toolforge's proxy leaves HTML as it is.
+app.use(require('compression')());
+// Each start gets a new asset version: files asked for with ?v= can be cached for a year.
+app.locals.assetV = Date.now().toString(36);
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  maxAge: env.nodeEnv === 'production' ? '1d' : 0,
+  setHeaders: (res, file) => {
+    if (env.nodeEnv === 'production' && res.req.query.v) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  },
+}));
 // Self-hosted: Toolforge forbids loading assets from third-party CDNs.
 const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules', pkg, 'dist'), { maxAge: '7d' });
 app.use('/vendor/tabler', vendor('@tabler/core'));

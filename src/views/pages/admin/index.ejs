@@ -4,7 +4,7 @@
   ['shield-lock', 'orange', 'Platform administrators', stats.admins, '/admin/users'],
   ['history', 'azure', 'Audit log entries', stats.auditEntries, '/admin/logs'],
 ]; %>
-<%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Overview') }) %>
+<%- include('../../partials/adminHeader', { tab: 'overview' }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="row row-deck row-cards mb-4">

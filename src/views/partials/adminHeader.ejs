@@ -1,0 +1,21 @@
+<%# Administration: one heading, its pages as tabs. Expects: tab. %>
+<%
+  const adminTabs = [
+    ['overview', '/admin', t('Overview')],
+    ['users', '/admin/users', t('Users')],
+    ['permissions', '/admin/permissions', t('Permissions')],
+    ...(can('viewAuditLog') ? [['logs', '/admin/logs', t('Audit log')]] : []),
+    ...(can('maintainSite') ? [['maintenance', '/admin/maintenance', t('Maintenance')]] : []),
+  ];
+%>
+<header class="z-evhead d-print-none" style="--z-proj: var(--z-brand)">
+  <div class="container-xl">
+    <div class="z-evhead-main">
+      <span class="z-evhead-logo is-icon"><i class="ti ti-shield-lock"></i></span>
+      <div class="z-evhead-text"><h1 class="z-evhead-title"><%= t('Administration') %></h1></div>
+    </div>
+    <nav class="z-evhead-tabs" aria-label="<%= t('Administration') %>">
+      <% adminTabs.forEach(([key, href, label]) => { %><a class="<%= key === tab ? 'active' : '' %>" href="<%= href %>"<%- key === tab ? ' aria-current="page"' : '' %>><%= label %></a><% }) %>
+    </nav>
+  </div>
+</header>

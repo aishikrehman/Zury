@@ -849,3 +849,11 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-form-fold>summary .fw-normal{text-transform:none;letter-spacing:0}
 .z-step-num{display:inline-flex;align-items:center;justify-content:center;width:1.4rem;height:1.4rem;margin-right:.45rem;border-radius:50%;font-size:.75rem;font-weight:700;background:var(--z-hover);color:var(--z-fg-muted)}
 .step-item.active .z-step-num,.nav-link.active .z-step-num{background:var(--z-brand);color:#fff}
+.z-filterbar{background:var(--z-surface);border:1px solid var(--z-border);border-radius:14px;padding:.75rem;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.z-filterbar-top{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.75rem}
+.z-filterbar-fields{display:grid;grid-template-columns:minmax(14rem,2fr) repeat(4,minmax(9rem,1fr)) auto;gap:.5rem;align-items:center}
+@media (max-width:991.98px){.z-filterbar-fields{grid-template-columns:1fr 1fr}.z-filter-search{grid-column:1/-1}}
+.z-seg{display:inline-flex;gap:2px;padding:3px;background:var(--z-hover);border-radius:10px;overflow-x:auto;scrollbar-width:none}
+.z-seg a{display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:8px;color:var(--z-fg-muted);font-weight:500;font-size:.875rem;text-decoration:none;white-space:nowrap}
+.z-seg a:hover{color:var(--z-fg)}
+.z-seg a.active{background:var(--z-surface);color:var(--z-fg);box-shadow:0 1px 2px rgba(16,24,40,.12)}

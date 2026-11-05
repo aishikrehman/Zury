@@ -1,5 +1,5 @@
 <% const pages = Math.max(1, Math.ceil(result.total / result.perPage)); %>
-<%- include('../../partials/pageHeader', { pretitle: t('Administration'), heading: t('Audit log') }) %>
+<%- include('../../partials/adminHeader', { tab: 'logs' }) %>
 <div class="page-body">
   <div class="container-xl">
     <div class="card">

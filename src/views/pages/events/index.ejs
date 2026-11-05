@@ -12,60 +12,55 @@
     const s = p.toString();
     return s ? `?${s}` : '';
   };
-  const more = filters.type || filters.wiki || filters.project || filters.sort !== 'newest';
+  const filtered = filters.type || filters.wiki || filters.q || filters.project;
+  const groupLabels = { active: 'Active', upcoming: 'Upcoming', completed: 'Completed' };
 %>
-<%- include('../../partials/pageHeader', { pretitle: t('Events'), heading, actions: can('createEvent') ? `<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>${h(t('Create event'))}</a>` : '' }) %>
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="d-flex flex-wrap align-items-end gap-3">
+      <div>
+        <h1 class="page-title"><%= heading %></h1>
+        <div class="text-secondary mt-1"><%= tn('{n} event', '{n} events', result.total) %></div>
+      </div>
+      <% if (can('createEvent')) { %><a class="btn btn-primary ms-auto" href="/events/create"><i class="ti ti-plus me-1"></i><%= t('Create event') %></a><% } %>
+    </div>
+  </div>
+</div>
 <div class="page-body">
   <div class="container-xl">
-        <div class="card mb-3">
-      <div class="card-header flex-wrap gap-2">
-        <ul class="nav nav-pills card-header-pills">
-          <li class="nav-item"><a class="nav-link<%= !filters.group ? ' active' : '' %>" href="/events<%= qs({}) %>"><%= t("All") %></a></li>
-          <% groups.forEach((g) => { %><li class="nav-item"><a class="nav-link<%= filters.group === g ? ' active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><%= t({ active: 'Active', upcoming: 'Upcoming', completed: 'Completed' }[g]) %></a></li><% }) %>
-        </ul>
-        <div class="ms-auto btn-group" role="group" aria-label="<%= t('View') %>">
-          <a class="btn btn-sm btn-icon<%= filters.view === 'grid' ? ' active' : '' %>" href="<%= base %><%= qs({ view: 'grid' }).replace('view=grid', '').replace(/[?&]$/, '') %>" title="<%= t('Cards') %>" aria-label="<%= t('Cards') %>"><i class="ti ti-layout-grid"></i></a>
-          <a class="btn btn-sm btn-icon<%= filters.view === 'list' ? ' active' : '' %>" href="<%= base %><%= qs({ view: 'list' }) %>" title="<%= t('List') %>" aria-label="<%= t('List') %>"><i class="ti ti-list"></i></a>
+    <form method="get" action="<%= base %>" class="z-filterbar mb-4">
+      <% if (filters.view !== 'grid') { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
+      <div class="z-filterbar-top">
+        <nav class="z-seg" aria-label="<%= t('Events') %>">
+          <a class="<%= !filters.group ? 'active' : '' %>" href="/events<%= qs({}) %>"><%= t('All') %></a>
+          <% groups.forEach((g) => { %><a class="<%= filters.group === g ? 'active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><%= t(groupLabels[g]) %></a><% }) %>
+        </nav>
+        <div class="z-seg ms-auto" role="group" aria-label="<%= t('View') %>">
+          <a class="<%= filters.view === 'grid' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'grid' }).replace('view=grid', '').replace(/[?&]$/, '') %>" title="<%= t('Cards') %>" aria-label="<%= t('Cards') %>"><i class="ti ti-layout-grid"></i></a>
+          <a class="<%= filters.view === 'list' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'list' }) %>" title="<%= t('List') %>" aria-label="<%= t('List') %>"><i class="ti ti-list"></i></a>
         </div>
       </div>
-      <form method="get" action="<%= base %>" class="card-body py-2">
-        <% if (filters.view !== 'grid') { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
-        <div class="row g-2 align-items-center">
-          <div class="col">
-            <div class="input-icon"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t("Title or community") %>" aria-label="<%= t("Search events") %>"></div>
-          </div>
-          <div class="col-auto"><button class="btn<%= more ? ' active' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#z-more-filters" aria-expanded="<%= more %>"><%= t('Filters') %></button></div>
-          <% if (filters.type || filters.wiki || filters.q || filters.project) { %><div class="col-auto"><a class="btn btn-ghost-secondary" href="<%= base %>"><%= t("Reset") %></a></div><% } %>
-        </div>
-        <div class="row g-2 mt-0 collapse<%= more ? ' show' : '' %>" id="z-more-filters">
-          <div class="col-6 col-md">
-            <select name="project" class="form-select" aria-label="<%= t('Project') %>" data-autosubmit>
-              <option value=""><%= t('All projects') %></option>
-              <% Object.entries(PROJECTS).forEach(([key, pr]) => { %><option value="<%= key %>"<%= filters.project === key ? ' selected' : '' %>><%= pr.label %></option><% }) %>
-            </select>
-          </div>
-          <div class="col-6 col-md">
-            <select name="type" class="form-select" aria-label="<%= t('Type') %>" data-autosubmit>
-              <option value=""><%= t("All types") %></option>
-              <% Object.entries(CONTEST_TYPES).forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.type === key ? ' selected' : '' %>><%= label %></option><% }) %>
-            </select>
-          </div>
-          <div class="col-6 col-md">
-            <select name="wiki" class="form-select" aria-label="<%= t("Wiki") %>" data-autosubmit>
-              <option value=""><%= t("All wikis") %></option>
-              <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiLocal(w) %></option><% }) %>
-            </select>
-          </div>
-          <div class="col-6 col-md">
-            <select name="sort" class="form-select" aria-label="<%= t("Sort") %>" data-autosubmit>
-              <% [['newest', 'Newest first'], ['soonest', 'Oldest first'], ['title', 'Title']].forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
-            </select>
-          </div>
-        </div>
-      </form>
-    </div>
+      <div class="z-filterbar-fields">
+        <div class="input-icon z-filter-search"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t('Title or community') %>" aria-label="<%= t('Search events') %>"></div>
+        <select name="project" class="form-select" aria-label="<%= t('Project') %>" data-autosubmit>
+          <option value=""><%= t('All projects') %></option>
+          <% Object.entries(PROJECTS).forEach(([key, pr]) => { %><option value="<%= key %>"<%= filters.project === key ? ' selected' : '' %>><%= pr.label %></option><% }) %>
+        </select>
+        <select name="type" class="form-select" aria-label="<%= t('Type') %>" data-autosubmit>
+          <option value=""><%= t('All types') %></option>
+          <% Object.entries(CONTEST_TYPES).forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.type === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+        </select>
+        <select name="wiki" class="form-select" aria-label="<%= t('Wiki') %>" data-autosubmit>
+          <option value=""><%= t('All wikis') %></option>
+          <% result.wikis.forEach((w) => { %><option value="<%= w %>"<%= filters.wiki === w ? ' selected' : '' %>><%= wikiLocal(w) %></option><% }) %>
+        </select>
+        <select name="sort" class="form-select" aria-label="<%= t('Sort') %>" data-autosubmit>
+          <% [['newest', 'Newest first'], ['soonest', 'Oldest first'], ['title', 'Title']].forEach(([key, label]) => { %><option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+        </select>
+        <% if (filtered) { %><a class="btn btn-ghost-secondary" href="<%= base %>"><i class="ti ti-x me-1"></i><%= t('Reset') %></a><% } %>
+      </div>
+    </form>
     <div>
-        <div class="text-secondary mb-3"><%= tn('{n} event', '{n} events', result.total) %></div>
         <% if (!result.items.length) { %>
           <div class="card">
             <div class="empty">
