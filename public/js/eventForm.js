@@ -126,8 +126,16 @@
       if (!edition.value && /^\d+$/.test(item.latest)) edition.value = autoEdition = String(Number(item.latest) + 1);
       if (prev && !prev.value) prev.value = autoPrev = `${location.origin}/${series.value}/${item.latest}`;
     }
+    // Its editions as choices; picking an existing one makes this wiki join it.
+    editions = item?.editions || [];
+    const list = document.getElementById('edition-list');
+    if (list) list.replaceChildren(...[...new Set([autoEdition, ...editions].filter(Boolean))].map((e) => Object.assign(document.createElement('option'), { value: e })));
     showAddress();
+    showJoin();
   });
-  edition.addEventListener('input', showAddress);
+  let editions = [];
+  const joinHint = form.querySelector('[data-edition-hint]');
+  const showJoin = () => joinHint && joinHint.classList.toggle('d-none', !editions.includes(edition.value.trim()));
+  edition.addEventListener('input', () => { showAddress(); showJoin(); });
   showAddress();
 })();

@@ -50,6 +50,7 @@
         <h1 class="z-evhead-title"><a href="<%= base %>"><%= series ? (contest.title || contest.edition) : contest.title %></a><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
         <div class="z-evhead-meta">
           <span class="z-evhead-status is-<%= color %>"><i></i><%= t(st.label) %></span>
+          <span><i class="ti ti-<%= typeDef.icon || 'calendar-event' %>"></i><%= t(typeDef.label) %></span>
           <% if (contest.visibility === 'private') { %><span><i class="ti ti-lock"></i><%= t('Private') %></span><% } %>
           <% if (contest.startDate) { %><span><i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %> – <%= formatDate(contest.endDate, contest.timezone) %></span><% } %>
           <% facts.forEach((f) => { %><span><%= f %></span><% }) %>

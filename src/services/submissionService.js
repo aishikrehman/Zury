@@ -72,7 +72,7 @@ async function prepare({ contest, settings, participantId, text, eventWikis, def
     const ref = parseEntry(input, defaultWiki || contest.primaryWiki);
     if (ref.error) return { input, error: ref.error };
     try {
-      return { input, meta: await fetchEntryMetadata(ref, { language: contest.language }) };
+      return { input, meta: await fetchEntryMetadata(ref, { language: contest.language, wordCountMethod: settings?.wordCountMethod }) };
     } catch (err) {
       if (err instanceof WikiApiError) return { input, error: `Could not check this entry: ${err.message}` };
       throw err;
@@ -261,7 +261,7 @@ function withdraw({ actor, submission, contestId }) {
 // Fetches fresh metadata and re-runs the rules. Decided outcomes
 // (approved, rejected, …) are never changed automatically.
 async function revalidate({ actor, submission, contest, settings, eventWikis = [] }) {
-  const meta = await fetchEntryMetadata({ wiki: submission.wiki, title: submission.title }, { language: contest.language });
+  const meta = await fetchEntryMetadata({ wiki: submission.wiki, title: submission.title }, { language: contest.language, wordCountMethod: settings?.wordCountMethod });
   const eventWiki = eventWikis.find((w) => w.wiki === submission.wiki);
   const eff = effectiveFor(contest, settings, eventWiki);
   const others = await activeKeys(contest.id);

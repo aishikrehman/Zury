@@ -22,23 +22,40 @@
     <div class="alert alert-warning"><i class="ti ti-info-circle"></i><div><% eligibility.reasons.forEach((r) => { %><div><%= t(r) %></div><% }) %></div></div>
   <% } %>
 
-  <%# ── About the event and how to take part ── %>
-  <div class="row row-cards mb-3">
-    <div class="col-12">
-      <div class="card z-about">
-        <div class="card-body">
-          <div class="d-flex flex-wrap gap-2 mb-2">
-            <span class="badge bg-blue-lt"><i class="ti ti-<%= typeDef.icon || 'calendar-event' %> me-1"></i><%= typeDef.label %></span>
-          </div>
-          <% if (contest.description) { %>
-            <p class="mb-0 z-lead" style="white-space: pre-line"><%= contest.description %></p>
-          <% } else { %>
-            <p class="mb-0 text-secondary"><%= t("No description yet.") %></p>
-          <% } %>
+  <%# ── About the event, then its wikis ── %>
+  <% if (contest.description) { %>
+    <div class="card mb-3 z-about"><div class="card-body"><p class="mb-0 z-lead" style="white-space: pre-line"><%= contest.description %></p></div></div>
+  <% } %>
+  <% if (wikiParts.length) { %>
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3><div class="card-actions text-secondary small"><%= t('{n} taking part', { n: wikiParts.filter((w) => w.status !== 'pending').length }) %></div></div>
+      <% const mostEntries = Math.max(1, ...wikiParts.map((w) => w.entries)); %>
+      <div class="card-body">
+        <div class="row row-cards g-3">
+          <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: t(w.status === 'paused' ? 'Paused' : 'Waiting for approval'), badge: 'secondary' }; const pr = eventProject({ primaryWiki: w.wiki }); %>
+            <div class="col-sm-6 col-lg-4">
+              <a class="z-wiki-card" href="<%= eventBase %>/<%= w.code %>" style="--z-proj: <%= pr.color %>">
+                <div class="d-flex align-items-start gap-2">
+                  <span class="avatar avatar-sm z-proj-icon"><i class="ti ti-<%= pr.icon %>"></i></span>
+                  <div class="min-w-0 flex-fill">
+                    <div class="z-wiki-name text-truncate"><%= wikiLocal(w.wiki) %></div>
+                    <div class="z-wiki-code">/<%= w.code %><% if (w.overridden) { %> · <%= t('{n} own settings', { n: w.overridden }) %><% } %></div>
+                  </div>
+                  <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
+                </div>
+                <div class="z-wiki-bar" title="<%= t('{n} entries', { n: w.entries }) %>"><span style="width: <%= Math.round((w.entries / mostEntries) * 100) %>%"></span></div>
+                <div class="z-wiki-stats">
+                  <span><strong><%= formatNumber(w.entries) %></strong> <%= t('Entries') %></span>
+                  <span><strong><%= formatNumber(w.organizers) %></strong> <%= t('Organizers') %></span>
+                  <span><strong><%= formatNumber(w.jury) %></strong> <%= t('Jury') %></span>
+                </div>
+              </a>
+            </div>
+          <% }) %>
         </div>
       </div>
     </div>
-  </div>
+  <% } %>
 
   <%# ── Schedule and the event at a glance ── %>
   <%
@@ -105,36 +122,7 @@
   <%# ── Wikis, then the details and rules in one card ── %>
   <div class="row row-cards">
     <div class="col-lg-8">
-      <% if (wikiParts.length) { %>
-        <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3><div class="card-actions text-secondary small"><%= t('{n} taking part', { n: wikiParts.filter((w) => w.status !== 'pending').length }) %></div></div>
-          <% const mostEntries = Math.max(1, ...wikiParts.map((w) => w.entries)); %>
-          <div class="card-body">
-            <div class="row row-cards g-3">
-              <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: t(w.status === 'paused' ? 'Paused' : 'Waiting for approval'), badge: 'secondary' }; const pr = eventProject({ primaryWiki: w.wiki }); %>
-                <div class="col-sm-6 col-lg-4">
-                  <a class="z-wiki-card" href="<%= eventBase %>/<%= w.code %>" style="--z-proj: <%= pr.color %>">
-                    <div class="d-flex align-items-start gap-2">
-                      <span class="avatar avatar-sm z-proj-icon"><i class="ti ti-<%= pr.icon %>"></i></span>
-                      <div class="min-w-0 flex-fill">
-                        <div class="z-wiki-name text-truncate"><%= wikiLocal(w.wiki) %></div>
-                        <div class="z-wiki-code">/<%= w.code %><% if (w.overridden) { %> · <%= t('{n} own settings', { n: w.overridden }) %><% } %></div>
-                      </div>
-                      <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
-                    </div>
-                    <div class="z-wiki-bar" title="<%= t('{n} entries', { n: w.entries }) %>"><span style="width: <%= Math.round((w.entries / mostEntries) * 100) %>%"></span></div>
-                    <div class="z-wiki-stats">
-                      <span><strong><%= formatNumber(w.entries) %></strong> <%= t('Entries') %></span>
-                      <span><strong><%= formatNumber(w.organizers) %></strong> <%= t('Organizers') %></span>
-                      <span><strong><%= formatNumber(w.jury) %></strong> <%= t('Jury') %></span>
-                    </div>
-                  </a>
-                </div>
-              <% }) %>
-            </div>
-          </div>
-        </div>
-      <% } %>
+      <% if (!series || wikiScope) { %>
       <div class="card">
             <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t("Rules") %></h3></div>
 
@@ -151,6 +139,7 @@
         <% } %>
 
       </div>
+      <% } %>
     </div>
     <div class="col-lg-4">
       <% if (requestableWikis && series && !wikiScope) { %>

@@ -159,7 +159,9 @@
                 </div>
                 <div class="col-md-2">
                   <label class="form-label" for="edition"><%= t("Edition") %></label>
-                  <input class="form-control<%= inv('edition') %>" id="edition" name="edition" maxlength="20" value="<%= v('edition') %>" placeholder="2026">
+                  <input class="form-control<%= inv('edition') %>" id="edition" name="edition" maxlength="20" list="edition-list" autocomplete="off" value="<%= v('edition') %>" placeholder="2026">
+                  <datalist id="edition-list"></datalist>
+                  <div class="form-hint d-none" data-edition-hint><%= t('This edition already exists: your wiki will join it.') %></div>
                   <%- err('edition') %>
                 </div>
                 <div class="col-md-6">
@@ -244,6 +246,13 @@
                 <label class="form-label" for="participantLimit"><%= t('Participant limit') %><%- mark('settings.participantLimit') %></label>
                 <input type="number" min="1" class="form-control<%= inv('participantLimit') %>" id="participantLimit" name="participantLimit" value="<%= v('participantLimit') %>" placeholder="<%= t("No limit") %>">
                 <%- err('participantLimit') %>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="wordCountMethod"><%= t('Word count') %><%- mark('settings.wordCountMethod') %></label>
+                <select class="form-select" id="wordCountMethod" name="wordCountMethod">
+                  <% [['auto', 'Auto: the ztools rule on Bengali wikis'], ['ztools', 'ztools rule (Bengali words in the wikitext)'], ['plain', 'Plain count (all words in the text)']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('wordCountMethod') || 'auto') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+                </select>
+                <div class="form-hint"><%= t('Same counting as ztools, so both tools give the same numbers.') %></div>
               </div>
               <div class="col-md-6">
                 <%- toggle('registrationRequired', 'Participants must register before submitting') %>

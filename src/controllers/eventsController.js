@@ -90,6 +90,23 @@ async function create(req, res, next) {
   if (Object.keys(parsed.errors).length) {
     return renderForm(res, { type, form: parsed.form, errors: parsed.errors, status: 422 });
   }
+  // An existing edition of the series: this wiki joins it instead of becoming an event of its own.
+  if (parsed.series && parsed.series.edition) {
+    const edition = await prisma.contest.findFirst({ where: { deletedAt: null, edition: parsed.series.edition, series: { slug: parsed.series.slug } }, include: { series: true, wikis: true } });
+    if (edition) {
+      const wiki = parsed.contest.primaryWiki;
+      const path = eventPath(edition);
+      if (edition.wikis.some((w) => w.wiki === wiki)) {
+        req.flash('info', req.t('{wiki} is already part of this edition.', { wiki }));
+        return res.redirect(path);
+      }
+      const scope = await require('../services/permissionService').contestScope(req.subject, edition, { wikis: edition.wikis, wiki: null }).catch(() => null);
+      const manages = Boolean(scope && scope.permissions && scope.permissions.has('manageEvent'));
+      await require('../services/eventWikiService').addWiki({ actorId: req.user.id, contest: edition, wiki, status: manages ? 'active' : 'pending', requestedById: manages ? null : req.user.id });
+      req.flash('success', req.t(manages ? '{wiki} added to this edition.' : 'Request to add {wiki} sent to the organizers of this edition.', { wiki }));
+      return res.redirect(manages ? `${path}/config#wikis` : path);
+    }
+  }
   try {
     const contest = await eventService.create({
       actorId: req.user.id,

@@ -1208,5 +1208,13 @@
   "{p}% of the time has passed": "সময়ের {p}% পেরিয়েছে",
   "Length": "মেয়াদ",
   "Days left": "বাকি দিন",
-  "{n} day": "{n} দিন"
+  "{n} day": "{n} দিন",
+  "This edition already exists: your wiki will join it.": "এই সংস্করণটি আগে থেকেই আছে: আপনার উইকি এতে যুক্ত হবে।",
+  "{wiki} is already part of this edition.": "{wiki} আগে থেকেই এই সংস্করণের অংশ।",
+  "{wiki} added to this edition.": "{wiki} এই সংস্করণে যুক্ত হয়েছে।",
+  "Request to add {wiki} sent to the organizers of this edition.": "{wiki} যুক্ত করার অনুরোধ এই সংস্করণের আয়োজকদের কাছে পাঠানো হয়েছে।",
+  "Auto: the ztools rule on Bengali wikis": "স্বয়ংক্রিয়: বাংলা উইকিতে ztools-এর নিয়ম",
+  "ztools rule (Bengali words in the wikitext)": "ztools-এর নিয়ম (উইকিটেক্সটে বাংলা শব্দ)",
+  "Plain count (all words in the text)": "সাধারণ গণনা (লেখার সব শব্দ)",
+  "Same counting as ztools, so both tools give the same numbers.": "ztools-এর মতোই গণনা, তাই দুই টুলে একই সংখ্যা আসবে।"
 }

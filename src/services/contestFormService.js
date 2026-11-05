@@ -225,6 +225,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   else if (marks.some((m) => m.values.some((v) => !Number.isInteger(v.points) || v.points < -100 || v.points > 100))) errors.marks = 'Points must be whole numbers from -100 to 100.';
   settings.marks = JSON.stringify(marks);
   settings.reviewAssignment = body.reviewAssignment === 'assigned' ? 'assigned' : 'open';
+  settings.wordCountMethod = ['ztools', 'plain'].includes(body.wordCountMethod) ? body.wordCountMethod : 'auto';
   settings.requiredReviews = intField(body.requiredReviews, { min: 1, max: 20 }, errors, 'requiredReviews') ?? 1;
   settings.trackHashtags = JSON.stringify([...new Set(hashtags)]);
   settings.trackCategories = JSON.stringify([...new Set(categories)]);
@@ -300,6 +301,7 @@ function toForm(contest, settings) {
     marks: s.marks || '[]',
     requiredReviews: String(s.requiredReviews || 1),
     reviewAssignment: s.reviewAssignment || 'open',
+    wordCountMethod: s.wordCountMethod || 'auto',
     trackHashtags: JSON.parse(s.trackHashtags || '[]').join(', '),
     trackCategories: JSON.parse(s.trackCategories || '[]').join('\n'),
   });
@@ -336,6 +338,7 @@ function defaultSettings(type) {
     marks: '[]',
     requiredReviews: 1,
     reviewAssignment: 'open',
+    wordCountMethod: 'auto',
     typeConfig: JSON.stringify(readTypeConfig(type, '{}')),
   };
   return { ...base, ...EVENT_TYPES[type].defaults };

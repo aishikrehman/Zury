@@ -105,3 +105,30 @@ document.addEventListener('click', (e) => {
   const only = document.querySelector('[data-new-only]');
   if (target && only) target.addEventListener('change', () => { only.hidden = Boolean(target.value); });
 })();
+
+// Links marked data-swap="<id>" (the calendar's arrows) load the next view of that part
+// only: no page reload, and the address follows so Back works.
+(function () {
+  async function swap(url, id, push) {
+    const target = document.getElementById(id);
+    if (!target) return (window.location.href = url);
+    target.style.opacity = '0.55';
+    try {
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'zury' } });
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const fresh = doc.getElementById(id);
+      if (!fresh) throw new Error('missing');
+      target.replaceWith(fresh);
+      if (push) history.pushState({ swap: id }, '', url);
+    } catch {
+      window.location.href = url;
+    }
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-swap]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    e.preventDefault();
+    swap(a.href, a.dataset.swap, true);
+  });
+  window.addEventListener('popstate', (e) => { if (e.state && e.state.swap) swap(location.href, e.state.swap, false); });
+})();

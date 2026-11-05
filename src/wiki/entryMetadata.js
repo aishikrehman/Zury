@@ -19,8 +19,14 @@ const safeThumb = (u) => {
   }
 };
 
-function countWords(text) {
-  return (text || '').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+const words = require('./wordCount');
+
+const countWords = words.countPlain;
+
+// Wikitext of the page's current revision, for the ztools rule.
+async function currentWikitext(wiki, pageId) {
+  const data = await wikiApi.get(wiki, { action: 'query', prop: 'revisions', pageids: String(pageId), rvprop: 'content', rvslots: 'main' });
+  return data.query?.pages?.[0]?.revisions?.[0]?.slots?.main?.content ?? null;
 }
 
 async function fetchEntity(id, language) {
@@ -49,7 +55,7 @@ async function fetchEntity(id, language) {
  * Looks up one entry. `ref` is { wiki, title } or { wiki, pageId }.
  * Returns normalized metadata with exists=false for missing pages.
  */
-async function fetchEntryMetadata(ref, { language = 'en' } = {}) {
+async function fetchEntryMetadata(ref, { language = 'en', wordCountMethod = 'auto' } = {}) {
   const { wiki } = ref;
   const props = ['info', 'revisions', 'categories', 'imageinfo'];
   if (isWikipedia(wiki)) props.push('extracts');
@@ -91,6 +97,10 @@ async function fetchEntryMetadata(ref, { language = 'en' } = {}) {
     wordCount: page.extract != null ? countWords(page.extract) : null,
     categories: (page.categories || []).map((c) => c.title.replace(/^[^:]+:/, '')),
   };
+  if (page.ns === 0 && words.methodFor(wiki, wordCountMethod) === 'ztools') {
+    const text = await currentWikitext(wiki, page.pageid);
+    if (text != null) meta.wordCount = words.countZtools(text);
+  }
   if (info) {
     meta.file = {
       width: info.width,

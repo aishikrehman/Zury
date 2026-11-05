@@ -8,16 +8,18 @@ const { TIMEZONES } = require('../utils/time');
 
 async function dashboard(req, res, next) {
   try {
-    const [myEvents, submissionCount, activity] = await Promise.all([
+    const [myEvents, submissionCount, activity, calendar] = await Promise.all([
       contestService.listForUser(req.user.id),
       prisma.submission.count({ where: { participantId: req.user.id, contest: { deletedAt: null } } }),
       statsService.userStats(req.user.id),
+      require('../services/calendarService').month(req.query.month, { memberships: { some: { userId: req.user.id, status: 'active' } } }),
     ]);
     res.render('pages/account/dashboard', {
       title: 'Dashboard — Zury',
       myEvents,
       submissionCount,
       activity,
+      calendar,
       juryEvents: myEvents.filter((e) => e.roles.includes('jury')),
       wikiRoles: req.subject.user.wikiRoles,
     });

@@ -10,6 +10,7 @@ const users = require('./userDirectoryService');
 const eventService = require('./eventService');
 const eventWikiService = require('./eventWikiService');
 const audit = require('./auditService');
+const words = require('../wiki/wordCount');
 const lifecycle = require('./lifecycleService');
 
 const API = 'https://fountain.toolforge.org/api/editathons';
@@ -48,14 +49,20 @@ function wikiOf(editathon) {
   return hostToDbname(`${editathon.wiki}.wikipedia.org`) || `${String(editathon.wiki).replace(/-/g, '_')}wiki`;
 }
 
-// One juror's marks add up to their points; the entry's score is the jurors' average.
-// No marks yet: still pending. A zero score: rejected.
-function decision(article) {
+// Fountain stores, per criterion, the position of the chosen option (0 = the first, "Yes").
+// As in ztools: no marks yet is pending; a juror choosing option 1 or 2 of the first
+// criterion ("No", or "needs work") rejects; otherwise accepted. Points are the chosen
+// options' values, averaged over the jurors.
+function decision(article, marksConfig = {}) {
   const marks = (article.marks || []).filter((m) => m && m.marks && Object.keys(m.marks).length);
   if (!marks.length) return { status: 'pending', score: null };
-  const points = marks.map((m) => Object.values(m.marks).reduce((a, v) => a + (Number(v) || 0), 0));
-  const score = points.reduce((a, b) => a + b, 0) / points.length;
-  return { status: score > 0 ? 'approved' : 'rejected', score };
+  const rejected = marks.some((m) => [1, 2].includes(Number(m.marks['0'])));
+  const valueOf = (criterion, pos) => {
+    const opt = marksConfig[criterion]?.values?.[Number(pos)];
+    return opt ? Number(opt.value) || 0 : 0;
+  };
+  const points = marks.map((m) => Object.entries(m.marks).reduce((a, [c, pos]) => a + valueOf(c, pos), 0));
+  return { status: rejected ? 'rejected' : 'approved', score: points.reduce((a, b) => a + b, 0) / points.length };
 }
 
 async function pageIds(wiki, titles) {
@@ -71,6 +78,23 @@ async function pageIds(wiki, titles) {
     }
   }
   return ids;
+}
+
+// Word counts by page id, from the current wikitext (ztools rule) or plain text.
+async function wordCounts(wiki, pageids, method) {
+  const out = new Map();
+  const ztools = words.methodFor(wiki, method) === 'ztools';
+  for (let i = 0; i < pageids.length; i += 20) {
+    const batch = pageids.slice(i, i + 20).join('|');
+    const data = ztools
+      ? await wikiApi.get(wiki, { action: 'query', prop: 'revisions', rvprop: 'content', rvslots: 'main', pageids: batch })
+      : await wikiApi.get(wiki, { action: 'query', prop: 'extracts', explaintext: '1', exlimit: 'max', pageids: batch });
+    for (const p of data.query?.pages || []) {
+      const text = ztools ? p.revisions?.[0]?.slots?.main?.content : p.extract;
+      if (text != null) out.set(String(p.pageid), ztools ? words.countZtools(text) : words.countPlain(text));
+    }
+  }
+  return out;
 }
 
 async function ensureMember(contestId, userId, role, wiki, actorId) {
@@ -99,7 +123,9 @@ async function sync(eventWiki, { actorId = null } = {}) {
 
   const articles = editathon.articles || [];
   const ids = await pageIds(wiki, [...new Set(articles.map((a) => a.name))]);
-  const existing = await prisma.submission.findMany({ where: { contestId, wiki }, select: { id: true, pageKey: true, status: true, score: true } });
+  const existing = await prisma.submission.findMany({ where: { contestId, wiki }, select: { id: true, pageKey: true, status: true, score: true, wordCount: true } });
+  const settings = await prisma.contestSettings.findUnique({ where: { contestId }, select: { wordCountMethod: true } });
+  const counts = await wordCounts(wiki, [...new Set(ids.values())], settings?.wordCountMethod).catch(() => new Map());
   const byKey = new Map(existing.map((s) => [s.pageKey, s]));
   let added = 0;
   let updated = 0;
@@ -109,11 +135,13 @@ async function sync(eventWiki, { actorId = null } = {}) {
     const u = await person(a.user);
     if (!pageid || !u) continue;
     const pageKey = String(pageid);
-    const { status, score } = decision(a);
+    const { status, score } = decision(a, editathon.marks);
+    const wordCount = counts.has(pageKey) ? counts.get(pageKey) : null;
     const have = byKey.get(pageKey);
     if (have) {
-      if (have.status !== status || have.score !== score) {
-        await prisma.submission.update({ where: { id: have.id }, data: { status, score } });
+      const newWords = wordCount ?? have.wordCount;
+      if (have.status !== status || have.score !== score || have.wordCount !== newWords) {
+        await prisma.submission.update({ where: { id: have.id }, data: { status, score, wordCount: newWords } });
         updated++;
       }
       continue;
@@ -121,7 +149,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
     await ensureMember(contestId, u.id, 'participant', '', actorId);
     const row = await prisma.submission.create({
       data: {
-        contestId, wiki, pageKey, status, score,
+        contestId, wiki, pageKey, status, score, wordCount,
         participantId: u.id,
         submittedById: u.id,
         title: a.name,

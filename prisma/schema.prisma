@@ -203,6 +203,8 @@ model ContestSettings {
   contestId Int @id
 
   juryReviewEnabled               Boolean @default(true)
+  // How words are counted: auto (the ztools rule on Bengali wikis), ztools or plain.
+  wordCountMethod                 String  @default("auto")
   appealsEnabled                  Boolean @default(false)
   registrationEnabled             Boolean @default(true)
   massSubmissionEnabled           Boolean @default(false)

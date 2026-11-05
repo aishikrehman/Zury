@@ -23,23 +23,13 @@ async function index(req, res, next) {
     const all = req.query.all === '1';
     const mineFirst = (c) => (c.wikis || []).length > 1 || c.language === lang || (c.primaryWiki || '').startsWith(lang) || (c.wikis || []).some((w) => (w.wiki || '').startsWith(lang));
     const pick = (list) => (all ? list : list.filter(mineFirst));
-    // The calendar: one month, ?month=2026-11.
-    const m = /^(\d{4})-(\d{2})$/.exec(req.query.month || '');
-    const today = new Date();
-    const year = m ? Number(m[1]) : today.getUTCFullYear();
-    const mon = m ? Number(m[2]) - 1 : today.getUTCMonth();
-    const monthStart = new Date(Date.UTC(year, mon, 1));
-    const monthEnd = new Date(Date.UTC(year, mon + 1, 1));
-    const calendarEvents = await prisma.contest.findMany({
-      where: { deletedAt: null, visibility: 'public', status: { notIn: ['draft', 'cancelled'] }, startDate: { lt: monthEnd }, endDate: { gte: monthStart } },
-      select: { id: true, slug: true, title: true, type: true, startDate: true, endDate: true, edition: true, language: true, primaryWiki: true, series: { select: { slug: true } }, wikis: { select: { wiki: true } } },
-      orderBy: { startDate: 'asc' },
-    });
+    const calendar = await require('../services/calendarService').month(req.query.month, { visibility: 'public' });
+    if (!all) calendar.events = calendar.events.filter(mineFirst);
     res.render('pages/home', {
       homeLang: lang,
       all,
       shown: { active: pick(active), upcoming: pick(upcoming), completed: pick(completed) },
-      calendar: { year, month: mon, start: monthStart, events: all ? calendarEvents : calendarEvents.filter(mineFirst) },
+      calendar,
       title: 'Zury — Wikimedia Contests & Events',
       stats: { events: stats[0], submissions: stats[1], users: stats[2], wikis: stats[3] },
       trend: platform.submissions,
