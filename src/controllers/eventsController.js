@@ -190,7 +190,7 @@ async function manageOneSeries(req, res, next) {
     const sr = (await require('../services/seriesService').listAll()).find((x) => x.slug === req.params.series);
     if (!sr) return next();
     if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
-    const summary = await require('../services/seriesService').summary(sr.id);
+    const summary = await require('../services/seriesService').summary(sr.id, { drafts: true });
     res.render('pages/events/seriesManageOne', { title: `${sr.title} — Zury`, sr, summary });
   } catch (err) {
     next(err);
@@ -261,8 +261,10 @@ async function series(req, res, next) {
     if (RESERVED.has(req.params.series)) return next();
     const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
     if (!found) return next();
+    // Those who run the series also see its drafts and private editions (marked by their status).
+    const canRun = await canRunSeries(req, found.id);
     const editions = await prisma.contest.findMany({
-      where: { seriesId: found.id, deletedAt: null, visibility: 'public', status: { not: 'draft' } },
+      where: { seriesId: found.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: { edition: 'desc' },
       select: { ...contestService.CARD_SELECT, edition: true },
     });
@@ -270,8 +272,8 @@ async function series(req, res, next) {
       title: `${found.title} — Zury`,
       series: found,
       editions,
-      summary: await require('../services/seriesService').summary(found.id),
-      canRun: await canRunSeries(req, found.id),
+      summary: await require('../services/seriesService').summary(found.id, { drafts: canRun }),
+      canRun,
     });
   } catch (err) {
     next(err);
@@ -290,7 +292,8 @@ async function firstEdition(req, res, next) {
     const edition = String(req.body.edition || '').trim().toLowerCase();
     const type = String(req.body.type || 'writing');
     // No wiki chosen: an umbrella edition on Meta-Wiki; wikis join it afterwards.
-    const wiki = String(req.body.wiki || '').trim() || 'metawiki';
+    const chosen = String(req.body.wiki || '').trim();
+    const wiki = chosen || 'metawiki';
     const day = (v, end) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? new Date(`${v}T${end ? '23:59:59' : '00:00:00'}Z`) : null);
     const startDate = day(req.body.startDate);
     const endDate = day(req.body.endDate, true);
@@ -312,6 +315,8 @@ async function firstEdition(req, res, next) {
         settings: {},
       },
     });
+    // Without a wiki, Meta-Wiki is only a placeholder: the edition has no wiki until one joins.
+    if (!chosen) await prisma.contestWiki.deleteMany({ where: { contestId: contest.id } });
     req.flash('success', req.t('The first edition is ready as a draft: check its settings, then publish it.'));
     res.redirect(`/${series.slug}/${contest.edition || edition}/config`);
   } catch (err) {

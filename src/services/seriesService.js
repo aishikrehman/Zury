@@ -36,9 +36,10 @@ async function create({ actorId, slug, title, description = '' }) {
 }
 
 // Totals per edition, newest first: entries, accepted, people, wikis, words.
-async function summary(seriesId) {
+// drafts: also the editions not yet published, for those who run the series.
+async function summary(seriesId, { drafts = false } = {}) {
   const editions = await prisma.contest.findMany({
-    where: { seriesId, deletedAt: null, status: { not: 'draft' } },
+    where: { seriesId, deletedAt: null, ...(drafts ? {} : { status: { not: 'draft' }, visibility: 'public' }) },
     orderBy: { edition: 'desc' },
     select: { id: true, edition: true, title: true, status: true, wikis: { where: { status: { not: 'pending' } }, select: { code: true, wiki: true } } },
   });

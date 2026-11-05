@@ -62,7 +62,7 @@
                     <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
                     <div class="flex-fill min-w-0">
                       <div class="text-truncate"><%= c.title %></div>
-                      <div class="text-secondary small"><%= t(CONTEST_TYPES[c.type]) %> · <%= wikiLocal(c.primaryWiki) %></div>
+                      <div class="text-secondary small"><%= t(CONTEST_TYPES[c.type]) %> · <%= (c.primaryWiki === 'metawiki' && c.wikis && !c.wikis.length ? t('No wikis yet') : wikiLocal(c.primaryWiki)) %></div>
                     </div>
                   </a>
                 <% }) %>

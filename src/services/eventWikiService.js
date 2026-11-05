@@ -37,6 +37,11 @@ async function addWiki({ actorId, contest, wiki, status = 'active', requestedByI
     if (await tx.contestWiki.findUnique({ where: { contestId_wiki: { contestId: contest.id, wiki } } })) {
       throw new EventWikiError(`${wiki} is already part of this event.`);
     }
+    // An edition made without a wiki: the first one to join becomes its main wiki.
+    if (contest.primaryWiki === 'metawiki' && !(await tx.contestWiki.count({ where: { contestId: contest.id } }))) {
+      const lang = await require('../wiki/catalogService').languageOf(wiki);
+      await tx.contest.update({ where: { id: contest.id }, data: { primaryWiki: wiki, ...(lang && lang !== 'special' && { language: lang }) } });
+    }
     const row = await tx.contestWiki.create({
       data: { contestId: contest.id, wiki, code: await uniqueCode(tx, contest.id, wiki), status, requestedById },
     });

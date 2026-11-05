@@ -26,7 +26,7 @@
       const facts = [
         contest.organizingCommunity,
         // One wiki: its name. Several: how many (the wiki menu lists them).
-        shownWikis.length > 1 ? tn('{n} wiki', '{n} wikis', shownWikis.length) : wikiLocal((shownWikis[0] || {}).wiki || contest.primaryWiki),
+        shownWikis.length > 1 ? tn('{n} wiki', '{n} wikis', shownWikis.length) : shownWikis.length ? wikiLocal(shownWikis[0].wiki) : t('No wikis yet'),
         // A multi-wiki event has no single language.
         shownWikis.length > 1 ? '' : null,
       ].filter(Boolean);

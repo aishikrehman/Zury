@@ -82,7 +82,7 @@
                         <td>
                           <div class="d-flex align-items-center">
                             <span class="avatar avatar-sm z-proj-icon me-2" title="<%= pr.label %>"><i class="ti ti-<%= pr.icon %>"></i></span>
-                            <div class="min-w-0"><a href="<%= eventPath(c) %>" class="fw-medium text-reset"><%= c.title %></a><div class="small"><span class="z-proj-name"><%= pr.label %></span> · <%= c.wikis && c.wikis.length > 1 ? tn('{n} wiki', '{n} wikis', c.wikis.length) : wikiLocal(c.primaryWiki) %></div></div>
+                            <div class="min-w-0"><a href="<%= eventPath(c) %>" class="fw-medium text-reset"><%= c.title %></a><div class="small"><span class="z-proj-name"><%= pr.label %></span> · <%= c.wikis && c.wikis.length > 1 ? tn('{n} wiki', '{n} wikis', c.wikis.length) : (c.primaryWiki === 'metawiki' && c.wikis && !c.wikis.length ? t('No wikis yet') : wikiLocal(c.primaryWiki)) %></div></div>
                           </div>
                         </td>
                         <td class="text-secondary"><%= CONTEST_TYPES[c.type] %></td>
