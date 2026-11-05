@@ -1,4 +1,6 @@
 require('dotenv').config();
+// ZURY_DB=toolsdb: DATABASE_URL is composed from the tool's ToolsDB account before it is checked.
+require('./database');
 
 // On Toolforge the tool may already keep its secrets under other names (SECRET_KEY,
 // WIKI_CONSUMER_KEY, WIKI_CONSUMER_SECRET): use those when Zury's own names are unset.
