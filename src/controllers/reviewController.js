@@ -265,26 +265,30 @@ async function resolve(req, res, next) {
 }
 
 // /review: every event where this person is on the jury, with what's waiting.
+// Every event where this person is on the jury, with what is left for them to review.
+async function juryEventsFor(userId) {
+  const memberships = await prisma.contestMembership.findMany({
+    where: { userId, role: 'jury', status: 'active', contest: { deletedAt: null } },
+    include: { contest: { include: { series: true, wikis: true, settings: true } } },
+  });
+  const byContest = new Map();
+  for (const m of memberships) {
+    const entry = byContest.get(m.contestId) || { contest: m.contest, wikis: [] };
+    entry.wikis.push(m.wiki);
+    byContest.set(m.contestId, entry);
+  }
+  const events = [];
+  for (const { contest, wikis } of byContest.values()) {
+    const all = wikis.includes('') ? null : wikis;
+    const q = await reviewService.queue({ contestId: contest.id, settings: contest.settings || {}, jurorId: userId, wikis: all });
+    events.push({ contest, path: eventPath(contest), remaining: q.remaining, reviewed: q.reviewedByMe, wikis: all });
+  }
+  return events.sort((x, y) => y.remaining - x.remaining);
+}
+
 async function myQueue(req, res, next) {
   try {
-    const memberships = await prisma.contestMembership.findMany({
-      where: { userId: req.user.id, role: 'jury', status: 'active', contest: { deletedAt: null } },
-      include: { contest: { include: { series: true, wikis: true, settings: true } } },
-    });
-    const byContest = new Map();
-    for (const m of memberships) {
-      const entry = byContest.get(m.contestId) || { contest: m.contest, wikis: [] };
-      entry.wikis.push(m.wiki);
-      byContest.set(m.contestId, entry);
-    }
-    const events = [];
-    for (const { contest, wikis } of byContest.values()) {
-      const all = wikis.includes('') ? null : wikis;
-      const q = await reviewService.queue({ contestId: contest.id, settings: contest.settings || {}, jurorId: req.user.id, wikis: all });
-      events.push({ contest, path: eventPath(contest), remaining: q.remaining, reviewed: q.reviewedByMe, wikis: all });
-    }
-    events.sort((a, b) => b.remaining - a.remaining);
-    res.render('pages/review/index', { title: 'Review — Zury', events });
+    res.render('pages/review/index', { title: 'Review — Zury', events: await juryEventsFor(req.user.id) });
   } catch (err) {
     next(err);
   }
@@ -348,4 +352,4 @@ const releaseJuror = assignmentAction(async (req) => {
   return req.t('{n} unreviewed entries taken back.', { n });
 });
 
-module.exports = { entries, bulkSave, assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+module.exports = { juryEventsFor, entries, bulkSave, assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };

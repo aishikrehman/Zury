@@ -1,7 +1,7 @@
 <footer class="gh-footer d-print-none">
   <div class="container-xl">
     <a href="/" class="gh-footer-brand" aria-label="Zury"><img src="/images/zury-logo.svg" width="24" height="24" alt=""></a>
-    <span>© <%= formatNumber(new Date().getFullYear()) %> <%= t('Zury') %></span>
+    <span>© <%= formatNumber(new Date().getFullYear()).replace(/,/g, '') %> <%= t('Zury') %></span>
     <span class="z-credit"><%- th('Made by {name}', { name: '<a href="https://meta.wikimedia.org/wiki/User:Aishik_Rehman" rel="noopener">' + 'Aishik Rehman' + '</a>' }) %></span>
     <nav aria-label="<%= t('Footer') %>">
       <a href="/events"><%= t('Events') %></a>

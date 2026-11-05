@@ -1,5 +1,7 @@
-<%# A month of events. Expects cal { year, month, events }, calLang; optional calExtra (query to keep). Its arrows swap in the next month without reloading the page. %>
+<%# A month of events beside a summary of it. Expects cal { year, month, events }, calLang; optional calExtra (query to keep).
+    Its arrows swap in the next month without reloading the page. %>
 <%
+  const loc = calLang === 'bn' ? 'bn-BD' : 'en-GB';
   const first = new Date(Date.UTC(cal.year, cal.month, 1));
   const daysIn = new Date(Date.UTC(cal.year, cal.month + 1, 0)).getUTCDate();
   const lead = (first.getUTCDay() + 6) % 7; // weeks start on Monday
@@ -8,34 +10,63 @@
   const ym = (y, mth) => `${y}-${String(mth + 1).padStart(2, '0')}`;
   const prev = cal.month === 0 ? ym(cal.year - 1, 11) : ym(cal.year, cal.month - 1);
   const next = cal.month === 11 ? ym(cal.year + 1, 0) : ym(cal.year, cal.month + 1);
-  const monthTitle = new Intl.DateTimeFormat(calLang === 'bn' ? 'bn-BD' : 'en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first);
-  const weekdays = Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(calLang === 'bn' ? 'bn-BD' : 'en-GB', { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 1 + i))));
-  const on = (d) => cal.events.filter((e) => { const at = Date.UTC(cal.year, cal.month, d); return new Date(e.startDate).getTime() < at + 86400000 && new Date(e.endDate).getTime() >= at; });
-  const isToday = (d) => { const n = new Date(); return n.getUTCFullYear() === cal.year && n.getUTCMonth() === cal.month && n.getUTCDate() === d; };
+  const fmt = (opts, d) => new Intl.DateTimeFormat(loc, { timeZone: 'UTC', ...opts }).format(d);
+  const monthTitle = fmt({ month: 'long', year: 'numeric' }, first);
+  const weekdays = Array.from({ length: 7 }, (_, i) => fmt({ weekday: 'short' }, new Date(Date.UTC(2024, 0, 1 + i))));
+  const dayStart = (d) => Date.UTC(cal.year, cal.month, d);
+  const on = (d) => cal.events.filter((e) => new Date(e.startDate).getTime() < dayStart(d) + 86400000 && new Date(e.endDate).getTime() >= dayStart(d));
+  const now = new Date();
+  const isToday = (d) => now.getUTCFullYear() === cal.year && now.getUTCMonth() === cal.month && now.getUTCDate() === d;
   const qs = (mth) => `?${new URLSearchParams({ ...(mth ? { month: mth } : {}), ...(typeof calExtra !== 'undefined' ? calExtra : {}) }).toString()}`;
+  // The summary: what starts, runs and ends this month.
+  const monthStart = first.getTime();
+  const monthEnd = Date.UTC(cal.year, cal.month + 1, 1);
+  const starting = cal.events.filter((e) => new Date(e.startDate).getTime() >= monthStart);
+  const ending = cal.events.filter((e) => new Date(e.endDate).getTime() < monthEnd);
+  const running = cal.events.filter((e) => new Date(e.startDate).getTime() <= now.getTime() && new Date(e.endDate).getTime() >= now.getTime());
+  const short = (d) => fmt({ day: 'numeric', month: 'short' }, new Date(d));
 %>
-    <div class="card" id="calendar" data-swap-root>
-      <div class="card-header">
-        <h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= monthTitle %></h3>
-        <div class="card-actions btn-list">
-          <a class="btn btn-sm btn-icon" data-swap="calendar" href="<%= qs(prev) %>" aria-label="<%= t('Previous month') %>"><i class="ti ti-chevron-left"></i></a>
-          <a class="btn btn-sm" data-swap="calendar" href="<%= qs(null) %>"><%= t('Today') %></a>
-          <a class="btn btn-sm btn-icon" data-swap="calendar" href="<%= qs(next) %>" aria-label="<%= t('Next month') %>"><i class="ti ti-chevron-right"></i></a>
-        </div>
-      </div>
-      <div class="z-cal">
-        <% weekdays.forEach((w) => { %><div class="z-cal-head"><%= w %></div><% }) %>
-        <% cells.forEach((d) => { const evs = d ? on(d) : []; %>
-          <div class="z-cal-day<%= d ? '' : ' z-cal-empty' %><%= d && isToday(d) ? ' z-cal-today' : '' %>">
-            <% if (d) { %>
-              <div class="z-cal-num"><%= formatNumber(d) %></div>
-              <% evs.slice(0, 3).forEach((e) => { %>
-                <% const ep = eventProject(e); %><a class="z-cal-ev" style="--z-proj: <%= ep.color %>" href="<%= eventPath(e) %>" title="<%= ep.label %> · <%= e.title %>"><i class="ti ti-<%= ep.icon %>"></i> <%= e.title %></a>
-              <% }) %>
-              <% if (evs.length > 3) { %><div class="z-cal-more"><%= t('+{n} more', { n: evs.length - 3 }) %></div><% } %>
-            <% } %>
-          </div>
-        <% }) %>
-      </div>
-      <% if (!cal.events.length) { %><div class="card-footer text-secondary"><%= t('No events this month.') %></div><% } %>
+<div class="card z-month" id="calendar">
+  <div class="card-header">
+    <h3 class="card-title"><%= monthTitle %></h3>
+    <div class="card-actions btn-list">
+      <a class="btn btn-sm btn-icon" data-swap="calendar" href="<%= qs(prev) %>" aria-label="<%= t('Previous month') %>"><i class="ti ti-chevron-left"></i></a>
+      <a class="btn btn-sm" data-swap="calendar" href="<%= qs(null) %>"><%= t('Today') %></a>
+      <a class="btn btn-sm btn-icon" data-swap="calendar" href="<%= qs(next) %>" aria-label="<%= t('Next month') %>"><i class="ti ti-chevron-right"></i></a>
     </div>
+  </div>
+  <div class="z-month-body">
+    <div class="z-cal">
+      <% weekdays.forEach((w, i) => { %><div class="z-cal-head<%= i > 4 ? ' is-weekend' : '' %>"><%= w %></div><% }) %>
+      <% cells.forEach((d, i) => { const evs = d ? on(d) : []; %>
+        <div class="z-cal-day<%= d ? '' : ' z-cal-empty' %><%= d && isToday(d) ? ' z-cal-today' : '' %><%= i % 7 > 4 ? ' is-weekend' : '' %>">
+          <% if (d) { %>
+            <span class="z-cal-num"><%= formatNumber(d) %></span>
+            <% evs.slice(0, 2).forEach((e) => { const ep = eventProject(e); const starts = new Date(e.startDate).getTime() >= dayStart(d); %>
+              <a class="z-cal-ev<%= starts ? ' is-start' : '' %>" style="--z-proj: <%= ep.color %>" href="<%= eventPath(e) %>" title="<%= e.title %> · <%= short(e.startDate) %> – <%= short(e.endDate) %>"><%= e.title %></a>
+            <% }) %>
+            <% if (evs.length > 2) { %><span class="z-cal-more"><%= t('+{n} more', { n: evs.length - 2 }) %></span><% } %>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+    <aside class="z-month-side">
+      <div class="z-month-stats">
+        <div><b><%= formatNumber(cal.events.length) %></b><span><%= t('This month') %></span></div>
+        <div><b><%= formatNumber(running.length) %></b><span><%= t('Running now') %></span></div>
+        <div><b><%= formatNumber(starting.length) %></b><span><%= t('Starting') %></span></div>
+        <div><b><%= formatNumber(ending.length) %></b><span><%= t('Ending') %></span></div>
+      </div>
+      <% if (!cal.events.length) { %>
+        <p class="text-secondary small m-0"><%= t('No events this month.') %></p>
+      <% } else { %>
+        <ol class="z-month-list">
+          <% cal.events.slice(0, 8).forEach((e) => { const ep = eventProject(e); %>
+            <li style="--z-proj: <%= ep.color %>"><a href="<%= eventPath(e) %>"><span class="z-month-dot"></span><span class="text-truncate"><%= e.title %></span></a><small><%= short(e.startDate) %> – <%= short(e.endDate) %></small></li>
+          <% }) %>
+        </ol>
+        <% if (cal.events.length > 8) { %><a class="small" href="/events"><%= t('+{n} more', { n: cal.events.length - 8 }) %></a><% } %>
+      <% } %>
+    </aside>
+  </div>
+</div>

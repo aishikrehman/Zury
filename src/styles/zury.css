@@ -743,25 +743,12 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 .z-stop-when { font-size: .72rem; color: var(--z-brand); font-weight: 600; }
 
 /* Home calendar: a month of days, each with its events as short bars. */
-.z-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.z-cal-head { padding: .5rem; font-size: .75rem; font-weight: 600; text-transform: uppercase; color: var(--z-fg-muted); border-bottom: 1px solid var(--z-border); text-align: center; }
-.z-cal-day { min-height: 6.5rem; padding: .35rem; border-right: 1px solid var(--z-border); border-bottom: 1px solid var(--z-border); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.z-cal-day:nth-child(7n) { border-right: 0; }
-.z-cal-empty { background: color-mix(in srgb, var(--z-border) 25%, transparent); }
-.z-cal-num { font-size: .8rem; font-weight: 600; color: var(--z-fg-muted); }
-.z-cal-today .z-cal-num { color: #fff; background: var(--z-brand); border-radius: 999px; width: 1.6rem; height: 1.6rem; display: inline-flex; align-items: center; justify-content: center; }
-.z-cal-ev { display: block; font-size: .72rem; line-height: 1.25; padding: 2px 5px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; color: inherit; }
-.z-cal-ev:hover { text-decoration: none; filter: brightness(.95); }
-.z-cal-more { font-size: .7rem; color: var(--z-fg-muted); }
-@media (max-width: 575.98px) { .z-cal-day { min-height: 3.75rem; padding: .2rem; } .z-cal-ev { font-size: 0; height: 5px; padding: 0; } .z-cal-more { display: none; } }
 
 /* Project colours: a strip on event cards, the icon tile, calendar bars. */
 .z-proj { position: relative; overflow: hidden; }
 .z-proj-strip { height: 4px; background: var(--z-proj); }
 .z-proj-icon { background: color-mix(in srgb, var(--z-proj) 14%, transparent); color: var(--z-proj); }
 .z-proj-name { color: var(--z-proj); font-weight: 600; }
-.z-cal-ev { background: color-mix(in srgb, var(--z-proj) 14%, var(--z-surface)); border-left: 3px solid var(--z-proj); }
-.z-cal-ev .ti { color: var(--z-proj); }
 
 /* Permissions matrix: groups, a sticky header and first column, clickable cells. */
 .z-perm-wrap { max-height: calc(100vh - 220px); overflow: auto; }
@@ -882,3 +869,34 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-glance .datagrid{grid-template-columns:1fr 1fr}
 .avatar.z-not-joined{outline:2px dashed var(--z-border-strong);outline-offset:2px;position:relative}
 .avatar.z-not-joined::after{content:"";position:absolute;right:-3px;bottom:-3px;width:.7em;height:.7em;min-width:9px;min-height:9px;border-radius:50%;background:var(--z-surface);border:2px solid var(--z-fg-muted)}
+
+/* ── Month calendar with its summary ─────────────────────────────────────── */
+.z-month-body{display:grid;grid-template-columns:minmax(0,1fr) 17rem}
+@media (max-width:991.98px){.z-month-body{grid-template-columns:1fr}}
+.z-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:.75rem}
+.z-cal-head{padding:.25rem 0 .4rem;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--z-fg-muted);text-align:center}
+.z-cal-head.is-weekend{color:color-mix(in srgb,var(--z-fg-muted) 70%,transparent)}
+.z-cal-day{min-height:5.75rem;padding:.35rem;border-radius:10px;background:var(--z-surface-2);display:flex;flex-direction:column;gap:3px;min-width:0;transition:background .15s}
+.z-cal-day:hover{background:var(--z-hover)}
+.z-cal-day.is-weekend{background:color-mix(in srgb,var(--z-surface-2) 60%,var(--z-hover))}
+.z-cal-empty,.z-cal-empty:hover{background:transparent}
+.z-cal-num{align-self:flex-start;font-size:.78rem;font-weight:600;color:var(--z-fg-muted);min-width:1.5rem;height:1.5rem;display:inline-flex;align-items:center;justify-content:center;border-radius:999px}
+.z-cal-today{background:color-mix(in srgb,var(--z-brand) 8%,var(--z-surface));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--z-brand) 45%,transparent)}
+.z-cal-today .z-cal-num{color:#fff;background:var(--z-brand)}
+.z-cal-ev{display:block;font-size:.7rem;font-weight:500;line-height:1.3;padding:2px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;color:var(--z-fg);background:color-mix(in srgb,var(--z-proj) 16%,var(--z-surface))}
+.z-cal-ev.is-start{box-shadow:inset 3px 0 0 var(--z-proj)}
+.z-cal-ev:hover{text-decoration:none;background:color-mix(in srgb,var(--z-proj) 26%,var(--z-surface))}
+.z-cal-more{font-size:.68rem;color:var(--z-fg-muted);padding-left:4px}
+.z-month-side{border-left:1px solid var(--z-border);padding:1rem;display:flex;flex-direction:column;gap:1rem;min-width:0}
+@media (max-width:991.98px){.z-month-side{border-left:0;border-top:1px solid var(--z-border)}}
+.z-month-stats{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.z-month-stats>div{background:var(--z-surface-2);border-radius:10px;padding:.55rem .7rem;display:flex;flex-direction:column}
+.z-month-stats b{font-size:1.25rem;line-height:1.1}
+.z-month-stats span{font-size:.72rem;color:var(--z-fg-muted)}
+.z-month-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.55rem}
+.z-month-list li{display:flex;flex-direction:column;min-width:0}
+.z-month-list a{display:flex;align-items:center;gap:.45rem;font-weight:500;font-size:.85rem;color:var(--z-fg);text-decoration:none;min-width:0}
+.z-month-list a:hover{color:var(--z-brand)}
+.z-month-list small{color:var(--z-fg-muted);font-size:.72rem;padding-left:1rem}
+.z-month-dot{flex:none;width:.55rem;height:.55rem;border-radius:50%;background:var(--z-proj)}
+@media (max-width:575.98px){.z-cal{gap:2px;padding:.4rem}.z-cal-day{min-height:3.5rem;padding:.2rem}.z-cal-ev{font-size:0;height:5px;padding:0}.z-cal-more{display:none}}

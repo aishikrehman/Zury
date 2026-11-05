@@ -1216,5 +1216,13 @@
   "Same counting as ztools, so both tools give the same numbers.": "ztools-এর মতোই গণনা, তাই দুই টুলে একই সংখ্যা আসবে।",
   "Trusted organizer who runs Zury: creates events on any wiki and, with Superuser, is the only one who can delete events, data and series.": "জুরি চালান এমন বিশ্বস্ত আয়োজক: যেকোনো উইকিতে ইভেন্ট তৈরি করেন এবং সুপারইউজারের সঙ্গে কেবল তিনিই ইভেন্ট, তথ্য ও সিরিজ মুছতে পারেন।",
   "{name} · has not logged in to Zury yet": "{name} · এখনো জুরিতে লগইন করেননি",
-  "Has not logged in to Zury yet": "এখনো জুরিতে লগইন করেননি"
+  "Has not logged in to Zury yet": "এখনো জুরিতে লগইন করেননি",
+  "{n} entry waiting for you": "আপনার জন্য {n}টি জমা অপেক্ষায়",
+  "{n} entries waiting for you": "আপনার জন্য {n}টি জমা অপেক্ষায়",
+  "Participation": "অংশগ্রহণ",
+  "My events and submissions": "আমার ইভেন্ট ও জমা",
+  "This month": "এই মাসে",
+  "Running now": "এখন চলছে",
+  "Starting": "শুরু হচ্ছে",
+  "Ending": "শেষ হচ্ছে"
 }

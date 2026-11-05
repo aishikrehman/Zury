@@ -1,4 +1,4 @@
-<%# Your own pages: a sidebar with who you are, then tabs and the page; close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
+<%# Your own pages: tabs, then the page (with who you are beside it on the profile only); close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
 <%
   const me = currentUser;
   const tabs = [
@@ -6,10 +6,12 @@
     ['dashboard', '/dashboard', 'layout-dashboard', t('Dashboard')],
     ['settings', '/settings', 'settings', t('Preferences')],
   ];
+  const withCard = tab === 'profile';
 %>
 <div class="page-body">
   <div class="container-xl">
     <div class="row g-4">
+      <% if (withCard) { %>
       <aside class="col-lg-3">
         <div class="card z-account-nav">
           <div class="card-body text-center">
@@ -31,7 +33,8 @@
           <% } %>
         </div>
       </aside>
-      <div class="col-lg-9">
+      <% } %>
+      <div class="<%= withCard ? 'col-lg-9' : 'col-12' %>">
         <nav class="z-account-tabs mb-3" aria-label="<%= t('Account') %>">
           <% tabs.forEach(([key, href, icon, label]) => { %><a href="<%= href %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-1"></i><%= label %></a><% }) %>
           <% if (typeof actions !== 'undefined' && actions) { %><div class="btn-list ms-auto align-self-center"><%- actions %></div><% } %>

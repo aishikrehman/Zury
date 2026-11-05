@@ -59,6 +59,38 @@
       </div>
     </div>
 
+    <%# ── Waiting for approval (for those who can approve), then review (for reviewers) ── %>
+    <% if (pendingWikis.length) { %>
+      <div class="card mb-4">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-clock-hour-4 me-2 text-warning"></i><%= t('Waiting for approval') %></h3><span class="badge bg-yellow-lt ms-auto"><%= formatNumber(pendingWikis.length) %></span></div>
+        <div class="list-group list-group-flush">
+          <% pendingWikis.forEach((w) => { %>
+            <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<%= eventPath(w.contest) %>/config#wikis">
+              <span class="flex-fill text-truncate"><%= wikiLocal(w.wiki) %> <span class="text-secondary">→ <%= w.contest.title %></span></span>
+              <span class="text-secondary small"><%= formatDate(w.createdAt) %></span><i class="ti ti-chevron-right text-secondary"></i>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+    <% if (reviewEvents.length) { const left = reviewEvents.reduce((n, e) => n + e.remaining, 0); %>
+      <div class="card mb-4">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2 text-secondary"></i><%= t('Review') %></h3><span class="text-secondary small ms-auto"><%= tn('{n} entry waiting for you', '{n} entries waiting for you', left) %></span></div>
+        <div class="list-group list-group-flush">
+          <% reviewEvents.forEach((e) => { const total = e.remaining + e.reviewed; const pct = total ? Math.round((e.reviewed / total) * 100) : 0; %>
+            <div class="list-group-item d-flex align-items-center gap-3">
+              <div class="flex-fill min-w-0">
+                <a class="fw-medium text-reset text-truncate d-block" href="<%= e.path %>"><%= e.contest.title %></a>
+                <div class="progress progress-sm mt-1"><div class="progress-bar bg-green" style="width: <%= pct %>%"></div></div>
+              </div>
+              <span class="text-secondary small text-nowrap"><%= t('{a} of {b}', { a: formatNumber(e.reviewed), b: formatNumber(total) }) %></span>
+              <% if (e.remaining) { %><a class="btn btn-sm btn-primary" href="<%= e.path %>/review"><%= t('Review') %></a><% } else { %><span class="badge bg-green-lt"><i class="ti ti-check"></i></span><% } %>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
     <% const statusKeys = Object.keys(SUBMISSION_STATUSES).filter((k) => activity.status[k]); const total30 = activity.series.values.reduce((a, b) => a + b, 0); %>
     <div class="row row-cards mb-4">
       <div class="col-lg-8">
@@ -112,7 +144,7 @@
     <div class="row row-cards">
       <div class="col-12">
         <div class="card">
-          <div class="card-header"><h3 class="card-title"><%= t("My events") %></h3></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Participation") %></h3><a class="ms-auto small" href="/submissions"><%= t("My events and submissions") %> →</a></div>
           <% if (!myEvents.length) { %>
             <%- include('../../partials/emptyArt', { art: 'contest', title: t('No events yet'), text: t('Join an event to see it here.'), action: '<a href="/events" class="btn btn-primary">' + h(t('Browse events')) + '</a>' }) %>
           <% } else { %>
