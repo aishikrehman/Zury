@@ -227,6 +227,10 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   settings.reviewAssignment = body.reviewAssignment === 'assigned' ? 'assigned' : 'open';
   settings.wordCountMethod = ['ztools', 'plain'].includes(body.wordCountMethod) ? body.wordCountMethod : 'auto';
   settings.requiredReviews = intField(body.requiredReviews, { min: 1, max: 20 }, errors, 'requiredReviews') ?? 1;
+  settings.decisionRule = ['majority', 'unanimous', 'any', 'veto', 'first', 'score'].includes(body.decisionRule) ? body.decisionRule : 'majority';
+  settings.tieBreak = ['accept', 'wait'].includes(body.tieBreak) ? body.tieBreak : 'reject';
+  settings.passScore = Math.max(0, Math.min(1000, Number(body.passScore) || 0));
+  settings.secretBallot = body.secretBallot === 'on' || body.secretBallot === '1';
   settings.trackHashtags = JSON.stringify([...new Set(hashtags)]);
   settings.trackCategories = JSON.stringify([...new Set(categories)]);
   for (const [key] of FEATURE_FIELDS) settings[key] = bool(body[key]);
@@ -300,6 +304,10 @@ function toForm(contest, settings) {
     eligibleNamespaces: JSON.parse(s.eligibleNamespaces || '[]').join(', '),
     marks: s.marks || '[]',
     requiredReviews: String(s.requiredReviews || 1),
+    decisionRule: s.decisionRule || 'majority',
+    tieBreak: s.tieBreak || 'reject',
+    passScore: String(s.passScore ?? 0),
+    secretBallot: Boolean(s.secretBallot),
     reviewAssignment: s.reviewAssignment || 'open',
     wordCountMethod: s.wordCountMethod || 'auto',
     trackHashtags: JSON.parse(s.trackHashtags || '[]').join(', '),
@@ -337,6 +345,10 @@ function defaultSettings(type) {
     trackCategories: '[]',
     marks: '[]',
     requiredReviews: 1,
+    decisionRule: 'majority',
+    tieBreak: 'reject',
+    passScore: 0,
+    secretBallot: false,
     reviewAssignment: 'open',
     wordCountMethod: 'auto',
     typeConfig: JSON.stringify(readTypeConfig(type, '{}')),

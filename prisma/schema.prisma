@@ -236,6 +236,14 @@ model ContestSettings {
   marks                       String @db.Text  @default("[]")
   // Reviews an entry needs before it is decided; the majority decides.
   requiredReviews             Int     @default(1)
+  // How the reviews decide an entry: majority | unanimous | any | veto | first | score.
+  decisionRule                String  @default("majority")
+  // With decisionRule score: the average points an entry needs to pass.
+  passScore                   Float   @default(0)
+  // A majority tie: reject | accept | wait (for one more review).
+  tieBreak                    String  @default("reject")
+  // Reviewers do not see each other's reviews until the entry is decided.
+  secretBallot                Boolean @default(false)
   // open: any jury member of the entry's wiki may review it.
   // assigned: jury members review only the entries assigned to them.
   reviewAssignment            String  @default("open")

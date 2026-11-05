@@ -45,6 +45,44 @@ function scoreMarks(scheme, chosen) {
  */
 const assignedMode = (settings) => settings.reviewAssignment === 'assigned';
 
+const DECISION_RULES = ['majority', 'unanimous', 'any', 'veto', 'first', 'score'];
+
+/**
+ * What the reviews so far make of an entry ({ status, score }), by the event's rule.
+ * Reviews come oldest first. Until enough reviews are in, it stays under review, except with
+ * "first", where the first review decides, and "veto", where one reject is enough.
+ */
+function decide(reviews, settings) {
+  const required = Math.max(1, settings.requiredReviews || 1);
+  const rule = DECISION_RULES.includes(settings.decisionRule) ? settings.decisionRule : 'majority';
+  const score = reviews.length ? Math.round((reviews.reduce((n, r) => n + (r.points || 0), 0) / reviews.length) * 100) / 100 : null;
+  const accepts = reviews.filter((r) => r.decision === 'accept').length;
+  const rejects = reviews.filter((r) => r.decision === 'reject').length;
+  const waiting = { status: 'under_review', score: null };
+  if (!reviews.length) return waiting;
+  if (rule === 'first') return { status: reviews[0].decision === 'accept' ? 'approved' : 'rejected', score };
+  if (rule === 'veto' && rejects) return { status: 'rejected', score };
+  if (reviews.length < required) return waiting;
+  switch (rule) {
+    case 'unanimous':
+      return { status: rejects ? 'rejected' : 'approved', score };
+    case 'any':
+      return { status: accepts ? 'approved' : 'rejected', score };
+    case 'veto':
+      return { status: 'approved', score };
+    case 'score':
+      return { status: score >= (Number(settings.passScore) || 0) ? 'approved' : 'rejected', score };
+    default: {
+      if (accepts * 2 > reviews.length) return { status: 'approved', score };
+      if (rejects * 2 > reviews.length) return { status: 'rejected', score };
+      // A tie.
+      if (settings.tieBreak === 'accept') return { status: 'approved', score };
+      if (settings.tieBreak === 'wait') return waiting;
+      return { status: 'rejected', score };
+    }
+  }
+}
+
 /**
  * The entries a jury member works through, oldest first, and where they are.
  * filters: mode "waiting" (not yet reviewed by them, still needing reviews; the default),
@@ -160,14 +198,8 @@ async function saveReview({ actor, contest, settings, submission, decision, mark
       update: data,
       create: { ...data, contestId: contest.id, submissionId: submission.id, jurorId: actor.id },
     });
-    const reviews = await tx.review.findMany({ where: { submissionId: submission.id } });
-    let status = 'under_review';
-    let score = null;
-    if (reviews.length >= required) {
-      const accepts = reviews.filter((r) => r.decision === 'accept').length;
-      status = accepts * 2 > reviews.length ? 'approved' : 'rejected';
-      score = Math.round((reviews.reduce((n, r) => n + r.points, 0) / reviews.length) * 100) / 100;
-    }
+    const reviews = await tx.review.findMany({ where: { submissionId: submission.id }, orderBy: { createdAt: 'asc' } });
+    const { status, score } = decide(reviews, settings);
     if (status !== submission.status || score !== submission.score) {
       await tx.submission.update({
         where: { id: submission.id },
@@ -462,7 +494,7 @@ function appeals(contestId) {
   });
 }
 
-module.exports = { juryActivity, queuePage, QUEUE_SORTS,
+module.exports = { decide, DECISION_RULES, juryActivity, queuePage, QUEUE_SORTS,
   REVIEWABLE,
   assignedMode,
   jurorsFor,

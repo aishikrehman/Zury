@@ -115,7 +115,8 @@ async function window(req, res, next) {
       preview: pagePreview(entry),
       validation: entry ? JSON.parse(entry.validation || '{}') : null,
       mine: entry ? entry.reviews.find((r) => r.jurorId === req.user.id) || null : null,
-      others: entry ? entry.reviews.filter((r) => r.jurorId !== req.user.id) : [],
+      // Secret ballot: other reviews stay hidden from reviewers until the entry is decided.
+      others: entry && !(req.eventSettings.secretBallot && ['pending', 'validated', 'under_review'].includes(entry.status) && !req.scope.permissions.has('manageEvent')) ? entry.reviews.filter((r) => r.jurorId !== req.user.id) : [],
       scheme: reviewService.markScheme(req.eventSettings),
       required: Math.max(1, req.eventSettings.requiredReviews || 1),
       queue: q,

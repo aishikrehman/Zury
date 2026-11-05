@@ -335,8 +335,27 @@
               <div class="col-sm-6 col-lg-4">
                 <label class="form-label" for="requiredReviews"><%= t('Reviews needed per entry') %><%- mark('settings.requiredReviews') %></label>
                 <input type="number" min="1" max="20" class="form-control<%= inv('requiredReviews') %>" id="requiredReviews" name="requiredReviews" value="<%= v('requiredReviews') || 1 %>">
-                <div class="form-hint"><%= t('When an entry has this many reviews, the majority decides and its score is the average.') %></div>
+                <div class="form-hint"><%= t('Its score is the average of the reviews.') %></div>
                 <%- err('requiredReviews') %>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <label class="form-label" for="decisionRule"><%= t('How reviews decide') %><%- mark('settings.decisionRule') %></label>
+                <select class="form-select" id="decisionRule" name="decisionRule" data-decision-rule>
+                  <% [['majority', 'Majority of the reviews'], ['unanimous', 'Every reviewer must accept'], ['any', 'One accept is enough'], ['veto', 'One reject is enough to reject'], ['first', 'The first review decides (like Fountain)'], ['score', 'Average score at least a pass mark']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('decisionRule') || 'majority') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+                </select>
+              </div>
+              <div class="col-sm-6 col-lg-4" data-show-for="majority">
+                <label class="form-label" for="tieBreak"><%= t('On a tie') %></label>
+                <select class="form-select" id="tieBreak" name="tieBreak">
+                  <% [['reject', 'Reject'], ['accept', 'Accept'], ['wait', 'Wait for one more review']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('tieBreak') || 'reject') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+                </select>
+              </div>
+              <div class="col-sm-6 col-lg-4" data-show-for="score">
+                <label class="form-label" for="passScore"><%= t('Pass mark (average points)') %></label>
+                <input type="number" min="0" step="0.5" class="form-control" id="passScore" name="passScore" value="<%= v('passScore') || 0 %>">
+              </div>
+              <div class="col-12">
+                <label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="secretBallot"<%= v('secretBallot') ? ' checked' : '' %>><span class="form-check-label"><%= t("Secret ballot: reviewers do not see each other's reviews until the entry is decided") %></span></label>
               </div>
               <div class="col-sm-6 col-lg-8">
                 <span class="form-label d-block"><%= t('Who reviews which entry') %><%- mark('settings.reviewAssignment') %></span>

@@ -900,3 +900,13 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-month-list small{color:var(--z-fg-muted);font-size:.72rem;padding-left:1rem}
 .z-month-dot{flex:none;width:.55rem;height:.55rem;border-radius:50%;background:var(--z-proj)}
 @media (max-width:575.98px){.z-cal{gap:2px;padding:.4rem}.z-cal-day{min-height:3.5rem;padding:.2rem}.z-cal-ev{font-size:0;height:5px;padding:0}.z-cal-more{display:none}}
+
+/* ── Dashboard ───────────────────────────────────────────────────────────── */
+.z-dash-hello{display:flex;flex-wrap:wrap;align-items:center;gap:1rem 2rem;margin-bottom:1.25rem}
+.z-dash-hello h2{font-size:1.35rem;font-weight:700;letter-spacing:-.02em}
+.z-dash-numbers{display:flex;flex-wrap:wrap;gap:.5rem;margin-left:auto}
+.z-dash-numbers a{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:.55rem;align-items:center;padding:.5rem .85rem;border:1px solid var(--z-border);border-radius:12px;background:var(--z-surface);color:var(--z-fg);text-decoration:none;min-width:8.5rem}
+.z-dash-numbers a:hover{border-color:var(--z-border-strong);background:var(--z-hover)}
+.z-dash-numbers .ti{grid-row:1/3;font-size:1.25rem;color:var(--z-brand)}
+.z-dash-numbers b{font-size:1.15rem;line-height:1.1}
+.z-dash-numbers span{font-size:.75rem;color:var(--z-fg-muted)}

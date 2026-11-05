@@ -1224,5 +1224,22 @@
   "This month": "এই মাসে",
   "Running now": "এখন চলছে",
   "Starting": "শুরু হচ্ছে",
-  "Ending": "শেষ হচ্ছে"
+  "Ending": "শেষ হচ্ছে",
+  "Its score is the average of the reviews.": "এর স্কোর হলো পর্যালোচনাগুলোর গড়।",
+  "How reviews decide": "পর্যালোচনা কীভাবে সিদ্ধান্ত নেয়",
+  "Majority of the reviews": "বেশিরভাগ পর্যালোচনা",
+  "Every reviewer must accept": "সব পর্যালোচককে গ্রহণ করতে হবে",
+  "One accept is enough": "একজনের গ্রহণই যথেষ্ট",
+  "One reject is enough to reject": "একজন বাতিল করলেই বাতিল",
+  "The first review decides (like Fountain)": "প্রথম পর্যালোচনাই সিদ্ধান্ত (ফাউন্টেনের মতো)",
+  "Average score at least a pass mark": "গড় স্কোর অন্তত পাস নম্বর",
+  "On a tie": "সমান হলে",
+  "Wait for one more review": "আরও একটি পর্যালোচনার অপেক্ষা",
+  "Pass mark (average points)": "পাস নম্বর (গড় পয়েন্ট)",
+  "Secret ballot: reviewers do not see each other's reviews until the entry is decided": "গোপন ব্যালট: সিদ্ধান্ত না হওয়া পর্যন্ত পর্যালোচকরা একে অন্যের পর্যালোচনা দেখবেন না",
+  "Reviewing": "পর্যালোচনা",
+  "Needs you": "আপনার জন্য অপেক্ষায়",
+  "{n} to review": "{n}টি পর্যালোচনা বাকি",
+  "Approve": "অনুমোদন",
+  "Organizing": "আয়োজন"
 }

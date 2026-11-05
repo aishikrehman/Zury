@@ -9,12 +9,11 @@ const { TIMEZONES } = require('../utils/time');
 async function dashboard(req, res, next) {
   try {
     const canSeePending = req.permissions.has('manageAnyEvent') || req.permissions.has('importEvents');
-    const [myEvents, submissionCount, activity, calendar, reviewEvents, pendingWikis] = await Promise.all([
+    const [myEvents, submissionCount, activity, calendar, pendingWikis] = await Promise.all([
       contestService.listForUser(req.user.id),
       prisma.submission.count({ where: { participantId: req.user.id, contest: { deletedAt: null } } }),
       statsService.userStats(req.user.id),
       require('../services/calendarService').month(req.query.month, { memberships: { some: { userId: req.user.id, status: 'active' } } }),
-      res.locals.onJury ? require('./reviewController').juryEventsFor(req.user.id) : [],
       // Wikis asking to join an event, for those who can approve them.
       canSeePending ? prisma.contestWiki.findMany({ where: { status: 'pending', contest: { deletedAt: null } }, include: { contest: { include: { series: true } } }, orderBy: { createdAt: 'asc' }, take: 20 }) : [],
     ]);
@@ -24,7 +23,6 @@ async function dashboard(req, res, next) {
       submissionCount,
       activity,
       calendar,
-      reviewEvents,
       pendingWikis,
       juryEvents: myEvents.filter((e) => e.roles.includes('jury')),
       wikiRoles: req.subject.user.wikiRoles,

@@ -139,3 +139,12 @@
   edition.addEventListener('input', () => { showAddress(); showJoin(); });
   showAddress();
 })();
+
+// Review settings: the tie choice is for a majority, the pass mark for a score.
+(function () {
+  const rule = document.querySelector('[data-decision-rule]');
+  if (!rule) return;
+  const show = () => document.querySelectorAll('[data-show-for]').forEach((el) => { el.hidden = el.dataset.showFor !== rule.value; });
+  rule.addEventListener('change', show);
+  show();
+})();
