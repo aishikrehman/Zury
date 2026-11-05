@@ -6,7 +6,7 @@
     { heading: t('Participated'), icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
   ];
 %>
-<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', prefs, eventCount: organized.length + judged.length + participated.length }) %><% } else { %>
+<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', prefs, eventCount: new Set([...organized, ...judged, ...participated].map((e) => e.contest.id)).size }) %><% } else { %>
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-3 align-items-center">
@@ -39,7 +39,7 @@
             <div class="datagrid">
               <% if (profileUser.wikimediaRegisteredAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Wikimedia account since") %></div><div class="datagrid-content"><%= formatDate(profileUser.wikimediaRegisteredAt) %></div></div><% } %>
               <div class="datagrid-item"><div class="datagrid-title"><%= t("Joined Zury") %></div><div class="datagrid-content"><%= formatDate(profileUser.createdAt) %></div></div>
-              <div class="datagrid-item"><div class="datagrid-title"><%= t("Events") %></div><div class="datagrid-content"><%= organized.length + judged.length + participated.length %></div></div>
+              <div class="datagrid-item"><div class="datagrid-title"><%= t("Events") %></div><div class="datagrid-content"><%= formatNumber(new Set([...organized, ...judged, ...participated].map((e) => e.contest.id)).size) %></div></div>
             </div>
           </div>
           <div class="card-footer">
