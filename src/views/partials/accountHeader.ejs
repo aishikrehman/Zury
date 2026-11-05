@@ -1,4 +1,4 @@
-<%# Your own pages: the page's name and the links to the others, then (on the profile only) who you are, then the page; close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
+<%# Your own pages: the page's name and the links to the others, then the page (on the profile, who you are in a sidebar beside it); close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
 <%
   const me = currentUser;
   const tabs = [
@@ -20,25 +20,28 @@
           </nav>
           <% if (typeof actions !== 'undefined' && actions) { %><div class="btn-list"><%- actions %></div><% } %>
         </div>
-        <% if (tab === 'profile') { %>
-          <div class="card mb-3 z-me">
-            <div class="card-body">
-              <div class="z-me-who">
-                <%- include('./avatar', { u: me, size: 'lg' }) %>
-                <div class="min-w-0">
-                  <div class="h3 m-0"><%= me.username %></div>
-                  <div class="text-secondary small"><%= me.homeWiki ? wikiLocal(me.homeWiki) : 'Wikimedia' %></div>
-                </div>
-              </div>
-              <div class="z-me-facts">
-                <% if (me.wikimediaRegisteredAt) { %><span title="<%= t('Wikimedia account since') %>"><i class="ti ti-world"></i><%= formatDate(me.wikimediaRegisteredAt) %></span><% } %>
-                <span title="<%= t('Joined Zury') %>"><i class="ti ti-user-plus"></i><%= formatDate(me.createdAt) %></span>
-                <% if (typeof eventCount !== 'undefined') { %><span title="<%= t('Events') %>"><i class="ti ti-calendar-event"></i><%= tn('{n} event', '{n} events', eventCount) %></span><% } %>
-                <a href="https://meta.wikimedia.org/wiki/Special:CentralAuth/<%= encodeURIComponent(me.username.replace(/ /g, '_')) %>" rel="noopener" target="_blank"><i class="ti ti-external-link"></i><%= t('Wikimedia account') %></a>
-              </div>
-              <% if (typeof subject !== 'undefined' && subject) { %>
-                <div class="z-me-roles"><span class="subheader"><%= t('Roles') %></span><%- include('./accessSummary', { s: subject, compact: true }) %></div>
-              <% } %>
+      </div>
+      <% if (tab === 'profile') { %>
+        <aside class="col-lg-3">
+          <div class="card z-account-nav">
+            <div class="card-body text-center">
+              <div class="mb-2"><%- include('./avatar', { u: me, size: 'xl' }) %></div>
+              <div class="h3 m-0"><%= me.username %></div>
+              <div class="text-secondary small"><%= me.homeWiki ? wikiLocal(me.homeWiki) : 'Wikimedia' %></div>
             </div>
+            <div class="card-body small z-account-facts">
+              <% if (me.wikimediaRegisteredAt) { %><div title="<%= t('Wikimedia account since') %>"><i class="ti ti-world"></i><%= formatDate(me.wikimediaRegisteredAt) %></div><% } %>
+              <div title="<%= t('Joined Zury') %>"><i class="ti ti-user-plus"></i><%= formatDate(me.createdAt) %></div>
+              <% if (typeof eventCount !== 'undefined') { %><div title="<%= t('Events') %>"><i class="ti ti-calendar-event"></i><%= tn('{n} event', '{n} events', eventCount) %></div><% } %>
+              <a href="https://meta.wikimedia.org/wiki/Special:CentralAuth/<%= encodeURIComponent(me.username.replace(/ /g, '_')) %>" rel="noopener" target="_blank"><i class="ti ti-external-link"></i><%= t('Wikimedia account') %></a>
+            </div>
+            <% if (typeof subject !== 'undefined' && subject) { %>
+              <div class="card-body">
+                <div class="subheader mb-1"><%= t('Roles') %></div>
+                <%- include('./accessSummary', { s: subject }) %>
+              </div>
+            <% } %>
           </div>
-        <% } %>
+        </aside>
+      <% } %>
+      <div class="<%= tab === 'profile' ? 'col-lg-9' : 'col-12' %>">
