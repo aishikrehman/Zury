@@ -1,5 +1,5 @@
 <%#
-  Tabler-style horizontal header: the top bar (logo, search, language, account)
+  The header: the top bar (logo, search, language, account)
   and the navigation bar beneath it. On small screens the navigation folds
   behind the menu button.
 %>
@@ -8,8 +8,8 @@
     <button class="z-icon-btn z-menu-btn" type="button" data-bs-toggle="collapse" data-bs-target="#z-navbar" aria-controls="z-navbar" aria-expanded="false" aria-label="<%= t('Toggle primary navigation') %>">
       <i class="ti ti-menu-2"></i>
     </button>
-    <a href="<%= currentUser ? '/dashboard' : '/' %>" class="z-brand" aria-label="Zury">
-      <img src="/images/zury-logo.svg" width="32" height="32" alt=""><span>Zury</span>
+    <a href="<%= currentUser ? '/dashboard' : '/' %>" class="z-brand" aria-label="<%= t('Zury') %>">
+      <img src="/images/zury-logo.svg" width="32" height="32" alt=""><span><%= t('Zury') %></span>
     </a>
 
     <form action="/events" method="get" role="search" class="z-search">

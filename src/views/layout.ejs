@@ -1,6 +1,6 @@
 <%
   const isActive = (prefix, exact = false) => (exact ? currentPath === prefix : currentPath === prefix || currentPath.startsWith(prefix + '/'));
-  // The navigation bar under the header, as in Tabler's horizontal layout.
+  // The navigation bar under the header.
   // Personal pages (profile, preferences) are in the account menu.
   const navItems = [
     currentUser
@@ -16,7 +16,7 @@
       ],
     },
   ];
-  if (currentUser) {
+  if (currentUser && typeof onJury !== 'undefined' && onJury) {
     navItems.push({ href: '/review', icon: 'gavel', label: t('Review'), active: isActive('/review') });
   }
   if (can('createEvent')) {
@@ -24,8 +24,10 @@
       icon: 'calendar-cog', label: t('Event management'), active: isActive('/events/create') || isActive('/events/import') || isActive('/series'),
       children: [
         { href: '/events/create', icon: 'calendar-plus', label: t('Create event'), active: isActive('/events/create') },
-        { href: '/events/import', icon: 'download', label: t('Import from Fountain'), active: isActive('/events/import') },
-        { href: '/series', icon: 'stack-2', label: t('Series and editions'), active: isActive('/series') },
+        ...(can('accessAdmin') ? [
+          { href: '/events/import', icon: 'download', label: t('Import from Fountain'), active: isActive('/events/import') },
+          { href: '/series', icon: 'stack-2', label: t('Series and editions'), active: isActive('/series') },
+        ] : []),
       ],
     });
   }

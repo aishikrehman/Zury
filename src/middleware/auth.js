@@ -1,3 +1,4 @@
+const prisma = require('../config/prisma');
 const permissionService = require('../services/permissionService');
 const rightsService = require('../services/rightsService');
 
@@ -28,6 +29,8 @@ async function attachUser(req, res, next) {
     }
     req.user = subject.user;
     setGlobalScope(req, res, subject);
+    // Review in the menu only for people on a jury somewhere.
+    res.locals.onJury = (await prisma.contestMembership.count({ where: { userId, role: 'jury', status: 'active', contest: { deletedAt: null } }, take: 1 })) > 0;
     next();
   } catch (err) {
     next(err);

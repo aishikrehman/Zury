@@ -171,7 +171,8 @@ async function icons() {
 }
 
 async function main() {
-  const banner = '/* Zury. Includes Tabler 1.7.1 and Tabler Icons 3.49.0 (MIT, https://tabler.io), Inter and Noto Serif Bengali (OFL). Built by scripts/build-assets.js from src/styles/zury.css; edit that, not this. */\n';
+  // Only the short licence notice that the MIT and OFL licences require in copies; never shown on a page.
+  const banner = '/*! Built from src/styles/zury.css by scripts/build-assets.js; edit that, not this. Contains MIT-licensed code (c) codecalm and OFL-licensed fonts. */\n';
   const style = banner + fonts() + build('node_modules/@tabler/core/dist/css/tabler.css', 'tabler') + (await icons()) + build('src/styles/zury.css', 'zury');
   fs.writeFileSync(path.join(ROOT, 'public/css/style.css'), style);
   console.log(`style.css: ${Math.round(style.length / 1024)} KB`);

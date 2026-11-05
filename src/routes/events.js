@@ -29,8 +29,8 @@ const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity
 router.get('/events', eventsController.index);
 router.get('/events/create', requirePermission('createEvent'), eventsController.createForm);
 router.post('/events/create', requirePermission('createEvent'), eventsController.create);
-router.get('/events/import', requirePermission('createEvent'), fountainController.importForm);
-router.post('/events/import', requirePermission('createEvent'), fountainController.importEvent);
+router.get('/events/import', requirePermission('accessAdmin'), fountainController.importForm);
+router.post('/events/import', requirePermission('accessAdmin'), fountainController.importEvent);
 router.get('/events/:group(active|upcoming|completed)', eventsController.index);
 router.get('/submissions', requireAuth, submissionController.mine);
 router.get('/review', requireAuth, reviewController.myQueue);
@@ -127,12 +127,13 @@ const mount = (loader) => (req, res, next) => {
   });
 };
 
-router.get('/series', requireAuth, eventsController.manageSeries);
-router.get('/series/new', requireAuth, requireCreate, eventsController.seriesForm);
-router.post(`/series/:series(${SLUG})/:action(update|delete)`, requireAuth, eventsController.seriesAction);
-router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSeries);
-router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requireAuth, eventsController.manageEdition);
-router.post('/series', requireAuth, requireCreate, eventsController.createSeries);
+// Series and editions are managed by administrators.
+router.get('/series', requirePermission('accessAdmin'), eventsController.manageSeries);
+router.get('/series/new', requirePermission('accessAdmin'), eventsController.seriesForm);
+router.post(`/series/:series(${SLUG})/:action(update|delete)`, requirePermission('accessAdmin'), eventsController.seriesAction);
+router.get(`/series/:series(${SLUG})`, requirePermission('accessAdmin'), eventsController.manageOneSeries);
+router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requirePermission('accessAdmin'), eventsController.manageEdition);
+router.post('/series', requirePermission('accessAdmin'), eventsController.createSeries);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 router.use(`/:series(${SLUG})/:edition(${SLUG})`, mount(loadSeriesEvent({ withWiki: false })));
