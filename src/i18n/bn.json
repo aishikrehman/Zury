@@ -1196,5 +1196,17 @@
   "No rows.": "কোনো সারি নেই।",
   "{n} row": "{n}টি সারি",
   "{n} rows": "{n}টি সারি",
-  "Look through the database (read only)": "ডেটাবেস দেখা (শুধু পড়া)"
+  "Look through the database (read only)": "ডেটাবেস দেখা (শুধু পড়া)",
+  "Wikimedia": "উইকিমিডিয়া",
+  "Schedule": "সময়সূচি",
+  "At a glance": "এক নজরে",
+  "Now": "এখন",
+  "Time passed": "অতিবাহিত সময়",
+  "Starts in {n} day": "{n} দিন পর শুরু",
+  "Starts in {n} days": "{n} দিন পর শুরু",
+  "Ended": "শেষ হয়েছে",
+  "{p}% of the time has passed": "সময়ের {p}% পেরিয়েছে",
+  "Length": "মেয়াদ",
+  "Days left": "বাকি দিন",
+  "{n} day": "{n} দিন"
 }

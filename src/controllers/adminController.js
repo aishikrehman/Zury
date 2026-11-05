@@ -91,7 +91,7 @@ const PERMISSION_GROUPS = [
 
 function permissions(req, res) {
   const roles = [
-    ...Object.entries(PLATFORM_ROLES).map(([key, r]) => ({ key, kind: 'platform', kindLabel: 'Platform', ...r })),
+    ...Object.entries(PLATFORM_ROLES).map(([key, r]) => ({ key, kind: 'platform', kindLabel: r.source === 'wikimedia' ? 'Wikimedia' : 'Zury', ...r })),
     ...Object.entries(EVENT_ROLES).map(([key, r]) => ({ key, kind: 'event', kindLabel: 'Event', ...r })),
   ].map((r) => ({ ...r, effective: expand(r.permissions), viaGlobal: new Set(r.globalPermissions || []), locked: rolePermissions.LOCKED(r.kind, r.key) }));
   const groups = PERMISSION_GROUPS.map(([label]) => ({ label, keys: [] }));

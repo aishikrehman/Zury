@@ -1,8 +1,8 @@
 // Builds the one stylesheet, public/css/style.css, and the icon font. Run after changing
 // views, scripts or src/styles/zury.css: npm run build:assets
 //   style.css = fonts (Inter, Noto Serif Bengali) + @tabler/core trimmed to the classes the code
-//               uses + the icons the code names + src/styles/zury.css (its unused rules dropped too)
-//   public/icons/tabler-icons.woff2 = only the icons the code names
+//               uses + src/styles/zury.css (its unused rules dropped too)
+//   public/icons/icons.css + tabler-icons.woff2 = only the icons the code names
 const fs = require('fs');
 const path = require('path');
 
@@ -173,7 +173,9 @@ async function icons() {
 async function main() {
   // Only the short licence notice that the MIT and OFL licences require in copies; never shown on a page.
   const banner = '/*! Built from src/styles/zury.css by scripts/build-assets.js; edit that, not this. Contains MIT-licensed code (c) codecalm and OFL-licensed fonts. */\n';
-  const style = banner + fonts() + build('node_modules/@tabler/core/dist/css/tabler.css', 'tabler') + (await icons()) + build('src/styles/zury.css', 'zury');
+  const style = banner + fonts() + build('node_modules/@tabler/core/dist/css/tabler.css', 'tabler') + build('src/styles/zury.css', 'zury');
+  // Icons keep a stylesheet of their own next to their font.
+  fs.writeFileSync(path.join(ROOT, 'public/icons/icons.css'), `/*! Tabler Icons, MIT licence. Built by scripts/build-assets.js. */\n${await icons()}`);
   fs.writeFileSync(path.join(ROOT, 'public/css/style.css'), style);
   console.log(`style.css: ${Math.round(style.length / 1024)} KB`);
 }

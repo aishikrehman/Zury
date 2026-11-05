@@ -36,36 +36,68 @@
             <p class="mb-0 text-secondary"><%= t("No description yet.") %></p>
           <% } %>
         </div>
-      <%
-        // One stop per day: things that happen the same day share it.
-        const now = Date.now();
-        const stops = [];
-        [...timeline].sort((x, y) => new Date(x.at) - new Date(y.at)).forEach((x) => {
-          const dayKey = formatDate(x.at, tz);
-          const last = stops[stops.length - 1];
-          if (last && last.day === dayKey) last.labels.push(x.label);
-          else stops.push({ day: dayKey, at: x.at, labels: [x.label] });
-        });
-        const current = stops.filter((x) => new Date(x.at).getTime() <= now).length - 1;
-        const daysTo = (at) => Math.round((new Date(at).getTime() - now) / 86400000);
-      %>
-      <% if (stops.length) { %>
-        <div class="card-footer bg-transparent z-timeline-wrap">
-          <ol class="z-timeline">
+      </div>
+    </div>
+  </div>
+
+  <%# ── Schedule and the event at a glance ── %>
+  <%
+    // One stop per day: things that happen the same day share it.
+    const now = Date.now();
+    const stops = [];
+    [...timeline].sort((x, y) => new Date(x.at) - new Date(y.at)).forEach((x) => {
+      const dayKey = formatDate(x.at, tz);
+      const last = stops[stops.length - 1];
+      if (last && last.day === dayKey) last.labels.push(x.label);
+      else stops.push({ day: dayKey, at: x.at, labels: [x.label] });
+    });
+    const current = stops.filter((x) => new Date(x.at).getTime() <= now).length - 1;
+    const daysTo = (at) => Math.ceil((new Date(at).getTime() - now) / 86400000);
+    const dayPart = (at, opts) => new Intl.DateTimeFormat(lang.code === 'bn' ? 'bn-BD' : 'en-GB', { timeZone: tz, ...opts }).format(new Date(at));
+    const start = contest.startDate ? new Date(contest.startDate).getTime() : null;
+    const finish = contest.endDate ? new Date(contest.endDate).getTime() : null;
+    const length = start && finish ? Math.max(1, Math.round((finish - start) / 86400000)) : null;
+    const done = start && finish ? Math.min(100, Math.max(0, Math.round(((now - start) / (finish - start)) * 100))) : null;
+    const next = stops.find((x) => new Date(x.at).getTime() > now);
+    const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' };
+  %>
+  <% if (stops.length) { %>
+    <div class="row row-cards mb-3">
+      <div class="col-lg-7">
+        <div class="card h-100">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2 text-secondary"></i><%= t('Schedule') %></h3><div class="card-actions text-secondary small"><%= tz %></div></div>
+          <ol class="z-agenda">
             <% stops.forEach((x, i) => { const state = i < current ? 'done' : i === current ? 'now' : 'next'; const d = daysTo(x.at); %>
-              <li class="z-stop z-stop-<%= state %>" title="<%= formatDateTime(x.at, tz) %>">
-                <span class="z-stop-dot"><% if (state === 'done') { %><i class="ti ti-check"></i><% } %></span>
-                <span class="z-stop-date"><%= x.day %></span>
-                <span class="z-stop-label"><%= x.labels.join(' · ') %></span>
-                <% if (state === 'next' && d >= 0 && d <= 60) { %><span class="z-stop-when"><%= d === 0 ? t('Today') : tn('in {n} day', 'in {n} days', d) %></span><% } %>
+              <li class="z-agenda-item is-<%= state %>" title="<%= formatDateTime(x.at, tz) %>">
+                <span class="z-agenda-date"><b><%= dayPart(x.at, { day: 'numeric' }) %></b><small><%= dayPart(x.at, { month: 'short' }) %></small></span>
+                <span class="z-agenda-text"><%= x.labels.join(' · ') %><small><%= dayPart(x.at, { weekday: 'long' }) %></small></span>
+                <span class="z-agenda-when"><% if (state === 'done') { %><i class="ti ti-check"></i><% } else if (state === 'now') { %><%= t('Now') %><% } else if (d >= 0 && d <= 90) { %><%= d === 0 ? t('Today') : tn('in {n} day', 'in {n} days', d) %><% } %></span>
               </li>
             <% }) %>
           </ol>
         </div>
-      <% } %>
+      </div>
+      <div class="col-lg-5">
+        <div class="card h-100 z-glance">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2 text-secondary"></i><%= t('At a glance') %></h3></div>
+          <div class="card-body">
+            <div class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %> mb-3"><i></i><%= t(st.label) %></div>
+            <% if (done !== null) { %>
+              <div class="d-flex justify-content-between small text-secondary mb-1"><span><%= formatDate(contest.startDate, tz) %></span><span><%= formatDate(contest.endDate, tz) %></span></div>
+              <div class="progress progress-sm mb-1"><div class="progress-bar" style="width: <%= done %>%" role="progressbar" aria-valuenow="<%= done %>" aria-valuemin="0" aria-valuemax="100" aria-label="<%= t('Time passed') %>"></div></div>
+              <div class="small text-secondary mb-3"><%= now < start ? tn('Starts in {n} day', 'Starts in {n} days', daysTo(contest.startDate)) : now > finish ? t('Ended') : t('{p}% of the time has passed', { p: formatNumber(done) }) %></div>
+            <% } %>
+            <div class="datagrid">
+              <% if (length) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Length') %></div><div class="datagrid-content"><%= tn('{n} day', '{n} days', length) %></div></div><% } %>
+              <% if (finish && now >= start && now <= finish) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Days left') %></div><div class="datagrid-content"><%= formatNumber(daysTo(contest.endDate)) %></div></div><% } %>
+              <% if (next) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Next') %></div><div class="datagrid-content"><%= next.labels[0] %> · <%= next.day %></div></div><% } %>
+              <div class="datagrid-item"><div class="datagrid-title"><%= t('Wikis') %></div><div class="datagrid-content"><%= formatNumber(eventWikis.length || 1) %></div></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  <% } %>
 
   <%# ── Numbers ── %>
   <% if (stats) { %><%- include('../../partials/eventStats', { stats, part: 'summary' }) %><% } %>

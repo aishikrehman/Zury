@@ -862,3 +862,21 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-credit a:hover{text-decoration:underline}
 .z-db-table td{max-width:22rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8125rem}
 .z-db-table th{white-space:nowrap}
+
+/* ── Event schedule ──────────────────────────────────────────────────────── */
+.z-agenda{list-style:none;margin:0;padding:.5rem 1rem 1rem}
+.z-agenda-item{position:relative;display:flex;align-items:center;gap:1rem;padding:.6rem 0}
+.z-agenda-item+.z-agenda-item::before{content:"";position:absolute;left:1.5rem;top:-.6rem;height:1.2rem;border-left:2px dashed var(--z-border-strong)}
+.z-agenda-date{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;width:3rem;height:3rem;border-radius:12px;background:var(--z-hover);color:var(--z-fg);line-height:1}
+.z-agenda-date b{font-size:1.15rem;font-weight:700}
+.z-agenda-date small{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--z-fg-muted);margin-top:.15rem}
+.z-agenda-text{flex:1;min-width:0;font-weight:600;display:flex;flex-direction:column}
+.z-agenda-text small{font-weight:400;color:var(--z-fg-muted);font-size:.8rem}
+.z-agenda-when{flex:none;font-size:.8rem;color:var(--z-fg-muted);white-space:nowrap}
+.z-agenda-item.is-done .z-agenda-date{opacity:.6}
+.z-agenda-item.is-done .z-agenda-text{color:var(--z-fg-muted)}
+.z-agenda-item.is-done .z-agenda-when{color:var(--z-green)}
+.z-agenda-item.is-now .z-agenda-date{background:var(--z-brand);color:#fff;box-shadow:0 6px 16px -8px var(--z-brand)}
+.z-agenda-item.is-now .z-agenda-date small{color:rgba(255,255,255,.8)}
+.z-agenda-item.is-now .z-agenda-when{color:var(--z-brand);font-weight:600}
+.z-glance .datagrid{grid-template-columns:1fr 1fr}

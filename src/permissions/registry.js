@@ -135,7 +135,7 @@ const PLATFORM_ROLES = {
   },
 };
 
-// Platform-level keys can't be handed out per event.
+// Keys from Zury and Wikimedia roles that can't be handed out per event.
 const NON_OVERRIDABLE = new Set([
   'viewDatabase',
   'createEvent',
