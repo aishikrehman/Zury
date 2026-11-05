@@ -51,24 +51,24 @@
       <% } %>
       <div class="<%= isOwnProfile ? 'col-12' : 'col-lg-8' %>">
         <% groups.forEach((g) => { %>
-          <div class="card mb-3">
-            <div class="card-header"><h3 class="card-title"><span class="avatar avatar-xs bg-<%= g.color %>-lt me-2"><i class="ti ti-<%= g.icon %>"></i></span><%= g.heading %></h3><div class="card-actions text-secondary"><%= g.items.length %></div></div>
+          <details class="card mb-3 z-fold-card"<%= g.items.length ? ' open' : '' %>>
+            <summary class="card-header"><h3 class="card-title"><span class="avatar avatar-xs bg-<%= g.color %>-lt me-2"><i class="ti ti-<%= g.icon %>"></i></span><%= g.heading %></h3><span class="ms-auto badge bg-secondary-lt"><%= formatNumber(g.items.length) %></span><i class="ti ti-chevron-down z-fold-icon"></i></summary>
             <% if (!g.items.length) { %>
               <div class="card-body text-secondary"><%= t(g.empty) %></div>
             <% } else { %>
               <div class="list-group list-group-flush">
                 <% g.items.forEach(({ contest: c }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-                  <a href="<%= eventPath(c) %>" class="list-group-item list-group-item-action d-flex align-items-center">
-                    <div class="flex-fill">
-                      <div><%= c.title %></div>
-                      <div class="text-secondary small"><%= CONTEST_TYPES[c.type] %> · <%= wikiLocal(c.primaryWiki) %></div>
+                  <a href="<%= eventPath(c) %>" class="list-group-item list-group-item-action d-flex align-items-center gap-3">
+                    <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
+                    <div class="flex-fill min-w-0">
+                      <div class="text-truncate"><%= c.title %></div>
+                      <div class="text-secondary small"><%= t(CONTEST_TYPES[c.type]) %> · <%= wikiLocal(c.primaryWiki) %></div>
                     </div>
-                    <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span>
                   </a>
                 <% }) %>
               </div>
             <% } %>
-          </div>
+          </details>
         <% }) %>
       </div>
     </div>

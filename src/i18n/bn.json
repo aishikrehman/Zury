@@ -1105,7 +1105,7 @@
   "edition": "সংস্করণ",
   "editions": "সংস্করণ",
   "Public events": "সর্বজনীন ইভেন্ট",
-  "No public events organized.": "কোনো সর্বজনীন ইভেন্ট আয়োজন করেননি।",
+  "No public events organized.": "কোনো সর্বজনীন ইভেন্ট আয়োজন করা হয়নি।",
   "No public jury roles.": "কোনো সর্বজনীন পর্যালোচক ভূমিকা নেই।",
   "this wiki": "এই উইকি",
   "participants' edits": "অংশগ্রহণকারীদের সম্পাদনা",
@@ -1241,5 +1241,6 @@
   "Needs you": "আপনার জন্য অপেক্ষায়",
   "{n} to review": "{n}টি পর্যালোচনা বাকি",
   "Approve": "অনুমোদন",
-  "Organizing": "আয়োজন"
+  "Organizing": "আয়োজন",
+  "No public event participation.": "কোনো সর্বজনীন ইভেন্টে অংশ নেওয়া হয়নি।"
 }
