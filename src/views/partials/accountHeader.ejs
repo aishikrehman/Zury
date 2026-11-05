@@ -36,7 +36,11 @@
       </aside>
       <% } %>
       <div class="<%= withCard ? 'col-lg-9' : 'col-12' %>">
-        <nav class="z-account-tabs mb-3" aria-label="<%= t('Account') %>">
-          <% tabs.forEach(([key, href, icon, label]) => { %><a href="<%= href %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-1"></i><%= label %></a><% }) %>
-          <% if (typeof actions !== 'undefined' && actions) { %><div class="btn-list ms-auto align-self-center"><%- actions %></div><% } %>
-        </nav>
+        <% const current = tabs.find(([key]) => key === tab); %>
+        <div class="z-account-bar mb-3">
+          <h1 class="z-account-title"><% if (current) { %><i class="ti ti-<%= current[2] %>"></i><%= current[3] %><% } %></h1>
+          <nav class="z-seg ms-auto" aria-label="<%= t('Account') %>">
+            <% tabs.forEach(([key, href, icon, label]) => { %><a href="<%= href %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %>"></i><%= label %></a><% }) %>
+          </nav>
+          <% if (typeof actions !== 'undefined' && actions) { %><div class="btn-list"><%- actions %></div><% } %>
+        </div>
