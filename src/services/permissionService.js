@@ -153,18 +153,36 @@ async function loadSubject(userId) {
   return user ? buildSubject(user) : null;
 }
 
+// Roles from the event's edition or series that were given with "applies to children".
+// They count event-wide, as if held on the event; roles without that flag stay on their level.
+async function inheritedRoles(userId, contest) {
+  let seriesId = contest.seriesId || null;
+  if (contest.editionId) {
+    const ed = await prisma.edition.findUnique({ where: { id: contest.editionId }, select: { seriesId: true } });
+    seriesId = ed?.seriesId || null;
+  }
+  const levels = [];
+  if (contest.editionId) levels.push({ editionId: contest.editionId });
+  if (seriesId) levels.push({ seriesId });
+  if (!levels.length) return [];
+  const rows = await prisma.scopeRole.findMany({ where: { userId, appliesToChildren: true, OR: levels } });
+  return rows.map((r) => ({ role: r.role, wiki: '', status: 'active', inheritedFrom: r.editionId ? 'edition' : 'series' }));
+}
+
 // opts: { wikis: event's active wiki database names, wiki: current wiki context }
 async function contestScope(subject, contest, opts = {}) {
   if (!subject.user) return computeContestScope(subject, contest, [], [], opts);
   const where = { contestId: contest.id, userId: subject.user.id };
-  const [memberships, overrides] = await Promise.all([
+  const [memberships, overrides, inherited] = await Promise.all([
     prisma.contestMembership.findMany({ where }),
     prisma.contestPermission.findMany({ where }),
+    inheritedRoles(subject.user.id, contest),
   ]);
-  return computeContestScope(subject, contest, memberships, overrides, opts);
+  return computeContestScope(subject, contest, [...memberships, ...inherited], overrides, opts);
 }
 
 module.exports = {
+  inheritedRoles,
   EMPTY_SUBJECT,
   RIGHTS_MAX_AGE_MS,
   expand,

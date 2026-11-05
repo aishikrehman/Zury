@@ -26,19 +26,25 @@ async function uniqueSlug(tx, slug, { auto, excludeId, parent = {} }) {
 
 // The event's parent from the form's "Part of" (a series) and edition: the edition when one
 // is given (made if missing; it may hold other events), else the series directly, else none.
-async function seriesFields(tx, series, title) {
+async function seriesFields(tx, series, title, actorId = null) {
   if (!series) return { seriesId: null, editionId: null };
   let row = await tx.eventSeries.findUnique({ where: { slug: series.slug } });
-  if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: series.title || title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
+  if (!row) {
+    row = await tx.eventSeries.create({ data: { slug: series.slug, title: series.title || title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
+    // A new series is run by whoever made it (that level only).
+    if (actorId) await tx.scopeRole.create({ data: { userId: actorId, role: 'organizer', seriesId: row.id, assignedById: actorId } });
+  }
   if (!series.edition) return { seriesId: row.id, editionId: null };
+  const existed = await tx.edition.findUnique({ where: { seriesId_slug: { seriesId: row.id, slug: series.edition } } });
   const edition = await editions.findOrCreate(row.id, series.edition, { title }, tx);
+  if (edition && !existed && actorId) await tx.scopeRole.create({ data: { userId: actorId, role: 'organizer', editionId: edition.id, assignedById: actorId } });
   if (!edition) throw new EventError(`/${series.slug}/${series.edition} is already the address of an event of this series.`, 'edition');
   return { seriesId: null, editionId: edition.id };
 }
 
 async function create({ actorId, type, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
-    const series = await seriesFields(tx, parsed.series, parsed.contest.title);
+    const series = await seriesFields(tx, parsed.series, parsed.contest.title, actorId);
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, parent: series });
     const contest = await tx.contest.create({
       data: {
@@ -69,7 +75,7 @@ function changedKeys(before, after) {
 
 async function update({ actorId, contest, settings, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
-    const parent = await seriesFields(tx, parsed.series, parsed.contest.title);
+    const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId);
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
     const data = { ...parsed.contest, ...parent, slug };
     const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).map((k) => `settings.${k}`)];

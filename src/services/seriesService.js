@@ -31,6 +31,8 @@ async function create({ actorId, slug, title, description = '' }) {
     throw new SeriesError(`/${slug} is already taken.`, 'slug');
   }
   const series = await prisma.eventSeries.create({ data: { slug, title, description: String(description).trim().slice(0, 2000) } });
+  // Whoever makes the series runs it (this level only).
+  if (actorId) await prisma.scopeRole.create({ data: { userId: actorId, role: 'organizer', seriesId: series.id, assignedById: actorId } });
   await audit.record({ actorId, action: 'series.created', entityType: 'EventSeries', entityId: series.id, details: { slug, title } });
   return series;
 }
@@ -112,6 +114,10 @@ async function nextEdition({ actorId, series }) {
       await editionService.sync(contest.id, tx);
       await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, from: ev.path } }, tx);
     }
+    // The latest edition's people keep their roles in the new one; whoever makes it runs it.
+    const roles = await tx.scopeRole.findMany({ where: { editionId: latest.id } });
+    const keep = new Map([[`${actorId}:organizer`, { userId: actorId, role: 'organizer', appliesToChildren: false }], ...roles.map((r) => [`${r.userId}:${r.role}`, r])]);
+    for (const r of keep.values()) await tx.scopeRole.create({ data: { userId: r.userId, role: r.role, editionId: edition.id, appliesToChildren: r.appliesToChildren, assignedById: actorId } });
     await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: edition.id, details: { series: series.slug, edition: slug, from: latest.slug, events: latest.events.length } }, tx);
     return edition;
   });
@@ -125,6 +131,7 @@ async function createEdition({ actorId, series, slug, title = '', startDate = nu
   if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: series.id, slug } } })) throw new SeriesError(`/${series.slug}/${slug} already exists.`, 'edition');
   if (startDate && endDate && endDate < startDate) throw new SeriesError('The end date must be after the start date.', 'endDate');
   const edition = await editionService.findOrCreate(series.id, slug, { title: String(title || '').trim() || `${series.title} ${slug}`, startDate, endDate });
+  if (actorId) await prisma.scopeRole.create({ data: { userId: actorId, role: 'organizer', editionId: edition.id, assignedById: actorId } });
   await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: edition.id, details: { series: series.slug, edition: slug } });
   return edition;
 }
@@ -159,6 +166,7 @@ async function remove({ actorId, series }) {
   if (editions || events) throw new SeriesError('A series with editions or events cannot be deleted; delete or move them first.');
   await prisma.$transaction([
     prisma.seriesSlug.deleteMany({ where: { seriesId: series.id } }),
+    prisma.scopeRole.deleteMany({ where: { OR: [{ seriesId: series.id }, { edition: { seriesId: series.id } }] } }),
     prisma.contest.updateMany({ where: { seriesId: series.id }, data: { seriesId: null } }),
     // Deleted events may still point at its (deleted) editions.
     prisma.contest.updateMany({ where: { editionOf: { seriesId: series.id } }, data: { editionId: null } }),

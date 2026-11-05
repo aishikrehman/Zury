@@ -17,7 +17,7 @@ model User {
   // Demo users use negative IDs so they can never collide with real accounts.
   wikimediaId           Int       @unique
   username              String    @unique
-  avatarUrl             String? @db.Text
+  avatarUrl             String?   @db.Text
   homeWiki              String?
   wikimediaRegisteredAt DateTime?
   // Global edit count from CentralAuth, refreshed with rights; used for eligibility.
@@ -32,30 +32,32 @@ model User {
   uiTextLarge           Boolean   @default(false)
   uiSidebarCollapsed    Boolean   @default(false)
   // JSON: the other display options (see src/config/displayOptions.js).
-  uiPrefs               String @db.Text    @default("{}")
+  uiPrefs               String    @default("{}") @db.Text
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   lastLoginAt           DateTime?
 
-  globalRoles          UserGlobalRole[]    @relation("GlobalRoleHolder")
-  globalRolesAssigned  UserGlobalRole[]    @relation("GlobalRoleAssigner")
-  wikiRoles            UserWikiRole[]
-  memberships          ContestMembership[] @relation("MembershipHolder")
-  membershipsAssigned  ContestMembership[] @relation("MembershipAssigner")
-  permissionOverrides  ContestPermission[]
-  contestsCreated      Contest[]           @relation("ContestCreator")
-  contestsDeleted      Contest[]           @relation("ContestDeleter")
-  auditLogs            AuditLog[]
-  submissions          Submission[]        @relation("SubmissionParticipant")
-  submissionsMade      Submission[]        @relation("SubmissionSubmitter")
-  submissionHistory    SubmissionHistory[]
-  eventBlocks          EventBlock[]        @relation("BlockedUser")
-  eventBlocksMade      EventBlock[]        @relation("BlockedBy")
-  attendances          SessionAttendance[]
-  reviews              Review[]            @relation("Reviewer")
-  assignments          ReviewAssignment[]  @relation("AssignedJuror")
-  appeals              Appeal[]            @relation("Appellant")
-  appealsResolved      Appeal[]            @relation("AppealResolver")
+  globalRoles         UserGlobalRole[]    @relation("GlobalRoleHolder")
+  globalRolesAssigned UserGlobalRole[]    @relation("GlobalRoleAssigner")
+  wikiRoles           UserWikiRole[]
+  memberships         ContestMembership[] @relation("MembershipHolder")
+  membershipsAssigned ContestMembership[] @relation("MembershipAssigner")
+  scopeRoles          ScopeRole[]         @relation("ScopeRoleHolder")
+  scopeRolesAssigned  ScopeRole[]         @relation("ScopeRoleAssigner")
+  permissionOverrides ContestPermission[]
+  contestsCreated     Contest[]           @relation("ContestCreator")
+  contestsDeleted     Contest[]           @relation("ContestDeleter")
+  auditLogs           AuditLog[]
+  submissions         Submission[]        @relation("SubmissionParticipant")
+  submissionsMade     Submission[]        @relation("SubmissionSubmitter")
+  submissionHistory   SubmissionHistory[]
+  eventBlocks         EventBlock[]        @relation("BlockedUser")
+  eventBlocksMade     EventBlock[]        @relation("BlockedBy")
+  attendances         SessionAttendance[]
+  reviews             Review[]            @relation("Reviewer")
+  assignments         ReviewAssignment[]  @relation("AssignedJuror")
+  appeals             Appeal[]            @relation("Appellant")
+  appealsResolved     Appeal[]            @relation("AppealResolver")
 }
 
 // Zury-assigned platform roles (e.g. platform-admin). Never derived from Wikimedia.
@@ -89,32 +91,32 @@ model UserWikiRole {
 }
 
 model Contest {
-  id                  Int       @id @default(autoincrement())
+  id                  Int     @id @default(autoincrement())
   // Unique within its parent (standalone, a series, or an edition), not across Zury.
   slug                String
   // Its address, kept from its actual parent: /events/<slug>, /<series>/<slug> or
   // /<series>/<edition>/<slug>. Unique; empty for deleted events.
-  path                String?   @unique @db.VarChar(255)
-  title               String @db.VarChar(1000)
-  description         String @db.Text    @default("")
+  path                String? @unique @db.VarChar(255)
+  title               String  @db.VarChar(1000)
+  description         String  @default("") @db.Text
   type                String
-  status              String    @default("draft")
+  status              String  @default("draft")
   // "auto": status follows the dates once published. "manual": pinned by an organizer.
-  statusMode          String    @default("auto")
-  visibility          String    @default("public")
-  organizingCommunity String    @default("")
+  statusMode          String  @default("auto")
+  visibility          String  @default("public")
+  organizingCommunity String  @default("")
   primaryWiki         String
   // JSON array of wiki database names.
-  additionalWikis     String @db.Text    @default("[]")
-  language            String    @default("en")
-  timezone            String    @default("UTC")
-  contactInfo         String @db.Text    @default("")
+  additionalWikis     String  @default("[]") @db.Text
+  language            String  @default("en")
+  timezone            String  @default("UTC")
+  contactInfo         String  @default("") @db.Text
   // Kind of project, e.g. "glam", "education" (see PROJECT_CATEGORIES).
-  category            String    @default("")
+  category            String  @default("")
   // Link to the previous edition's page, for recurring events run elsewhere before.
-  previousEditionUrl  String @db.Text    @default("")
+  previousEditionUrl  String  @default("") @db.Text
   // The event's main category on the wiki, without "Category:".
-  mainCategory        String @db.Text    @default("")
+  mainCategory        String  @default("") @db.Text
   logoUrl             String? @db.Text
   bannerUrl           String? @db.Text
 
@@ -132,18 +134,18 @@ model Contest {
 
   // At most one parent: a series directly, or an edition (whose series it then belongs to),
   // or neither. The database refuses both.
-  seriesId    Int?
-  editionId   Int?
-  createdById Int?
-  deletedAt   DateTime?
-  deletedById Int?
+  seriesId           Int?
+  editionId          Int?
+  createdById        Int?
+  deletedAt          DateTime?
+  deletedById        Int?
   // Set when the event was moved into another one; its address then redirects there.
-  mergedIntoId Int?
-  mergedWikiCode String?
+  mergedIntoId       Int?
+  mergedWikiCode     String?
   // When the results were made public; until then only organizers and jury see them.
   resultsPublishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   createdBy           User?               @relation("ContestCreator", fields: [createdById], references: [id], onDelete: SetNull)
   deletedBy           User?               @relation("ContestDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
@@ -175,20 +177,21 @@ model Contest {
 
 // A recurring event such as Wikipedia Asian Month; each year is an edition (a Contest).
 model EventSeries {
-  id          Int      @id @default(autoincrement())
-  slug        String   @unique
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
   title       String
-  description String @db.Text   @default("")
+  description String    @default("") @db.Text
   // active | archived
-  status      String   @default("active")
+  status      String    @default("active")
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
 
   // Events linked through the old seriesId (until stage 2).
-  editions        Contest[]
-  editionRecords  Edition[]
-  slugs           SeriesSlug[]
+  editions       Contest[]
+  editionRecords Edition[]
+  slugs          SeriesSlug[]
+  roles          ScopeRole[]
 }
 
 // One occurrence of a series (WLM 2026). Belongs to exactly one series; holds zero or more events.
@@ -198,7 +201,7 @@ model Edition {
   slug        String
   title       String    @db.VarChar(1000)
   year        Int?
-  description String    @db.Text @default("")
+  description String    @default("") @db.Text
   // draft | active | completed | archived
   status      String    @default("draft")
   startDate   DateTime?
@@ -210,6 +213,7 @@ model Edition {
   series     EventSeries @relation(fields: [seriesId], references: [id], onDelete: Restrict)
   events     Contest[]   @relation("EditionEvents")
   seriesSlug SeriesSlug?
+  roles      ScopeRole[]
 
   @@unique([seriesId, slug])
 }
@@ -253,21 +257,21 @@ model LocalEvent {
 
 // A wiki taking part in an event. Settings it doesn't override come from the event.
 model ContestWiki {
-  id            Int      @id @default(autoincrement())
-  contestId     Int
-  wiki          String
+  id               Int       @id @default(autoincrement())
+  contestId        Int
+  wiki             String
   // Short code used in URLs, e.g. "bn" in /wam/2026/bn.
-  code          String
+  code             String
   // active | pending (requested, awaiting approval) | paused
-  status        String   @default("active")
+  status           String    @default("active")
   // JSON: { contest: {...}, settings: {...}, typeConfig: {...} } — only overridden fields.
-  overrides     String @db.Text   @default("{}")
-  requestedById Int?
+  overrides        String    @default("{}") @db.Text
+  requestedById    Int?
   // The Fountain editathon this wiki follows (fountain.toolforge.org/editathons/<code>), if any.
-  fountainCode  String   @default("")
+  fountainCode     String    @default("")
   fountainSyncedAt DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
 
@@ -294,37 +298,37 @@ model ContestSettings {
   publicStatisticsEnabled         Boolean @default(true)
   participantNotificationsEnabled Boolean @default(true)
 
-  registrationRequired        Boolean @default(false)
+  registrationRequired        Boolean   @default(false)
   // individual | team | both
-  participationMode           String  @default("individual")
-  minAccountAgeDays           Int     @default(0)
-  minEditCount                Int     @default(0)
+  participationMode           String    @default("individual")
+  minAccountAgeDays           Int       @default(0)
+  minEditCount                Int       @default(0)
   participantLimit            Int?
-  allowJuryParticipation      Boolean @default(false)
-  allowOrganizerParticipation Boolean @default(false)
-  anonymousParticipants       Boolean @default(false)
+  allowJuryParticipation      Boolean   @default(false)
+  allowOrganizerParticipation Boolean   @default(false)
+  anonymousParticipants       Boolean   @default(false)
   // JSON array of namespace numbers; empty means the event type's default.
-  eligibleNamespaces          String @db.Text  @default("[]")
-  typeConfig                  String @db.Text  @default("{}")
+  eligibleNamespaces          String    @default("[]") @db.Text
+  typeConfig                  String    @default("{}") @db.Text
   // Contribution tracking. Participant tracking uses contributionDiscoveryEnabled.
   // JSON arrays: hashtags without "#", categories without "Category:".
-  trackHashtags               String @db.Text  @default("[]")
-  trackCategories             String @db.Text  @default("[]")
+  trackHashtags               String    @default("[]") @db.Text
+  trackCategories             String    @default("[]") @db.Text
   // Jury marks (Fountain-style), JSON: [{ name, values: [{ label, points }] }].
-  marks                       String @db.Text  @default("[]")
+  marks                       String    @default("[]") @db.Text
   // Reviews an entry needs before it is decided; the majority decides.
-  requiredReviews             Int     @default(1)
+  requiredReviews             Int       @default(1)
   // How the reviews decide an entry: majority | unanimous | any | veto | first | score.
-  decisionRule                String  @default("majority")
+  decisionRule                String    @default("majority")
   // With decisionRule score: the average points an entry needs to pass.
-  passScore                   Float   @default(0)
+  passScore                   Float     @default(0)
   // A majority tie: reject | accept | wait (for one more review).
-  tieBreak                    String  @default("reject")
+  tieBreak                    String    @default("reject")
   // Reviewers do not see each other's reviews until the entry is decided.
-  secretBallot                Boolean @default(false)
+  secretBallot                Boolean   @default(false)
   // open: any jury member of the entry's wiki may review it.
   // assigned: jury members review only the entries assigned to them.
-  reviewAssignment            String  @default("open")
+  reviewAssignment            String    @default("open")
   trackedAt                   DateTime?
 
   updatedAt DateTime @updatedAt
@@ -369,14 +373,14 @@ model ContestPermission {
 
 // An entry (page, file or Wikidata entity) submitted to an event.
 model Submission {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   contestId     Int
   participantId Int
   submittedById Int
   // Wiki database name, e.g. "commonswiki".
   wiki          String
-  title         String @db.VarChar(1000)
-  url           String @db.Text
+  title         String    @db.VarChar(1000)
+  url           String    @db.Text
   // Stable identity for duplicate checks: page ID, or entity ID on Wikidata.
   pageKey       String
   // article | file | item | property | lexeme | page
@@ -384,29 +388,29 @@ model Submission {
   // pending | validated | invalid | under_review | approved | rejected | disqualified | withdrawn | appealed
   status        String
   // JSON: normalized metadata from the wiki at the last check.
-  metadata      String @db.Text   @default("{}")
+  metadata      String    @default("{}") @db.Text
   // JSON: { errors: [], warnings: [] } from the last rule check.
-  validation    String @db.Text   @default("{}")
+  validation    String    @default("{}") @db.Text
   checkedAt     DateTime?
-  submittedAt   DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  submittedAt   DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  contest     Contest             @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  contest      Contest             @relation(fields: [contestId], references: [id], onDelete: Cascade)
   // The local event it was made in, if its event has local events.
   localEventId Int?
-  localEvent  LocalEvent?         @relation(fields: [localEventId], references: [id], onDelete: Restrict)
-  participant User                @relation("SubmissionParticipant", fields: [participantId], references: [id], onDelete: Cascade)
-  submittedBy User                @relation("SubmissionSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
-  history     SubmissionHistory[]
-  reviews     Review[]
-  appeals     Appeal[]
-  assignments ReviewAssignment[]
+  localEvent   LocalEvent?         @relation(fields: [localEventId], references: [id], onDelete: Restrict)
+  participant  User                @relation("SubmissionParticipant", fields: [participantId], references: [id], onDelete: Cascade)
+  submittedBy  User                @relation("SubmissionSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
+  history      SubmissionHistory[]
+  reviews      Review[]
+  appeals      Appeal[]
+  assignments  ReviewAssignment[]
 
   // Average points of its reviews, set when the entry is decided.
-  score       Float?
+  score Float?
 
   // Words in the article at the last check (from metadata), for sorting and totals.
-  wordCount   Int?
+  wordCount Int?
 
   @@index([contestId, pageKey])
   @@index([contestId, status])
@@ -422,9 +426,9 @@ model SubmissionHistory {
   actorId       Int?
   // submitted | status_changed | revalidated | withdrawn
   action        String
-  previousValue String? @db.VarChar(1000)
-  newValue      String? @db.VarChar(1000)
-  note          String? @db.Text
+  previousValue String?  @db.VarChar(1000)
+  newValue      String?  @db.VarChar(1000)
+  note          String?  @db.Text
   createdAt     DateTime @default(now())
 
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
@@ -486,7 +490,7 @@ model AuditLog {
   entityType String
   entityId   String?
   // JSON-encoded; SQLite has no native JSON column in Prisma 5.
-  details    String? @db.Text
+  details    String?  @db.Text
   createdAt  DateTime @default(now())
 
   actor   User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
@@ -501,7 +505,7 @@ model EventBlock {
   id          Int       @id @default(autoincrement())
   contestId   Int
   userId      Int
-  reason      String @db.Text    @default("")
+  reason      String    @default("") @db.Text
   blockedById Int?
   createdAt   DateTime  @default(now())
   liftedAt    DateTime?
@@ -519,19 +523,19 @@ model EventSession {
   contestId  Int
   // Wiki database name the session belongs to; "" means the whole event.
   wiki       String    @default("")
-  title      String @db.VarChar(1000)
+  title      String    @db.VarChar(1000)
   // planned | open | held | cancelled
   status     String    @default("planned")
   // online | offline | hybrid
   mode       String    @default("offline")
   startsAt   DateTime
   endsAt     DateTime?
-  location   String @db.Text    @default("")
-  meetingUrl String @db.Text    @default("")
+  location   String    @default("") @db.Text
+  meetingUrl String    @default("") @db.Text
   capacity   Int?
-  agenda     String @db.Text    @default("")
+  agenda     String    @default("") @db.Text
   // Written after the session: what happened, outcomes.
-  report     String @db.Text    @default("")
+  report     String    @default("") @db.Text
   createdAt  DateTime  @default(now())
 
   contest     Contest             @relation(fields: [contestId], references: [id], onDelete: Cascade)
@@ -567,12 +571,12 @@ model Contribution {
   source    String
   username  String   @default("")
   userId    Int?
-  pageTitle String @db.VarChar(1000)
+  pageTitle String   @db.VarChar(1000)
   ns        Int      @default(0)
   revId     Int?
   isNew     Boolean  @default(false)
   sizeDiff  Int      @default(0)
-  comment   String @db.Text   @default("")
+  comment   String   @default("") @db.Text
   timestamp DateTime
   foundAt   DateTime @default(now())
 
@@ -586,7 +590,7 @@ model Contribution {
 // Login sessions, kept in the database so they survive restarts.
 model Session {
   sid       String   @id
-  data      String @db.Text
+  data      String   @db.Text
   expiresAt DateTime
 
   @@index([expiresAt])
@@ -601,9 +605,9 @@ model Review {
   // accept | reject
   decision     String
   // JSON: { "<mark name>": "<value label>" }
-  marks        String @db.Text   @default("{}")
+  marks        String   @default("{}") @db.Text
   points       Float    @default(0)
-  comment      String @db.Text   @default("")
+  comment      String   @default("") @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -621,10 +625,10 @@ model Appeal {
   contestId    Int
   submissionId Int
   userId       Int
-  reason       String @db.Text
+  reason       String    @db.Text
   // open | upheld | dismissed
   status       String    @default("open")
-  response     String @db.Text    @default("")
+  response     String    @default("") @db.Text
   resolvedById Int?
   createdAt    DateTime  @default(now())
   resolvedAt   DateTime?
@@ -667,4 +671,28 @@ model RolePermissionChange {
   changedAt   DateTime @default(now())
 
   @@unique([kind, role, permission])
+}
+
+// A role held on a series or an edition: exactly one of the two (checked by the database).
+// It covers that level only; with appliesToChildren it also counts on every event below it.
+// Event and local-event roles are ContestMembership (local event = wiki set); platform roles UserGlobalRole.
+model ScopeRole {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  // organizer | jury | viewer
+  role              String
+  seriesId          Int?
+  editionId         Int?
+  appliesToChildren Boolean  @default(false)
+  assignedAt        DateTime @default(now())
+  assignedById      Int?
+
+  user       User         @relation("ScopeRoleHolder", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User?        @relation("ScopeRoleAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  series     EventSeries? @relation(fields: [seriesId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  edition    Edition?     @relation(fields: [editionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([userId])
+  @@index([seriesId])
+  @@index([editionId])
 }

@@ -119,15 +119,18 @@ router.use('/contest/:contestId(\\d+)', loadContest, contest);
 // Series addresses go last so they never shadow app pages.
 // No '*' here: Express 4 turns it into a wildcard that would swallow the wiki code.
 const SLUG = '[a-z0-9][a-z0-9-]{0,79}';
-// Series and editions: stewards, global sysops, local admins and superusers; deleting one: superusers and Zury administrators.
+// Making series: stewards, global sysops, local admins and superusers. One series is run by its
+// organizers (a role on the series; the controller checks it); deleting one: superusers and Zury administrators.
 router.get('/series', requirePermission('importEvents'), eventsController.manageSeries);
 router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
-router.post(`/series/:series(${SLUG})/:action(update)`, requirePermission('importEvents'), eventsController.seriesAction);
+router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
 router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnyEvent'), eventsController.seriesAction);
-router.get(`/series/:series(${SLUG})`, requirePermission('importEvents'), eventsController.manageOneSeries);
-router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requirePermission('importEvents'), eventsController.manageEdition);
+router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSeries);
+router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requireAuth, eventsController.manageEdition);
 router.post('/series', requirePermission('importEvents'), eventsController.createSeries);
-router.post(`/series/:series(${SLUG})/first-edition`, requirePermission('importEvents'), eventsController.firstEdition);
+router.post(`/series/:series(${SLUG})/first-edition`, requireAuth, eventsController.firstEdition);
+router.post(`/series/:series(${SLUG})/people`, requireAuth, eventsController.grantRole);
+router.post(`/series/:series(${SLUG})/people/:id(\\d+)/remove`, requireAuth, eventsController.revokeRole);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 // An edition's own page, when the name under the series is an edition.

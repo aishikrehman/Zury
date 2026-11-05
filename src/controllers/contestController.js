@@ -201,6 +201,9 @@ async function updateConfig(req, res, next) {
   const catalog = { ...loaded, open: (w) => w === req.contest.primaryWiki || loaded.open(w) };
   const parsed = contestForm.parse({ ...req.body, type }, { type, wikiAllowed: wikiAllowedForEdit(req), catalog });
   if (Object.keys(parsed.errors).length) return renderConfig(req, res, { form: parsed.form, errors: parsed.errors, status: 422 });
+  if (!(await require('../services/scopeRoleService').mayPlace(req, parsed.series, { seriesId: req.contest.seriesId, editionId: req.contest.editionId }))) {
+    return renderConfig(req, res, { form: parsed.form, errors: { seriesSlug: 'Only the organizers of that series or edition can add events to it.' }, status: 403 });
+  }
   try {
     await eventService.update({ actorId: req.user.id, contest: { ...req.contest, series: req.series }, settings: req.eventSettings, parsed, autoSlug: parsed.autoSlug });
     req.flash('success', 'Event settings saved.');

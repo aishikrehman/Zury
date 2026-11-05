@@ -9,6 +9,7 @@ const { CONTEST_TYPES, STATUS_GROUPS } = require('../utils/contestLabels');
 const membershipService = require('../services/membershipService');
 const userDirectory = require('../services/userDirectoryService');
 const { eventPath } = require('../utils/format');
+const scopeRoles = require('../services/scopeRoleService');
 
 const GROUP_TITLES = { active: 'Active events', upcoming: 'Upcoming events', completed: 'Completed events' };
 
@@ -93,6 +94,9 @@ async function create(req, res, next) {
   if (Object.keys(parsed.errors).length) {
     return renderForm(res, { type, form: parsed.form, errors: parsed.errors, status: 422 });
   }
+  if (!(await scopeRoles.mayPlace(req, parsed.series))) {
+    return renderForm(res, { type, form: parsed.form, errors: { seriesSlug: 'Only the organizers of that series or edition can add events to it.' }, status: 403 });
+  }
   try {
     const contest = await eventService.create({
       actorId: req.user.id,
@@ -114,12 +118,9 @@ async function create(req, res, next) {
 }
 
 // /<series>: every edition of a recurring event. Unknown slugs fall through to 404.
-// Organizers of any edition, and people who manage every event, can start the next edition.
-async function canRunSeries(req, seriesId) {
-  if (!req.user) return false;
-  if (req.permissions.has('manageAnyEvent')) return true;
-  // Organizers of any of its events, direct or in one of its editions.
-  return !!(await prisma.contestMembership.findFirst({ where: { userId: req.user.id, role: 'organizer', status: 'active', contest: { OR: [{ seriesId }, { editionOf: { seriesId } }] } } }));
+// Its organizers (a series role) and people who manage every event run it and start editions.
+function canRunSeries(req, seriesId) {
+  return scopeRoles.canRunSeries(req, seriesId);
 }
 
 function seriesForm(req, res) {
@@ -178,7 +179,8 @@ async function manageOneSeries(req, res, next) {
     if (!sr) return next();
     if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
     const summary = await require('../services/seriesService').summary(sr.id, { drafts: true });
-    res.render('pages/events/seriesManageOne', { title: `${sr.title} — Zury`, sr, summary });
+    const people = await scopeRoles.list({ seriesId: sr.id, editionIds: sr.editions.map((e) => e.id) });
+    res.render('pages/events/seriesManageOne', { title: `${sr.title} — Zury`, sr, summary, people, ROLES: scopeRoles.ROLES });
   } catch (err) {
     next(err);
   }
@@ -195,9 +197,11 @@ async function editionPage(req, res, next) {
     if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
     const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
     if (!edition) return next();
-    const canRun = await canRunSeries(req, sr.id);
+    // The edition's own people (or the series' with a role for its children) see its drafts.
+    const canRun = await scopeRoles.canRunEdition(req, edition);
+    const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));
     const events = await prisma.contest.findMany({
-      where: { editionId: edition.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
+      where: { editionId: edition.id, deletedAt: null, ...(canSee ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: { startDate: 'asc' },
       select: contestService.CARD_SELECT,
     });
@@ -215,9 +219,11 @@ async function manageEdition(req, res, next) {
     if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
     const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
     if (!edition) return next();
-    const canRun = await canRunSeries(req, sr.id);
+    // The edition's own people (or the series' with a role for its children) see its drafts.
+    const canRun = await scopeRoles.canRunEdition(req, edition);
+    const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));
     const events = await prisma.contest.findMany({
-      where: { editionId: edition.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
+      where: { editionId: edition.id, deletedAt: null, ...(canSee ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: { startDate: 'asc' },
       select: contestService.CARD_SELECT,
     });
@@ -305,3 +311,39 @@ async function firstEdition(req, res, next) {
   }
 }
 module.exports.firstEdition = firstEdition;
+
+// People of a series and its editions: a role on one level, optionally for everything below it.
+// Series organizers give roles anywhere in the series; an edition's organizers only on that edition.
+async function peopleAction(req, res, next, fn) {
+  try {
+    const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series }, include: { editionRecords: { where: { deletedAt: null }, select: { id: true, slug: true, seriesId: true } } } });
+    if (!sr) return next();
+    const runsSeries = await canRunSeries(req, sr.id);
+    const editionIds = [];
+    for (const e of sr.editionRecords) if (runsSeries || (await scopeRoles.canRunEdition(req, e))) editionIds.push(e.id);
+    if (!runsSeries && !editionIds.length) return forbiddenPage(next);
+    await fn({ sr, runsSeries, editionIds });
+  } catch (err) {
+    if (!(err instanceof scopeRoles.ScopeRoleError)) return next(err);
+    req.flash('danger', req.t(err.message));
+  }
+  res.redirect(String(req.body.back || '').startsWith(`/${req.params.series}`) ? req.body.back : `/series/${req.params.series}#people`);
+}
+
+function grantRole(req, res, next) {
+  return peopleAction(req, res, next, async ({ sr, runsSeries, editionIds }) => {
+    const editionId = Number(req.body.editionId) || null;
+    if (editionId ? !editionIds.includes(editionId) : !runsSeries) throw new scopeRoles.ScopeRoleError("You can't give roles there.");
+    await scopeRoles.grant({ actorId: req.user.id, username: req.body.username, role: req.body.role, level: editionId ? { editionId } : { seriesId: sr.id }, appliesToChildren: req.body.appliesToChildren === 'on' });
+    req.flash('success', req.t('Role given.'));
+  });
+}
+
+function revokeRole(req, res, next) {
+  return peopleAction(req, res, next, async ({ sr, runsSeries, editionIds }) => {
+    await scopeRoles.revoke({ actorId: req.user.id, id: Number(req.params.id), seriesId: runsSeries ? sr.id : -1, editionIds });
+    req.flash('success', req.t('Role removed.'));
+  });
+}
+module.exports.grantRole = grantRole;
+module.exports.revokeRole = revokeRole;

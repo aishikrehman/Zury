@@ -1264,5 +1264,21 @@
   "Make next year’s edition from the latest one, with a copy of each of its events?": "সর্বশেষ সংস্করণ থেকে পরের বছরের সংস্করণ তৈরি করবেন, এর প্রতিটি ইভেন্টের কপিসহ?",
   "Edition created. Add its events next.": "সংস্করণ তৈরি হয়েছে। এবার এর ইভেন্ট যোগ করুন।",
   "This slug is already used here.": "এই নামটি এখানে আগেই ব্যবহৃত।",
-  "The next edition is ready, with a draft copy of each event: check their dates and settings, then publish them.": "পরের সংস্করণ তৈরি, প্রতিটি ইভেন্টের খসড়া কপিসহ: তারিখ ও সেটিংস দেখে প্রকাশ করুন।"
+  "The next edition is ready, with a draft copy of each event: check their dates and settings, then publish them.": "পরের সংস্করণ তৈরি, প্রতিটি ইভেন্টের খসড়া কপিসহ: তারিখ ও সেটিংস দেখে প্রকাশ করুন।",
+  "On": "কোথায়",
+  "The series": "সিরিজ",
+  "Edition {name}": "সংস্করণ {name}",
+  "Also everything below it": "এর নিচের সবকিছুতেও",
+  "and everything below it": "এবং এর নিচের সবকিছুতে",
+  "A role counts only where it is given. Roles on one event, or on one wiki of an event, are given on that event.": "ভূমিকা কেবল যেখানে দেওয়া হয় সেখানেই গণ্য হয়। একটি ইভেন্ট বা ইভেন্টের একটি উইকির ভূমিকা সেই ইভেন্টেই দেওয়া হয়।",
+  "No one has a role here yet": "এখানে এখনো কারো ভূমিকা নেই",
+  "Remove this role?": "এই ভূমিকা সরাবেন?",
+  "Role given.": "ভূমিকা দেওয়া হয়েছে।",
+  "Role removed.": "ভূমিকা সরানো হয়েছে।",
+  "You can't give roles there.": "সেখানে আপনি ভূমিকা দিতে পারবেন না।",
+  "Choose a role.": "একটি ভূমিকা বাছুন।",
+  "Choose the series or one of its editions.": "সিরিজ বা এর একটি সংস্করণ বাছুন।",
+  "No Zury user has that name. They need to log in to Zury once first.": "এই নামে জুরিতে কোনো ব্যবহারকারী নেই। তাঁকে আগে একবার জুরিতে লগইন করতে হবে।",
+  "That role is not on this series.": "এই ভূমিকাটি এই সিরিজের নয়।",
+  "Only the organizers of that series or edition can add events to it.": "কেবল সেই সিরিজ বা সংস্করণের আয়োজকরাই এতে ইভেন্ট যোগ করতে পারেন।"
 }
