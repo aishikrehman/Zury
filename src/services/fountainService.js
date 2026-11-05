@@ -97,6 +97,23 @@ async function wordCounts(wiki, pageids, method) {
   return out;
 }
 
+// Word counts of each page as it was at `at` (one request per page: the API gives an old
+// revision for one page at a time). Pages that did not exist yet count 0.
+async function finalCounts(wiki, pageids, at, method) {
+  const out = new Map();
+  const ztools = words.methodFor(wiki, method) === 'ztools';
+  for (const id of pageids) {
+    try {
+      const data = await wikiApi.get(wiki, { action: 'query', prop: 'revisions', rvprop: 'content', rvslots: 'main', pageids: String(id), rvstart: at.toISOString(), rvdir: 'older', rvlimit: '1' });
+      const text = data.query?.pages?.[0]?.revisions?.[0]?.slots?.main?.content;
+      out.set(String(id), text == null ? 0 : ztools ? words.countZtools(text) : words.countPlain(text.replace(/<[^>]+>|\{\{[^}]*\}\}|\[\[|\]\]|'''?/g, ' ')));
+    } catch {
+      // Left for the next sync.
+    }
+  }
+  return out;
+}
+
 async function ensureMember(contestId, userId, role, wiki, actorId) {
   await prisma.contestMembership.upsert({
     where: { contestId_userId_role_wiki: { contestId, userId, role, wiki } },
@@ -123,10 +140,17 @@ async function sync(eventWiki, { actorId = null } = {}) {
 
   const articles = editathon.articles || [];
   const ids = await pageIds(wiki, [...new Set(articles.map((a) => a.name))]);
-  const existing = await prisma.submission.findMany({ where: { contestId, wiki }, select: { id: true, pageKey: true, status: true, score: true, wordCount: true } });
+  const existing = await prisma.submission.findMany({ where: { contestId, wiki }, select: { id: true, pageKey: true, status: true, score: true, wordCount: true, metadata: true } });
   const settings = await prisma.contestSettings.findUnique({ where: { contestId }, select: { wordCountMethod: true } });
-  const counts = await wordCounts(wiki, [...new Set(ids.values())], settings?.wordCountMethod).catch(() => new Map());
   const byKey = new Map(existing.map((s) => [s.pageKey, s]));
+  // While it runs, articles are counted as they are now. Once it has ended, as they were at
+  // the finish (like ztools), once per article; that count then stays.
+  const finish = editathon.finish ? new Date(editathon.finish) : null;
+  const ended = finish && Date.now() > finish.getTime();
+  const isFinal = (s) => { try { return Boolean(JSON.parse(s.metadata || '{}').wordsAtFinish); } catch { return false; } };
+  const counts = ended
+    ? await finalCounts(wiki, [...new Set(ids.values())].filter((id) => !byKey.has(String(id)) || !isFinal(byKey.get(String(id)))), finish, settings?.wordCountMethod)
+    : await wordCounts(wiki, [...new Set(ids.values())], settings?.wordCountMethod).catch(() => new Map());
   let added = 0;
   let updated = 0;
 
@@ -140,8 +164,10 @@ async function sync(eventWiki, { actorId = null } = {}) {
     const have = byKey.get(pageKey);
     if (have) {
       const newWords = wordCount ?? have.wordCount;
-      if (have.status !== status || have.score !== score || have.wordCount !== newWords) {
-        await prisma.submission.update({ where: { id: have.id }, data: { status, score, wordCount: newWords } });
+      const markFinal = ended && counts.has(pageKey);
+      if (have.status !== status || have.score !== score || have.wordCount !== newWords || markFinal) {
+        const meta = markFinal ? JSON.stringify({ ...JSON.parse(have.metadata || '{}'), wordsAtFinish: finish.toISOString() }) : undefined;
+        await prisma.submission.update({ where: { id: have.id }, data: { status, score, wordCount: newWords, ...(meta && { metadata: meta }) } });
         updated++;
       }
       continue;
@@ -156,7 +182,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
         url: pageUrl(wiki, a.name),
         entryType: 'article',
         submittedAt: a.dateAdded ? new Date(a.dateAdded) : new Date(),
-        metadata: JSON.stringify({ source: 'fountain', fountainId: a.id }),
+        metadata: JSON.stringify({ source: 'fountain', fountainId: a.id, ...(ended && counts.has(pageKey) && { wordsAtFinish: finish.toISOString() }) }),
       },
     });
     byKey.set(pageKey, row);

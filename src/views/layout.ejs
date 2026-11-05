@@ -13,6 +13,7 @@
         { href: '/events/active', icon: 'player-play', label: t('Active'), active: isActive('/events/active') },
         { href: '/events/upcoming', icon: 'clock', label: t('Upcoming'), active: isActive('/events/upcoming') },
         { href: '/events/completed', icon: 'flag', label: t('Completed'), active: isActive('/events/completed') },
+        ...(currentUser ? [{ href: '/submissions', icon: 'files', label: t('My submissions'), active: isActive('/submissions') }] : []),
       ],
     },
   ];

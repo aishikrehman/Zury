@@ -1,9 +1,9 @@
-<%# Your own pages: a sidebar with who you are, then tabs and the page; close with accountEnd. Expects: tab; optional eventCount. %>
+<%# Your own pages: a sidebar with who you are, then tabs and the page; close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
 <%
   const me = currentUser;
   const tabs = [
     ['profile', userPath(me.username), 'user', t('Profile')],
-    ['submissions', '/submissions', 'files', t('My submissions')],
+    ['dashboard', '/dashboard', 'layout-dashboard', t('Dashboard')],
     ['settings', '/settings', 'settings', t('Preferences')],
   ];
 %>
@@ -34,4 +34,5 @@
       <div class="col-lg-9">
         <nav class="z-account-tabs mb-3" aria-label="<%= t('Account') %>">
           <% tabs.forEach(([key, href, icon, label]) => { %><a href="<%= href %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-1"></i><%= label %></a><% }) %>
+          <% if (typeof actions !== 'undefined' && actions) { %><div class="btn-list ms-auto align-self-center"><%- actions %></div><% } %>
         </nav>

@@ -1,5 +1,5 @@
 // Grants a Zury platform role from the server command line. The user must have logged in once.
-// Usage: npm run admin:grant -- "Username" [--role=platform-admin|event-creator|superuser]
+// Usage: npm run admin:grant -- "Username" [--role=platform-admin|superuser]
 const prisma = require('../src/config/prisma');
 const audit = require('../src/services/auditService');
 const { PLATFORM_ROLES } = require('../src/permissions/registry');

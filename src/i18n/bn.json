@@ -236,7 +236,6 @@
   "Entry status": "ভুক্তির অবস্থা",
   "Event": "ইভেন্ট",
   "Event created as a draft. Review the settings, then publish it when ready.": "ইভেন্টটি খসড়া হিসেবে তৈরি হয়েছে। সেটিংস দেখে নিয়ে প্রস্তুত হলে প্রকাশ করুন।",
-  "Event Creator": "ইভেন্ট নির্মাতা",
   "Event ends": "ইভেন্ট শেষ",
   "Event series": "ইভেন্ট সিরিজ",
   "Event settings saved.": "ইভেন্টের সেটিংস সংরক্ষিত হয়েছে।",
@@ -701,7 +700,6 @@
   "Tracking": "অনুসরণ",
   "Tracking is off. Turn it on in the configuration: participants' edits, hashtags or categories.": "অনুসরণ বন্ধ আছে। কনফিগারেশনে চালু করুন: অংশগ্রহণকারীদের সম্পাদনা, হ্যাশট্যাগ বা বিষয়শ্রেণী।",
   "Training": "প্রশিক্ষণ",
-  "Trusted community organizer who can create events on any wiki and organizes them.": "বিশ্বস্ত কমিউনিটি আয়োজক, যিনি যেকোনো উইকিতে ইভেন্ট তৈরি ও আয়োজন করতে পারেন।",
   "Try a different search or remove some filters.": "অন্যভাবে খুঁজুন বা কিছু ফিল্টার সরান।",
   "Type": "ধরন",
   "Type {address} to confirm": "নিশ্চিত করতে {address} লিখুন",
@@ -1187,7 +1185,6 @@
   "Manage users and Zury roles": "ব্যবহারকারী ও জুরি ভূমিকা পরিচালনা",
   "Event authority across all communities.": "সব কমিউনিটির ইভেন্টে ক্ষমতা।",
   "Can manage events across communities.": "সব কমিউনিটির ইভেন্ট পরিচালনা করতে পারেন।",
-  "Runs Zury itself; the only role besides Superuser that can delete events, data and series.": "জুরি নিজে চালান; সুপারইউজার ছাড়া কেবল এই ভূমিকাই ইভেন্ট, তথ্য ও সিরিজ মুছতে পারে।",
   "Import from Fountain and manage series and editions": "ফাউন্টেন থেকে আমদানি এবং সিরিজ ও সংস্করণ পরিচালনা",
   "This area runs Zury itself. Zury administrators and superusers are the only ones who can delete events, data and series.": "এই অংশে জুরি নিজে পরিচালিত হয়। কেবল জুরি প্রশাসক ও সুপারইউজাররাই ইভেন্ট, তথ্য ও সিরিজ মুছতে পারেন।",
   "You can't remove your own Zury role. Ask another administrator.": "নিজের জুরি ভূমিকা সরাতে পারবেন না। অন্য প্রশাসককে বলুন।",
@@ -1216,5 +1213,8 @@
   "Auto: the ztools rule on Bengali wikis": "স্বয়ংক্রিয়: বাংলা উইকিতে ztools-এর নিয়ম",
   "ztools rule (Bengali words in the wikitext)": "ztools-এর নিয়ম (উইকিটেক্সটে বাংলা শব্দ)",
   "Plain count (all words in the text)": "সাধারণ গণনা (লেখার সব শব্দ)",
-  "Same counting as ztools, so both tools give the same numbers.": "ztools-এর মতোই গণনা, তাই দুই টুলে একই সংখ্যা আসবে।"
+  "Same counting as ztools, so both tools give the same numbers.": "ztools-এর মতোই গণনা, তাই দুই টুলে একই সংখ্যা আসবে।",
+  "Trusted organizer who runs Zury: creates events on any wiki and, with Superuser, is the only one who can delete events, data and series.": "জুরি চালান এমন বিশ্বস্ত আয়োজক: যেকোনো উইকিতে ইভেন্ট তৈরি করেন এবং সুপারইউজারের সঙ্গে কেবল তিনিই ইভেন্ট, তথ্য ও সিরিজ মুছতে পারেন।",
+  "{name} · has not logged in to Zury yet": "{name} · এখনো জুরিতে লগইন করেননি",
+  "Has not logged in to Zury yet": "এখনো জুরিতে লগইন করেননি"
 }

@@ -93,7 +93,7 @@ async function listForUser(userId, { publicOnly = false } = {}) {
 function members(contestId) {
   return prisma.contestMembership.findMany({
     where: { contestId, status: 'active' },
-    include: { user: { select: { id: true, username: true, homeWiki: true, avatarUrl: true } } },
+    include: { user: { select: { id: true, username: true, homeWiki: true, avatarUrl: true, lastLoginAt: true } } },
     orderBy: [{ role: 'asc' }, { user: { username: 'asc' } }],
   });
 }
@@ -101,7 +101,7 @@ function members(contestId) {
 function overrides(contestId) {
   return prisma.contestPermission.findMany({
     where: { contestId },
-    include: { user: { select: { id: true, username: true, homeWiki: true, avatarUrl: true } } },
+    include: { user: { select: { id: true, username: true, homeWiki: true, avatarUrl: true, lastLoginAt: true } } },
     orderBy: [{ userId: 'asc' }, { permission: 'asc' }],
   });
 }

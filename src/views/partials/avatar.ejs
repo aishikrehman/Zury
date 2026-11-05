@@ -1,4 +1,5 @@
-<%# A person's picture from Commons, or their first letter. u: { username, avatarUrl }, size: xs | sm | md | lg | xl. %>
-<% const sz = typeof size !== 'undefined' ? size : 'sm'; %>
-<% if (u.avatarUrl) { %><span class="avatar avatar-<%= sz %> rounded-circle" style="background-image: url('<%= u.avatarUrl %>')" title="<%= u.username %>" role="img" aria-label="<%= u.username %>"></span>
-<% } else { %><span class="avatar avatar-<%= sz %> rounded-circle bg-primary-lt" title="<%= u.username %>"><%= u.username.charAt(0).toUpperCase() %></span><% } %>
+<%# A person's picture from Commons, or their first letter. u: { username, avatarUrl, lastLoginAt? }, size: xs | sm | md | lg | xl.
+    People added by an import or as jury who have never logged in get a dashed ring and a note. %>
+<% const sz = typeof size !== 'undefined' ? size : 'sm'; const away = u.lastLoginAt === null; const label = away ? t('{name} · has not logged in to Zury yet', { name: u.username }) : u.username; %>
+<% if (u.avatarUrl) { %><span class="avatar avatar-<%= sz %> rounded-circle<%= away ? ' z-not-joined' : '' %>" style="background-image: url('<%= u.avatarUrl %>')" title="<%= label %>" role="img" aria-label="<%= label %>"></span>
+<% } else { %><span class="avatar avatar-<%= sz %> rounded-circle bg-primary-lt<%= away ? ' z-not-joined' : '' %>" title="<%= label %>"><%= u.username.charAt(0).toUpperCase() %></span><% } %>

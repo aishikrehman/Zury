@@ -880,3 +880,5 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-agenda-item.is-now .z-agenda-date small{color:rgba(255,255,255,.8)}
 .z-agenda-item.is-now .z-agenda-when{color:var(--z-brand);font-weight:600}
 .z-glance .datagrid{grid-template-columns:1fr 1fr}
+.avatar.z-not-joined{outline:2px dashed var(--z-border-strong);outline-offset:2px;position:relative}
+.avatar.z-not-joined::after{content:"";position:absolute;right:-3px;bottom:-3px;width:.7em;height:.7em;min-width:9px;min-height:9px;border-radius:50%;background:var(--z-surface);border:2px solid var(--z-fg-muted)}

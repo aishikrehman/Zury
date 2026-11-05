@@ -110,13 +110,6 @@ const PLATFORM_ROLES = {
     permissions: ['editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
     globalPermissions: ['createEvent', 'importEvents'],
   },
-  'event-creator': {
-    label: 'Event Creator',
-    source: 'zury',
-    scope: 'global',
-    description: 'Trusted community organizer who can create events on any wiki and organizes them.',
-    permissions: ['createEvent'],
-  },
   // Every permission. Only grantable from the server command line, never the web UI.
   superuser: {
     label: 'Superuser',
@@ -130,8 +123,8 @@ const PLATFORM_ROLES = {
     label: 'Zury Administrator',
     source: 'zury',
     scope: 'global',
-    description: 'Runs Zury itself; the only role besides Superuser that can delete events, data and series.',
-    permissions: ['accessAdmin', 'deleteAnyEvent', 'managePlatformRoles', 'manageSiteConfig', 'viewAuditLog'],
+    description: 'Trusted organizer who runs Zury: creates events on any wiki and, with Superuser, is the only one who can delete events, data and series.',
+    permissions: ['createEvent', 'accessAdmin', 'deleteAnyEvent', 'managePlatformRoles', 'manageSiteConfig', 'viewAuditLog'],
   },
 };
 

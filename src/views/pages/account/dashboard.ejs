@@ -7,14 +7,8 @@
     ['gavel', 'orange', juryEvents.length, 'On the jury'],
     ['files', 'azure', typeof submissionCount !== 'undefined' ? submissionCount : participating, typeof submissionCount !== 'undefined' ? 'Submissions' : 'Participating'],
   ];
-  const actions = [
-    can('createEvent') ? `<a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i>${h(t('Create event'))}</a>` : '',
-    can('accessAdmin') ? '<a class="btn btn-dark" href="/admin"><i class="ti ti-shield-lock me-1"></i>' + h(t('Administration')) + '</a>' : '',
-  ].join('');
 %>
-<%- include('../../partials/pageHeader', { pretitle: t('Overview'), heading: t('Dashboard'), actions }) %>
-<div class="page-body">
-  <div class="container-xl">
+<%- include('../../partials/accountHeader', { tab: 'dashboard' }) %>
     <div class="row row-deck row-cards mb-4">
       <div class="col-sm-12 col-lg-6">
         <div class="card card-gradient">
@@ -116,7 +110,7 @@
     <div class="mb-4"><%- include('../../partials/calendar', { cal: calendar, calLang: lang.code }) %></div>
 
     <div class="row row-cards">
-      <div class="col-lg-8">
+      <div class="col-12">
         <div class="card">
           <div class="card-header"><h3 class="card-title"><%= t("My events") %></h3></div>
           <% if (!myEvents.length) { %>
@@ -141,27 +135,5 @@
         </div>
       </div>
 
-      <div class="col-lg-4">
-        <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><%= t("Roles") %></h3></div>
-          <div class="card-body">
-            <%- include('../../partials/accessSummary', { s: subject }) %>
-            <% const groups = {}; wikiRoles.filter((r) => !['sysop', 'steward', 'global-sysop'].includes(r.rightName)).forEach((r) => { (groups[r.rightName] ||= []).push(r.wiki === '*' ? t('all wikis (global)') : wikiLocal(r.wiki)); }); %>
-            <% if (Object.keys(groups).length) { %>
-              <ul class="list-unstyled m-0 z-role-list border-top mt-2 pt-1">
-                <% Object.entries(groups).forEach(([right, ws]) => { %><li title="<%= t('Verified on Wikimedia') %>"><i class="ti ti-world text-secondary"></i><span><%= right %> <span class="text-secondary">· <%= ws.join(', ') %></span></span></li><% }) %>
-              </ul>
-            <% } %>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h3 class="card-title"><%= t("Profile") %></h3></div>
-          <div class="list-group list-group-flush">
-            <a class="list-group-item list-group-item-action" href="<%= userPath(currentUser.username) %>"><i class="ti ti-user me-2"></i><%= t("Public profile") %></a>
-            <a class="list-group-item list-group-item-action" href="/settings"><i class="ti ti-settings me-2"></i><%= t("Preferences") %></a>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
-</div>
+<%- include('../../partials/accountEnd') %>
