@@ -1251,5 +1251,6 @@
   "Set a start date and an end date after it.": "শুরুর তারিখ এবং তার পরের একটি শেষের তারিখ দিন।",
   "The first edition is ready as a draft: check its settings, then publish it.": "প্রথম সংস্করণ খসড়া হিসেবে তৈরি: সেটিংস দেখে প্রকাশ করুন।",
   "Choose a wiki…": "একটি উইকি বেছে নিন…",
-  "Title: {title}. Everything else can be set in its settings afterwards.": "শিরোনাম: {title}। বাকি সব পরে এর সেটিংসে ঠিক করা যাবে।"
+  "Title: {title}. Everything else can be set in its settings afterwards.": "শিরোনাম: {title}। বাকি সব পরে এর সেটিংসে ঠিক করা যাবে।",
+  "The end date must be after the start date.": "শেষের তারিখ শুরুর তারিখের পরে হতে হবে।"
 }

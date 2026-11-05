@@ -43,8 +43,8 @@
           <div class="col-md-7"><select class="form-select" id="fe-wiki" name="wiki" data-picker="wiki" data-language-label="<%= t('Project language') %>" data-site-label="<%= t('Project site') %>" placeholder="<%= t('Choose a wiki…') %>"></select></div>
         </div>
         <div class="row g-3 align-items-end mt-0">
-          <div class="col-6 col-md-2"><label class="form-label" for="fe-start"><%= t('Starts') %></label><input class="form-control" type="date" id="fe-start" name="startDate" required></div>
-          <div class="col-6 col-md-2"><label class="form-label" for="fe-end"><%= t('Ends') %></label><input class="form-control" type="date" id="fe-end" name="endDate" required></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="fe-start"><%= t('Starts') %></label><input class="form-control" type="date" id="fe-start" name="startDate"></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="fe-end"><%= t('Ends') %></label><input class="form-control" type="date" id="fe-end" name="endDate"></div>
         </div>
         <div class="d-flex align-items-center gap-3 mt-3">
           <span class="text-secondary small flex-fill"><%= t('Title: {title}. Everything else can be set in its settings afterwards.', { title: sr.title + ' ' + new Date().getFullYear() }) %></span>

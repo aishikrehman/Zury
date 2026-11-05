@@ -299,7 +299,8 @@ async function firstEdition(req, res, next) {
     const catalog = await catalogService.validators();
     if (!/^[a-z][a-z0-9_]*$/.test(wiki) || !catalog.known(wiki)) return back('Choose an existing wiki.');
     if (!canUseWikiForEvents(req.subject, wiki)) return back('You cannot create events on that wiki.');
-    if (!startDate || !endDate || endDate < startDate) return back('Set a start date and an end date after it.');
+    // Dates are optional here; they can be set in the edition's settings.
+    if (startDate && endDate && endDate < startDate) return back('The end date must be after the start date.');
     const language = (await catalogService.languageOf(wiki)) || 'en';
     const contest = await eventService.create({
       actorId: req.user.id,
