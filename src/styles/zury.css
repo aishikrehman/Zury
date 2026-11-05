@@ -860,3 +860,5 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-credit{color:var(--z-fg)}
 .z-credit a{font-weight:650;color:var(--z-brand);text-decoration:none}
 .z-credit a:hover{text-decoration:underline}
+.z-db-table td{max-width:22rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8125rem}
+.z-db-table th{white-space:nowrap}

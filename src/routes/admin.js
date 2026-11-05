@@ -13,6 +13,7 @@ router.post('/admin/users/:userId(\\d+)/roles/revoke', requirePermission('manage
 router.get('/admin/permissions', adminController.permissions);
 router.post('/admin/permissions', requirePermission('maintainSite'), adminController.setRolePermission);
 router.post('/admin/permissions/reset', requirePermission('maintainSite'), adminController.resetRolePermissions);
+router.get('/admin/database', requirePermission('viewDatabase'), require('../controllers/databaseController').index);
 router.get('/admin/logs', requirePermission('viewAuditLog'), adminController.logs);
 router.get('/admin/maintenance', requirePermission('maintainSite'), adminController.maintenancePage);
 router.post('/admin/maintenance/backup', requirePermission('maintainSite'), adminController.downloadBackup);

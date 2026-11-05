@@ -942,7 +942,7 @@
   "All statuses": "সব অবস্থা",
   "Back up the database and run maintenance": "ডাটাবেজ ব্যাকআপ ও রক্ষণাবেক্ষণ",
   "Clean up": "পরিষ্কার করুন",
-  "Database": "ডাটাবেজ",
+  "Database": "ডেটাবেস",
   "Download a backup": "ব্যাকআপ ডাউনলোড করুন",
   "Expired sign-in sessions": "মেয়াদোত্তীর্ণ লগইন সেশন",
   "In the event": "ইভেন্টে দেখুন",
@@ -1190,5 +1190,11 @@
   "Runs Zury itself; the only role besides Superuser that can delete events, data and series.": "জুরি নিজে চালান; সুপারইউজার ছাড়া কেবল এই ভূমিকাই ইভেন্ট, তথ্য ও সিরিজ মুছতে পারে।",
   "Import from Fountain and manage series and editions": "ফাউন্টেন থেকে আমদানি এবং সিরিজ ও সংস্করণ পরিচালনা",
   "This area runs Zury itself. Zury administrators and superusers are the only ones who can delete events, data and series.": "এই অংশে জুরি নিজে পরিচালিত হয়। কেবল জুরি প্রশাসক ও সুপারইউজাররাই ইভেন্ট, তথ্য ও সিরিজ মুছতে পারেন।",
-  "You can't remove your own Zury role. Ask another administrator.": "নিজের জুরি ভূমিকা সরাতে পারবেন না। অন্য প্রশাসককে বলুন।"
+  "You can't remove your own Zury role. Ask another administrator.": "নিজের জুরি ভূমিকা সরাতে পারবেন না। অন্য প্রশাসককে বলুন।",
+  "Read only: nothing here changes the database. Sessions are not shown.": "শুধু দেখার জন্য: এখান থেকে ডেটাবেসে কিছুই বদলায় না। সেশন দেখানো হয় না।",
+  "Choose a table.": "একটি টেবিল বেছে নিন।",
+  "No rows.": "কোনো সারি নেই।",
+  "{n} row": "{n}টি সারি",
+  "{n} rows": "{n}টি সারি",
+  "Look through the database (read only)": "ডেটাবেস দেখা (শুধু পড়া)"
 }

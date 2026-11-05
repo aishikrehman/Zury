@@ -41,6 +41,7 @@ const PERMISSIONS = {
   exportData: 'Export data',
   importEvents: 'Import from Fountain and manage series and editions',
   accessAdmin: 'Open the Zury administration panel',
+  viewDatabase: 'Look through the database (read only)',
   managePlatformRoles: 'Grant and revoke Zury roles',
   manageSiteConfig: 'Change Zury site configuration',
   viewAuditLog: 'View the audit log',
@@ -136,6 +137,7 @@ const PLATFORM_ROLES = {
 
 // Platform-level keys can't be handed out per event.
 const NON_OVERRIDABLE = new Set([
+  'viewDatabase',
   'createEvent',
   'importEvents',
   'deleteEvent',
