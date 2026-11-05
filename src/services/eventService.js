@@ -1,5 +1,6 @@
 const prisma = require('../config/prisma');
 const audit = require('./auditService');
+const editions = require('./editionService');
 const lifecycle = require('./lifecycleService');
 const { defaultSettings } = require('./contestFormService');
 const { defaultCode } = require('./eventWikiService');
@@ -60,6 +61,7 @@ async function create({ actorId, type, parsed, autoSlug }) {
       },
     });
     await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, type } }, tx);
+    await editions.sync(contest.id, tx);
     return contest;
   });
 }
@@ -101,6 +103,7 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
         tx,
       );
     }
+    await editions.sync(updated.id, tx);
     return updated;
   });
 }
@@ -124,6 +127,7 @@ async function softDelete({ actorId, contest, confirmation }) {
     // A deleted event gives up its address, so a new event can use /<slug> or /<series>/<edition> again.
     await tx.contest.update({ where: { id: contest.id }, data: { deletedAt: new Date(), deletedById: actorId, slug: `deleted-${contest.id}-${contest.slug}`.slice(0, 190), edition: null } });
     await audit.record({ actorId, contestId: contest.id, action: 'contest.deleted', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, slug: contest.slug, edition: contest.edition } }, tx);
+    await editions.sync(contest.id, tx);
   });
 }
 

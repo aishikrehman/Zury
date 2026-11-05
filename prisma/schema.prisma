@@ -129,6 +129,9 @@ model Contest {
   // Recurring events: /<series slug>/<edition>, e.g. /wam/2026.
   seriesId    Int?
   edition     String?
+  // Stage 1 of the Series / Edition / Event / Local Event structure: the Edition this event
+  // belongs to. seriesId and edition stay until the addresses move over (stage 2).
+  editionId   Int?
   createdById Int?
   deletedAt   DateTime?
   deletedById Int?
@@ -145,6 +148,9 @@ model Contest {
   settings            ContestSettings?
   wikis               ContestWiki[]
   series              EventSeries?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  editionOf           Edition?            @relation("EditionEvents", fields: [editionId], references: [id], onDelete: Restrict)
+  localEvents         LocalEvent[]
+  seriesSlug          SeriesSlug?
   submissions         Submission[]
   memberships         ContestMembership[]
   permissionOverrides ContestPermission[]
@@ -160,6 +166,7 @@ model Contest {
   @@index([primaryWiki])
   @@index([deletedAt])
   @@unique([seriesId, edition])
+  @@index([editionId])
 }
 
 // A recurring event such as Wikipedia Asian Month; each year is an edition (a Contest).
@@ -168,9 +175,76 @@ model EventSeries {
   slug        String   @unique
   title       String
   description String @db.Text   @default("")
+  // active | archived
+  status      String   @default("active")
+  deletedAt   DateTime?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
-  editions Contest[]
+  // Events linked through the old seriesId (until stage 2).
+  editions        Contest[]
+  editionRecords  Edition[]
+  slugs           SeriesSlug[]
+}
+
+// One occurrence of a series (WLM 2026). Belongs to exactly one series; holds zero or more events.
+model Edition {
+  id          Int       @id @default(autoincrement())
+  seriesId    Int
+  slug        String
+  title       String    @db.VarChar(1000)
+  year        Int?
+  description String    @db.Text @default("")
+  // draft | active | completed | archived
+  status      String    @default("draft")
+  startDate   DateTime?
+  endDate     DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  series     EventSeries @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  events     Contest[]   @relation("EditionEvents")
+  seriesSlug SeriesSlug?
+
+  @@unique([seriesId, slug])
+}
+
+// The names directly under a series (/wlm/<name>): an edition or a direct event, never both.
+model SeriesSlug {
+  seriesId  Int
+  slug      String
+  editionId Int?   @unique
+  contestId Int?   @unique
+
+  series  EventSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  // Restrict, so the database can check "an edition or an event, never both" (MariaDB allows
+  // no check on a column whose foreign key cascades); the entry is removed before its owner.
+  edition Edition?    @relation(fields: [editionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  contest Contest?    @relation(fields: [contestId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([seriesId, slug])
+}
+
+// An optional, separately managed local part of an event (its bnwiki edition, say).
+// Created only when a community needs its own management; wikis an event simply accepts
+// stay as ContestWiki rows.
+model LocalEvent {
+  id        Int       @id @default(autoincrement())
+  contestId Int
+  slug      String
+  title     String?   @db.VarChar(1000)
+  wiki      String?
+  // active | paused | archived
+  status    String    @default("active")
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  contest     Contest      @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  submissions Submission[]
+
+  @@unique([contestId, slug])
 }
 
 // A wiki taking part in an event. Settings it doesn't override come from the event.
@@ -314,6 +388,9 @@ model Submission {
   updatedAt     DateTime @updatedAt
 
   contest     Contest             @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  // The local event it was made in, if its event has local events.
+  localEventId Int?
+  localEvent  LocalEvent?         @relation(fields: [localEventId], references: [id], onDelete: Restrict)
   participant User                @relation("SubmissionParticipant", fields: [participantId], references: [id], onDelete: Cascade)
   submittedBy User                @relation("SubmissionSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
   history     SubmissionHistory[]

@@ -96,6 +96,7 @@ async function nextEdition({ actorId, series }) {
       },
     });
     await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, from: `${series.slug}/${latest.edition}` } }, tx);
+    await require('./editionService').sync(contest.id, tx);
     return contest;
   });
   return next;
