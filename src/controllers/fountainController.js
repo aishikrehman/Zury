@@ -13,15 +13,12 @@ async function targets(req) {
     ? { deletedAt: null }
     : { deletedAt: null, memberships: { some: { userId: req.user.id, role: 'organizer', wiki: '', status: 'active' } } };
   const rows = await prisma.contest.findMany({
-    where,
-    select: { id: true, slug: true, title: true, edition: true, series: { select: { slug: true, title: true } } },
+    where: { ...where, path: { not: null } },
+    select: { id: true, title: true, path: true },
     orderBy: { createdAt: 'desc' },
     take: 200,
   });
-  return rows.map((c) => {
-    const path = c.series ? `/${c.series.slug}/${c.edition}` : `/${c.slug}`;
-    return { id: c.id, path, label: `${c.series ? `${c.series.title} ${c.edition}` : c.title} (${path})` };
-  });
+  return rows.map((c) => ({ id: c.id, path: c.path, label: `${c.title} (${c.path})` }));
 }
 
 function render(req, res, { value = '', type = 'writing', target = '', error = '', status = 200 } = {}) {
@@ -50,7 +47,7 @@ async function importEvent(req, res, next) {
     }
     const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type });
     req.flash('success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));
-    res.redirect(`/${contest.slug}`);
+    res.redirect((await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path);
   } catch (err) {
     if (!(err instanceof fountain.FountainError || err instanceof EventWikiError)) return next(err);
     render(req, res, { value, type, target, error: req.t(err.message), status: 400 }).catch(next);

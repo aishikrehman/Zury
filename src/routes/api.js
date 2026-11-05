@@ -14,12 +14,12 @@ router.get('/api/series', async (req, res, next) => {
   try {
     const term = q(req).trim();
     const rows = await prisma.eventSeries.findMany({
-      where: term ? { OR: [{ slug: { contains: term.toLowerCase() } }, { title: { contains: term } }] } : {},
       orderBy: { title: 'asc' },
       take: 30,
-      include: { editions: { where: { deletedAt: null }, orderBy: { edition: 'desc' }, take: 20, select: { edition: true } } },
+      where: { deletedAt: null, ...(term ? { OR: [{ slug: { contains: term.toLowerCase() } }, { title: { contains: term } }] } : {}) },
+      include: { editionRecords: { where: { deletedAt: null }, orderBy: [{ year: 'desc' }, { slug: 'desc' }], take: 20, select: { slug: true } } },
     });
-    res.json(rows.map((r) => ({ value: r.slug, text: r.title, latest: r.editions[0]?.edition || null, editions: r.editions.map((e) => e.edition) })));
+    res.json(rows.map((r) => ({ value: r.slug, text: r.title, latest: r.editionRecords[0]?.slug || null, editions: r.editionRecords.map((e) => e.slug) })));
   } catch (err) {
     next(err);
   }

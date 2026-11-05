@@ -1,41 +1,75 @@
-// Editions as their own records (stage 1 of the Series / Edition / Event / Local Event
-// structure). Until the addresses move over, an event still carries seriesId + edition;
-// this keeps the Edition record, its place under the series and the event's link in step.
+// Where an event sits, and so its address. An event has at most one parent: a series directly
+// (/<series>/<slug>), an edition (/<series>/<edition>/<slug>), or none (/events/<slug>).
+// The address is worked out from that parent and stored, so every page resolves an event by
+// one lookup and nothing is guessed from the shape of an address.
 const prisma = require('../config/prisma');
 
-const EDITION_STATUS = (status) => (status === 'draft' ? 'draft' : ['completed', 'archived'].includes(status) ? status : 'active');
+// Names that can't be a standalone event's slug (they are pages under /events).
+const EVENTS_RESERVED = new Set(['active', 'upcoming', 'completed', 'create', 'import']);
 
-// After an event is created or changed: give its series + edition an Edition record (made
-// once, shared by every event of that edition) and point the event at it. An event that
-// left its series loses the link; an Edition stays, even empty, as editions may.
-async function sync(contestId, client = prisma) {
-  const c = await client.contest.findUnique({ where: { id: contestId }, select: { id: true, seriesId: true, edition: true, editionId: true, title: true, status: true, startDate: true, endDate: true } });
-  if (!c) return null;
-  if (!c.seriesId || !c.edition) {
-    if (c.editionId) await client.contest.update({ where: { id: c.id }, data: { editionId: null } });
-    return null;
+// Names that can't sit right under an event: its own pages.
+const EVENT_TABS = new Set([
+  'config', 'submissions', 'submit', 'results', 'tracking', 'participants', 'assignments', 'appeals', 'activity',
+  'sessions', 'review', 'message', 'export', 'data', 'delete', 'move', 'status', 'join', 'leave', 'wikis', 'fountain',
+  'members', 'overrides', 'blocks', 'statistics', 'certificate',
+]);
+
+// The address for an event with this slug under this parent ({ seriesId } or { editionId } or neither).
+async function pathFor(slug, { seriesId = null, editionId = null } = {}, client = prisma) {
+  if (editionId) {
+    const e = await client.edition.findUnique({ where: { id: editionId }, select: { slug: true, series: { select: { slug: true } } } });
+    return e ? `/${e.series.slug}/${e.slug}/${slug}` : null;
   }
-  let edition = await client.edition.findUnique({ where: { seriesId_slug: { seriesId: c.seriesId, slug: c.edition } } });
-  if (!edition) {
-    edition = await client.edition.create({
-      data: {
-        seriesId: c.seriesId,
-        slug: c.edition,
-        title: c.title,
-        year: /^\d{4}$/.test(c.edition) ? Number(c.edition) : null,
-        status: EDITION_STATUS(c.status),
-        startDate: c.startDate,
-        endDate: c.endDate,
-      },
+  if (seriesId) {
+    const s = await client.eventSeries.findUnique({ where: { id: seriesId }, select: { slug: true } });
+    return s ? `/${s.slug}/${slug}` : null;
+  }
+  return `/events/${slug}`;
+}
+
+// Whether this slug is free under this parent; excludeId is the event itself when it's renamed.
+async function slugFree(slug, parent, { excludeId = null } = {}, client = prisma) {
+  if (!parent.seriesId && !parent.editionId && EVENTS_RESERVED.has(slug)) return false;
+  const path = await pathFor(slug, parent, client);
+  const taken = await client.contest.findFirst({ where: { path, ...(excludeId && { NOT: { id: excludeId } }) }, select: { id: true } });
+  if (taken) return false;
+  // Directly under a series, an event shares the names with the series' editions.
+  if (parent.seriesId) {
+    const entry = await client.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: parent.seriesId, slug } } });
+    if (entry && entry.contestId !== excludeId) return false;
+  }
+  return true;
+}
+
+// After an event is created, moved, renamed or deleted: its stored address, and its name
+// entry under the series when it sits there directly.
+async function sync(contestId, client = prisma) {
+  const c = await client.contest.findUnique({ where: { id: contestId }, select: { id: true, slug: true, seriesId: true, editionId: true, deletedAt: true } });
+  if (!c) return null;
+  await client.seriesSlug.deleteMany({ where: { contestId: c.id, ...(c.seriesId && !c.deletedAt && { NOT: { seriesId: c.seriesId, slug: c.slug } }) } });
+  const path = c.deletedAt ? null : await pathFor(c.slug, c, client);
+  await client.contest.update({ where: { id: c.id }, data: { path } });
+  if (c.seriesId && !c.deletedAt) {
+    await client.seriesSlug.upsert({
+      where: { seriesId_slug: { seriesId: c.seriesId, slug: c.slug } },
+      update: {},
+      create: { seriesId: c.seriesId, slug: c.slug, contestId: c.id },
     });
   }
-  await client.seriesSlug.upsert({
-    where: { seriesId_slug: { seriesId: c.seriesId, slug: c.edition } },
-    update: {},
-    create: { seriesId: c.seriesId, slug: c.edition, editionId: edition.id },
+  return path;
+}
+
+// An edition of a series by its name, made when missing (an empty edition is fine).
+async function findOrCreate(seriesId, slug, { title, startDate = null, endDate = null } = {}, client = prisma) {
+  const found = await client.edition.findUnique({ where: { seriesId_slug: { seriesId, slug } } });
+  if (found) return found;
+  const clash = await client.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId, slug } } });
+  if (clash) return null; // a direct event of the series already has this name
+  const edition = await client.edition.create({
+    data: { seriesId, slug, title: title || slug, year: /^\d{4}$/.test(slug) ? Number(slug) : null, startDate, endDate },
   });
-  if (c.editionId !== edition.id) await client.contest.update({ where: { id: c.id }, data: { editionId: edition.id } });
+  await client.seriesSlug.create({ data: { seriesId, slug, editionId: edition.id } });
   return edition;
 }
 
-module.exports = { sync };
+module.exports = { pathFor, slugFree, sync, findOrCreate, EVENTS_RESERVED, EVENT_TABS };

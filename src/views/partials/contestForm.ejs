@@ -86,9 +86,8 @@
                   <div class="col-12">
                     <label class="form-label" for="slug"><%= t("Address") %></label>
                     <div class="input-group">
-                      <span class="input-group-text"><%= origin %>/</span>
+                      <span class="input-group-text" data-address-prefix data-origin="<%= origin %>"><%= origin %>/events/</span>
                       <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="<%= t("made-from-the-title") %>" data-slug>
-                      <span class="input-group-text d-none" data-series-address></span>
                     </div>
                     <div class="form-hint" data-address-hint><%= t("Made from the title; you can change it.") %></div>
                     <%- err('slug') %>

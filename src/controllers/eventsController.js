@@ -54,6 +54,9 @@ function createForm(req, res) {
   const type = EVENT_TYPES[req.query.type] ? req.query.type : '';
   const form = contestForm.newForm(type || 'writing');
   if (!type) form.type = '';
+  // From a series or edition page: the event is created there.
+  if (/^[a-z0-9-]{1,80}$/.test(req.query.series || '')) form.seriesSlug = req.query.series;
+  if (/^[a-z0-9-]{1,20}$/.test(req.query.edition || '')) form.edition = req.query.edition;
   renderForm(res, { type, form });
 }
 
@@ -90,23 +93,6 @@ async function create(req, res, next) {
   if (Object.keys(parsed.errors).length) {
     return renderForm(res, { type, form: parsed.form, errors: parsed.errors, status: 422 });
   }
-  // An existing edition of the series: this wiki joins it instead of becoming an event of its own.
-  if (parsed.series && parsed.series.edition) {
-    const edition = await prisma.contest.findFirst({ where: { deletedAt: null, edition: parsed.series.edition, series: { slug: parsed.series.slug } }, include: { series: true, wikis: true } });
-    if (edition) {
-      const wiki = parsed.contest.primaryWiki;
-      const path = eventPath(edition);
-      if (edition.wikis.some((w) => w.wiki === wiki)) {
-        req.flash('info', req.t('{wiki} is already part of this edition.', { wiki }));
-        return res.redirect(path);
-      }
-      const scope = await require('../services/permissionService').contestScope(req.subject, edition, { wikis: edition.wikis, wiki: null }).catch(() => null);
-      const manages = Boolean(scope && scope.permissions && scope.permissions.has('manageEvent'));
-      await require('../services/eventWikiService').addWiki({ actorId: req.user.id, contest: edition, wiki, status: manages ? 'active' : 'pending', requestedById: manages ? null : req.user.id });
-      req.flash('success', req.t(manages ? '{wiki} added to this edition.' : 'Request to add {wiki} sent to the organizers of this edition.', { wiki }));
-      return res.redirect(manages ? `${path}/config#wikis` : path);
-    }
-  }
   try {
     const contest = await eventService.create({
       actorId: req.user.id,
@@ -117,7 +103,7 @@ async function create(req, res, next) {
     const problems = await addStartingTeam(req, contest, { ...contestForm.defaultSettings(type), ...parsed.settings });
     req.flash('success', 'Event created as a draft. Review the settings, then publish it when ready.');
     if (problems.length) req.flash('warning', `Not added: ${problems.join(' ')}`);
-    const full = await prisma.contest.findUnique({ where: { id: contest.id }, include: { series: true } });
+    const full = await prisma.contest.findUnique({ where: { id: contest.id }, select: { id: true, path: true } });
     res.redirect(`${eventPath(full)}/config`);
   } catch (err) {
     if (err instanceof eventService.EventError) {
@@ -132,7 +118,8 @@ async function create(req, res, next) {
 async function canRunSeries(req, seriesId) {
   if (!req.user) return false;
   if (req.permissions.has('manageAnyEvent')) return true;
-  return !!(await prisma.contestMembership.findFirst({ where: { userId: req.user.id, role: 'organizer', status: 'active', contest: { seriesId } } }));
+  // Organizers of any of its events, direct or in one of its editions.
+  return !!(await prisma.contestMembership.findFirst({ where: { userId: req.user.id, role: 'organizer', status: 'active', contest: { OR: [{ seriesId }, { editionOf: { seriesId } }] } } }));
 }
 
 function seriesForm(req, res) {
@@ -162,8 +149,8 @@ async function nextEdition(req, res, next) {
       return next(err);
     }
     const created = await seriesService.nextEdition({ actorId: req.user.id, series: found });
-    req.flash('success', 'The next edition is ready as a draft: check its dates and settings, then publish it.');
-    res.redirect(`/${found.slug}/${created.edition}/config`);
+    req.flash('success', 'The next edition is ready, with a draft copy of each event: check their dates and settings, then publish them.');
+    res.redirect(`/${found.slug}/${created.slug}`);
   } catch (err) {
     const seriesService = require('../services/seriesService');
     if (!(err instanceof seriesService.SeriesError)) return next(err);
@@ -198,28 +185,43 @@ async function manageOneSeries(req, res, next) {
 }
 
 // /series/<series>/<edition>: one edition, its wikis and numbers, and the way into its settings.
+async function editionPage(req, res, next) {
+  try {
+    const { RESERVED } = require('../middleware/permissions');
+    if (RESERVED.has(req.params.series)) return next();
+    const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!sr) return next();
+    const entry = await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: sr.id, slug: req.params.edition } } });
+    if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
+    const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
+    if (!edition) return next();
+    const canRun = await canRunSeries(req, sr.id);
+    const events = await prisma.contest.findMany({
+      where: { editionId: edition.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
+      orderBy: { startDate: 'asc' },
+      select: contestService.CARD_SELECT,
+    });
+    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition, events, canRun });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function manageEdition(req, res, next) {
   try {
     const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
     if (!sr) return next();
-    if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
-    const edition = await prisma.contest.findFirst({
-      where: { seriesId: sr.id, edition: req.params.edition, deletedAt: null },
-      include: { settings: true, wikis: { orderBy: { code: 'asc' } }, _count: { select: { submissions: true, memberships: true, reviews: true } } },
-    });
+    const entry = await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: sr.id, slug: req.params.edition } } });
+    if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
+    const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
     if (!edition) return next();
-    const byWiki = await prisma.submission.groupBy({ by: ['wiki'], where: { contestId: edition.id }, _count: { _all: true } });
-    const people = await prisma.contestMembership.groupBy({ by: ['wiki', 'role'], where: { contestId: edition.id, status: 'active' }, _count: { _all: true } });
-    const wikis = edition.wikis.map((w) => ({
-      ...w,
-      entries: byWiki.find((b) => b.wiki === w.wiki)?._count._all || 0,
-      organizers: people.filter((g) => g.wiki === w.wiki && g.role === 'organizer').reduce((n, g) => n + g._count._all, 0),
-      jury: people.filter((g) => g.wiki === w.wiki && g.role === 'jury').reduce((n, g) => n + g._count._all, 0),
-      participants: people.filter((g) => g.wiki === w.wiki && g.role === 'participant').reduce((n, g) => n + g._count._all, 0),
-      own: Object.values(JSON.parse(w.overrides || '{}')).reduce((n, o) => n + Object.keys(o || {}).length, 0),
-    }));
-    const others = await prisma.contest.findMany({ where: { seriesId: sr.id, deletedAt: null }, orderBy: { edition: 'desc' }, select: { edition: true } });
-    res.render('pages/events/editionManage', { title: `${edition.title} — Zury`, sr, edition, wikis, others: others.map((o) => o.edition) });
+    const canRun = await canRunSeries(req, sr.id);
+    const events = await prisma.contest.findMany({
+      where: { editionId: edition.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
+      orderBy: { startDate: 'asc' },
+      select: contestService.CARD_SELECT,
+    });
+    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition, events, canRun });
   } catch (err) {
     next(err);
   }
@@ -260,68 +262,46 @@ async function series(req, res, next) {
     const { RESERVED } = require('../middleware/permissions');
     if (RESERVED.has(req.params.series)) return next();
     const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
-    if (!found) return next();
+    if (!found || found.deletedAt) return next();
     // Those who run the series also see its drafts and private editions (marked by their status).
     const canRun = await canRunSeries(req, found.id);
-    const editions = await prisma.contest.findMany({
+    const directEvents = await prisma.contest.findMany({
       where: { seriesId: found.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
-      orderBy: { edition: 'desc' },
-      select: { ...contestService.CARD_SELECT, edition: true },
+      orderBy: { startDate: 'desc' },
+      select: contestService.CARD_SELECT,
     });
-    res.render('pages/events/series', {
-      title: `${found.title} — Zury`,
-      series: found,
-      editions,
-      summary: await require('../services/seriesService').summary(found.id, { drafts: canRun }),
-      canRun,
-    });
+    const summary = await require('../services/seriesService').summary(found.id, { drafts: canRun });
+    res.render('pages/events/series', { title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, canRun });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { index, createForm, create, series, seriesForm, createSeries, nextEdition, manageSeries, seriesAction, manageOneSeries, manageEdition };
+module.exports = { index, createForm, create, series, editionPage, seriesForm, createSeries, nextEdition, manageSeries, seriesAction, manageOneSeries, manageEdition };
 
 // A series' first edition from a few fields: edition, type, wiki and dates. The rest has
 // sensible defaults; the organizer fine-tunes it in the edition's settings afterwards.
+// A new, empty edition of a series (events are added to it afterwards).
 async function firstEdition(req, res, next) {
+  const seriesService = require('../services/seriesService');
   const series = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } }).catch(() => null);
   if (!series) return next();
-  const back = (msg) => { req.flash('danger', req.t(msg)); res.redirect(`/series/${series.slug}`); };
   try {
-    const edition = String(req.body.edition || '').trim().toLowerCase();
-    const type = String(req.body.type || 'writing');
-    // No wiki chosen: an umbrella edition on Meta-Wiki; wikis join it afterwards.
-    const chosen = String(req.body.wiki || '').trim();
-    const wiki = chosen || 'metawiki';
+    if (!(await canRunSeries(req, series.id))) {
+      const err = new Error("You don't have permission to do that.");
+      err.status = 403;
+      return next(err);
+    }
     const day = (v, end) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? new Date(`${v}T${end ? '23:59:59' : '00:00:00'}Z`) : null);
-    const startDate = day(req.body.startDate);
-    const endDate = day(req.body.endDate, true);
-    if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) return back('Give the edition a short name, such as 2026.');
-    if (!EVENT_TYPES[type]) return back('Choose the type of event.');
-    const catalog = await catalogService.validators();
-    if (!/^[a-z][a-z0-9_]*$/.test(wiki) || !catalog.known(wiki)) return back('Choose an existing wiki.');
-    if (!canUseWikiForEvents(req.subject, wiki)) return back('You cannot create events on that wiki.');
-    // Dates are optional here; they can be set in the edition's settings.
-    if (startDate && endDate && endDate < startDate) return back('The end date must be after the start date.');
-    const language = (await catalogService.languageOf(wiki)) || 'en';
-    const contest = await eventService.create({
-      actorId: req.user.id,
-      type,
-      autoSlug: true,
-      parsed: {
-        contest: { slug: `${series.slug}-${edition}`, title: `${series.title} ${edition}`, primaryWiki: wiki, language: language === 'special' ? 'en' : language, timezone: 'UTC', startDate, endDate },
-        series: { slug: series.slug, edition, title: series.title },
-        settings: {},
-      },
+    const edition = await seriesService.createEdition({
+      actorId: req.user.id, series, slug: req.body.edition, title: req.body.title, startDate: day(req.body.startDate), endDate: day(req.body.endDate, true),
     });
-    // Without a wiki, Meta-Wiki is only a placeholder: the edition has no wiki until one joins.
-    if (!chosen) await prisma.contestWiki.deleteMany({ where: { contestId: contest.id } });
-    req.flash('success', req.t('The first edition is ready as a draft: check its settings, then publish it.'));
-    res.redirect(`/${series.slug}/${contest.edition || edition}/config`);
+    req.flash('success', req.t('Edition created. Add its events next.'));
+    res.redirect(`/${series.slug}/${edition.slug}`);
   } catch (err) {
-    if (err instanceof eventService.EventError) return back(err.message);
-    next(err);
+    if (!(err instanceof seriesService.SeriesError)) return next(err);
+    req.flash('danger', req.t(err.message));
+    res.redirect(`/series/${series.slug}`);
   }
 }
 module.exports.firstEdition = firstEdition;

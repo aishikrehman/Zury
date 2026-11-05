@@ -90,7 +90,11 @@ model UserWikiRole {
 
 model Contest {
   id                  Int       @id @default(autoincrement())
-  slug                String    @unique
+  // Unique within its parent (standalone, a series, or an edition), not across Zury.
+  slug                String
+  // Its address, kept from its actual parent: /events/<slug>, /<series>/<slug> or
+  // /<series>/<edition>/<slug>. Unique; empty for deleted events.
+  path                String?   @unique @db.VarChar(255)
   title               String @db.VarChar(1000)
   description         String @db.Text    @default("")
   type                String
@@ -126,11 +130,9 @@ model Contest {
   appealDeadline       DateTime?
   resultsAnnouncedAt   DateTime?
 
-  // Recurring events: /<series slug>/<edition>, e.g. /wam/2026.
+  // At most one parent: a series directly, or an edition (whose series it then belongs to),
+  // or neither. The database refuses both.
   seriesId    Int?
-  edition     String?
-  // Stage 1 of the Series / Edition / Event / Local Event structure: the Edition this event
-  // belongs to. seriesId and edition stay until the addresses move over (stage 2).
   editionId   Int?
   createdById Int?
   deletedAt   DateTime?
@@ -147,8 +149,9 @@ model Contest {
   deletedBy           User?               @relation("ContestDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
   settings            ContestSettings?
   wikis               ContestWiki[]
-  series              EventSeries?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
-  editionOf           Edition?            @relation("EditionEvents", fields: [editionId], references: [id], onDelete: Restrict)
+  // Restrict: MariaDB allows the "not both" check only on links that don't cascade.
+  series              EventSeries?        @relation(fields: [seriesId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  editionOf           Edition?            @relation("EditionEvents", fields: [editionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   localEvents         LocalEvent[]
   seriesSlug          SeriesSlug?
   submissions         Submission[]
@@ -165,8 +168,9 @@ model Contest {
   @@index([status, visibility])
   @@index([primaryWiki])
   @@index([deletedAt])
-  @@unique([seriesId, edition])
   @@index([editionId])
+  @@index([seriesId])
+  @@index([slug])
 }
 
 // A recurring event such as Wikipedia Asian Month; each year is an edition (a Contest).

@@ -95,6 +95,8 @@ async function mergeInto({ actorId, source, target }) {
 
     // 4. The source closes and points to where it went.
     await tx.contest.update({ where: { id: source.id }, data: { deletedAt: new Date(), deletedById: actorId, mergedIntoId: target.id, mergedWikiCode: eventWiki.code } });
+    // It gives up its address (no redirect).
+    await require('./editionService').sync(source.id, tx);
     const details = { from: source.title, into: target.title, wiki, code: eventWiki.code, submissions, people, sessions, contributions: contributions.length - duplicate.length };
     await audit.record({ actorId, contestId: target.id, action: 'contest.mergedIn', entityType: 'Contest', entityId: source.id, details }, tx);
     await audit.record({ actorId, contestId: source.id, action: 'contest.mergedInto', entityType: 'Contest', entityId: target.id, details }, tx);

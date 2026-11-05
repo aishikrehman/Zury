@@ -109,7 +109,8 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
 
   const { RESERVED } = require('../middleware/permissions');
 
-  // Optional recurring-event address: /<series>/<edition>, e.g. /wam/2026.
+  // Optional parent. "Part of" a series with an edition: an event in that edition
+  // (/<series>/<edition>/<slug>); without an edition: directly under the series (/<series>/<slug>).
   // "Part of" takes an existing series' address or a new name ("Wiki Loves Food").
   const seriesRaw = str(body.seriesSlug);
   const seriesIsSlug = SLUG.test(seriesRaw.toLowerCase());
@@ -119,15 +120,15 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const inSeries = !!(seriesRaw || edition);
   if (inSeries) {
     if (!seriesSlug || seriesSlug.length > 40 || RESERVED.has(seriesSlug)) errors.seriesSlug = 'Use a name in Latin letters or numbers, e.g. Wiki Loves Monuments.';
-    if (!edition) errors.edition = 'Add the edition, e.g. 2026.';
-    else if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) errors.edition = 'Use a short edition such as 2026.';
+    if (edition && !/^[a-z0-9][a-z0-9-]{0,19}$/.test(edition)) errors.edition = 'Use a short edition such as 2026.';
   }
 
   // The address. Made from the title when left empty; titles without Latin letters
   // (e.g. Bangla) fall back to the series and edition, or "event". In a series the
   // address isn't shown, so an unusable one is replaced instead of reported.
   const typedSlug = str(body.slug).toLowerCase();
-  const fallbackSlug = slugify(title) || (seriesSlug && edition ? `${seriesSlug}-${edition}` : 'event');
+  // An event in an edition is named by its type unless named (/wam/2026/writing).
+  const fallbackSlug = (edition ? type : slugify(title)) || type || 'event';
   let slug = typedSlug || fallbackSlug;
   const autoSlug = !typedSlug || (inSeries && (!SLUG.test(typedSlug) || RESERVED.has(typedSlug)));
   if (autoSlug) slug = fallbackSlug.slice(0, 80).replace(/-+$/, '');
@@ -244,7 +245,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
 
   return {
     errors,
-    series: seriesSlug && edition ? { slug: seriesSlug, edition, title: seriesTitle } : null,
+    series: seriesSlug ? { slug: seriesSlug, edition: edition || null, title: seriesTitle } : null,
     autoSlug,
     contest: {
       title,
@@ -274,8 +275,8 @@ function toForm(contest, settings) {
     type: contest.type,
     title: contest.title,
     slug: contest.slug,
-    seriesSlug: contest.series ? contest.series.slug : '',
-    edition: contest.edition || '',
+    seriesSlug: contest.editionOf ? contest.editionOf.series.slug : contest.series ? contest.series.slug : '',
+    edition: contest.editionOf ? contest.editionOf.slug : '',
     description: contest.description,
     organizingCommunity: contest.organizingCommunity,
     category: contest.category || '',

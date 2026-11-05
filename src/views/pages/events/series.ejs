@@ -24,7 +24,7 @@
 </div>
 <div class="page-body">
   <div class="container-xl">
-    <% if (!editions.length) { %>
+    <% if (!editions.length && !directEvents.length) { %>
       <div class="card"><%- include('../../partials/emptyArt', { title: t('No editions yet') }) %></div>
     <% } else { %>
       <div class="row row-cards mb-3">
@@ -53,17 +53,23 @@
               <% summary.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
                 <tr>
                   <td><a href="/<%= series.slug %>/<%= e.edition %>" class="fw-bold"><%= e.edition %></a><div class="text-secondary small"><%= e.title %></div></td>
-                  <td><div class="d-flex flex-wrap gap-1"><% e.wikis.forEach((w) => { %><a class="badge bg-blue-lt" href="/<%= series.slug %>/<%= e.edition %>/<%= w.code %>" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></a><% }) %></div></td>
+                  <td><div class="d-flex flex-wrap gap-1"><% e.wikis.forEach((w) => { %><span class="badge bg-blue-lt" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></span><% }) %></div><div class="text-secondary small"><%= tn('{n} event', '{n} events', e.events.length) %></div></td>
                   <td class="text-end"><%= formatNumber(e.participants) %></td>
                   <td class="text-end"><%= formatNumber(e.entries) %></td>
                   <td class="text-end"><%= formatNumber(e.approved) %></td>
                   <td class="text-end"><%= formatNumber(e.approvedWords) %></td>
-                  <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></td>
+                  <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></td>
                 </tr>
               <% }) %>
             </tbody>
           </table>
         </div>
+      </div>
+    <% } %>
+    <% if (directEvents.length) { %>
+      <h3 class="mt-4 mb-3"><%= t('Events of the series') %></h3>
+      <div class="row row-cards">
+        <% directEvents.forEach((c) => { %><div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
       </div>
     <% } %>
   </div>

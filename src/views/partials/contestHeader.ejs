@@ -38,7 +38,8 @@
     <nav class="z-evhead-path" aria-label="<%= t('Breadcrumb') %>">
       <a href="/events"><%= t('Events') %></a>
       <% if (series) { %><span>/</span><a href="/<%= series.slug %>"><%= series.title %></a><% } %>
-      <% if (wikiScope) { %><span>/</span><a href="<%= eventBase %>"><%= series ? contest.edition : contest.title %></a><% } %>
+      <% if (typeof edition !== 'undefined' && edition) { %><span>/</span><a href="/<%= series.slug %>/<%= edition.slug %>"><%= edition.slug %></a><% } %>
+      <% if (wikiScope) { %><span>/</span><a href="<%= eventBase %>"><%= contest.title %></a><% } %>
     </nav>
     <div class="z-evhead-main">
       <% if (contest.logoUrl) { %>
@@ -47,7 +48,7 @@
         <span class="z-evhead-logo is-icon" title="<%= headProj.label %> · <%= CONTEST_TYPES[contest.type] %>"><i class="ti ti-<%= headProj.icon %>"></i></span>
       <% } %>
       <div class="z-evhead-text">
-        <h1 class="z-evhead-title"><a href="<%= base %>"><%= series ? (contest.title || contest.edition) : contest.title %></a><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
+        <h1 class="z-evhead-title"><a href="<%= base %>"><%= contest.title %></a><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
         <div class="z-evhead-meta">
           <span class="z-evhead-status is-<%= color %>"><i></i><%= t(st.label) %></span>
           <span><i class="ti ti-<%= typeDef.icon || 'calendar-event' %>"></i><%= t(typeDef.label) %></span>

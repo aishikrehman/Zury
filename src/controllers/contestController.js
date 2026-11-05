@@ -151,7 +151,7 @@ async function config(req, res) {
   // The data card: what could be cleared, and how much of it there is.
   res.locals.dataCounts = await eventData.counts(req.contest.id);
   const shown = req.wikiScope ? req.effective.contest : req.contest;
-  renderConfig(req, res, { form: contestForm.toForm({ ...shown, series: req.series }, req.settings) });
+  renderConfig(req, res, { form: contestForm.toForm({ ...shown, series: req.edition ? null : req.series, editionOf: req.edition ? { ...req.edition, series: req.series } : null }, req.settings) });
 }
 
 // Fields a wiki part always takes from the event.
@@ -161,7 +161,7 @@ const same = (a, b) => (a instanceof Date || b instanceof Date ? (a && a.getTime
 // A wiki's settings form: every value that differs from the event's becomes an override.
 async function updateWikiConfig(req, res, next) {
   const type = req.contest.type;
-  const eventForm = contestForm.toForm({ ...req.contest, series: req.series }, req.eventSettings);
+  const eventForm = contestForm.toForm({ ...req.contest, series: req.edition ? null : req.series, editionOf: req.edition ? { ...req.edition, series: req.series } : null }, req.eventSettings);
   if (req.body.reset) {
     await eventWikiService.saveOverrides({ actorId: req.user.id, contest: req.contest, eventWiki: req.wikiScope, overrides: { contest: {}, settings: {}, typeConfig: {} } });
     req.flash('success', 'This wiki now follows the event settings.');

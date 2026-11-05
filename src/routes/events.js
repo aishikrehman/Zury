@@ -9,7 +9,7 @@ const trackingController = require('../controllers/trackingController');
 const sessionController = require('../controllers/sessionController');
 const reviewController = require('../controllers/reviewController');
 const { takesEntries, EVENT_TYPES } = require('../events/eventTypes');
-const { loadContest, loadSeriesEvent, loadSlugEvent, requirePermission, requireEventWide } = require('../middleware/permissions');
+const { loadContest, eventAddresses, requirePermission, requireEventWide } = require('../middleware/permissions');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -119,17 +119,6 @@ router.use('/contest/:contestId(\\d+)', loadContest, contest);
 // Series addresses go last so they never shadow app pages.
 // No '*' here: Express 4 turns it into a wildcard that would swallow the wiki code.
 const SLUG = '[a-z0-9][a-z0-9-]{0,79}';
-// Runs the event pages only when the loader found an event at this address;
-// otherwise the next kind of address gets a try.
-const mount = (loader) => (req, res, next) => {
-  req.contest = undefined;
-  loader(req, res, (err) => {
-    if (err) return next(err);
-    if (!req.contest) return next();
-    contest(req, res, next);
-  });
-};
-
 // Series and editions: stewards, global sysops, local admins and superusers; deleting one: superusers and Zury administrators.
 router.get('/series', requirePermission('importEvents'), eventsController.manageSeries);
 router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
@@ -141,9 +130,10 @@ router.post('/series', requirePermission('importEvents'), eventsController.creat
 router.post(`/series/:series(${SLUG})/first-edition`, requirePermission('importEvents'), eventsController.firstEdition);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
-router.use(`/:series(${SLUG})/:edition(${SLUG})`, mount(loadSeriesEvent({ withWiki: false })));
-router.use(`/:series(${SLUG})/:edition(${SLUG})/:code(${SLUG})`, mount(loadSeriesEvent({ withWiki: true })));
-router.use(`/:slug(${SLUG})`, mount(loadSlugEvent({ withWiki: false })));
-router.use(`/:slug(${SLUG})/:code(${SLUG})`, mount(loadSlugEvent({ withWiki: true })));
+// An edition's own page, when the name under the series is an edition.
+router.get(`/:series(${SLUG})/:edition(${SLUG})`, eventsController.editionPage);
+// Every event address (/events/<slug>, /<series>/<slug>, /<series>/<edition>/<slug>, each
+// with an optional /<wiki code> and a page), looked up by the event's stored address.
+router.use(eventAddresses(contest));
 
 module.exports = router;

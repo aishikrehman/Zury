@@ -27,7 +27,7 @@ const CARD_SELECT = {
   timezone: true,
   startDate: true,
   endDate: true,
-  edition: true,
+  path: true,
   series: { select: { slug: true, title: true } },
   wikis: { where: { status: { not: 'pending' } }, select: { wiki: true, code: true }, orderBy: { code: 'asc' } },
   _count: { select: { memberships: { where: { role: 'participant', status: 'active' } } } },

@@ -14,7 +14,7 @@ async function month(query, where = {}) {
   const monthEnd = new Date(Date.UTC(year, mon + 1, 1));
   const events = await prisma.contest.findMany({
     where: { deletedAt: null, status: { notIn: ['draft', 'cancelled'] }, startDate: { lt: monthEnd }, endDate: { gte: monthStart }, ...where },
-    select: { id: true, slug: true, title: true, type: true, startDate: true, endDate: true, edition: true, language: true, primaryWiki: true, series: { select: { slug: true } }, wikis: { select: { wiki: true } } },
+    select: { id: true, slug: true, title: true, type: true, startDate: true, endDate: true, path: true, language: true, primaryWiki: true, series: { select: { slug: true } }, wikis: { select: { wiki: true } } },
     orderBy: { startDate: 'asc' },
   });
   return { year, month: mon, start: monthStart, events };

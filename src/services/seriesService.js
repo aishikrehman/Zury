@@ -1,5 +1,5 @@
-// Event series (/wam): every year's edition, a summary across the years, and the
-// next edition made from the latest one.
+// Event series (/wam): its editions (each holding zero or more events) and events directly
+// under it, a summary across the years, and the next edition made from the latest one.
 const prisma = require('../config/prisma');
 const audit = require('./auditService');
 
@@ -27,7 +27,7 @@ async function create({ actorId, slug, title, description = '' }) {
   if (!SLUG.test(slug) || slug.length > 40) throw new SeriesError('Use lowercase letters, numbers and single hyphens (max 40).', 'slug');
   const { RESERVED } = require('../middleware/permissions');
   if (RESERVED.has(slug)) throw new SeriesError('That address is reserved.', 'slug');
-  if ((await prisma.eventSeries.findUnique({ where: { slug } })) || (await prisma.contest.findFirst({ where: { slug, seriesId: null } }))) {
+  if (await prisma.eventSeries.findUnique({ where: { slug } })) {
     throw new SeriesError(`/${slug} is already taken.`, 'slug');
   }
   const series = await prisma.eventSeries.create({ data: { slug, title, description: String(description).trim().slice(0, 2000) } });
@@ -35,77 +35,111 @@ async function create({ actorId, slug, title, description = '' }) {
   return series;
 }
 
-// Totals per edition, newest first: entries, accepted, people, wikis, words.
-// drafts: also the editions not yet published, for those who run the series.
+// Editions of a series, newest first, each with its events' totals: entries, accepted,
+// people (each counted once per edition) and wikis. drafts: also editions and events not
+// yet published, for those who run the series.
 async function summary(seriesId, { drafts = false } = {}) {
-  const editions = await prisma.contest.findMany({
-    where: { seriesId, deletedAt: null, ...(drafts ? {} : { status: { not: 'draft' }, visibility: 'public' }) },
-    orderBy: { edition: 'desc' },
-    select: { id: true, edition: true, title: true, status: true, wikis: { where: { status: { not: 'pending' } }, select: { code: true, wiki: true } } },
+  const shown = drafts ? {} : { status: { not: 'draft' }, visibility: 'public' };
+  const editions = await prisma.edition.findMany({
+    where: { seriesId, deletedAt: null, ...(drafts ? {} : { status: { not: 'draft' } }) },
+    orderBy: [{ year: 'desc' }, { slug: 'desc' }],
+    select: {
+      id: true, slug: true, title: true, status: true, startDate: true, endDate: true,
+      events: { where: { deletedAt: null, ...shown }, select: { id: true, slug: true, title: true, status: true, path: true, wikis: { where: { status: { not: 'pending' } }, select: { code: true, wiki: true } } } },
+    },
   });
-  const ids = editions.map((e) => e.id);
+  const ids = editions.flatMap((e) => e.events.map((ev) => ev.id));
   const [entries, approved, people] = await Promise.all([
     prisma.submission.groupBy({ by: ['contestId'], where: { contestId: { in: ids }, status: { not: 'withdrawn' } }, _count: { _all: true }, _sum: { wordCount: true } }),
     prisma.submission.groupBy({ by: ['contestId'], where: { contestId: { in: ids }, status: 'approved' }, _count: { _all: true }, _sum: { wordCount: true } }),
-    prisma.contestMembership.groupBy({ by: ['contestId'], where: { contestId: { in: ids }, role: 'participant', status: 'active' }, _count: { _all: true } }),
+    prisma.contestMembership.findMany({ where: { contestId: { in: ids }, role: 'participant', status: 'active' }, select: { contestId: true, userId: true } }),
   ]);
-  const of = (rows, id) => rows.find((r) => r.contestId === id);
-  return editions.map((e) => ({
-    ...e,
-    entries: of(entries, e.id)?._count._all || 0,
-    words: of(entries, e.id)?._sum.wordCount || 0,
-    approved: of(approved, e.id)?._count._all || 0,
-    approvedWords: of(approved, e.id)?._sum.wordCount || 0,
-    participants: of(people, e.id)?._count._all || 0,
-  }));
+  const sum = (rows, evIds, pick) => rows.filter((r) => evIds.includes(r.contestId)).reduce((n, r) => n + (pick(r) || 0), 0);
+  return editions.map((e) => {
+    const evIds = e.events.map((ev) => ev.id);
+    const wikis = [...new Map(e.events.flatMap((ev) => ev.wikis).map((w) => [w.wiki, w])).values()];
+    return {
+      ...e,
+      edition: e.slug,
+      wikis,
+      entries: sum(entries, evIds, (r) => r._count._all),
+      words: sum(entries, evIds, (r) => r._sum.wordCount),
+      approved: sum(approved, evIds, (r) => r._count._all),
+      approvedWords: sum(approved, evIds, (r) => r._sum.wordCount),
+      // The same person in two events of an edition counts once.
+      participants: new Set(people.filter((m) => evIds.includes(m.contestId)).map((m) => m.userId)).size,
+    };
+  });
 }
 
-// The next edition: the latest one's settings, wikis, organizers and jury, a year later, as a draft.
+// The next edition: a year after the latest, with a copy of each of its events (settings,
+// wikis, organizers and jury, dates a year later) as drafts. An empty latest edition gives
+// an empty next one.
 async function nextEdition({ actorId, series }) {
-  const latest = await prisma.contest.findFirst({
+  const editionService = require('./editionService');
+  const latest = await prisma.edition.findFirst({
     where: { seriesId: series.id, deletedAt: null },
-    orderBy: { edition: 'desc' },
-    include: { settings: true, wikis: true, memberships: { where: { status: 'active', role: { in: ['organizer', 'jury'] } } } },
+    orderBy: [{ year: 'desc' }, { slug: 'desc' }],
+    include: { events: { where: { deletedAt: null }, include: { settings: true, wikis: true, memberships: { where: { status: 'active', role: { in: ['organizer', 'jury'] } } } } } },
   });
   if (!latest) throw new SeriesError('This series has no edition to start from.');
-  if (latest.status === 'draft') throw new SeriesError(`/${series.slug}/${latest.edition} is still a draft: publish it before making the next one.`);
-  const year = Number.parseInt(latest.edition, 10);
-  if (!Number.isFinite(year)) throw new SeriesError(`The latest edition (${latest.edition}) isn't a year; create the next one from the event form.`);
-  const edition = String(year + 1);
-  if (await prisma.contest.findFirst({ where: { seriesId: series.id, edition } })) throw new SeriesError(`/${series.slug}/${edition} already exists.`);
+  const year = Number.parseInt(latest.slug, 10);
+  if (!Number.isFinite(year)) throw new SeriesError(`The latest edition (${latest.slug}) isn't a year; create the next one by hand.`);
+  const slug = String(year + 1);
+  if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: series.id, slug } } })) throw new SeriesError(`/${series.slug}/${slug} already exists.`);
 
-  const { id, slug, edition: _e, createdAt, updatedAt, status, statusMode, resultsPublishedAt, mergedIntoId, mergedWikiCode, settings, wikis, memberships, ...rest } = latest;
-  const shift = Object.fromEntries(DATE_KEYS.map((k) => [k, inAYear(latest[k])]));
-  const next = await prisma.$transaction(async (tx) => {
-    const { id: _sid, contestId: _cid, trackedAt: _t, ...copySettings } = settings || {};
-    const contest = await tx.contest.create({
-      data: {
-        ...rest,
-        ...shift,
-        slug: `${series.slug}-${edition}`,
-        edition,
-        title: latest.title.replace(String(year), edition),
-        mainCategory: (latest.mainCategory || '').replace(String(year), edition),
-        previousEditionUrl: '',
-        status: 'draft',
-        statusMode: 'auto',
-        createdById: actorId,
-        settings: { create: copySettings },
-        wikis: { create: wikis.map((w) => ({ wiki: w.wiki, code: w.code, status: w.status === 'pending' ? 'pending' : 'active', overrides: w.overrides })) },
-        memberships: { create: [...new Map([[`${actorId}:organizer:`, { userId: actorId, role: 'organizer', wiki: '' }], ...memberships.map((m) => [`${m.userId}:${m.role}:${m.wiki}`, { userId: m.userId, role: m.role, wiki: m.wiki }])]).values()].map((m) => ({ ...m, assignedById: actorId })) },
-      },
-    });
-    await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, from: `${series.slug}/${latest.edition}` } }, tx);
-    await require('./editionService').sync(contest.id, tx);
-    return contest;
+  return prisma.$transaction(async (tx) => {
+    const edition = await editionService.findOrCreate(series.id, slug, { title: latest.title.replace(String(year), slug), startDate: inAYear(latest.startDate), endDate: inAYear(latest.endDate) }, tx);
+    for (const ev of latest.events) {
+      const { id, path, createdAt, updatedAt, status, statusMode, resultsPublishedAt, mergedIntoId, mergedWikiCode, settings, wikis, memberships, editionId, seriesId, deletedAt, deletedById, ...rest } = ev;
+      const { id: _sid, contestId: _cid, trackedAt: _t, ...copySettings } = settings || {};
+      const contest = await tx.contest.create({
+        data: {
+          ...rest,
+          ...Object.fromEntries(DATE_KEYS.map((k) => [k, inAYear(ev[k])])),
+          editionId: edition.id,
+          title: ev.title.replace(String(year), slug),
+          mainCategory: (ev.mainCategory || '').replace(String(year), slug),
+          previousEditionUrl: '',
+          status: 'draft',
+          statusMode: 'auto',
+          createdById: actorId,
+          settings: { create: copySettings },
+          wikis: { create: wikis.map((w) => ({ wiki: w.wiki, code: w.code, status: w.status === 'pending' ? 'pending' : 'active', overrides: w.overrides })) },
+          memberships: { create: [...new Map([[`${actorId}:organizer:`, { userId: actorId, role: 'organizer', wiki: '' }], ...memberships.map((m) => [`${m.userId}:${m.role}:${m.wiki}`, { userId: m.userId, role: m.role, wiki: m.wiki }])]).values()].map((m) => ({ ...m, assignedById: actorId })) },
+        },
+      });
+      await editionService.sync(contest.id, tx);
+      await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, from: ev.path } }, tx);
+    }
+    await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: edition.id, details: { series: series.slug, edition: slug, from: latest.slug, events: latest.events.length } }, tx);
+    return edition;
   });
-  return next;
 }
 
-// Every series with its editions (newest first), for the management page.
+// An empty edition (events are added to it afterwards).
+async function createEdition({ actorId, series, slug, title = '', startDate = null, endDate = null }) {
+  const editionService = require('./editionService');
+  slug = String(slug || '').trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(slug)) throw new SeriesError('Give the edition a short name, such as 2026.', 'edition');
+  if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: series.id, slug } } })) throw new SeriesError(`/${series.slug}/${slug} already exists.`, 'edition');
+  if (startDate && endDate && endDate < startDate) throw new SeriesError('The end date must be after the start date.', 'endDate');
+  const edition = await editionService.findOrCreate(series.id, slug, { title: String(title || '').trim() || `${series.title} ${slug}`, startDate, endDate });
+  await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: edition.id, details: { series: series.slug, edition: slug } });
+  return edition;
+}
+
+// Every series with its editions (newest first) and direct events, for the management page.
 async function listAll() {
-  const series = await prisma.eventSeries.findMany({ orderBy: { title: 'asc' }, include: { editions: { where: { deletedAt: null }, orderBy: { edition: 'desc' }, select: { id: true, edition: true, title: true, status: true, startDate: true, wikis: { select: { code: true } } } } } });
-  return series;
+  const series = await prisma.eventSeries.findMany({
+    where: { deletedAt: null },
+    orderBy: { title: 'asc' },
+    include: {
+      editionRecords: { where: { deletedAt: null }, orderBy: [{ year: 'desc' }, { slug: 'desc' }], select: { id: true, slug: true, title: true, status: true, startDate: true, _count: { select: { events: { where: { deletedAt: null } } } } } },
+      editions: { where: { deletedAt: null }, select: { id: true, slug: true, title: true, status: true, path: true } },
+    },
+  });
+  return series.map(({ editionRecords, editions, ...sr }) => ({ ...sr, editions: editionRecords.map((e) => ({ ...e, edition: e.slug, events: e._count.events })), directEvents: editions }));
 }
 
 async function update({ actorId, series, title, description }) {
@@ -116,12 +150,22 @@ async function update({ actorId, series, title, description }) {
   return updated;
 }
 
-// Only a series without editions can go (editions keep their addresses through it).
+// Only an empty series can go: no editions and no events directly under it.
 async function remove({ actorId, series }) {
-  const editions = await prisma.contest.count({ where: { seriesId: series.id } });
-  if (editions) throw new SeriesError('A series with editions cannot be deleted; delete or move its editions first.');
-  await prisma.eventSeries.delete({ where: { id: series.id } });
+  const [editions, events] = await Promise.all([
+    prisma.edition.count({ where: { seriesId: series.id, deletedAt: null } }),
+    prisma.contest.count({ where: { seriesId: series.id, deletedAt: null } }),
+  ]);
+  if (editions || events) throw new SeriesError('A series with editions or events cannot be deleted; delete or move them first.');
+  await prisma.$transaction([
+    prisma.seriesSlug.deleteMany({ where: { seriesId: series.id } }),
+    prisma.contest.updateMany({ where: { seriesId: series.id }, data: { seriesId: null } }),
+    // Deleted events may still point at its (deleted) editions.
+    prisma.contest.updateMany({ where: { editionOf: { seriesId: series.id } }, data: { editionId: null } }),
+    prisma.edition.deleteMany({ where: { seriesId: series.id } }),
+    prisma.eventSeries.delete({ where: { id: series.id } }),
+  ]);
   await audit.record({ actorId, action: 'series.deleted', entityType: 'EventSeries', entityId: series.id, details: { slug: series.slug } });
 }
 
-module.exports = { SeriesError, create, summary, nextEdition, listAll, update, remove };
+module.exports = { SeriesError, create, summary, nextEdition, createEdition, listAll, update, remove };

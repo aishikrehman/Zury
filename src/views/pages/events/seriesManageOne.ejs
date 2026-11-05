@@ -28,42 +28,34 @@
       <div class="card">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3><div class="card-actions">
       <% if (sr.editions.length) { %>
-        <form method="post" action="/<%= sr.slug %>/next-edition" data-confirm="<%= t('Make next year’s edition from the latest one?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-primary" type="submit"><i class="ti ti-calendar-plus me-1"></i><%= t('Create next edition') %></button></form>
-      <% } else { %>
-        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#first-edition" aria-expanded="false"><i class="ti ti-calendar-plus me-1"></i><%= t('Create the first edition') %></button>
+        <form method="post" action="/<%= sr.slug %>/next-edition" class="d-inline" data-confirm="<%= t('Make next year’s edition from the latest one, with a copy of each of its events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-copy me-1"></i><%= t('Next edition from the latest') %></button></form>
       <% } %>
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#new-edition" aria-expanded="false"><i class="ti ti-calendar-plus me-1"></i><%= t('New edition') %></button>
 </div></div>
-  <% if (!sr.editions.length) { %>
-    <form method="post" action="/series/<%= sr.slug %>/first-edition" class="collapse border-bottom" id="first-edition">
+    <%# An empty edition: a name and, if known, its dates. Its events are added on its page. %>
+    <form method="post" action="/series/<%= sr.slug %>/first-edition" class="collapse border-bottom" id="new-edition">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="card-body">
         <div class="row g-3 align-items-end">
-          <div class="col-6 col-md-2"><label class="form-label" for="fe-edition"><%= t('Edition') %></label><input class="form-control" id="fe-edition" name="edition" value="<%= new Date().getFullYear() %>" maxlength="20" required></div>
-          <div class="col-6 col-md-3"><label class="form-label" for="fe-type"><%= t('Type of event') %></label><select class="form-select" id="fe-type" name="type"><% Object.entries(EVENT_TYPES).forEach(([key, td]) => { %><option value="<%= key %>"<%= key === 'writing' ? ' selected' : '' %>><%= t(td.label) %></option><% }) %></select></div>
-          <div class="col-md-7"><select class="form-select" id="fe-wiki" name="wiki" data-picker="wiki" data-language-label="<%= t('Project language') %>" data-site-label="<%= t('Project site') %>" placeholder="<%= t('Choose a wiki…') %>"></select></div>
-        </div>
-        <div class="row g-3 align-items-end mt-0">
-          <div class="col-6 col-md-2"><label class="form-label" for="fe-start"><%= t('Starts') %></label><input class="form-control" type="date" id="fe-start" name="startDate"></div>
-          <div class="col-6 col-md-2"><label class="form-label" for="fe-end"><%= t('Ends') %></label><input class="form-control" type="date" id="fe-end" name="endDate"></div>
-        </div>
-        <div class="d-flex align-items-center gap-3 mt-3">
-          <span class="text-secondary small flex-fill"><%= t('Title: {title}. Everything else can be set in its settings afterwards.', { title: sr.title + ' ' + new Date().getFullYear() }) %></span>
-          <button class="btn btn-primary" type="submit"><%= t('Create') %></button>
+          <div class="col-6 col-md-2"><label class="form-label" for="ne-edition"><%= t('Edition') %></label><input class="form-control" id="ne-edition" name="edition" value="<%= new Date().getFullYear() %>" maxlength="20" required></div>
+          <div class="col-6 col-md-4"><label class="form-label" for="ne-title"><%= t('Title') %></label><input class="form-control" id="ne-title" name="title" maxlength="200" placeholder="<%= sr.title %> <%= new Date().getFullYear() %>"></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="ne-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ne-start" name="startDate"></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="ne-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ne-end" name="endDate"></div>
+          <div class="col-12 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Create') %></button></div>
         </div>
       </div>
     </form>
-  <% } %>
         <% if (!sr.editions.length) { %><div class="card-body text-secondary"><%= t('No editions yet') %></div><% } else { %>
           <div class="list-group list-group-flush">
             <% sr.editions.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; const sum = summary.find((x) => x.id === e.id) || {}; %>
-              <a class="list-group-item list-group-item-action" href="/series/<%= sr.slug %>/<%= e.edition %>">
+              <a class="list-group-item list-group-item-action" href="/<%= sr.slug %>/<%= e.edition %>">
                 <div class="row align-items-center">
                   <div class="col-auto"><div class="h2 m-0"><%= e.edition %></div></div>
                   <div class="col min-w-0">
                     <div class="text-truncate"><%= e.title %></div>
-                    <div class="text-secondary small"><%= tn('{n} wiki', '{n} wikis', e.wikis.length) %> · <%= tn('{n} entry', '{n} entries', sum.entries || 0) %> · <%= tn('{n} participant', '{n} participants', sum.participants || 0) %></div>
+                    <div class="text-secondary small"><%= tn('{n} event', '{n} events', e.events) %> · <%= tn('{n} entry', '{n} entries', sum.entries || 0) %> · <%= tn('{n} participant', '{n} participants', sum.participants || 0) %></div>
                   </div>
-                  <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= st.label %></span></div>
+                  <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></div>
                   <div class="col-auto text-secondary"><i class="ti ti-chevron-right"></i></div>
                 </div>
               </a>

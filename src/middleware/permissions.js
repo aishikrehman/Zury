@@ -4,6 +4,7 @@ const contestService = require('../services/contestService');
 const { defaultSettings } = require('../services/contestFormService');
 const { effectiveFor } = require('../events/effective');
 const { requireAuth } = require('./auth');
+const { EVENT_TABS } = require('../services/editionService');
 
 function forbidden() {
   const err = new Error("You don't have permission to do that.");
@@ -27,7 +28,10 @@ const notFound = (res) => res.status(404).render('pages/404', { title: 'Event No
  * (the URL prefix for links: /wam/2026, /wam/2026/bn or /contest/12).
  */
 async function setupEvent(req, res, next, contest, code) {
-  const { settings: rawSettings, wikis, series, ...rest } = contest;
+  const { settings: rawSettings, wikis, series: directSeries, editionOf, ...rest } = contest;
+  // The series: its own, or its edition's.
+  const series = editionOf ? editionOf.series : directSeries;
+  const edition = editionOf || null;
   const settings = rawSettings || { contestId: contest.id, ...defaultSettings(contest.type) };
   const participating = wikis.filter((w) => w.status !== 'pending');
   let wikiScope = null;
@@ -45,7 +49,7 @@ async function setupEvent(req, res, next, contest, code) {
   // A single-wiki event is managed as that wiki; its page is the event page.
   const contextWiki = wikiScope || (participating.length === 1 ? participating[0] : null);
   const eff = effectiveFor(rest, settings, contextWiki);
-  const eventBase = series && rest.edition ? `/${series.slug}/${rest.edition}` : `/${rest.slug}`;
+  const eventBase = rest.path || `/contest/${rest.id}`;
   const base = wikiScope ? `${eventBase}/${wikiScope.code}` : eventBase;
 
   req.contest = rest;
@@ -53,6 +57,7 @@ async function setupEvent(req, res, next, contest, code) {
   req.settings = eff.settings;
   req.effective = eff;
   req.series = series;
+  req.edition = edition;
   req.eventWikis = participating;
   req.allWikis = wikis;
   req.wikiScope = wikiScope;
@@ -68,6 +73,7 @@ async function setupEvent(req, res, next, contest, code) {
     settings: eff.settings,
     overridden: eff.overridden,
     series,
+    edition,
     eventWikis: participating,
     allWikis: wikis,
     wikiScope,
@@ -79,73 +85,56 @@ async function setupEvent(req, res, next, contest, code) {
   next();
 }
 
-const EVENT_INCLUDE = { settings: true, wikis: { orderBy: [{ status: 'asc' }, { code: 'asc' }] }, series: true };
-
-// A moved event's old address leads to its wiki in the event it joined.
-async function redirectMerged(req, res, where, prefixLength) {
-  if (req.method !== 'GET') return false;
-  const old = await prisma.contest.findFirst({ where: { ...where, mergedIntoId: { not: null } }, select: { mergedIntoId: true, mergedWikiCode: true } });
-  if (!old) return false;
-  const target = await prisma.contest.findFirst({ where: { id: old.mergedIntoId, deletedAt: null }, include: { series: true } });
-  if (!target) return false;
-  const base = target.series && target.edition ? `/${target.series.slug}/${target.edition}` : `/${target.slug}`;
-  res.redirect(301, `${base}/${old.mergedWikiCode}${req.originalUrl.slice(prefixLength)}`);
-  return true;
-}
+const EVENT_INCLUDE = { settings: true, wikis: { orderBy: [{ status: 'asc' }, { code: 'asc' }] }, series: true, editionOf: { include: { series: true } } };
 
 // /contest/:contestId
 async function loadContest(req, res, next) {
   try {
     const id = Number(req.params.contestId);
     const contest = Number.isSafeInteger(id) && id > 0 ? await prisma.contest.findFirst({ where: { id, deletedAt: null }, include: EVENT_INCLUDE }) : null;
-    if (!contest) {
-      if (Number.isSafeInteger(id) && (await redirectMerged(req, res, { id }, `/contest/${id}`.length))) return;
-      return notFound(res);
-    }
+    if (!contest) return notFound(res);
     await setupEvent(req, res, next, contest, null);
   } catch (err) {
     next(err);
   }
 }
 
-// Loaders below call next() without setting req.contest when the address isn't
-// theirs, so the next kind of address can try (see the routes).
-
-// /:series/:edition[/:code], e.g. /wam/2026/bn
-function loadSeriesEvent({ withWiki }) {
-  return async (req, res, next) => {
-    try {
-      const { series, edition } = req.params;
-      if (RESERVED.has(series)) return next();
-      const contest = await prisma.contest.findFirst({
-        where: { edition, deletedAt: null, series: { slug: series } },
-        include: EVENT_INCLUDE,
-      });
-      if (!contest) return next();
-      await setupEvent(req, res, next, contest, withWiki ? req.params.code : null);
-    } catch (err) {
-      next(err);
-    }
-  };
+/**
+ * Finds the event an address belongs to by its stored address (/events/<slug>,
+ * /<series>/<slug> or /<series>/<edition>/<slug>): the longest one the address starts
+ * with. What follows is an optional wiki code (/bn), then the event's page (/config).
+ * Returns { contest, code, rest } or null; nothing is guessed from the address's shape.
+ */
+async function resolveEvent(req) {
+  const segs = req.path.split('/').filter(Boolean).map((x) => { try { return decodeURIComponent(x); } catch { return x; } });
+  if (!segs.length || (RESERVED.has(segs[0]) && segs[0] !== 'events')) return null;
+  const prefixes = [];
+  for (let n = Math.min(3, segs.length); n >= 1; n -= 1) prefixes.push('/' + segs.slice(0, n).join('/'));
+  const found = await prisma.contest.findMany({ where: { path: { in: prefixes }, deletedAt: null }, include: EVENT_INCLUDE });
+  if (!found.length) return null;
+  const contest = found.sort((x, y) => y.path.length - x.path.length)[0];
+  let rest = segs.slice(contest.path.split('/').filter(Boolean).length);
+  let code = null;
+  if (rest.length && !EVENT_TABS.has(rest[0]) && contest.wikis.some((w) => w.code === rest[0])) {
+    code = rest[0];
+    rest = rest.slice(1);
+  }
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  return { contest, code, rest: '/' + rest.join('/') + query };
 }
 
-// /:slug[/:code] for events that aren't part of a series, e.g. /dhaka-photowalk
-function loadSlugEvent({ withWiki }) {
+// Runs the event pages (the given router) for any address that belongs to an event.
+function eventAddresses(eventRouter) {
   return async (req, res, next) => {
     try {
-      const { slug } = req.params;
-      if (RESERVED.has(slug)) return next();
-      const contest = await prisma.contest.findFirst({ where: { slug, deletedAt: null }, include: EVENT_INCLUDE });
-      if (!contest) {
-        if (!withWiki && (await redirectMerged(req, res, { slug }, slug.length + 1))) return;
-        return next();
-      }
-      // An event that joined a series moved to /<series>/<edition>.
-      if (contest.series && contest.edition) {
-        if (req.method !== 'GET') return next();
-        return res.redirect(301, `/${contest.series.slug}/${contest.edition}${req.originalUrl.slice(slug.length + 1)}`);
-      }
-      await setupEvent(req, res, next, contest, withWiki ? req.params.code : null);
+      const found = await resolveEvent(req);
+      if (!found) return next();
+      const url = req.url;
+      req.url = found.rest;
+      await setupEvent(req, res, (err) => {
+        if (err) return next(err);
+        eventRouter(req, res, (e) => { req.url = url; next(e); });
+      }, found.contest, found.code);
     } catch (err) {
       next(err);
     }
@@ -172,4 +161,4 @@ function requireEventWide(permission) {
   };
 }
 
-module.exports = { loadContest, loadSeriesEvent, loadSlugEvent, requirePermission, requireEventWide, forbidden, RESERVED };
+module.exports = { loadContest, eventAddresses, requirePermission, requireEventWide, forbidden, RESERVED, EVENT_INCLUDE };

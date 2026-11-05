@@ -17,7 +17,7 @@ router.get('/sitemap.xml', async (req, res, next) => {
     const { eventPath } = require('../utils/format');
     const origin = `${req.protocol}://${req.get('host')}`;
     const [events, series] = await Promise.all([
-      prisma.contest.findMany({ where: { deletedAt: null, visibility: 'public', status: { notIn: ['draft'] } }, select: { id: true, slug: true, edition: true, updatedAt: true, series: { select: { slug: true } }, wikis: { where: { status: 'active' }, select: { code: true } } } }),
+      prisma.contest.findMany({ where: { deletedAt: null, visibility: 'public', status: { notIn: ['draft'] } }, select: { id: true, slug: true, path: true, updatedAt: true, series: { select: { slug: true } }, wikis: { where: { status: 'active' }, select: { code: true } } } }),
       prisma.eventSeries.findMany({ select: { slug: true, createdAt: true } }),
     ]);
     const url = (loc, at) => `<url><loc>${origin}${loc}</loc>${at ? `<lastmod>${new Date(at).toISOString().slice(0, 10)}</lastmod>` : ''}</url>`;

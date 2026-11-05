@@ -21,9 +21,9 @@ function userPath(username) {
 }
 
 // Canonical address of an event: /<series>/<edition> when it has one.
+// An event's address, as stored from its actual parent (see editionService).
 function eventPath(c) {
-  if (c.series && c.edition) return `/${c.series.slug}/${c.edition}`;
-  return c.slug ? `/${c.slug}` : `/contest/${c.id}`;
+  return c.path || `/contest/${c.id}`;
 }
 
 module.exports = { formatDate, formatDateTime, userPath, eventPath };

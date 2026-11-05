@@ -85,33 +85,33 @@
     marksBox.querySelectorAll('[data-marks-preset]').forEach((b) => b.addEventListener('click', () => addRow(PRESETS[b.dataset.marksPreset])));
   }
 
-  // Address: from the title until changed by hand; /<series>/<edition> when part of a series.
+  // Address: the parent's part (/events, /<series> or /<series>/<edition>) and a name: from the
+  // title until changed by hand, or the event's type in an edition (/wam/2026/writing).
   const title = $('title');
   const slug = form.querySelector('[data-slug]');
   const series = $('seriesSlug');
   const edition = $('edition');
-  const seriesAddress = form.querySelector('[data-series-address]');
+  const prefix = form.querySelector('[data-address-prefix]');
   const hint = form.querySelector('[data-address-hint]');
   if (!slug) return;
   const slugify = (t) =>
     t.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
   let slugEdited = slug.value !== '' && slug.value !== slugify(title.value);
   title.addEventListener('input', () => {
-    if (!slugEdited) slug.value = slugify(title.value);
+    if (!slugEdited && !edition.value.trim()) slug.value = slugify(title.value);
   });
   slug.addEventListener('input', () => {
     slugEdited = slug.value !== '';
   });
 
   function showAddress() {
-    const s = series.value.trim();
-    const inSeries = s !== '' && !slug.classList.contains('is-invalid');
-    slug.classList.toggle('d-none', inSeries);
-    seriesAddress.classList.toggle('d-none', !inSeries);
-    seriesAddress.classList.toggle('flex-fill', inSeries);
-    seriesAddress.textContent = `${slugify(s).slice(0, 40)}/${edition.value.trim().toLowerCase() || '…'}`;
-    hint.textContent = zt(inSeries ? 'Part of a series: the address is the series and the edition.' : 'Made from the title; you can change it.');
+    const s = slugify(series.value.trim()).slice(0, 40);
+    const e = edition.value.trim().toLowerCase();
+    prefix.textContent = `${prefix.dataset.origin}/${s ? `${s}/${e ? `${e}/` : ''}` : 'events/'}`;
+    if (!slugEdited) slug.value = s && e ? (typeSelect && typeSelect.value) || 'event' : slugify(title.value);
+    hint.textContent = zt(s && e ? 'An event of this edition: name it, e.g. by its type.' : s ? 'An event directly under the series.' : 'Made from the title; you can change it.');
   }
+  if (typeSelect) typeSelect.addEventListener('change', showAddress);
   // Values filled in from a series; cleared again if the series changes or is removed.
   const prev = $('previousEditionUrl');
   let autoEdition = null;

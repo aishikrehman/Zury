@@ -1,0 +1,32 @@
+<%# An edition of a series (/wlm/2026): its events. An empty edition is fine. %>
+<% const st = CONTEST_STATUSES[edition.status] || { label: edition.status, badge: 'secondary' }; %>
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <ol class="breadcrumb mb-1"><li class="breadcrumb-item"><a href="/<%= sr.slug %>"><%= sr.title %></a></li><li class="breadcrumb-item active"><%= edition.slug %></li></ol>
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <h2 class="page-title"><%= edition.title %></h2>
+        <div class="z-evhead-meta">
+          <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>"><i></i><%= t(st.label) %></span>
+          <% if (edition.startDate) { %><span><i class="ti ti-calendar"></i><%= formatDate(edition.startDate) %><% if (edition.endDate) { %> – <%= formatDate(edition.endDate) %><% } %></span><% } %>
+          <span><i class="ti ti-calendar-event"></i><%= tn('{n} event', '{n} events', events.length) %></span>
+        </div>
+      </div>
+      <% if (canRun) { %>
+        <div class="col-auto"><a class="btn btn-primary" href="/events/create?series=<%= sr.slug %>&edition=<%= edition.slug %>"><i class="ti ti-plus me-1"></i><%= t('Add event') %></a></div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<div class="page-body">
+  <div class="container-xl">
+    <% if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
+    <% if (!events.length) { %>
+      <div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div>
+    <% } else { %>
+      <div class="row row-cards">
+        <% events.forEach((c) => { %><div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>

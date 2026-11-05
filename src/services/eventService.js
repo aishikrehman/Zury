@@ -13,40 +13,33 @@ class EventError extends Error {
   }
 }
 
-async function uniqueSlug(tx, slug, { auto, excludeId }) {
-  const taken = async (s) => {
-    const found =
-      (await tx.contest.findUnique({ where: { slug: s }, select: { id: true } })) ||
-      // Events without a series live at /<slug>, which must not be a series address.
-      (await tx.eventSeries.findUnique({ where: { slug: s }, select: { id: true } }));
-    return found && found.id !== excludeId;
-  };
-  if (!(await taken(slug))) return slug;
-  if (!auto) throw new EventError('This slug is already used by another event.', 'slug');
+// A free slug under this parent; with auto, -2, -3 … is tried until one is free.
+async function uniqueSlug(tx, slug, { auto, excludeId, parent = {} }) {
+  if (await editions.slugFree(slug, parent, { excludeId }, tx)) return slug;
+  if (!auto) throw new EventError('This slug is already used here.', 'slug');
   for (let i = 2; i < 100; i++) {
     const candidate = `${slug.slice(0, 76)}-${i}`;
-    if (!(await taken(candidate))) return candidate;
+    if (await editions.slugFree(candidate, parent, { excludeId }, tx)) return candidate;
   }
   throw new EventError('Could not find a free slug; please choose one.', 'slug');
 }
 
-// Resolves /<series>/<edition>: finds or creates the series and checks the edition is free.
-async function seriesFields(tx, series, title, excludeId) {
-  if (!series) return { seriesId: null, edition: null };
+// The event's parent from the form's "Part of" (a series) and edition: the edition when one
+// is given (made if missing; it may hold other events), else the series directly, else none.
+async function seriesFields(tx, series, title) {
+  if (!series) return { seriesId: null, editionId: null };
   let row = await tx.eventSeries.findUnique({ where: { slug: series.slug } });
-  if (!row && (await tx.contest.findFirst({ where: { slug: series.slug, seriesId: null, id: excludeId ? { not: excludeId } : undefined }, select: { id: true } }))) {
-    throw new EventError(`/${series.slug} is already the address of another event.`, 'seriesSlug');
-  }
   if (!row) row = await tx.eventSeries.create({ data: { slug: series.slug, title: series.title || title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
-  const taken = await tx.contest.findFirst({ where: { seriesId: row.id, edition: series.edition, NOT: excludeId ? { id: excludeId } : undefined }, select: { id: true } });
-  if (taken) throw new EventError(`/${series.slug}/${series.edition} is already used by another event. To add a wiki to it, open that event and use Wikis in its settings.`, 'edition');
-  return { seriesId: row.id, edition: series.edition };
+  if (!series.edition) return { seriesId: row.id, editionId: null };
+  const edition = await editions.findOrCreate(row.id, series.edition, { title }, tx);
+  if (!edition) throw new EventError(`/${series.slug}/${series.edition} is already the address of an event of this series.`, 'edition');
+  return { seriesId: null, editionId: edition.id };
 }
 
 async function create({ actorId, type, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
-    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug });
     const series = await seriesFields(tx, parsed.series, parsed.contest.title);
+    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, parent: series });
     const contest = await tx.contest.create({
       data: {
         ...parsed.contest,
@@ -76,8 +69,9 @@ function changedKeys(before, after) {
 
 async function update({ actorId, contest, settings, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
-    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id });
-    const data = { ...parsed.contest, ...(await seriesFields(tx, parsed.series, parsed.contest.title, contest.id)), slug };
+    const parent = await seriesFields(tx, parsed.series, parsed.contest.title);
+    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
+    const data = { ...parsed.contest, ...parent, slug };
     const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).map((k) => `settings.${k}`)];
     if (!changed.length) return contest;
 
@@ -124,9 +118,9 @@ async function changeStatus({ actorId, contest, settings, action, status }) {
 async function softDelete({ actorId, contest, confirmation }) {
   if (confirmation !== contest.slug) throw new EventError('Type the event slug exactly to confirm.', 'confirmation');
   return prisma.$transaction(async (tx) => {
-    // A deleted event gives up its address, so a new event can use /<slug> or /<series>/<edition> again.
-    await tx.contest.update({ where: { id: contest.id }, data: { deletedAt: new Date(), deletedById: actorId, slug: `deleted-${contest.id}-${contest.slug}`.slice(0, 190), edition: null } });
-    await audit.record({ actorId, contestId: contest.id, action: 'contest.deleted', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, slug: contest.slug, edition: contest.edition } }, tx);
+    // A deleted event gives up its address (sync clears it), so a new event can take it.
+    await tx.contest.update({ where: { id: contest.id }, data: { deletedAt: new Date(), deletedById: actorId, slug: `deleted-${contest.id}-${contest.slug}`.slice(0, 190) } });
+    await audit.record({ actorId, contestId: contest.id, action: 'contest.deleted', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, slug: contest.slug, path: contest.path } }, tx);
     await editions.sync(contest.id, tx);
   });
 }

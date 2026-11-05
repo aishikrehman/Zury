@@ -1253,5 +1253,16 @@
   "Choose a wiki…": "একটি উইকি বেছে নিন…",
   "Title: {title}. Everything else can be set in its settings afterwards.": "শিরোনাম: {title}। বাকি সব পরে এর সেটিংসে ঠিক করা যাবে।",
   "The end date must be after the start date.": "শেষের তারিখ শুরুর তারিখের পরে হতে হবে।",
-  "No wikis yet": "এখনো কোনো উইকি নেই"
+  "No wikis yet": "এখনো কোনো উইকি নেই",
+  "An event of this edition: name it, e.g. by its type.": "এই সংস্করণের একটি ইভেন্ট: নাম দিন, যেমন এর ধরন দিয়ে।",
+  "An event directly under the series.": "সিরিজের সরাসরি একটি ইভেন্ট।",
+  "Add event": "ইভেন্ট যোগ করুন",
+  "No events in this edition yet": "এই সংস্করণে এখনো কোনো ইভেন্ট নেই",
+  "Events of the series": "সিরিজের ইভেন্ট",
+  "New edition": "নতুন সংস্করণ",
+  "Next edition from the latest": "সর্বশেষটি থেকে পরের সংস্করণ",
+  "Make next year’s edition from the latest one, with a copy of each of its events?": "সর্বশেষ সংস্করণ থেকে পরের বছরের সংস্করণ তৈরি করবেন, এর প্রতিটি ইভেন্টের কপিসহ?",
+  "Edition created. Add its events next.": "সংস্করণ তৈরি হয়েছে। এবার এর ইভেন্ট যোগ করুন।",
+  "This slug is already used here.": "এই নামটি এখানে আগেই ব্যবহৃত।",
+  "The next edition is ready, with a draft copy of each event: check their dates and settings, then publish them.": "পরের সংস্করণ তৈরি, প্রতিটি ইভেন্টের খসড়া কপিসহ: তারিখ ও সেটিংস দেখে প্রকাশ করুন।"
 }
