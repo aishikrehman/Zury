@@ -21,10 +21,20 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function remote(el, kind) {
+    // What the server found for each search: it knows other names too (Bengali for বাংলা).
+    const found = new Map();
     return new window.TomSelect(el, { ...ON_TOP,
       valueField: 'value',
       labelField: 'text',
       searchField: ['text', 'value', 'localName'],
+      // Whatever the server found for this search shows, the current choice included;
+      // anything else is matched on its text as usual.
+      score(search) {
+        const query = String(typeof search === 'string' ? search : search?.query || '').trim();
+        const base = this.sifter.getScoreFunction(query, this.getSearchOptions());
+        const hits = found.get(query);
+        return (item) => (hits && hits.has(String(item.value)) ? 1 : base(item));
+      },
       maxOptions: 50,
       loadThrottle: 250,
       preload: kind !== 'user' ? 'focus' : false,
@@ -32,8 +42,9 @@
       createOnBlur: CREATABLE.includes(kind),
       maxItems: el.multiple ? null : 1,
       plugins: el.multiple ? ['remove_button'] : [],
-      // A picked name becomes a pill: don't offer it again, and start the next search clean.
-      hideSelected: true,
+      // Several to pick: a picked name becomes a pill and isn't offered again. One to pick:
+      // the current choice stays findable, so searching for it never says "no matches".
+      hideSelected: el.multiple,
       closeAfterSelect: true,
       onItemAdd() {
         this.setTextboxValue('');
@@ -43,7 +54,9 @@
         if (!el.multiple) setTimeout(() => this.blur());
       },
       load(query, callback) {
-        json(`${ENDPOINT[kind]}?q=${encodeURIComponent(query)}`).then(callback).catch(() => callback());
+        json(`${ENDPOINT[kind]}?q=${encodeURIComponent(query)}`)
+          .then((rows) => { found.set(query.trim(), new Set(rows.map((r) => String(r.value)))); callback(rows); })
+          .catch(() => callback());
       },
       render: {
         option(item) {
@@ -58,6 +71,8 @@
           }
           return `<div>${esc(item.text)}</div>`;
         },
+        // The chosen language by its own name (বাংলা), not its code.
+        item: (item) => `<div>${esc(kind === 'language' && item.local ? item.local : item.text)}</div>`,
         no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>`,
         option_create: (data) => `<div class="create">${esc(zt('Use “{text}”', { text: data.input }))}</div>`,
       },

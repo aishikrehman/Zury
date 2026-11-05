@@ -1,13 +1,13 @@
 <%# Expects `s`: a permission subject (platformRoles, adminWikis); optional compact (one line of text, for tables). %>
-<% const keys = [...s.platformRoles].filter((k) => !(s.platformRoles.has('superuser') && k === 'platform-admin')); /* Superuser already includes the administrator */ const wikis = (role) => role.scope === 'wiki' && s.adminWikis.size ? [...s.adminWikis].map(wikiLocal).join(', ') : ''; %>
+<% const keys = [...s.platformRoles].filter((k) => !(s.platformRoles.has('superuser') && k === 'platform-admin')); /* Superuser already includes the administrator */ const all = (role) => (role.scope === 'wiki' ? [...s.adminWikis].map(wikiLocal) : []); /* One wiki by name; several as a count, the names on hover. */ const wikis = (role) => { const w = all(role); return w.length > 1 ? tn('{n} wiki', '{n} wikis', w.length) : w[0] || ''; }; %>
 <% if (!keys.length) { %>
   <span class="text-secondary"><%= t("No Zury roles") %></span>
 <% } else if (typeof compact !== 'undefined' && compact) { %>
-  <span><%= keys.map((k) => t(PLATFORM_ROLES[k].label) + (wikis(PLATFORM_ROLES[k]) ? ' (' + wikis(PLATFORM_ROLES[k]) + ')' : '')).join(', ') %></span>
+  <span><%= keys.map((k) => t(PLATFORM_ROLES[k].label) + (wikis(PLATFORM_ROLES[k]) ? ' · ' + wikis(PLATFORM_ROLES[k]) : '')).join(', ') %></span>
 <% } else { %>
   <ul class="list-unstyled m-0 z-role-list">
     <% keys.forEach((key) => { const role = PLATFORM_ROLES[key]; %>
-      <li title="<%= t(role.description) %>"><i class="ti ti-<%= role.source === 'zury' ? 'shield-check' : 'world' %> text-secondary"></i><span><%= t(role.label) %><% if (wikis(role)) { %> <span class="text-secondary">· <%= wikis(role) %></span><% } %></span></li>
+      <li title="<%= all(role).length > 1 ? all(role).join(', ') : t(role.description) %>"><i class="ti ti-<%= role.source === 'zury' ? 'shield-check' : 'world' %> text-secondary"></i><span><%= t(role.label) %><% if (wikis(role)) { %> <span class="text-secondary">· <%= wikis(role) %></span><% } %></span></li>
     <% }) %>
   </ul>
 <% } %>

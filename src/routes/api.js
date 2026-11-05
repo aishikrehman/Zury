@@ -136,7 +136,7 @@ router.get('/api/wikis/:dbname/namespaces', async (req, res, next) => {
 router.get('/api/languages', async (req, res, next) => {
   try {
     const langs = await catalog.searchLanguages(q(req));
-    res.json(langs.map((l) => ({ value: l.code, text: l.localName && l.localName !== l.name ? `${l.name} · ${l.localName}` : l.name, code: l.code })));
+    res.json(langs.map((l) => ({ value: l.code, text: l.localName && l.localName !== l.name ? `${l.name} · ${l.localName}` : l.name, local: l.localName || l.name, code: l.code })));
   } catch (err) {
     next(err);
   }

@@ -238,13 +238,20 @@ function searchWikis(q, take = 20, { family } = {}) {
   });
 }
 
-function searchLanguages(q, take = 25) {
+// Other names people search by, beside the catalogue's own ("Bengali" for Bangla).
+const LANGUAGE_ALIASES = { bengali: 'bn', farsi: 'fa', persian: 'fa', burmese: 'my', myanmar: 'my', oriya: 'or', panjabi: 'pa', sinhalese: 'si', castilian: 'es', filipino: 'tl', chinese: 'zh', mandarin: 'zh', hebrew: 'he', bahasa: 'id', malay: 'ms', assamese: 'as', nepalese: 'ne' };
+
+async function searchLanguages(q, take = 25) {
   const term = String(q || '').trim();
-  return prisma.language.findMany({
-    where: term ? { OR: [{ code: { startsWith: term.toLowerCase() } }, { name: { contains: term } }, { localName: { contains: term } }] } : {},
+  const lower = term.toLowerCase();
+  const aliased = lower.length >= 3 ? Object.entries(LANGUAGE_ALIASES).filter(([name]) => name.startsWith(lower)).map(([, code]) => code) : [];
+  const rows = await prisma.language.findMany({
+    where: term ? { OR: [{ code: { startsWith: lower } }, { name: { contains: term } }, { localName: { contains: term } }, ...(aliased.length ? [{ code: { in: aliased } }] : [])] } : {},
     orderBy: { code: 'asc' },
     take,
   });
+  // The exact code first ("bn" before "bnn").
+  return rows.sort((a, b) => (b.code === lower) - (a.code === lower));
 }
 
 // Namespaces of a wiki, cached in the database.
