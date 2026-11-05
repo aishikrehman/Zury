@@ -1,7 +1,7 @@
 <%# Expects `s`: a permission subject (platformRoles, adminWikis); optional compact (one line of text, for tables). %>
 <% const keys = [...s.platformRoles]; const wikis = (role) => role.scope === 'wiki' && s.adminWikis.size ? [...s.adminWikis].map(wikiLocal).join(', ') : ''; %>
 <% if (!keys.length) { %>
-  <span class="text-secondary"><%= t("No platform roles") %></span>
+  <span class="text-secondary"><%= t("No Zury roles") %></span>
 <% } else if (typeof compact !== 'undefined' && compact) { %>
   <span><%= keys.map((k) => t(PLATFORM_ROLES[k].label) + (wikis(PLATFORM_ROLES[k]) ? ' (' + wikis(PLATFORM_ROLES[k]) + ')' : '')).join(', ') %></span>
 <% } else { %>

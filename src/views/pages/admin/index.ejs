@@ -1,7 +1,7 @@
 <% const tiles = [
   ['users', 'primary', 'Users', stats.users, '/admin/users'],
   ['calendar-event', 'green', 'Events', stats.contests, '/events'],
-  ['shield-lock', 'orange', 'Platform administrators', stats.admins, '/admin/users'],
+  ['shield-lock', 'orange', 'Zury administrators', stats.admins, '/admin/users'],
   ['history', 'azure', 'Audit log entries', stats.auditEntries, '/admin/logs'],
 ]; %>
 <%- include('../../partials/adminHeader', { tab: 'overview' }) %>
@@ -75,15 +75,15 @@
     <div class="row row-cards">
       <div class="col-md-6">
         <div class="card">
-          <div class="card-header"><h3 class="card-title"><%= t("Platform administration") %></h3></div>
-          <div class="card-body text-secondary"><%= t("This area runs Zury itself. It is separate from Wikimedia community administration: being a platform administrator gives no authority over events.") %></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Zury administration") %></h3></div>
+          <div class="card-body text-secondary"><%= t("This area runs Zury itself. Zury administrators and superusers are the only ones who can delete events, data and series.") %></div>
         </div>
       </div>
       <div class="col-md-6">
         <div class="card">
           <div class="card-header"><h3 class="card-title"><%= t("Shortcuts") %></h3></div>
           <div class="list-group list-group-flush">
-            <a class="list-group-item list-group-item-action" href="/admin/users"><i class="ti ti-users me-2"></i><%= t("Manage users and platform roles") %></a>
+            <a class="list-group-item list-group-item-action" href="/admin/users"><i class="ti ti-users me-2"></i><%= t("Manage users and Zury roles") %></a>
             <a class="list-group-item list-group-item-action" href="/admin/permissions"><i class="ti ti-key me-2"></i><%= t("Permission matrix") %></a>
             <% if (can('viewAuditLog')) { %><a class="list-group-item list-group-item-action" href="/admin/logs"><i class="ti ti-history me-2"></i><%= t("Audit log") %></a><% } %>
           </div>

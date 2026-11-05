@@ -39,8 +39,9 @@ const PERMISSIONS = {
   publishResults: 'Publish results',
   viewStatistics: 'View statistics',
   exportData: 'Export data',
+  importEvents: 'Import from Fountain and manage series and editions',
   accessAdmin: 'Open the Zury administration panel',
-  managePlatformRoles: 'Grant and revoke Zury platform roles',
+  managePlatformRoles: 'Grant and revoke Zury roles',
   manageSiteConfig: 'Change Zury site configuration',
   viewAuditLog: 'View the audit log',
   // Superusers only (every permission): backups and clean-up.
@@ -90,23 +91,23 @@ const PLATFORM_ROLES = {
     label: 'Steward',
     source: 'wikimedia',
     scope: 'global',
-    description: 'Platform-wide event authority across all communities.',
-    permissions: ['createEvent', 'deleteAnyEvent', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
+    description: 'Event authority across all communities.',
+    permissions: ['createEvent', 'importEvents', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
   },
   'global-sysop': {
     label: 'Global Sysop',
     source: 'wikimedia',
     scope: 'global',
-    description: 'Can manage events across communities; cannot delete them.',
-    permissions: ['createEvent', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
+    description: 'Can manage events across communities.',
+    permissions: ['createEvent', 'importEvents', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
   },
   'local-admin': {
     label: 'Local Admin',
     source: 'wikimedia',
     scope: 'wiki',
     description: 'Manages events whose primary wiki is one where they are an administrator.',
-    permissions: ['deleteAnyEvent', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
-    globalPermissions: ['createEvent'],
+    permissions: ['editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
+    globalPermissions: ['createEvent', 'importEvents'],
   },
   'event-creator': {
     label: 'Event Creator',
@@ -125,17 +126,20 @@ const PLATFORM_ROLES = {
     permissions: Object.keys(PERMISSIONS),
   },
   'platform-admin': {
-    label: 'Platform Administrator',
+    label: 'Zury Administrator',
     source: 'zury',
     scope: 'global',
-    description: 'Runs Zury itself. Grants no authority over events.',
-    permissions: ['accessAdmin', 'managePlatformRoles', 'manageSiteConfig', 'viewAuditLog'],
+    description: 'Runs Zury itself; the only role besides Superuser that can delete events, data and series.',
+    permissions: ['accessAdmin', 'deleteAnyEvent', 'managePlatformRoles', 'manageSiteConfig', 'viewAuditLog'],
   },
 };
 
 // Platform-level keys can't be handed out per event.
 const NON_OVERRIDABLE = new Set([
   'createEvent',
+  'importEvents',
+  'deleteEvent',
+  'deleteOwnEvent',
   'deleteAnyEvent',
   'editAnyEvent',
   'manageAnyEvent',
@@ -160,7 +164,7 @@ const EVENT_ROLES = {
     label: 'Organizer',
     plural: 'Organizers',
     description: 'Runs the event.',
-    permissions: ['editOwnEvent', 'deleteOwnEvent', 'manageOwnEvent', 'reviewEvent', 'viewSubmissions', ...EVENT_MANAGEMENT],
+    permissions: ['editOwnEvent', 'manageOwnEvent', 'reviewEvent', 'viewSubmissions', ...EVENT_MANAGEMENT],
   },
   jury: {
     label: 'Jury',

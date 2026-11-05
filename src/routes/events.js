@@ -29,8 +29,9 @@ const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity
 router.get('/events', eventsController.index);
 router.get('/events/create', requirePermission('createEvent'), eventsController.createForm);
 router.post('/events/create', requirePermission('createEvent'), eventsController.create);
-router.get('/events/import', requirePermission('accessAdmin'), fountainController.importForm);
-router.post('/events/import', requirePermission('accessAdmin'), fountainController.importEvent);
+// Fountain imports, series and editions: stewards, global sysops, local admins and superusers.
+router.get('/events/import', requirePermission('importEvents'), fountainController.importForm);
+router.post('/events/import', requirePermission('importEvents'), fountainController.importEvent);
 router.get('/events/:group(active|upcoming|completed)', eventsController.index);
 router.get('/submissions', requireAuth, submissionController.mine);
 router.get('/review', requireAuth, reviewController.myQueue);
@@ -50,16 +51,18 @@ contest.post('/config', requirePermission('editEvent'), contestController.update
 contest.post('/status', requireEventWide('manageEvent'), contestController.changeStatus);
 contest.post('/delete', requireEventWide('deleteEvent'), contestController.destroy);
 contest.get('/export/:dataset([a-z]+).:format([a-z]+)', requirePermission('manageEvent', 'exportData'), contestController.exportData);
-contest.post('/data/clear/:what([a-z]+)', requireEventWide('manageEvent'), contestController.clearData);
+// Removing anything is for superusers and Zury administrators (deleteEvent).
+contest.post('/data/clear/:what([a-z]+)', requireEventWide('deleteEvent'), contestController.clearData);
 contest.post('/move', requireEventWide('deleteEvent'), contestController.move);
 
 // Wikis taking part. Requests are open to logged-in users; the rest is for global controllers.
 contest.post('/wikis/request', requireAuth, wikiController.request);
 contest.post('/wikis', requireEventWide('manageEvent'), wikiController.add);
-contest.post('/fountain', requireEventWide('manageEvent'), fountainController.link);
-contest.post('/fountain/:wikiId(\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
-contest.post('/fountain/:wikiId(\d+)/:action(unlink)', requireEventWide('manageEvent'), fountainController.unlink);
-contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume|remove)', requireEventWide('manageEvent'), wikiController.change);
+contest.post('/fountain', requirePermission('importEvents'), fountainController.link);
+contest.post('/fountain/:wikiId(\\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
+contest.post('/fountain/:wikiId(\\d+)/:action(unlink)', requirePermission('importEvents'), fountainController.unlink);
+contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume)', requireEventWide('manageEvent'), wikiController.change);
+contest.post('/wikis/:wikiId(\\d+)/:action(remove)', requireEventWide('deleteEvent'), wikiController.change);
 
 // Per-role permission checks happen in the controller/service.
 contest.get('/participants', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.people);
@@ -127,13 +130,14 @@ const mount = (loader) => (req, res, next) => {
   });
 };
 
-// Series and editions are managed by administrators.
-router.get('/series', requirePermission('accessAdmin'), eventsController.manageSeries);
-router.get('/series/new', requirePermission('accessAdmin'), eventsController.seriesForm);
-router.post(`/series/:series(${SLUG})/:action(update|delete)`, requirePermission('accessAdmin'), eventsController.seriesAction);
-router.get(`/series/:series(${SLUG})`, requirePermission('accessAdmin'), eventsController.manageOneSeries);
-router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requirePermission('accessAdmin'), eventsController.manageEdition);
-router.post('/series', requirePermission('accessAdmin'), eventsController.createSeries);
+// Series and editions: stewards, global sysops, local admins and superusers; deleting one: superusers and Zury administrators.
+router.get('/series', requirePermission('importEvents'), eventsController.manageSeries);
+router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
+router.post(`/series/:series(${SLUG})/:action(update)`, requirePermission('importEvents'), eventsController.seriesAction);
+router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnyEvent'), eventsController.seriesAction);
+router.get(`/series/:series(${SLUG})`, requirePermission('importEvents'), eventsController.manageOneSeries);
+router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requirePermission('importEvents'), eventsController.manageEdition);
+router.post('/series', requirePermission('importEvents'), eventsController.createSeries);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 router.use(`/:series(${SLUG})/:edition(${SLUG})`, mount(loadSeriesEvent({ withWiki: false })));

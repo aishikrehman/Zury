@@ -33,7 +33,7 @@ async function grant({ actorId, userId, role }) {
 
 async function revoke({ actorId, userId, role }) {
   assertAssignable(role);
-  if (actorId === userId) throw new RoleError("You can't remove your own platform role. Ask another administrator.");
+  if (actorId === userId) throw new RoleError("You can't remove your own Zury role. Ask another administrator.");
   return prisma.$transaction(async (tx) => {
     const target = await tx.user.findUnique({ where: { id: userId } });
     const { count } = await tx.userGlobalRole.deleteMany({ where: { userId, role } });

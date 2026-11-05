@@ -83,10 +83,10 @@
                   <% } else { %><span class="text-secondary">—</span><% } %>
                 </td>
                 <td class="text-nowrap">
-                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ['unlink', t('Stop following'), 'ghost-secondary']].forEach(([action, label, cls]) => { %>
+                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ...(can('importEvents') ? [['unlink', t('Stop following'), 'ghost-secondary']] : [])].forEach(([action, label, cls]) => { %>
                     <form method="post" action="<%= eventBase %>/fountain/<%= w.id %>/<%= action %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button></form>
                   <% }) %><% } %>
-                  <% (wikiActions[w.status] || []).forEach(([action, label, cls]) => { %>
+                  <% (wikiActions[w.status] || []).filter(([action]) => action !== 'remove' || can('deleteEvent')).forEach(([action, label, cls]) => { %>
                     <form method="post" action="<%= eventBase %>/wikis/<%= w.id %>/<%= action %>" class="d-inline">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button>
@@ -104,11 +104,11 @@
           <div class="col"><select class="form-select" name="wiki" data-picker="wiki" placeholder="<%= t("Add a wiki…") %>" required></select></div>
           <div class="col-auto"><button class="btn btn-primary" type="submit"><i class="ti ti-plus me-1"></i><%= t("Add wiki") %></button></div>
         </form>
-        <form method="post" action="<%= eventBase %>/fountain" class="row g-2 align-items-center mt-2">
+        <% if (can('importEvents')) { %><form method="post" action="<%= eventBase %>/fountain" class="row g-2 align-items-center mt-2">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="col"><input class="form-control" name="code" placeholder="<%= t('Fountain editathon code or address') %>" aria-label="<%= t('Fountain editathon code or address') %>" required></div>
           <div class="col-auto"><button class="btn" type="submit"><%= t("Follow on Fountain") %></button></div>
-        </form>
+        </form><% } %>
       </div>
     </div>
   <% } %>
@@ -129,6 +129,7 @@
             <p class="text-secondary small mt-2 mb-0"><%= t('CSV and Excel open in spreadsheets; wikitext pastes into a wiki page; Markdown into GitHub or a document.') %></p>
           </div>
         </div>
+        <% if (can('deleteEvent')) { %>
         <div class="col-lg-6">
           <div class="card-body">
             <div class="subheader mb-2"><%= t('Clear') %></div>
@@ -143,6 +144,7 @@
             <% }) %>
             <p class="text-secondary small mb-0"><%= t('Entries, reviews and results stay. Only what you delete here goes, for good.') %></p>
           </div>
+        <% } %>
         </div>
       </div>
     </div>

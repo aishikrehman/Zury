@@ -46,7 +46,7 @@
         </div>
         <div class="card-footer d-flex gap-2">
           <button class="btn btn-primary" type="submit"><%= t('Save') %></button>
-          <% if (!sr.editions.length) { %><button class="btn btn-ghost-danger ms-auto" type="submit" formaction="/series/<%= sr.slug %>/delete" data-confirm="<%= t('Delete this series?') %>"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button><% } %>
+          <% if (!sr.editions.length && can('deleteAnyEvent')) { %><button class="btn btn-ghost-danger ms-auto" type="submit" formaction="/series/<%= sr.slug %>/delete" data-confirm="<%= t('Delete this series?') %>"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button><% } %>
         </div>
       </form>
     </div>

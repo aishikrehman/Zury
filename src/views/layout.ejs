@@ -24,7 +24,7 @@
       icon: 'calendar-cog', label: t('Event management'), active: isActive('/events/create') || isActive('/events/import') || isActive('/series'),
       children: [
         { href: '/events/create', icon: 'calendar-plus', label: t('Create event'), active: isActive('/events/create') },
-        ...(can('accessAdmin') ? [
+        ...(can('importEvents') ? [
           { href: '/events/import', icon: 'download', label: t('Import from Fountain'), active: isActive('/events/import') },
           { href: '/series', icon: 'stack-2', label: t('Series and editions'), active: isActive('/series') },
         ] : []),
