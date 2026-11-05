@@ -59,7 +59,7 @@
                 <label for="preferredLanguage" class="form-label small mb-1"><%= t('Preferred language') %></label>
                 <select id="preferredLanguage" name="preferredLanguage" data-picker="language" placeholder="<%= t('Search languages…') %>" class="form-select form-select-sm mb-2">
                   <option value=""><%= t('Default') %></option>
-                  <% if (prefs.values.preferredLanguage) { %><option value="<%= prefs.values.preferredLanguage %>" selected><%= prefs.values.preferredLanguage %></option><% } %>
+                  <% if (prefs.values.preferredLanguage) { %><option value="<%= prefs.values.preferredLanguage %>" selected><%= langLocal(prefs.values.preferredLanguage) %></option><% } %>
                 </select>
                 <label for="timezone" class="form-label small mb-1"><%= t('Timezone') %></label>
                 <select id="timezone" name="timezone" class="form-select form-select-sm mb-2">

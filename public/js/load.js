@@ -12,7 +12,9 @@
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = '/vendor/tom-select/css/tom-select.bootstrap5.min.css';
-    document.head.appendChild(css);
+    // Before Zury's own stylesheet, so Zury's look of the pickers wins.
+    const ours = document.querySelector('link[rel="stylesheet"]');
+    document.head.insertBefore(css, ours);
     add('/vendor/tom-select/js/tom-select.complete.min.js');
     add('/js/pickers.js');
   }
