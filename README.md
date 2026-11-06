@@ -41,6 +41,44 @@ webservice buildservice restart
 
 Set `NODE_ENV=production`, `SESSION_SECRET`, `WIKIMEDIA_CALLBACK_URL` and the OAuth key and secret as envvars too.
 
+### Updating Toolforge to the latest code on GitHub
+
+Push to `main` first. Then, from your own computer's terminal (PowerShell or any shell with `ssh`):
+
+```bash
+ssh aishik@login.toolforge.org "sudo -niu tools.zury toolforge build start https://github.com/aishikrehman/Zury.git"
+```
+
+Wait until the build has finished. Check with this; the newest line must say `ok`:
+
+```bash
+ssh aishik@login.toolforge.org "sudo -niu tools.zury toolforge build list"
+```
+
+Then restart on the new build, and check the new pod after a minute:
+
+```bash
+ssh aishik@login.toolforge.org "sudo -niu tools.zury webservice buildservice restart"
+```
+
+```bash
+ssh aishik@login.toolforge.org "sudo -niu tools.zury kubectl get pods"
+```
+
+The new pod must be `Running` with no `CrashLoopBackOff`. `https://zury.toolforge.org/healthz` answering 200 is not enough on its own: an old pod can keep answering while the new one fails. Database migrations run when the new pod starts, after a backup in `/data/project/zury/backups`; if a pod keeps restarting, its logs say why:
+
+```bash
+ssh aishik@login.toolforge.org "sudo -niu tools.zury webservice buildservice logs"
+```
+
+The same steps in one go (start the build, wait for it, restart, show the pods): `zury-toolsdb-deploy.sh` in the tool's home on Toolforge:
+
+```bash
+ssh aishik@login.toolforge.org "tr -d '\r' < zury-toolsdb-deploy.sh | bash"
+```
+
+If its build log stream fails ("container … is not available"), the build itself usually still finishes: check `build list`, then run the restart command above once it says `ok`.
+
 ## Scripts
 
 | Script | Does |
