@@ -107,9 +107,12 @@
   function showAddress() {
     const s = slugify(series.value.trim()).slice(0, 40);
     const e = edition.value.trim().toLowerCase();
-    prefix.textContent = `${prefix.dataset.origin}/${s ? `${s}/${e ? `${e}/` : ''}` : 'events/'}`;
-    if (!slugEdited) slug.value = s && e ? (typeSelect && typeSelect.value) || 'event' : slugify(title.value);
-    hint.textContent = zt(s && e ? 'An event of this edition: name it, e.g. by its type.' : s ? 'An event directly under the series.' : 'Made from the title; you can change it.');
+    // In an edition the event is the edition's address: no name of its own.
+    prefix.textContent = s && e ? `${prefix.dataset.origin}/${s}/${e}` : `${prefix.dataset.origin}/${s ? `${s}/` : 'events/'}`;
+    slug.hidden = !!(s && e);
+    if (s && e) slug.value = e;
+    else if (!slugEdited || slug.value === edition.dataset.current) slug.value = slugify(title.value);
+    hint.textContent = zt(s && e ? 'The edition’s event: its address is the edition’s.' : s ? 'An event directly under the series.' : 'Made from the title; you can change it.');
   }
   if (typeSelect) typeSelect.addEventListener('change', showAddress);
   // Edition: the chosen series' editions (newest first); a new series has none yet. The latest
@@ -119,7 +122,15 @@
   function fillEditions(item, keep, chosen) {
     const list = item?.editionList || [];
     const options = [Object.assign(document.createElement('option'), { value: '', textContent: edition.dataset.noneLabel })];
-    for (const e of list) options.push(Object.assign(document.createElement('option'), { value: e.slug, textContent: e.title && e.title !== e.slug ? `${e.slug} — ${e.title}` : e.slug }));
+    for (const e of list) {
+      const o = Object.assign(document.createElement('option'), { value: e.slug, textContent: e.title && e.title !== e.slug ? `${e.slug} — ${e.title}` : e.slug });
+      // An edition has one event: one that already has it can't be chosen (except this event's own).
+      if (e.taken && e.slug !== edition.dataset.current) {
+        o.disabled = true;
+        o.textContent += ` (${zt('has its event')})`;
+      }
+      options.push(o);
+    }
     edition.replaceChildren(...options);
     edition.value = keep && list.some((e) => e.slug === keep) ? keep : '';
     edition.disabled = !list.length;

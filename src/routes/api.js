@@ -17,9 +17,9 @@ router.get('/api/series', async (req, res, next) => {
       orderBy: { title: 'asc' },
       take: 30,
       where: { deletedAt: null, ...(term ? { OR: [{ slug: { contains: term.toLowerCase() } }, { title: { contains: term } }] } : {}) },
-      include: { editionRecords: { where: { deletedAt: null }, orderBy: [{ year: 'desc' }, { slug: 'desc' }], take: 30, select: { slug: true, title: true } } },
+      include: { editionRecords: { where: { deletedAt: null }, orderBy: [{ year: 'desc' }, { slug: 'desc' }], take: 30, select: { slug: true, title: true, events: { where: { deletedAt: null }, select: { id: true }, take: 1 } } } },
     });
-    res.json(rows.map((r) => ({ value: r.slug, text: r.title, latest: r.editionRecords[0]?.slug || null, editions: r.editionRecords.map((e) => e.slug), editionList: r.editionRecords.map((e) => ({ slug: e.slug, title: e.title })) })));
+    res.json(rows.map((r) => ({ value: r.slug, text: r.title, latest: r.editionRecords[0]?.slug || null, editions: r.editionRecords.map((e) => e.slug), editionList: r.editionRecords.map((e) => ({ slug: e.slug, title: e.title, taken: e.events.length > 0 })) })));
   } catch (err) {
     next(err);
   }

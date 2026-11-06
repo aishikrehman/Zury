@@ -1393,5 +1393,13 @@
   "Registration has not opened yet.": "নিবন্ধন এখনো শুরু হয়নি।",
   "Registration has closed.": "নিবন্ধন বন্ধ হয়ে গেছে।",
   "The event is full.": "ইভেন্টে আর জায়গা নেই।",
-  "Log in to join this event.": "এই ইভেন্টে যোগ দিতে লগইন করুন।"
+  "Log in to join this event.": "এই ইভেন্টে যোগ দিতে লগইন করুন।",
+  "as the event": "ইভেন্টের মতো",
+  "The edition’s event: its address is the edition’s.": "সংস্করণের ইভেন্ট: এর ঠিকানা সংস্করণেরটিই।",
+  "has its event": "ইভেন্ট আছে",
+  "This event is the edition {name} of {series}. The edition has its own settings for its event, its people and its archive.": "এই ইভেন্টটি {series}-এর {name} সংস্করণ। সংস্করণের ইভেন্টের জন্য নিজস্ব সেটিংস, ব্যক্তিবর্গ ও আর্কাইভ আছে।",
+  "Edition settings": "সংস্করণের সেটিংস",
+  "Edition people": "সংস্করণের ব্যক্তিবর্গ",
+  "This edition already has its event. Add your wiki to that event instead.": "এই সংস্করণের ইভেন্ট আগে থেকেই আছে। বরং ওই ইভেন্টে আপনার উইকি যোগ করুন।",
+  "This edition already has its event. Add the wikis to that event instead.": "এই সংস্করণের ইভেন্ট আগে থেকেই আছে। বরং ওই ইভেন্টে উইকিগুলো যোগ করুন।"
 }

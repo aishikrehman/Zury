@@ -49,6 +49,7 @@ contest.post('/leave', requireAuth, contestController.leave);
 contest.get('/config', requirePermission('editEvent', 'manageEvent'), contestController.config);
 contest.post('/config', requirePermission('editEvent'), contestController.updateConfig);
 contest.post('/structure/:action(move|copy)', requirePermission('manageEvent'), contestController.structure);
+contest.post('/wikis/:wikiId(\\d+)/type', requireEventWide('manageEvent'), contestController.setWikiType);
 contest.post('/inline', requirePermission('editEvent'), contestController.inlineUpdate);
 contest.post('/config/follow', requirePermission('editEvent'), contestController.followSetting);
 contest.post('/status', requireEventWide('manageEvent'), contestController.changeStatus);
@@ -129,7 +130,7 @@ router.get('/series/new', requirePermission('importEvents'), eventsController.se
 router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
 router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnyEvent'), eventsController.seriesAction);
 router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSeries);
-router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, requireAuth, eventsController.manageEdition);
+router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, eventsController.manageEdition);
 router.post('/series', requirePermission('importEvents'), eventsController.createSeries);
 router.post(`/series/:series(${SLUG})/first-edition`, requireAuth, eventsController.firstEdition);
 router.post(`/series/:series(${SLUG})/people`, requireAuth, eventsController.grantRole);

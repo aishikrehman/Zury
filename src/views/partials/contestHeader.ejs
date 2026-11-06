@@ -38,7 +38,7 @@
     <nav class="z-evhead-path" aria-label="<%= t('Breadcrumb') %>">
       <a href="/events"><%= t('Events') %></a>
       <% if (series) { %><span>/</span><a href="/<%= series.slug %>"><%= series.title %></a><% } %>
-      <% if (typeof edition !== 'undefined' && edition) { %><span>/</span><a href="/<%= series.slug %>/<%= edition.slug %>"><%= edition.slug %></a><% } %>
+      <% if (typeof edition !== 'undefined' && edition) { %><span>/</span><a href="<%= contest.path === `/${series.slug}/${edition.slug}` ? `/series/${series.slug}/${edition.slug}` : `/${series.slug}/${edition.slug}` %>"><%= edition.slug %></a><% } %>
       <% if (wikiScope) { %><span>/</span><a href="<%= eventBase %>"><%= contest.title %></a><% } %>
     </nav>
     <div class="z-evhead-main">

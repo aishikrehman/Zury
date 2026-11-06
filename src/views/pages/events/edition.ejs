@@ -1,7 +1,7 @@
 <%# An edition of a series (/wlm/2026), in tabs: an overview (totals and its events), and for those who run it
     its settings (details, settings for its events, copy, archive) and people. %>
 <%
-  const base = `/${sr.slug}/${edition.slug}`;
+  const base = `/series/${sr.slug}/${edition.slug}`;
   const tabs = [['overview', 'layout-dashboard', t('Overview')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
   const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
   const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
@@ -11,7 +11,8 @@
   <div class="container-xl">
 
     <% if (tab === 'overview') { %>
-      <% if (canRun) { %>
+      <%# An edition has one event; its wikis carry the different projects. %>
+      <% if (canRun && !events.length) { %>
         <div class="d-flex justify-content-end mb-3"><div class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-plus me-1"></i><%= t('Add event') %></button>
           <div class="dropdown-menu dropdown-menu-end">

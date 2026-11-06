@@ -248,5 +248,17 @@ function readTypeConfig(type, json) {
   return { ...typeDefaults(type), ...Object.fromEntries(EVENT_TYPES[type].fields.filter((f) => f.key in stored).map((f) => [f.key, stored[f.key]])) };
 }
 
+// Types that work on a project; a wiki of an event whose type doesn't fit takes the first.
+const PROJECT_TYPES = [
+  [(w) => w === 'commonswiki', ['photo', 'photowalk', 'glam', 'digitization']],
+  [(w) => w === 'wikidatawiki', ['data']],
+  [(w) => /wikisource$/.test(w), ['proofread', 'digitization']],
+];
+function typeForWiki(eventType, wiki) {
+  const rule = PROJECT_TYPES.find(([test]) => test(wiki));
+  return rule && !rule[1].includes(eventType) ? rule[1][0] : null;
+}
+
 module.exports = {
+  typeForWiki,
   takesEntries, EVENT_TYPES, typeDefaults, parseTypeConfig, readTypeConfig };

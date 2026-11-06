@@ -69,11 +69,14 @@ function readOverrides(json) {
  */
 function effectiveFor(contest, settings, eventWiki, now = new Date()) {
   const o = eventWiki ? readOverrides(eventWiki.overrides) : { contest: {}, settings: {}, typeConfig: {} };
-  const fields = EVENT_TYPES[contest.type].fields.map((f) => f.key);
+  // A wiki may have its own type (photos on Commons in a writing event): its fields and settings.
+  const type = eventWiki && eventWiki.type && EVENT_TYPES[eventWiki.type] ? eventWiki.type : contest.type;
+  const ownType = type !== contest.type;
+  const fields = EVENT_TYPES[type].fields.map((f) => f.key);
   const typeOverride = Object.fromEntries(Object.entries(o.typeConfig).filter(([k]) => fields.includes(k)));
-  const typeConfig = { ...readTypeConfig(contest.type, settings.typeConfig), ...typeOverride };
+  const typeConfig = { ...readTypeConfig(type, ownType ? '{}' : settings.typeConfig), ...typeOverride };
   const effSettings = { ...settings, ...o.settings, typeConfig: JSON.stringify(typeConfig) };
-  const effContest = { ...contest, ...o.contest, ...(eventWiki && { primaryWiki: eventWiki.wiki }) };
+  const effContest = { ...contest, ...o.contest, type, ...(eventWiki && { primaryWiki: eventWiki.wiki }) };
 
   // A wiki with its own dates gets its own status unless the event's status was set by hand.
   if (!STICKY_STATUSES.includes(contest.status) && contest.statusMode !== 'manual') {

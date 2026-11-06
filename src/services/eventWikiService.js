@@ -43,7 +43,7 @@ async function addWiki({ actorId, contest, wiki, status = 'active', requestedByI
       await tx.contest.update({ where: { id: contest.id }, data: { primaryWiki: wiki, ...(lang && lang !== 'special' && { language: lang }) } });
     }
     const row = await tx.contestWiki.create({
-      data: { contestId: contest.id, wiki, code: await uniqueCode(tx, contest.id, wiki), status, requestedById },
+      data: { contestId: contest.id, wiki, code: await uniqueCode(tx, contest.id, wiki), status, requestedById, type: require('../events/eventTypes').typeForWiki(contest.type, wiki) },
     });
     await audit.record(
       { actorId, contestId: contest.id, action: status === 'pending' ? 'eventWiki.requested' : 'eventWiki.added', entityType: 'ContestWiki', entityId: row.id, details: { wiki, code: row.code } },
@@ -107,4 +107,19 @@ async function saveOverrides({ actorId, contest, eventWiki, overrides }) {
   });
 }
 
-module.exports = { EventWikiError, defaultCode, uniqueCode, addWiki, changeWiki, saveOverrides };
+// A wiki's own type (empty: the event's). Its type-specific settings start fresh for a new type.
+async function setType({ actorId, contest, wikiId, type }) {
+  const { EVENT_TYPES } = require('../events/eventTypes');
+  const row = await prisma.contestWiki.findFirst({ where: { id: wikiId, contestId: contest.id } });
+  if (!row) throw new EventWikiError('That wiki is not part of this event.');
+  const next = type && type !== contest.type ? type : null;
+  if (next && !EVENT_TYPES[next]) throw new EventWikiError('Choose a type.');
+  if (next === row.type) return row;
+  const o = JSON.parse(row.overrides || '{}');
+  o.typeConfig = {};
+  await prisma.contestWiki.update({ where: { id: row.id }, data: { type: next, overrides: JSON.stringify(o) } });
+  await audit.record({ actorId, contestId: contest.id, action: 'eventWiki.typeChanged', entityType: 'ContestWiki', entityId: row.id, details: { wiki: row.wiki, from: row.type || contest.type, to: next || contest.type } });
+  return row;
+}
+
+module.exports = { EventWikiError, defaultCode, uniqueCode, addWiki, changeWiki, saveOverrides, setType };

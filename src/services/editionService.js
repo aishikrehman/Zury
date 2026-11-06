@@ -1,5 +1,6 @@
 // Where an event sits, and so its address. An event has at most one parent: a series directly
-// (/<series>/<slug>), an edition (/<series>/<edition>/<slug>), or none (/events/<slug>).
+// (/<series>/<slug>), an edition (/<series>/<edition>: an edition has one event, at its own
+// address; its wikis carry the different projects), or none (/events/<slug>).
 // The address is worked out from that parent and stored, so every page resolves an event by
 // one lookup and nothing is guessed from the shape of an address.
 const prisma = require('../config/prisma');
@@ -15,10 +16,15 @@ const EVENT_TABS = new Set([
 ]);
 
 // The address for an event with this slug under this parent ({ seriesId } or { editionId } or neither).
-async function pathFor(slug, { seriesId = null, editionId = null } = {}, client = prisma) {
+// selfId: the event itself. An edition's event takes the edition's address; an older edition that
+// already holds several keeps the others under it (/<series>/<edition>/<slug>).
+async function pathFor(slug, { seriesId = null, editionId = null } = {}, client = prisma, selfId = null) {
   if (editionId) {
     const e = await client.edition.findUnique({ where: { id: editionId }, select: { slug: true, series: { select: { slug: true } } } });
-    return e ? `/${e.series.slug}/${e.slug}/${slug}` : null;
+    if (!e) return null;
+    const base = `/${e.series.slug}/${e.slug}`;
+    const holder = await client.contest.findFirst({ where: { path: base, deletedAt: null, ...(selfId && { NOT: { id: selfId } }) }, select: { id: true } });
+    return holder ? `${base}/${slug}` : base;
   }
   if (seriesId) {
     const s = await client.eventSeries.findUnique({ where: { id: seriesId }, select: { slug: true } });
@@ -47,7 +53,7 @@ async function sync(contestId, client = prisma) {
   const c = await client.contest.findUnique({ where: { id: contestId }, select: { id: true, slug: true, seriesId: true, editionId: true, deletedAt: true } });
   if (!c) return null;
   await client.seriesSlug.deleteMany({ where: { contestId: c.id, ...(c.seriesId && !c.deletedAt && { NOT: { seriesId: c.seriesId, slug: c.slug } }) } });
-  const path = c.deletedAt ? null : await pathFor(c.slug, c, client);
+  const path = c.deletedAt ? null : await pathFor(c.slug, c, client, c.id);
   await client.contest.update({ where: { id: c.id }, data: { path } });
   if (c.seriesId && !c.deletedAt) {
     await client.seriesSlug.upsert({
@@ -72,4 +78,9 @@ async function findOrCreate(seriesId, slug, { title, startDate = null, endDate =
   return edition;
 }
 
-module.exports = { pathFor, slugFree, sync, findOrCreate, EVENTS_RESERVED, EVENT_TABS };
+// The live event an edition already has (other than excludeId), if any.
+function eventOf(editionId, { excludeId = null } = {}, client = prisma) {
+  return client.contest.findFirst({ where: { editionId, deletedAt: null, ...(excludeId && { NOT: { id: excludeId } }) }, select: { id: true, title: true, path: true } });
+}
+
+module.exports = { pathFor, slugFree, sync, findOrCreate, eventOf, EVENTS_RESERVED, EVENT_TABS };

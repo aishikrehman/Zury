@@ -27,7 +27,7 @@ async function uniqueSlug(tx, slug, { auto, excludeId, parent = {} }) {
 
 // The event's parent from the form's "Part of" (a series) and edition: the edition when one
 // is given (made if missing; it may hold other events), else the series directly, else none.
-async function seriesFields(tx, series, title, actorId = null) {
+async function seriesFields(tx, series, title, actorId = null, selfId = null) {
   if (!series) return { seriesId: null, editionId: null };
   let row = await tx.eventSeries.findUnique({ where: { slug: series.slug } });
   if (!row) {
@@ -41,6 +41,8 @@ async function seriesFields(tx, series, title, actorId = null) {
   const edition = await editions.findOrCreate(row.id, series.edition, { title }, tx);
   if (edition && !existed && actorId) await tx.scopeRole.create({ data: { userId: actorId, role: 'organizer', editionId: edition.id, assignedById: actorId } });
   if (!edition) throw new EventError(`/${series.slug}/${series.edition} is already the address of an event of this series.`, 'edition');
+  const has = await editions.eventOf(edition.id, { excludeId: selfId }, tx);
+  if (has) throw new EventError('This edition already has its event. Add your wiki to that event instead.', 'edition');
   return { seriesId: null, editionId: edition.id };
 }
 
@@ -81,7 +83,7 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
   // Locked settings keep their value; a followed setting changed here becomes the event's own.
   parsed.lockedRefused = await inherit.guardUpdate(contest, settings, parsed.settings);
   return prisma.$transaction(async (tx) => {
-    const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId);
+    const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, contest.id);
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
     const data = { ...parsed.contest, ...parent, slug };
     const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).filter((k) => k !== 'followed').map((k) => `settings.${k}`)];

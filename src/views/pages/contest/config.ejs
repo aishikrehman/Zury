@@ -60,6 +60,10 @@
     </div>
   <% } %>
 
+  <% if (editionAdmin) { %>
+    <div class="alert alert-info d-flex flex-wrap align-items-center gap-2 mb-3"><i class="ti ti-calendar"></i><span class="me-auto"><%= t('This event is the edition {name} of {series}. The edition has its own settings for its event, its people and its archive.', { name: edition.slug, series: series.title }) %></span><a class="btn btn-sm" href="<%= editionAdmin %>?tab=settings"><%= t('Edition settings') %></a><a class="btn btn-sm" href="<%= editionAdmin %>?tab=people"><%= t('Edition people') %></a></div>
+  <% } %>
+
   <%# Where the event sits: move it to another series or edition, take it out (detach), or copy it there as a draft. %>
   <% if (!wikiMode && can('manageEvent') && (places.length || contest.seriesId || contest.editionId)) { %>
     <form method="post" action="<%= eventBase %>/structure/move" class="card mb-3" id="structure">
@@ -114,12 +118,16 @@
       <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3></div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th><%= t("Address") %></th><th><%= t("Wiki") %></th><th><%= t("Status") %></th><th>Fountain</th><th class="w-1"></th></tr></thead>
+          <thead><tr><th><%= t("Address") %></th><th><%= t("Wiki") %></th><th><%= t("Type") %></th><th><%= t("Status") %></th><th>Fountain</th><th class="w-1"></th></tr></thead>
           <tbody>
             <% allWikis.forEach((w) => { %>
               <tr>
                 <td><a href="<%= eventBase %>/<%= w.code %>"><%= eventBase %>/<%= w.code %></a></td>
                 <td><%- wikiLabel(w.wiki) %></td>
+                <%# Each wiki can have its own type: photos on Commons in a writing event. %>
+                <td><form method="post" action="<%= eventBase %>/wikis/<%= w.id %>/type" class="d-flex gap-1"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <select class="form-select form-select-sm" name="type" aria-label="<%= t("Type") %>: <%= w.wiki %>"><% Object.entries(EVENT_TYPES).forEach(([k, d]) => { %><option value="<%= k %>"<%= (w.type || contest.type) === k ? " selected" : "" %>><%= t(d.label) %><%= k === contest.type ? ` (${t("as the event")})` : "" %></option><% }) %></select>
+                  <button class="btn btn-sm btn-icon" type="submit" title="<%= t("Save") %>" aria-label="<%= t("Save") %>"><i class="ti ti-check"></i></button></form></td>
                 <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= t(w.status) %></span></td>
                 <td class="text-nowrap">
                   <% if (w.fountainCode) { %>

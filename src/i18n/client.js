@@ -28,6 +28,8 @@ const CLIENT_STRINGS = [
   '{n} selected',
   'Loading…',
   'No notifications yet',
+  'The edition’s event: its address is the edition’s.',
+  'has its event',
   'Locked by the series or edition',
 ];
 

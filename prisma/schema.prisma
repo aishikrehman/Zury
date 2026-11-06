@@ -270,6 +270,8 @@ model ContestWiki {
   status           String    @default("active")
   // JSON: { contest: {...}, settings: {...}, typeConfig: {...} } — only overridden fields.
   overrides        String    @default("{}") @db.Text
+  // This wiki's own event type (photo on Commons in a writing event); null: the event's type.
+  type             String?   @db.VarChar(40)
   requestedById    Int?
   // The Fountain editathon this wiki follows (fountain.toolforge.org/editathons/<code>), if any.
   fountainCode     String    @default("")

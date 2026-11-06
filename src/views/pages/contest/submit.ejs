@@ -95,7 +95,9 @@
       <div class="card">
         <div class="card-header"><h3 class="card-title"><%= t("What's accepted") %></h3></div>
         <div class="list-group list-group-flush">
-          <div class="list-group-item"><%= t('{type} on {wikis}', { type: EVENT_TYPES[contest.type].label, wikis: (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiLocal).join(', ') }) %></div>
+          <%# Wikis grouped by their type (a wiki can have its own: photos on Commons in a writing event). %>
+          <% const byType = {}; (eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki }]).forEach((w) => { (byType[w.type || contest.type] ||= []).push(w.wiki); }); %>
+          <% Object.entries(byType).forEach(([ty, ws]) => { %><div class="list-group-item"><%= t('{type} on {wikis}', { type: t(EVENT_TYPES[ty].label), wikis: ws.map(wikiLocal).join(', ') }) %></div><% }) %>
           <% rules.forEach((r) => { %><div class="list-group-item"><i class="ti ti-check text-green me-1"></i><%= r %></div><% }) %>
         </div>
       </div>

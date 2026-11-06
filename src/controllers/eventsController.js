@@ -252,7 +252,7 @@ async function peopleAction(req, res, next, fn) {
   }
   const tab = req.path.includes('/settings') ? 'settings' : 'people';
   const ed = Number(req.body.editionId) ? await prisma.edition.findUnique({ where: { id: Number(req.body.editionId) }, select: { slug: true } }) : null;
-  res.redirect(`/${req.params.series}${ed ? `/${ed.slug}` : ''}?tab=${tab}`);
+  res.redirect(ed ? `/series/${req.params.series}/${ed.slug}?tab=${tab}` : `/${req.params.series}?tab=${tab}`);
 }
 
 function grantRole(req, res, next) {
@@ -339,7 +339,7 @@ module.exports.editionFountain = editionFountain;
 // Stage 5 on an edition or a series: copy an edition, archive or unarchive a level.
 async function levelAction(req, res, next) {
   const structureService = require('../services/structureService');
-  const back = `/${req.params.series}${req.params.edition ? `/${req.params.edition}` : ''}${req.body && req.body.back === 'overview' ? '' : '?tab=settings'}`;
+  const back = `${req.params.edition ? `/series/${req.params.series}/${req.params.edition}` : `/${req.params.series}`}${req.body && req.body.back === 'overview' ? '' : '?tab=settings'}`;
   try {
     const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
     if (!sr) return next();
@@ -444,6 +444,9 @@ async function editionTabs(req, res, next) {
     if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
     const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
     if (!edition) return next();
+    // Its event, when it has one, is at this address; the edition's own tabs are under /series.
+    const managing = req.path.startsWith('/series/');
+    if (!managing && (await prisma.contest.findFirst({ where: { path: `/${sr.slug}/${edition.slug}`, deletedAt: null }, select: { id: true } }))) return next();
     // The edition's own people (or the series' with a role for its children) see its drafts.
     const canRun = await scopeRoles.canRunEdition(req, edition);
     const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));
@@ -472,8 +475,8 @@ async function editionTabs(req, res, next) {
 function manageOneSeriesTabs(req, res) {
   res.redirect(`/${req.params.series}?tab=settings`);
 }
-function manageEditionTabs(req, res) {
-  res.redirect(`/${req.params.series}/${req.params.edition}?tab=settings`);
+function manageEditionTabs(req, res, next) {
+  return editionTabs(req, res, next);
 }
 module.exports.series = seriesPage;
 module.exports.editionPage = editionTabs;

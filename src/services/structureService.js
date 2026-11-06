@@ -26,6 +26,10 @@ function parentOf(target) {
 }
 
 async function freeName(tx, wanted, parent, excludeId) {
+  if (parent.editionId) {
+    const has = await editions.eventOf(parent.editionId, { excludeId }, tx);
+    if (has) throw new StructureError('This edition already has its event. Add the wikis to that event instead.');
+  }
   if (!SLUG.test(wanted)) throw new StructureError('Use lowercase letters, numbers and hyphens for the name.');
   if (await editions.slugFree(wanted, parent, { excludeId }, tx)) return wanted;
   for (let i = 2; i < 100; i++) {
