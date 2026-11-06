@@ -120,4 +120,39 @@ async function platformStats(now = new Date(), days = 30) {
   };
 }
 
-module.exports = { eventStats, userStats, platformStats, dailySeries };
+// Stage 6: totals for any set of events (an edition, a series), counted without doubles:
+// - an entry is one page on one wiki (wiki + pageKey): the same article entered in two events
+//   counts once; withdrawn entries don't count; it counts as approved if approved anywhere;
+// - a person counts once however many events, editions or wikis they took part in
+//   (registered participants and anyone who submitted);
+// - words are those of the distinct approved entries.
+const empty = () => ({ eventCount: 0, entries: 0, approved: 0, words: 0, approvedWords: 0, participants: 0, wikis: [] });
+
+async function rollup(contestIds) {
+  const ids = [...new Set(contestIds)];
+  if (!ids.length) return empty();
+  const [subs, people, wikis] = await Promise.all([
+    prisma.submission.findMany({ where: { contestId: { in: ids }, status: { not: 'withdrawn' } }, select: { wiki: true, pageKey: true, status: true, wordCount: true, participantId: true } }),
+    prisma.contestMembership.findMany({ where: { contestId: { in: ids }, role: 'participant', status: 'active' }, select: { userId: true } }),
+    prisma.contestWiki.findMany({ where: { contestId: { in: ids }, status: { not: 'pending' } }, select: { wiki: true, code: true } }),
+  ]);
+  const entries = new Map();
+  for (const s of subs) {
+    const key = `${s.wiki}\u0000${s.pageKey}`;
+    const had = entries.get(key);
+    // Approved anywhere counts as approved; keep the larger word count seen.
+    entries.set(key, { approved: (had && had.approved) || s.status === 'approved', words: Math.max(had ? had.words : 0, s.wordCount || 0) });
+  }
+  const approved = [...entries.values()].filter((e) => e.approved);
+  return {
+    eventCount: ids.length,
+    entries: entries.size,
+    words: [...entries.values()].reduce((n, e) => n + e.words, 0),
+    approved: approved.length,
+    approvedWords: approved.reduce((n, e) => n + e.words, 0),
+    participants: new Set([...people.map((p) => p.userId), ...subs.map((s) => s.participantId)]).size,
+    wikis: [...new Map(wikis.map((w) => [w.wiki, w])).values()],
+  };
+}
+
+module.exports = { eventStats, userStats, platformStats, dailySeries, rollup };

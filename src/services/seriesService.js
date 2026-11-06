@@ -31,7 +31,7 @@ async function create({ actorId, slug, title, description = '' }) {
 }
 
 // Editions of a series, newest first, each with its events' totals: entries, accepted,
-// people (each counted once per edition) and wikis. drafts: also editions and events not
+// people (each counted once per edition) and wikis, without doubles. drafts: also editions and events not
 // yet published, for those who run the series.
 async function summary(seriesId, { drafts = false } = {}) {
   const shown = drafts ? {} : { status: { not: 'draft' }, visibility: 'public' };
@@ -43,28 +43,9 @@ async function summary(seriesId, { drafts = false } = {}) {
       events: { where: { deletedAt: null, ...shown }, select: { id: true, slug: true, title: true, status: true, path: true, wikis: { where: { status: { not: 'pending' } }, select: { code: true, wiki: true } } } },
     },
   });
-  const ids = editions.flatMap((e) => e.events.map((ev) => ev.id));
-  const [entries, approved, people] = await Promise.all([
-    prisma.submission.groupBy({ by: ['contestId'], where: { contestId: { in: ids }, status: { not: 'withdrawn' } }, _count: { _all: true }, _sum: { wordCount: true } }),
-    prisma.submission.groupBy({ by: ['contestId'], where: { contestId: { in: ids }, status: 'approved' }, _count: { _all: true }, _sum: { wordCount: true } }),
-    prisma.contestMembership.findMany({ where: { contestId: { in: ids }, role: 'participant', status: 'active' }, select: { contestId: true, userId: true } }),
-  ]);
-  const sum = (rows, evIds, pick) => rows.filter((r) => evIds.includes(r.contestId)).reduce((n, r) => n + (pick(r) || 0), 0);
-  return editions.map((e) => {
-    const evIds = e.events.map((ev) => ev.id);
-    const wikis = [...new Map(e.events.flatMap((ev) => ev.wikis).map((w) => [w.wiki, w])).values()];
-    return {
-      ...e,
-      edition: e.slug,
-      wikis,
-      entries: sum(entries, evIds, (r) => r._count._all),
-      words: sum(entries, evIds, (r) => r._sum.wordCount),
-      approved: sum(approved, evIds, (r) => r._count._all),
-      approvedWords: sum(approved, evIds, (r) => r._sum.wordCount),
-      // The same person in two events of an edition counts once.
-      participants: new Set(people.filter((m) => evIds.includes(m.contestId)).map((m) => m.userId)).size,
-    };
-  });
+  // Each edition's totals, counted without doubles (statsService).
+  const { rollup } = require('./statsService');
+  return Promise.all(editions.map(async (e) => ({ ...e, edition: e.slug, ...(await rollup(e.events.map((ev) => ev.id))) })));
 }
 
 // The next edition: a year after the latest, with a copy of each of its events (settings,

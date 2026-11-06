@@ -208,7 +208,8 @@ async function editionPage(req, res, next) {
       orderBy: { startDate: 'asc' },
       select: contestService.CARD_SELECT,
     });
-    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition, events, canRun });
+    const totals = await require('../services/statsService').rollup(events.map((ev) => ev.id));
+    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition, events, canRun, totals });
   } catch (err) {
     next(err);
   }
@@ -230,7 +231,8 @@ async function manageEdition(req, res, next) {
       orderBy: { startDate: 'asc' },
       select: contestService.CARD_SELECT,
     });
-    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition, events, canRun });
+    const totals = await require('../services/statsService').rollup(events.map((ev) => ev.id));
+    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition, events, canRun, totals });
   } catch (err) {
     next(err);
   }
@@ -280,7 +282,9 @@ async function series(req, res, next) {
       select: contestService.CARD_SELECT,
     });
     const summary = await require('../services/seriesService').summary(found.id, { drafts: canRun });
-    res.render('pages/events/series', { title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, canRun });
+    // The whole series at once: a person or an entry in several editions counts once.
+    const totals = await require('../services/statsService').rollup([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]);
+    res.render('pages/events/series', { title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, canRun });
   } catch (err) {
     next(err);
   }
