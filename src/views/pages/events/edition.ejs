@@ -13,13 +13,48 @@
         </div>
       </div>
       <% if (canRun) { %>
-        <div class="col-auto"><a class="btn btn-primary" href="/events/create?series=<%= sr.slug %>&edition=<%= edition.slug %>"><i class="ti ti-plus me-1"></i><%= t('Add event') %></a></div>
+        <%# Add an event: the full form, an editathon from Fountain, or tracking only. %>
+        <div class="col-auto"><div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-plus me-1"></i><%= t('Add event') %></button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" href="/events/create?series=<%= sr.slug %>&edition=<%= edition.slug %>"><i class="ti ti-file-plus me-2"></i><%= t('New event') %></a>
+            <% if (can('importEvents')) { %><button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#add-fountain"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></button><% } %>
+            <% if (can('createEvent')) { %><button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#add-tracking"><i class="ti ti-chart-line me-2"></i><%= t('Tracking only') %></button><% } %>
+          </div>
+        </div></div>
       <% } %>
     </div>
   </div>
 </div>
 <div class="page-body">
   <div class="container-xl">
+    <% if (canRun) { %>
+      <% if (can('importEvents')) { %>
+        <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/fountain" class="card collapse mb-3" id="add-fountain">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></h3></div>
+          <div class="card-body"><div class="row g-2 align-items-end">
+            <div class="col-12 col-md-6"><label class="form-label" for="af-code"><%= t('Fountain editathon code or address') %></label><input class="form-control" id="af-code" name="code" required placeholder="https://fountain.toolforge.org/editathons/wam2026-bn"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="af-type"><%= t('Type') %></label><select class="form-select" id="af-type" name="type"><option value="writing"><%= t('Writing contest') %></option><option value="editathon"><%= t('Edit-a-thon') %></option></select></div>
+            <div class="col-6 col-md-3"><button class="btn btn-primary w-100" type="submit"><%= t('Import') %></button></div>
+          </div><div class="form-hint mt-2"><%= t('The editathon becomes an event of this edition; its entries and Fountain’s decisions come along and stay in step.') %></div></div>
+        </form>
+      <% } %>
+      <% if (can('createEvent')) { %>
+        <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/tracking" class="card collapse mb-3" id="add-tracking">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-chart-line me-2"></i><%= t('Tracking only') %></h3></div>
+          <div class="card-body"><div class="row g-2 align-items-end">
+            <div class="col-12 col-md-6"><label class="form-label" for="at-wiki"><%= t('Wiki') %></label><select class="form-select" id="at-wiki" name="primaryWiki" data-picker="wiki" required></select></div>
+            <div class="col-12 col-md-6"><label class="form-label" for="at-title"><%= t('Title') %></label><input class="form-control" id="at-title" name="title" maxlength="200" placeholder="<%= edition.title %> – …"></div>
+            <div class="col-12 col-md-4"><label class="form-label" for="at-tags"><%= t('Hashtags') %></label><input class="form-control" id="at-tags" name="trackHashtags" placeholder="wam2026"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="at-start"><%= t('Starts') %></label><input class="form-control" type="date" id="at-start" name="startDate" value="<%= edition.startDate ? edition.startDate.toISOString().slice(0, 10) : '' %>"></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="at-end"><%= t('Ends') %></label><input class="form-control" type="date" id="at-end" name="endDate" value="<%= edition.endDate ? edition.endDate.toISOString().slice(0, 10) : '' %>"></div>
+            <div class="col-12 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Create') %></button></div>
+          </div><div class="form-hint mt-2"><%= t('No entries and no jury: participants register and their edits on the wiki during the dates are counted (only those with the hashtags, if given).') %></div></div>
+        </form>
+      <% } %>
+    <% } %>
     <% if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
     <% if (!events.length) { %>
       <div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div>

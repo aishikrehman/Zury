@@ -1321,5 +1321,11 @@
   "Pass mark": "পাস নম্বর",
   "A tie": "সমান ভোট",
   "Secret ballot": "গোপন ব্যালট",
-  "How words are counted": "শব্দ কীভাবে গোনা হয়"
+  "How words are counted": "শব্দ কীভাবে গোনা হয়",
+  "New event": "নতুন ইভেন্ট",
+  "Tracking only": "শুধু ট্র্যাকিং",
+  "The editathon becomes an event of this edition; its entries and Fountain’s decisions come along and stay in step.": "এডিটাথনটি এই সংস্করণের একটি ইভেন্ট হবে; এর জমা ও ফাউন্টেনের সিদ্ধান্ত সাথে আসবে এবং হালনাগাদ থাকবে।",
+  "Hashtags": "হ্যাশট্যাগ",
+  "No entries and no jury: participants register and their edits on the wiki during the dates are counted (only those with the hashtags, if given).": "কোনো জমা বা পর্যালোচক নেই: অংশগ্রহণকারীরা নিবন্ধন করেন এবং এই তারিখগুলোতে উইকিতে তাঁদের সম্পাদনা গোনা হয় (হ্যাশট্যাগ দিলে কেবল সেগুলো)।",
+  "Tracking event created as a draft. Publish it when ready.": "ট্র্যাকিং ইভেন্ট খসড়া হিসেবে তৈরি হয়েছে। প্রস্তুত হলে প্রকাশ করুন।"
 }

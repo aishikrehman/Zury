@@ -381,3 +381,69 @@ function removeLevelSetting(req, res, next) {
 }
 module.exports.setLevelSetting = setLevelSetting;
 module.exports.removeLevelSetting = removeLevelSetting;
+
+// The edition named in the address, for adding events to it; null when there is none.
+async function editionFromParams(req) {
+  const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+  if (!sr) return null;
+  const edition = await prisma.edition.findFirst({ where: { seriesId: sr.id, slug: req.params.edition, deletedAt: null } });
+  return edition ? { sr, edition } : null;
+}
+
+// /wam/2026 → "Add event" → "Import from Fountain": the editathon becomes an event of this edition.
+async function editionFountain(req, res, next) {
+  const fountain = require('../services/fountainService');
+  const found = await editionFromParams(req).catch(next);
+  if (!found) return next();
+  const { sr, edition } = found;
+  const back = `/${sr.slug}/${edition.slug}`;
+  if (!(await scopeRoles.canRunEdition(req, edition))) return forbiddenPage(next);
+  try {
+    const type = ['writing', 'editathon'].includes(req.body.type) ? req.body.type : 'writing';
+    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: req.body.code, type, series: { slug: sr.slug, edition: edition.slug, title: sr.title } });
+    const path = (await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path;
+    req.flash(existed ? 'warning' : 'success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));
+    res.redirect(path || back);
+  } catch (err) {
+    const { EventWikiError } = require('../services/eventWikiService');
+    if (!(err instanceof fountain.FountainError || err instanceof EventWikiError || err instanceof eventService.EventError)) return next(err);
+    req.flash('danger', req.t(err.message));
+    res.redirect(back);
+  }
+}
+
+// /wam/2026 → "Add event" → "Tracking only": no entries and no jury; participants' edits on the
+// wiki during the dates are counted (optionally only those with the hashtags).
+async function editionTracking(req, res, next) {
+  const found = await editionFromParams(req).catch(next);
+  if (!found) return next();
+  const { sr, edition } = found;
+  const back = `/${sr.slug}/${edition.slug}`;
+  if (!(await scopeRoles.canRunEdition(req, edition))) return forbiddenPage(next);
+  try {
+    const catalog = await catalogService.validators();
+    const day = (v, end) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? `${v}T${end ? '23:59' : '00:00'}` : '');
+    const start = day(req.body.startDate) || (edition.startDate ? edition.startDate.toISOString().slice(0, 16) : '');
+    const end = day(req.body.endDate, true) || (edition.endDate ? edition.endDate.toISOString().slice(0, 16) : '');
+    const wiki = String(req.body.primaryWiki || '').trim();
+    const body = {
+      title: String(req.body.title || '').trim() || `${edition.title} – ${wiki}`,
+      primaryWiki: wiki, timezone: 'UTC', seriesSlug: sr.slug, edition: edition.slug,
+      slug: String(req.body.slug || '').trim() || `${wiki.replace(/wiki$/, '')}-tracking`,
+      startDate: start, endDate: end, submissionOpensAt: start, submissionDeadline: end,
+      trackHashtags: req.body.trackHashtags || '',
+    };
+    const parsed = contestForm.parse(body, { type: 'editathon', wikiAllowed: (w) => canUseWikiForEvents(req.subject, w), catalog });
+    if (Object.keys(parsed.errors).length) throw new eventService.EventError(Object.values(parsed.errors)[0]);
+    Object.assign(parsed.settings, { juryReviewEnabled: false, contributionDiscoveryEnabled: true, massSubmissionEnabled: false, appealsEnabled: false });
+    const contest = await eventService.create({ actorId: req.user.id, type: 'editathon', parsed, autoSlug: !req.body.slug });
+    req.flash('success', req.t('Tracking event created as a draft. Publish it when ready.'));
+    res.redirect(`${(await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path}/config`);
+  } catch (err) {
+    if (!(err instanceof eventService.EventError)) return next(err);
+    req.flash('danger', req.t(err.message));
+    res.redirect(back);
+  }
+}
+module.exports.editionFountain = editionFountain;
+module.exports.editionTracking = editionTracking;

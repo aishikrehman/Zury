@@ -194,7 +194,8 @@ async function sync(eventWiki, { actorId = null } = {}) {
 }
 
 // A new Zury event from a Fountain editathon, following it from then on.
-async function importEvent({ actorId, input, type = 'writing' }) {
+// series: optional { slug, edition, title } to put the event in a series or edition.
+async function importEvent({ actorId, input, type = 'writing', series = null }) {
   const code = parseCode(input);
   if (!code) throw new FountainError('Enter a Fountain editathon code or address.');
   const linked = await prisma.contestWiki.findFirst({ where: { fountainCode: code, contest: { deletedAt: null } }, include: { contest: true } });
@@ -221,6 +222,7 @@ async function importEvent({ actorId, input, type = 'writing' }) {
       },
       // Fountain's jury decides the entries, so Zury's own review stays off.
       settings: { juryReviewEnabled: false },
+      series,
     },
   });
   // The editathon is already running on Fountain: publish it straight away.
