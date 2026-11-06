@@ -73,6 +73,13 @@ async function show(req, res, next) {
       participants: byRole('participant'),
       participantCount: participants,
       isParticipant: roles.includes('participant'),
+      ...(() => {
+        const ps = require('../services/participationService');
+        const pp = ps.read(req.settings);
+        const joined = roles.includes('participant');
+        const show = req.user && pp.page && (pp.mode === 'onwiki' ? !joined : joined);
+        return { signUp: show ? { url: ps.signUpUrl(req.contest, req.settings, req.user.username), onwiki: pp.mode === 'onwiki' } : null };
+      })(),
       eligibility,
       typeDef: EVENT_TYPES[req.contest.type],
       typeConfig: readTypeConfig(req.contest.type, req.settings.typeConfig),
@@ -196,6 +203,15 @@ async function updateWikiConfig(req, res, next) {
   }
 }
 
+// After saving: the fixed list joins and the eligible articles are fetched; says how it went.
+async function participationNotes(req, contest) {
+  const r = await require('../services/participationService').afterSave({ actorId: req.user.id, contest }).catch((err) => ({ eligibleError: err.message }));
+  if (r.imported && r.imported.added) req.flash('success', req.t('{n} participants added from the list.', { n: r.imported.added }));
+  if (r.imported && r.imported.missing.length) req.flash('warning', req.t('Not added: {list}.', { list: r.imported.missing.slice(0, 20).join(', ') }));
+  if (r.eligible) req.flash('success', req.t('{n} eligible articles.', { n: r.eligible }));
+  if (r.eligibleError) req.flash('warning', req.t('The eligible articles could not be fetched: {error}', { error: r.eligibleError }));
+}
+
 async function updateConfig(req, res, next) {
   if (req.wikiScope) return updateWikiConfig(req, res, next);
   // The type can change while the event is a draft; its type settings then start from that type's defaults.
@@ -216,6 +232,7 @@ async function updateConfig(req, res, next) {
   try {
     await eventService.update({ actorId: req.user.id, contest: { ...req.contest, series: req.series }, settings: req.eventSettings, parsed, autoSlug: parsed.autoSlug });
     req.flash('success', 'Event settings saved.');
+    await participationNotes(req, req.contest);
     if (parsed.lockedRefused && parsed.lockedRefused.length) req.flash('warning', req.t('Some settings are locked by the series or edition and were kept: {list}.', { list: parsed.lockedRefused.map((k) => req.t(require('../services/inheritService').KEYS[k].label)).join(', ') }));
     res.redirect(back(req, '/config'));
   } catch (err) {
@@ -274,7 +291,9 @@ async function people(req, res, next) {
     const [members, overrides] = await Promise.all([contestService.members(req.contest.id), contestService.overrides(req.contest.id)]);
     const wiki = req.wikiScope?.wiki;
     const blocks = await membershipService.activeBlocks(req.contest.id);
+    const pp = require('../services/participationService').read(req.settings);
     res.render('pages/contest/participants', {
+      importable: (pp.mode === 'onwiki' && !!pp.page) || pp.mode === 'list',
       blocks,
       canBlock: (req.wikiScope || req.eventWikis.length > 1 ? req.scope.global : req.permissions).has('manageParticipants'),
       title: `People — ${req.contest.title}`,
@@ -290,6 +309,18 @@ async function people(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+// Everyone on the on-wiki sign-up page (or the fixed list) becomes a participant.
+async function importParticipants(req, res, next) {
+  try {
+    const r = await require('../services/participationService').importParticipants({ actorId: req.user.id, contest: req.contest, settings: req.settings });
+    req.flash('success', req.t('{n} participants added from the list.', { n: r.added }));
+    if (r.missing.length) req.flash('warning', req.t('Not added: {list}.', { list: r.missing.slice(0, 20).join(', ') }));
+  } catch (err) {
+    req.flash('danger', err.message);
+  }
+  res.redirect(back(req, '/participants'));
 }
 
 async function resolveUser(req) {
@@ -356,11 +387,31 @@ async function removeOverride(req, res, next) {
   res.redirect(back(req, '/participants'));
 }
 
+// The join form, when the event asks for details or a team; otherwise the event page has the button.
+async function joinForm(req, res, next) {
+  try {
+    const participation = require('../services/participationService');
+    const p = participation.read(req.settings);
+    if (!p.ask.length && req.settings.participationMode === 'individual') return res.redirect(req.base);
+    let profile = {};
+    try { profile = JSON.parse((await require('../config/prisma').user.findUnique({ where: { id: req.user.id }, select: { profile: true } })).profile || '{}'); } catch { profile = {}; }
+    res.render('pages/contest/join', {
+      title: req.t('Join this event') + ' — ' + req.contest.title,
+      ask: p.ask, ASK: participation.ASK, profile,
+      teams: req.settings.participationMode === 'individual' ? [] : await participation.teams(req.contest.id),
+      teamMode: req.settings.participationMode,
+      joinWikis: req.eventWikis.length > 1 && !req.wikiScope ? req.eventWikis.filter((w) => w.status === 'active') : [],
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function join(req, res, next) {
   try {
     const wiki = defaultWikiFor(req, req.body.wiki);
     if (req.eventWikis.length > 1 && !wiki) throw new membershipService.MembershipError('Choose the wiki you will take part from.');
-    await membershipService.join({ user: req.user, contest: req.contest, settings: req.settings, wiki });
+    await membershipService.join({ user: req.user, contest: req.contest, settings: req.settings, wiki, details: req.body, team: req.body.team });
     req.flash('success', wiki && req.eventWikis.length > 1 ? `You've joined this event on ${wiki}.` : "You've joined this event.");
   } catch (err) {
     if (!handled(err)) return next(err);
@@ -459,6 +510,8 @@ module.exports = { exportData, clearData,
   setOverride,
   removeOverride,
   join,
+  joinForm,
+  importParticipants,
   leave,
   blockUser,
   unblockUser,

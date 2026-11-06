@@ -139,8 +139,22 @@ async function removeMember({ actorId, contest, membershipId, allowed }) {
 }
 
 // wiki: the wiki the participant takes part from ("" for single-wiki events without one).
-async function join({ user, contest, settings, wiki = '' }) {
+async function join({ user, contest, settings, wiki = '', details = {}, team = '' }) {
+  const participation = require('./participationService');
   const bans = await wikimediaBans(user, wiki || contest.primaryWiki);
+  const listed = await participation.joinCheck({ user, contest, settings });
+  if (listed) bans.push(listed);
+  const p = participation.read(settings);
+  // The details asked when joining; each one is needed, and kept on the profile for next time.
+  const answers = {};
+  for (const k of p.ask) {
+    const v = String(details[k] || '').trim().slice(0, 200);
+    if (!v) throw new MembershipError('Fill in every detail asked.');
+    if (k === 'email' && !/^[^@s]+@[^@s]+.[^@s]+$/.test(v)) throw new MembershipError('Enter a valid email address.');
+    answers[k] = v;
+  }
+  const teamName = String(team || '').trim();
+  if (settings.participationMode === 'team' && !teamName) throw new MembershipError('Enter your team.');
   return prisma.$transaction(async (tx) => {
     const roles = await activeRoles(contest.id, user.id, tx);
     const result = checkEligibility({
@@ -149,7 +163,14 @@ async function join({ user, contest, settings, wiki = '' }) {
       participants: await participantCount(contest.id, tx),
     });
     if (!result.eligible) throw new MembershipError(result.reasons.join(' '));
-    await upsertActive(tx, { contestId: contest.id, userId: user.id, role: 'participant', actorId: user.id, wiki });
+    const m = await upsertActive(tx, { contestId: contest.id, userId: user.id, role: 'participant', actorId: user.id, wiki });
+    if (Object.keys(answers).length) {
+      await tx.contestMembership.update({ where: { id: m.id }, data: { details: JSON.stringify(answers) } });
+      let profile = {};
+      try { profile = JSON.parse((await tx.user.findUnique({ where: { id: user.id }, select: { profile: true } })).profile || '{}'); } catch { profile = {}; }
+      await tx.user.update({ where: { id: user.id }, data: { profile: JSON.stringify({ ...profile, ...answers }) } });
+    }
+    if (teamName && settings.participationMode !== 'individual') await participation.joinTeam(tx, { contestId: contest.id, userId: user.id, name: teamName });
     await audit.record(
       { actorId: user.id, contestId: contest.id, action: 'membership.joined', entityType: 'User', entityId: user.id, details: { username: user.username, wiki: wiki || undefined } },
       tx,

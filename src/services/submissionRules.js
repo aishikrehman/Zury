@@ -44,6 +44,9 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
 
   const wikis = allowedWikis || [contest.primaryWiki, ...JSON.parse(contest.additionalWikis || '[]')];
   if (!wikis.includes(meta.wiki)) rules.push(`Entries must come from ${wikis.join(' or ')}.`);
+  // The event's list of eligible articles (on-wiki page, pasted list, category or Wikidata query).
+  const eligible = require('./participationService').eligibleSet(settings);
+  if (eligible && meta.ns === 0 && !eligible.has(String(meta.title || '').replace(/_/g, ' '))) rules.push("This article is not on the event's list of eligible articles.");
   const namespaces = eligibleNamespaces(contest, settings, typeConfig);
   if (!namespaces.includes(meta.ns)) rules.push(`Pages in namespace ${meta.ns} are not eligible (allowed: ${namespaces.join(', ')}).`);
 

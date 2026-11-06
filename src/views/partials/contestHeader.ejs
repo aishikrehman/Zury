@@ -77,13 +77,19 @@
         <%
           // Taking part lives here: join, then submit, then leave.
           const isParticipant = scope.eventRoles && scope.eventRoles.includes('participant');
-          const joinable = settings.registrationEnabled && ['active', 'upcoming', 'published'].includes(contest.status);
+          let pj = {}; try { pj = JSON.parse(settings.participation || '{}') || {}; } catch (e) { pj = {}; }
+          const pmode = pj.mode || (settings.registrationRequired ? 'register' : 'submit');
+          // A first entry makes someone a participant: no join button then. A fixed list joins only those listed.
+          const joinable = settings.registrationEnabled && pmode !== 'submit' && !(pmode === 'list' && !pj.outsiders) && ['active', 'upcoming', 'published'].includes(contest.status);
+          const joinPage = (pj.ask || []).length > 0 || (settings.participationMode && settings.participationMode !== 'individual');
           const joinWikis = !wikiScope && eventWikis.length > 1 ? eventWikis.filter((w) => w.status === 'active') : [];
         %>
         <% if (!currentUser && joinable) { %>
           <a href="/login" class="btn btn-primary"><i class="ti ti-login me-1"></i><%= t("Log in to join") %></a>
         <% } else if (currentUser && !(scope.eventRoles || []).length && joinable && !(typeof eligibility !== 'undefined' && !eligibility.eligible)) { %>
-          <% if (joinWikis.length) { %>
+          <% if (joinPage) { %>
+            <a class="btn btn-primary" href="<%= base %>/join"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></a>
+          <% } else if (joinWikis.length) { %>
             <div class="dropdown">
               <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></button>
               <div class="dropdown-menu dropdown-menu-end">

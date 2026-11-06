@@ -232,8 +232,30 @@
                 <div class="form-hint"><%= t('Same counting as ztools, so both tools give the same numbers.') %></div>
               </div>
               <div class="col-md-6">
-                <%- toggle('registrationRequired', 'Participants must register before submitting') %>
               </div>
+            </div>
+            <%# How people take part, and which articles count. %>
+            <div class="z-set-list mb-3">
+              <div class="z-set-row"><div class="z-set-label"><%= t("How people take part") %></div><div class="z-set-control">
+                <select class="form-select form-select-sm" name="participation_mode" data-show-for>
+                  <% Object.entries(PARTICIPATION.MODES).forEach(([k, label]) => { %><option value="<%= k %>"<%= (v('participation_mode') || 'submit') === k ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+                </select></div></div>
+              <div class="z-set-row"><div class="z-set-label"><%= t("Ask when joining") %><div class="z-set-hint"><%= t("None: just the username. Kept on their profile for next time.") %></div></div><div class="z-set-control z-set-inline">
+                <% Object.entries(PARTICIPATION.ASK).forEach(([k, label]) => { %><label class="form-check form-check-inline mb-0"><input class="form-check-input" type="checkbox" name="participation_ask" value="<%= k %>"<%= [].concat(v('participation_ask') || []).includes(k) ? ' checked' : '' %>><span class="form-check-label"><%= t(label) %></span></label><% }) %>
+              </div></div>
+              <div class="z-set-row"><div class="z-set-label"><%= t("On-wiki page") %><div class="z-set-hint"><%= t("The sign-up page; or, for other ways, a page where participants list themselves (they get a link to add their name).") %></div></div><div class="z-set-control">
+                <input class="form-control form-control-sm<%= inv('participation_page') %>" name="participation_page" value="<%= v('participation_page') || '' %>" placeholder="<%= t("E.g. Wikipedia:Asian Month 2026/Participants") %>"><%- err('participation_page') %></div></div>
+              <div class="z-set-row"><div class="z-set-label"><%= t("Participant list") %><div class="z-set-hint"><%= t("One username per line; added as participants when saved.") %></div></div><div class="z-set-control">
+                <textarea class="form-control form-control-sm<%= inv('participation_users') %>" name="participation_users" rows="2"><%= v('participation_users') || '' %></textarea><%- err('participation_users') %></div></div>
+              <div class="z-set-row"><div class="z-set-label"><%= t("Others may join too") %><div class="z-set-hint"><%= t("For the on-wiki page and the list: people not on them can also join.") %></div></div><div class="z-set-control">
+                <label class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" name="participation_outsiders"<%= v('participation_outsiders') ? ' checked' : '' %>></label></div></div>
+              <div class="z-set-row"><div class="z-set-label"><%= t("Eligible articles") %><div class="z-set-hint"><%= t("Only these may be submitted. Fetched again each time the settings are saved.") %></div></div><div class="z-set-control">
+                <select class="form-select form-select-sm" name="eligible_source">
+                  <% Object.entries(PARTICIPATION.SOURCES).forEach(([k, label]) => { %><option value="<%= k %>"<%= (v('eligible_source') || 'none') === k ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+                </select></div></div>
+              <div class="z-set-row"><div class="z-set-label"><%= t("Where from") %><div class="z-set-hint"><%= t("The page or category name, the articles one per line, or the SPARQL query. Subcategory depth for a category.") %></div></div><div class="z-set-control">
+                <textarea class="form-control form-control-sm<%= inv('eligible_value') %>" name="eligible_value" rows="2"><%= v('eligible_value') || '' %></textarea><%- err('eligible_value') %>
+                <input class="form-control form-control-sm mt-1" style="max-width:7rem" type="number" min="0" max="5" name="eligible_depth" value="<%= v('eligible_depth') || '0' %>" title="<%= t("Subcategory depth") %>"></div></div>
             </div>
 
             <h4 class="mb-3"><%= t("What counts") %></h4>
@@ -377,7 +399,7 @@
                 <label class="z-set-label" for="passScore"><%= t('Pass mark (average points)') %><span class="z-set-hint"><%= t('An entry whose average reaches it is accepted.') %></span></label>
                 <div class="z-set-control"><input type="number" min="0" step="0.5" class="form-control" id="passScore" name="passScore" value="<%= v('passScore') || 0 %>"></div>
               </div>
-              <% [['allowJuryParticipation', 'Reviewers may also take part'], ['allowOrganizerParticipation', 'Organizers may also take part'], ['selfReview', 'Reviewers may review their own entries'], ['bulkReviewEnabled', 'Bulk review: decide many entries at once'], ['juryStatsEnabled', 'Reviewer statistics for everyone (else only for organizers)']].forEach(([key, label]) => { %>
+              <% [['allowJuryParticipation', 'Reviewers and organizers may also take part'], ['selfReview', 'Reviewers may review their own entries'], ['bulkReviewEnabled', 'Bulk review: decide many entries at once'], ['juryStatsEnabled', 'Reviewer statistics for everyone (else only for organizers)']].forEach(([key, label]) => { %>
                 <div class="z-set-row">
                   <label class="z-set-label" for="<%= key %>"><%= t(label) %><%- mark('settings.' + key) %></label>
                   <div class="z-set-control"><label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="<%= key %>" name="<%= key %>"<%= on(key) ? ' checked' : '' %>></label></div>
@@ -456,10 +478,17 @@
                   <span class="form-label d-block"><%= t("Who can see the event") %></span>
                   <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2">
                     <label class="form-selectgroup-item flex-fill">
-                      <input type="radio" name="visibility" value="public" class="form-selectgroup-input"<%= v('visibility') !== 'private' ? ' checked' : '' %>>
+                      <input type="radio" name="visibility" value="public" class="form-selectgroup-input"<%= !['private', 'unlisted'].includes(v('visibility')) ? ' checked' : '' %>>
                       <span class="form-selectgroup-label d-flex align-items-center p-3">
                         <span class="me-3"><span class="form-selectgroup-check"></span></span>
                         <span><strong><%= t("Public") %></strong><span class="d-block text-secondary"><%= t("Anyone can see it once published.") %></span></span>
+                      </span>
+                    </label>
+                    <label class="form-selectgroup-item flex-fill">
+                      <input type="radio" name="visibility" value="unlisted" class="form-selectgroup-input"<%= v('visibility') === 'unlisted' ? ' checked' : '' %>>
+                      <span class="form-selectgroup-label d-flex align-items-center p-3">
+                        <span class="me-3"><span class="form-selectgroup-check"></span></span>
+                        <span><strong><%= t("Link only") %></strong><span class="d-block text-secondary"><%= t("Not listed anywhere; opens from its link.") %></span></span>
                       </span>
                     </label>
                     <label class="form-selectgroup-item flex-fill">

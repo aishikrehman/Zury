@@ -23,6 +23,7 @@ function labelTables(code) {
     SUBMISSION_STATUSES: mapValues(contestLabels.SUBMISSION_STATUSES, withLabel),
     PROJECT_CATEGORIES: mapValues(contestLabels.PROJECT_CATEGORIES, t),
     PARTICIPATION_MODES: mapValues(PARTICIPATION_MODES, t),
+    PARTICIPATION: require('../services/participationService'),
     FEATURE_FIELDS: FEATURE_FIELDS.map(([k, label, help]) => [k, t(label), t(help)]),
     DATE_FIELDS: DATE_FIELDS.map(([k, label]) => [k, t(label)]),
     EVENT_ROLES: mapValues(EVENT_ROLES, withLabel),

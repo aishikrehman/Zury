@@ -107,6 +107,8 @@ async function create(req, res, next) {
     const problems = await addStartingTeam(req, contest, { ...contestForm.defaultSettings(type), ...parsed.settings });
     req.flash('success', 'Event created as a draft. Review the settings, then publish it when ready.');
     if (problems.length) req.flash('warning', `Not added: ${problems.join(' ')}`);
+    const pr = await require('../services/participationService').afterSave({ actorId: req.user.id, contest }).catch(() => ({}));
+    if (pr.eligibleError) req.flash('warning', req.t('The eligible articles could not be fetched: {error}', { error: pr.eligibleError }));
     const full = await prisma.contest.findUnique({ where: { id: contest.id }, select: { id: true, path: true } });
     res.redirect(`${eventPath(full)}/config`);
   } catch (err) {

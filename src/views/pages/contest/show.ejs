@@ -18,6 +18,9 @@
 <div class="page-body"><div class="container-xl">
 
   <%# Why the Join button is missing, for someone who can't take part. %>
+  <% if (signUp && signUp.url) { %>
+    <div class="alert alert-info d-flex align-items-center gap-2"><i class="ti ti-list-check"></i><div class="flex-fill"><%= signUp.onwiki ? t('Sign up on the event page on the wiki, then join here.') : t('Add your name to the participants list on the wiki.') %></div><a class="btn btn-sm btn-primary" href="<%= signUp.url %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= t('Open the wiki page') %></a></div>
+  <% } %>
   <% if (currentUser && !isParticipant && !eligibility.eligible && eligibility.reasons.length) { %>
     <div class="alert alert-warning"><i class="ti ti-info-circle"></i><div><% eligibility.reasons.forEach((r) => { %><div><%= t(r) %></div><% }) %></div></div>
   <% } %>

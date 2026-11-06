@@ -42,7 +42,7 @@ const contest = express.Router({ mergeParams: true });
 
 contest.get('/', contestController.show);
 // Joining is a form button; opening /join directly goes to the event page with that button.
-contest.get('/join', (req, res) => res.redirect(req.base));
+contest.get('/join', requireAuth, contestController.joinForm);
 contest.post('/join', requireAuth, contestController.join);
 contest.post('/leave', requireAuth, contestController.leave);
 
@@ -69,6 +69,7 @@ contest.post('/wikis/:wikiId(\\d+)/:action(remove)', requireEventWide('deleteEve
 
 // Per-role permission checks happen in the controller/service.
 contest.get('/participants', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.people);
+contest.post('/participants/import', requirePermission('manageParticipants'), contestController.importParticipants);
 contest.post('/members', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.addMember);
 contest.post('/members/:membershipId(\\d+)/remove', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.removeMember);
 contest.get('/message', requirePermission('sendNotifications'), messageController.form);

@@ -33,6 +33,8 @@ model User {
   uiSidebarCollapsed    Boolean   @default(false)
   // JSON: the other display options (see src/config/displayOptions.js).
   uiPrefs               String    @default("{}") @db.Text
+  // Details given when registering for events (email, legal name, phone), reused next time.
+  profile               String    @default("{}") @db.Text
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   lastLoginAt           DateTime?
@@ -160,6 +162,7 @@ model Contest {
   seriesSlug          SeriesSlug?
   submissions         Submission[]
   memberships         ContestMembership[]
+  teams               Team[]
   permissionOverrides ContestPermission[]
   auditLogs           AuditLog[]
   blocks              EventBlock[]
@@ -314,6 +317,11 @@ model ContestSettings {
   // JSON array of namespace numbers; empty means the event type's default.
   eligibleNamespaces          String    @default("[]") @db.Text
   typeConfig                  String    @default("{}") @db.Text
+  // How people take part, JSON (see src/services/participationService.js): mode, asked
+  // details, the on-wiki page, a fixed list, outsiders, eligible articles.
+  participation               String    @default("{}") @db.Text
+  // The articles that may be submitted, resolved from participation.eligible; empty: any.
+  eligibleTitles              String    @default("[]") @db.MediumText
   // Contribution tracking. Participant tracking uses contributionDiscoveryEnabled.
   // JSON arrays: hashtags without "#", categories without "Category:".
   trackHashtags               String    @default("[]") @db.Text
@@ -372,7 +380,11 @@ model ContestMembership {
   status       String   @default("active")
   assignedAt   DateTime @default(now())
   assignedById Int?
+  // A participant's answers when registering (email, legal name, phone…), JSON.
+  details      String   @default("{}") @db.Text
+  teamId       Int?
 
+  team       Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
   contest    Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   user       User    @relation("MembershipHolder", fields: [userId], references: [id], onDelete: Cascade)
   assignedBy User?   @relation("MembershipAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
@@ -764,4 +776,17 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+// A team in an event; participants join one when the event takes teams.
+model Team {
+  id        Int      @id @default(autoincrement())
+  contestId Int
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+
+  contest Contest             @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  members ContestMembership[]
+
+  @@unique([contestId, name])
 }

@@ -34,14 +34,9 @@ const DATE_ORDER = [
 ];
 
 const FEATURE_FIELDS = [
-  ['juryReviewEnabled', 'Reviewers review', 'Jurors score or approve entries.'],
   ['appealsEnabled', 'Appeals', 'Participants can appeal decisions.'],
-  ['registrationEnabled', 'Self-registration', 'Logged-in users can join the event themselves.'],
   ['massSubmissionEnabled', 'Mass submission', 'Participants can submit many entries at once.'],
-  ['autoValidationEnabled', 'Automatic validation', 'Entries are checked against the rules when submitted.'],
   ['contributionDiscoveryEnabled', "Track participants' edits", "Participants' edits during the event are found automatically."],
-  ['badgesEnabled', 'Badges', 'Award badges to participants and winners.'],
-  ['wordCountEnabled', 'Show word counts', 'Show the words of each article in tables, results and statistics. (What the results count is set under Review.)'],
   ['publicStatisticsEnabled', 'Public statistics', 'Anyone can see the statistics page.'],
   ['participantNotificationsEnabled', 'Participant notifications', 'Participants are notified about their entries.'],
 ];
@@ -166,7 +161,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const timezone = str(body.timezone);
   if (!timezone) errors.timezone = 'Choose a time zone.';
   else if (!isValidTimezone(timezone)) errors.timezone = 'Unknown time zone.';
-  const visibility = body.visibility === 'private' ? 'private' : 'public';
+  const visibility = ['private', 'unlisted'].includes(body.visibility) ? body.visibility : 'public';
 
   const logoUrl = imageUrl(str(body.logoUrl), errors, 'logoUrl');
   const bannerUrl = imageUrl(str(body.bannerUrl), errors, 'bannerUrl');
@@ -193,9 +188,10 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
     minEditCount: intField(body.minEditCount, { min: 0, max: 10000000 }, errors, 'minEditCount'),
     participantLimit: intField(body.participantLimit, { min: 1, max: 1000000, optional: true }, errors, 'participantLimit'),
     allowJuryParticipation: bool(body.allowJuryParticipation),
-    allowOrganizerParticipation: bool(body.allowOrganizerParticipation),
+    allowOrganizerParticipation: bool(body.allowJuryParticipation),
     anonymousParticipants: bool(body.anonymousParticipants),
   };
+  Object.assign(settings, require('./participationService').parse(body, errors));
   const namespaces = listOf(body.eligibleNamespaces).map(Number);
   if (namespaces.some((n) => !Number.isInteger(n) || n < 0 || n > 9999)) errors.eligibleNamespaces = 'Use namespace numbers such as 0 or 6.';
   settings.eligibleNamespaces = JSON.stringify(namespaces.filter(Number.isInteger));
@@ -254,7 +250,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   settings.trackCategories = JSON.stringify([...new Set(categories)]);
   for (const [key] of FEATURE_FIELDS) settings[key] = bool(body[key]);
   // Results by words need the word counts shown.
-  if (settings.rankBy === 'words') settings.wordCountEnabled = true;
+  settings.wordCountEnabled = settings.rankBy === 'words';
 
   const typeInput = Object.fromEntries(
     typeDef.fields.map((f) => [f.key, body[`type_${f.key}`]]),
@@ -321,7 +317,7 @@ function toForm(contest, settings) {
     minAccountAgeDays: String(s.minAccountAgeDays),
     minEditCount: String(s.minEditCount),
     participantLimit: s.participantLimit == null ? '' : String(s.participantLimit),
-    allowJuryParticipation: s.allowJuryParticipation,
+    allowJuryParticipation: s.allowJuryParticipation || s.allowOrganizerParticipation,
     allowOrganizerParticipation: s.allowOrganizerParticipation,
     anonymousParticipants: s.anonymousParticipants,
     eligibleNamespaces: JSON.parse(s.eligibleNamespaces || '[]').join(', '),
@@ -346,6 +342,8 @@ function toForm(contest, settings) {
     trackCategories: JSON.parse(s.trackCategories || '[]').join('\n'),
   });
   for (const [key] of FEATURE_FIELDS) form[key] = s[key];
+  const pp = require('./participationService').read(s);
+  Object.assign(form, { participation_mode: pp.mode, participation_ask: pp.ask, participation_page: pp.page, participation_users: pp.users.join(String.fromCharCode(10)), participation_outsiders: pp.outsiders, eligible_source: pp.eligible.source, eligible_value: pp.eligible.value, eligible_depth: String(pp.eligible.depth) });
   const typeConfig = readTypeConfig(contest.type, s.typeConfig);
   for (const [key, value] of Object.entries(typeConfig)) form[`type_${key}`] = Array.isArray(value) ? value : value;
   return form;

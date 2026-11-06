@@ -1,0 +1,33 @@
+<%- include('../../partials/contestHeader', { active: 'overview' }) %>
+<div class="page-body"><div class="container-xl">
+  <div class="row justify-content-center"><div class="col-lg-6">
+    <form class="card" method="post" action="<%= base %>/join">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></h3></div>
+      <div class="card-body">
+        <%# Details asked by the organizers; filled in from what you gave other events. %>
+        <% ask.forEach((k) => { %>
+          <div class="mb-3">
+            <label class="form-label required" for="j-<%= k %>"><%= t(ASK[k]) %></label>
+            <input class="form-control" id="j-<%= k %>" name="<%= k %>" required value="<%= profile[k] || '' %>" type="<%= k === 'email' ? 'email' : k === 'phone' ? 'tel' : 'text' %>">
+          </div>
+        <% }) %>
+        <% if (ask.length) { %><div class="form-hint mb-3"><%= t("Only the organizers see these. They are kept on your profile for the next event.") %></div><% } %>
+        <% if (teamMode !== 'individual') { %>
+          <div class="mb-3">
+            <label class="form-label<%= teamMode === 'team' ? ' required' : '' %>" for="j-team"><%= t("Team") %></label>
+            <input class="form-control" id="j-team" name="team" list="j-teams" maxlength="100"<%= teamMode === 'team' ? ' required' : '' %> placeholder="<%= t("Choose a team, or type a new name") %>">
+            <datalist id="j-teams"><% teams.forEach((tm) => { %><option value="<%= tm.name %>"><% }) %></datalist>
+          </div>
+        <% } %>
+        <% if (joinWikis.length) { %>
+          <div class="mb-3">
+            <label class="form-label required" for="j-wiki"><%= t("Your wiki") %></label>
+            <select class="form-select" id="j-wiki" name="wiki" required><% joinWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= wikiLocal(w.wiki) %></option><% }) %></select>
+          </div>
+        <% } %>
+      </div>
+      <div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t("Join this event") %></button></div>
+    </form>
+  </div></div>
+</div></div>

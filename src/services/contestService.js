@@ -11,7 +11,8 @@ const SORTS = {
 // Draft and private events are visible only to their members and to those
 // with management authority over them (platform roles, local admins).
 function isVisible(contest, scope) {
-  if (contest.visibility === 'public' && contest.status !== 'draft') return true;
+  // Unlisted events open from their link but are not listed anywhere.
+  if (['public', 'unlisted'].includes(contest.visibility) && contest.status !== 'draft') return true;
   return scope.hasAnyRole || scope.permissions.has('manageEvent') || scope.wikisWith('manageEvent').length > 0;
 }
 
@@ -93,7 +94,7 @@ async function listForUser(userId, { publicOnly = false } = {}) {
 function members(contestId) {
   return prisma.contestMembership.findMany({
     where: { contestId, status: 'active' },
-    include: { user: { select: { id: true, username: true, homeWiki: true, avatarUrl: true, lastLoginAt: true } } },
+    include: { user: { select: { id: true, username: true, homeWiki: true, avatarUrl: true, lastLoginAt: true } }, team: { select: { name: true } } },
     orderBy: [{ role: 'asc' }, { user: { username: 'asc' } }],
   });
 }
