@@ -1206,7 +1206,6 @@
   "Length": "মেয়াদ",
   "Days left": "বাকি দিন",
   "{n} day": "{n} দিন",
-  "This edition already exists: your wiki will join it.": "এই সংস্করণটি আগে থেকেই আছে: আপনার উইকি এতে যুক্ত হবে।",
   "{wiki} is already part of this edition.": "{wiki} আগে থেকেই এই সংস্করণের অংশ।",
   "{wiki} added to this edition.": "{wiki} এই সংস্করণে যুক্ত হয়েছে।",
   "Request to add {wiki} sent to the organizers of this edition.": "{wiki} যুক্ত করার অনুরোধ এই সংস্করণের আয়োজকদের কাছে পাঠানো হয়েছে।",
@@ -1367,5 +1366,7 @@
   "Give the edition a title.": "সংস্করণের একটি শিরোনাম দিন।",
   "{n} edition": "{n}টি সংস্করণ",
   "{n} editions": "{n}টি সংস্করণ",
-  "{n} word": "{n} শব্দ"
+  "{n} word": "{n} শব্দ",
+  "Directly under the series": "সরাসরি সিরিজের অধীনে",
+  "Choose one of the series’ editions, or none. New editions are made on the series page.": "সিরিজের একটি সংস্করণ বাছুন, বা কোনোটিই নয়। নতুন সংস্করণ সিরিজ পাতায় তৈরি করা হয়।"
 }

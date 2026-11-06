@@ -37,6 +37,7 @@ async function seriesFields(tx, series, title, actorId = null) {
   }
   if (!series.edition) return { seriesId: row.id, editionId: null };
   const existed = await tx.edition.findUnique({ where: { seriesId_slug: { seriesId: row.id, slug: series.edition } } });
+  if (!existed) throw new EventError('Choose one of the series’ editions, or none. New editions are made on the series page.', 'edition');
   const edition = await editions.findOrCreate(row.id, series.edition, { title }, tx);
   if (edition && !existed && actorId) await tx.scopeRole.create({ data: { userId: actorId, role: 'organizer', editionId: edition.id, assignedById: actorId } });
   if (!edition) throw new EventError(`/${series.slug}/${series.edition} is already the address of an event of this series.`, 'edition');

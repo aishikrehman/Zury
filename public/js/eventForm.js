@@ -112,31 +112,32 @@
     hint.textContent = zt(s && e ? 'An event of this edition: name it, e.g. by its type.' : s ? 'An event directly under the series.' : 'Made from the title; you can change it.');
   }
   if (typeSelect) typeSelect.addEventListener('change', showAddress);
-  // Values filled in from a series; cleared again if the series changes or is removed.
+  // Edition: the chosen series' editions (newest first); a new series has none yet. The latest
+  // one links as the previous edition when that field is empty.
   const prev = $('previousEditionUrl');
-  let autoEdition = null;
   let autoPrev = null;
-  series.addEventListener('change', () => {
-    if (autoEdition !== null && edition.value === autoEdition) edition.value = '';
-    if (autoPrev !== null && prev && prev.value === autoPrev) prev.value = '';
-    autoEdition = autoPrev = null;
-    // An existing series: suggest the next edition and link the latest one.
-    const item = series.value && series.tomselect?.options[series.value];
-    if (item?.latest) {
-      if (!edition.value && /^\d+$/.test(item.latest)) edition.value = autoEdition = String(Number(item.latest) + 1);
-      if (prev && !prev.value) prev.value = autoPrev = `${location.origin}/${series.value}/${item.latest}`;
-    }
-    // Its editions as choices; picking an existing one makes this wiki join it.
-    editions = item?.editions || [];
-    const list = document.getElementById('edition-list');
-    if (list) list.replaceChildren(...[...new Set([autoEdition, ...editions].filter(Boolean))].map((e) => Object.assign(document.createElement('option'), { value: e })));
+  function fillEditions(item, keep, chosen) {
+    const list = item?.editionList || [];
+    const options = [Object.assign(document.createElement('option'), { value: '', textContent: edition.dataset.noneLabel })];
+    for (const e of list) options.push(Object.assign(document.createElement('option'), { value: e.slug, textContent: e.title && e.title !== e.slug ? `${e.slug} — ${e.title}` : e.slug }));
+    edition.replaceChildren(...options);
+    edition.value = keep && list.some((e) => e.slug === keep) ? keep : '';
+    edition.disabled = !list.length;
+    if (chosen && autoPrev !== null && prev && prev.value === autoPrev) prev.value = '';
+    if (chosen) autoPrev = null;
+    if (chosen && item?.latest && prev && !prev.value) prev.value = autoPrev = `${location.origin}/${item.value}/${item.latest}`;
     showAddress();
-    showJoin();
-  });
-  let editions = [];
-  const joinHint = form.querySelector('[data-edition-hint]');
-  const showJoin = () => joinHint && joinHint.classList.toggle('d-none', !editions.includes(edition.value.trim()));
-  edition.addEventListener('input', () => { showAddress(); showJoin(); });
+  }
+  series.addEventListener('change', () => fillEditions(series.value && series.tomselect?.options[series.value], null, true));
+  edition.addEventListener('change', showAddress);
+  // Opening the form with a series already chosen (editing, or a link from an edition page).
+  if (series.value) {
+    fetch(`/api/series?q=${encodeURIComponent(series.value)}`).then((r) => r.json()).then((rows) => {
+      fillEditions(rows.find((r) => r.value === series.value), edition.dataset.current);
+    }).catch(() => {});
+  } else {
+    edition.disabled = true;
+  }
   showAddress();
 })();
 

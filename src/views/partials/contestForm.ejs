@@ -158,9 +158,11 @@
                 </div>
                 <div class="col-md-2">
                   <label class="form-label" for="edition"><%= t("Edition") %></label>
-                  <input class="form-control<%= inv('edition') %>" id="edition" name="edition" maxlength="20" list="edition-list" autocomplete="off" value="<%= v('edition') %>" placeholder="2026">
-                  <datalist id="edition-list"></datalist>
-                  <div class="form-hint d-none" data-edition-hint><%= t('This edition already exists: your wiki will join it.') %></div>
+                  <%# The chosen series' editions (filled in by eventForm.js); none: directly under the series. New editions are made on the series page. %>
+                  <select class="form-select<%= inv('edition') %>" id="edition" name="edition" data-current="<%= v('edition') %>" data-none-label="<%= t('Directly under the series') %>">
+                    <option value=""><%= t('Directly under the series') %></option>
+                    <% if (v('edition')) { %><option value="<%= v('edition') %>" selected><%= v('edition') %></option><% } %>
+                  </select>
                   <%- err('edition') %>
                 </div>
                 <div class="col-md-6">
