@@ -1,6 +1,6 @@
 // Where an event sits, and so its address. An event has at most one parent: a series directly
-// (/<series>/<slug>), an edition (/<series>/<edition>: an edition has one event, at its own
-// address; its wikis carry the different projects), or none (/events/<slug>).
+// (/<type>/<series>/<slug>), an edition (/<type>/<series>/<edition>: an edition has one event), or
+// none (/events/<slug>). The type begins the address of every series event (/photo/wlm/2026).
 // The address is worked out from that parent and stored, so every page resolves an event by
 // one lookup and nothing is guessed from the shape of an address.
 const prisma = require('../config/prisma');
@@ -15,22 +15,33 @@ const EVENT_TABS = new Set([
   'members', 'overrides', 'blocks', 'statistics', 'certificate',
 ]);
 
-// The address for an event with this slug under this parent ({ seriesId } or { editionId } or neither).
-// selfId: the event itself. An edition's event takes the edition's address; an older edition that
-// already holds several keeps the others under it (/<series>/<edition>/<slug>).
-async function pathFor(slug, { seriesId = null, editionId = null } = {}, client = prisma, selfId = null) {
+// The address for an event with this slug under this parent ({ seriesId } or { editionId } or neither,
+// with the event's type). selfId: the event itself. An edition's event takes /<type>/<series>/<edition>;
+// an older edition that already holds several keeps the others under it (…/<edition>/<slug>).
+async function pathFor(slug, { seriesId = null, editionId = null, type = null } = {}, client = prisma, selfId = null) {
+  if ((seriesId || editionId) && !type) type = await typeFor({ seriesId, editionId, selfId }, client);
   if (editionId) {
     const e = await client.edition.findUnique({ where: { id: editionId }, select: { slug: true, series: { select: { slug: true } } } });
     if (!e) return null;
-    const base = `/${e.series.slug}/${e.slug}`;
+    const base = `/${type}/${e.series.slug}/${e.slug}`;
     const holder = await client.contest.findFirst({ where: { path: base, deletedAt: null, ...(selfId && { NOT: { id: selfId } }) }, select: { id: true } });
     return holder ? `${base}/${slug}` : base;
   }
   if (seriesId) {
     const s = await client.eventSeries.findUnique({ where: { id: seriesId }, select: { slug: true } });
-    return s ? `/${s.slug}/${slug}` : null;
+    return s ? `/${type}/${s.slug}/${slug}` : null;
   }
   return `/events/${slug}`;
+}
+
+// The type for an address when the caller didn't give it: the event's own, else its series'.
+async function typeFor({ seriesId, editionId, selfId }, client = prisma) {
+  if (selfId) {
+    const c = await client.contest.findUnique({ where: { id: selfId }, select: { type: true } });
+    if (c) return c.type;
+  }
+  const sid = seriesId || (await client.edition.findUnique({ where: { id: editionId }, select: { seriesId: true } }))?.seriesId;
+  return (sid && (await seriesType(sid, {}, client))) || 'events';
 }
 
 // Whether this slug is free under this parent; excludeId is the event itself when it's renamed.
@@ -50,7 +61,7 @@ async function slugFree(slug, parent, { excludeId = null } = {}, client = prisma
 // After an event is created, moved, renamed or deleted: its stored address, and its name
 // entry under the series when it sits there directly.
 async function sync(contestId, client = prisma) {
-  const c = await client.contest.findUnique({ where: { id: contestId }, select: { id: true, slug: true, seriesId: true, editionId: true, deletedAt: true } });
+  const c = await client.contest.findUnique({ where: { id: contestId }, select: { id: true, slug: true, type: true, seriesId: true, editionId: true, deletedAt: true } });
   if (!c) return null;
   await client.seriesSlug.deleteMany({ where: { contestId: c.id, ...(c.seriesId && !c.deletedAt && { NOT: { seriesId: c.seriesId, slug: c.slug } }) } });
   const path = c.deletedAt ? null : await pathFor(c.slug, c, client, c.id);

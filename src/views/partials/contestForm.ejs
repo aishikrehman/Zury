@@ -69,7 +69,7 @@
                 <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label required" for="type"><%= t("Type of event") %></label>
-                  <select class="form-select<%= inv('type') %>" id="type" <%- creating ? 'name="type" required' : 'disabled' %> data-type-select>
+                  <select class="form-select<%= inv('type') %>" id="type" <%- creating || (typeof contest !== 'undefined' && contest && contest.status === 'draft' && !wikiMode) ? 'name="type" required' : 'disabled' %> data-type-select>
                     <option value=""<%= type ? '' : ' selected' %>><%= t("Choose…") %></option>
                     <% Object.entries(EVENT_TYPES).forEach(([key, td]) => { %>
                       <option value="<%= key %>"<%= type === key ? ' selected' : '' %> data-defaults="<%= JSON.stringify(FEATURE_DEFAULTS[key]) %>" data-namespaces="<%= td.defaultNamespaces.join(', ') %>" data-description="<%= td.description %>" data-guide-rules="<%= (td.guide || {}).rules || '' %>" data-guide-judging="<%= (td.guide || {}).judging || '' %>"><%= td.label %></option>

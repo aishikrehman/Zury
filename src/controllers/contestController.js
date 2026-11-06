@@ -198,7 +198,8 @@ async function updateWikiConfig(req, res, next) {
 
 async function updateConfig(req, res, next) {
   if (req.wikiScope) return updateWikiConfig(req, res, next);
-  const type = req.contest.type;
+  // The type can change while the event is a draft; its type settings then start from that type's defaults.
+  const type = req.contest.status === 'draft' && EVENT_TYPES[req.body.type] ? req.body.type : req.contest.type;
   let loaded;
   try {
     loaded = await catalogService.validators();

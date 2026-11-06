@@ -434,7 +434,7 @@ async function seriesPage(req, res, next) {
     const stats = require('../services/statsService');
     // The whole series at once: a person or an entry in several editions counts once.
     const totals = await stats.rollup([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]);
-    const rows = summary.map((e) => ({ label: e.slug, sub: e.title, href: `/${found.slug}/${e.slug}`, status: e.status, stats: e }));
+    const rows = summary.map((e) => ({ label: e.slug, sub: e.title, href: e.events.length === 1 && e.events[0].path ? e.events[0].path : `/${found.slug}/${e.slug}`, status: e.status, stats: e }));
     for (const c of directEvents) rows.push({ label: c.title, sub: req.t('Event of the series'), href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) });
     res.render('pages/events/series', { title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, rows, canRun, tab, ...(await levelExtras({ seriesId: found.id }, tab)) });
   } catch (err) {
@@ -452,9 +452,6 @@ async function editionTabs(req, res, next) {
     if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
     const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
     if (!edition) return next();
-    // Its event, when it has one, is at this address; the edition's own tabs are under /series.
-    const managing = req.path.startsWith('/series/');
-    if (!managing && (await prisma.contest.findFirst({ where: { path: `/${sr.slug}/${edition.slug}`, deletedAt: null }, select: { id: true } }))) return next();
     // The edition's own people (or the series' with a role for its children) see its drafts.
     const canRun = await scopeRoles.canRunEdition(req, edition);
     const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));

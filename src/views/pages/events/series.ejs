@@ -34,7 +34,7 @@
         <% if (!summary.length) { %><div class="card-body text-secondary"><%= t('No editions yet') %></div><% } else { %>
           <div class="list-group list-group-flush">
             <% summary.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
-              <a class="list-group-item list-group-item-action" href="/<%= series.slug %>/<%= e.slug %>">
+              <a class="list-group-item list-group-item-action" href="<%= e.events.length === 1 && e.events[0].path ? e.events[0].path : `/${series.slug}/${e.slug}` %>">
                 <div class="row align-items-center">
                   <div class="col-auto"><div class="h2 m-0"><%= e.slug %></div></div>
                   <div class="col min-w-0">

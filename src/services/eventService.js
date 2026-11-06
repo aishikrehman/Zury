@@ -54,7 +54,7 @@ async function seriesFields(tx, series, title, actorId = null, selfId = null, ty
 async function create({ actorId, type, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
     const series = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, null, type);
-    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, parent: series });
+    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, parent: { ...series, type } });
     const contest = await tx.contest.create({
       data: {
         ...parsed.contest,
@@ -88,9 +88,10 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
   // Locked settings keep their value; a followed setting changed here becomes the event's own.
   parsed.lockedRefused = await inherit.guardUpdate(contest, settings, parsed.settings);
   return prisma.$transaction(async (tx) => {
-    const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, contest.id, contest.type);
+    const newType = parsed.type && parsed.type !== contest.type && contest.status === 'draft' ? parsed.type : contest.type;
+    const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, contest.id, newType);
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
-    const data = { ...parsed.contest, ...parent, slug };
+    const data = { ...parsed.contest, ...parent, slug, ...(newType !== contest.type && { type: newType }) };
     const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).filter((k) => k !== 'followed').map((k) => `settings.${k}`)];
     if (!changed.length) return contest;
 

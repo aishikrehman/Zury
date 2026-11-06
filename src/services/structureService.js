@@ -37,10 +37,10 @@ async function freeName(tx, wanted, parent, excludeId, type = null) {
     if (has) throw new StructureError('This edition already has its event. Add the wikis to that event instead.');
   }
   if (!SLUG.test(wanted)) throw new StructureError('Use lowercase letters, numbers and hyphens for the name.');
-  if (await editions.slugFree(wanted, parent, { excludeId }, tx)) return wanted;
+  if (await editions.slugFree(wanted, { ...parent, type }, { excludeId }, tx)) return wanted;
   for (let i = 2; i < 100; i++) {
     const c = `${wanted.slice(0, 76)}-${i}`;
-    if (await editions.slugFree(c, parent, { excludeId }, tx)) return c;
+    if (await editions.slugFree(c, { ...parent, type }, { excludeId }, tx)) return c;
   }
   throw new StructureError('Could not find a free name there; choose one.');
 }

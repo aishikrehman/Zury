@@ -13,9 +13,13 @@ function forbidden() {
 }
 
 // Paths that can never be an event series (they belong to the app).
+const { EVENT_TYPES } = require('../events/eventTypes');
 const RESERVED = new Set([
   'events', 'contest', 'admin', 'api', 'users', 'dashboard', 'settings', 'submissions', 'login', 'logout',
   'auth', 'layout', 'preferences', 'review', 'vendor', 'css', 'js', 'images', 'about', 'favicon.ico', 'series', 'robots.txt', 'sitemap.xml', 'icons',
+  'notifications',
+  // Event types begin the addresses of series events (/photo/wlm/2026).
+  ...Object.keys(require('../events/eventTypes').EVENT_TYPES),
 ]);
 
 const notFound = (res) => res.status(404).render('pages/404', { title: 'Event Not Found' });
@@ -108,7 +112,8 @@ async function loadContest(req, res, next) {
  */
 async function resolveEvent(req) {
   const segs = req.path.split('/').filter(Boolean).map((x) => { try { return decodeURIComponent(x); } catch { return x; } });
-  if (!segs.length || (RESERVED.has(segs[0]) && segs[0] !== 'events')) return null;
+  // Event addresses begin with /events or with the event's type (/photo/wlm/2026).
+  if (!segs.length || (RESERVED.has(segs[0]) && segs[0] !== 'events' && !EVENT_TYPES[segs[0]])) return null;
   const prefixes = [];
   for (let n = Math.min(3, segs.length); n >= 1; n -= 1) prefixes.push('/' + segs.slice(0, n).join('/'));
   const found = await prisma.contest.findMany({ where: { path: { in: prefixes }, deletedAt: null }, include: EVENT_INCLUDE });

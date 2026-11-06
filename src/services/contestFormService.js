@@ -130,10 +130,12 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   // An event in an edition is named by its type unless named (/wam/2026/writing).
   const fallbackSlug = (edition ? type : slugify(title)) || type || 'event';
   let slug = typedSlug || fallbackSlug;
-  const autoSlug = !typedSlug || (inSeries && (!SLUG.test(typedSlug) || RESERVED.has(typedSlug)));
+  const autoSlug = !typedSlug || (inSeries && !SLUG.test(typedSlug));
   if (autoSlug) slug = fallbackSlug.slice(0, 80).replace(/-+$/, '');
   if (!SLUG.test(slug) || slug.length > 80) errors.slug = 'Use lowercase Latin letters, numbers and single hyphens, e.g. dhaka-photowalk-2026.';
-  else if (RESERVED.has(slug)) errors.slug = 'This address is used by Zury itself; choose another.';
+  // An event's name never begins an address (/events/<name>, /<type>/<series>/<name>); names that
+  // are pages of /events are refused where the address is worked out.
+  else if (!inSeries && require('./editionService').EVENTS_RESERVED.has(slug)) errors.slug = 'This address is used by Zury itself; choose another.';
 
   const category = PROJECT_CATEGORIES[body.category] ? body.category : '';
   const previousEditionUrl = str(body.previousEditionUrl);
@@ -260,8 +262,10 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   const typeResult = parseTypeConfig(type, typeInput);
   for (const [k, v] of Object.entries(typeResult.errors)) errors[`type_${k}`] = v;
   settings.typeConfig = JSON.stringify(typeResult.values);
+  const parsedType = type;
 
   return {
+    type: parsedType,
     errors,
     series: seriesSlug ? { slug: seriesSlug, edition: edition || null, title: seriesTitle } : null,
     autoSlug,
