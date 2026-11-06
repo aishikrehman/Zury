@@ -4,12 +4,13 @@
   const base = `/${series.slug}`;
   const tabs = [['overview', 'layout-dashboard', t('Overview')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
 %>
-<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events']], heading: series.title, status: series.status === 'archived' ? 'archived' : '', meta: `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span>`, base, tab, tabs }) %>
+<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events']], heading: series.title, inline: canRun ? { action: `/series/${series.slug}/update`, name: 'title', label: t('Name'), maxlength: 120, hidden: { description: series.description, back: 'overview' } } : null, status: series.status === 'archived' ? 'archived' : '', meta: `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span>`, base, tab, tabs }) %>
 <div class="page-body">
   <div class="container-xl">
 
     <% if (tab === 'overview') { %>
-      <% if (series.description) { %><p class="text-secondary" style="white-space: pre-line"><%= series.description %></p><% } %>
+      <% if (canRun) { %><div class="mb-3"><%- include('../../partials/inlineEdit', { action: `/series/${series.slug}/update`, name: 'description', value: series.description, label: t('Description'), multiline: true, maxlength: 2000, hidden: { title: series.title, back: 'overview' }, viewTag: 'p', viewClass: 'text-secondary m-0', emptyText: t('Add a description') }) %></div>
+      <% } else if (series.description) { %><p class="text-secondary" style="white-space: pre-line"><%= series.description %></p><% } %>
       <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition'), table: false }) %>
       <div class="card mb-3">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3>

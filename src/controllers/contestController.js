@@ -509,3 +509,29 @@ async function structure(req, res, next) {
   }
 }
 module.exports.structure = structure;
+
+// One field edited in place on the event's pages: its title or its description.
+async function inlineUpdate(req, res, next) {
+  try {
+    const data = {};
+    if ('title' in req.body) {
+      const title = String(req.body.title || '').trim().slice(0, 1000);
+      if (!title) {
+        req.flash('danger', req.t('Give the event a title.'));
+        return res.redirect(req.eventBase);
+      }
+      data.title = title;
+    }
+    if ('description' in req.body) data.description = String(req.body.description || '').trim().slice(0, 10000);
+    const changed = Object.keys(data).filter((k) => data[k] !== req.contest[k]);
+    if (changed.length) {
+      await prisma.contest.update({ where: { id: req.contest.id }, data });
+      await require('../services/auditService').record({ actorId: req.user.id, contestId: req.contest.id, action: 'contest.updated', entityType: 'Contest', entityId: req.contest.id, details: { changed } });
+      req.flash('success', req.t('Saved.'));
+    }
+    res.redirect(req.eventBase);
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports.inlineUpdate = inlineUpdate;

@@ -1386,5 +1386,12 @@
   "You can now follow {event}.": "আপনি এখন {event} অনুসরণ করতে পারবেন।",
   "You were made an organizer of {name}.": "আপনাকে {name}-এর আয়োজক করা হয়েছে।",
   "You were added to the jury of {name}.": "আপনাকে {name}-এর পর্যালোচক হিসেবে যোগ করা হয়েছে।",
-  "You can now follow {name}.": "আপনি এখন {name} অনুসরণ করতে পারবেন।"
+  "You can now follow {name}.": "আপনি এখন {name} অনুসরণ করতে পারবেন।",
+  "Add a description": "বিবরণ যোগ করুন",
+  "Give the event a title.": "ইভেন্টের একটি শিরোনাম দিন।",
+  "Organizers add participants to this event themselves.": "আয়োজকরা নিজেরাই এই ইভেন্টে অংশগ্রহণকারী যোগ করেন।",
+  "Registration has not opened yet.": "নিবন্ধন এখনো শুরু হয়নি।",
+  "Registration has closed.": "নিবন্ধন বন্ধ হয়ে গেছে।",
+  "The event is full.": "ইভেন্টে আর জায়গা নেই।",
+  "Log in to join this event.": "এই ইভেন্টে যোগ দিতে লগইন করুন।"
 }

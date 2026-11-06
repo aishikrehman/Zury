@@ -48,7 +48,11 @@
         <span class="z-evhead-logo is-icon" title="<%= headProj.label %> · <%= CONTEST_TYPES[contest.type] %>"><i class="ti ti-<%= headProj.icon %>"></i></span>
       <% } %>
       <div class="z-evhead-text">
+        <% if (active === 'overview' && !wikiScope && can('editEvent')) { %>
+          <%- include('./inlineEdit', { action: `${eventBase}/inline`, name: 'title', value: contest.title, label: t('Title'), multiline: false, maxlength: 1000, viewTag: 'h1', viewClass: 'z-evhead-title' }) %>
+        <% } else { %>
         <h1 class="z-evhead-title"><a href="<%= base %>"><%= contest.title %></a><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
+        <% } %>
         <div class="z-evhead-meta">
           <span class="z-evhead-status is-<%= color %>"><i></i><%= t(st.label) %></span>
           <span><i class="ti ti-<%= typeDef.icon || 'calendar-event' %>"></i><%= t(typeDef.label) %></span>

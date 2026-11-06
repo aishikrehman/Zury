@@ -202,7 +202,7 @@ async function seriesAction(req, res, next) {
     if (!(err instanceof seriesService.SeriesError)) return next(err);
     req.flash('danger', err.message);
   }
-  res.redirect(req.params.action === 'delete' ? '/series' : `/${req.params.series}?tab=settings`);
+  res.redirect(req.params.action === 'delete' ? '/series' : `/${req.params.series}${req.body.back === 'overview' ? '' : '?tab=settings'}`);
 }
 
 
@@ -339,7 +339,7 @@ module.exports.editionFountain = editionFountain;
 // Stage 5 on an edition or a series: copy an edition, archive or unarchive a level.
 async function levelAction(req, res, next) {
   const structureService = require('../services/structureService');
-  const back = `/${req.params.series}${req.params.edition ? `/${req.params.edition}` : ''}?tab=settings`;
+  const back = `/${req.params.series}${req.params.edition ? `/${req.params.edition}` : ''}${req.body && req.body.back === 'overview' ? '' : '?tab=settings'}`;
   try {
     const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
     if (!sr) return next();

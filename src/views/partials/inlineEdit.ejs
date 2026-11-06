@@ -1,0 +1,23 @@
+<%# One value edited where it is shown: the value with a pencil; the pencil turns it into a field.
+    Expects: action, name, value, label, multiline (bool), maxlength, hidden ({ name: value } sent as is),
+    viewTag ('h1', 'h2', 'p' …), viewClass, emptyText (shown, as a link to edit, when there is no value). %>
+<% const hiddenFields = typeof hidden !== 'undefined' ? hidden : {}; const tag = typeof viewTag !== 'undefined' ? viewTag : 'div'; %>
+<form method="post" action="<%= action %>" class="z-inline" data-inline>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <% Object.entries(hiddenFields).forEach(([k, v]) => { %><input type="hidden" name="<%= k %>" value="<%= v == null ? '' : v %>"><% }) %>
+  <div class="z-inline-view">
+    <% if (value) { %>
+      <<%= tag %> class="<%= typeof viewClass !== 'undefined' ? viewClass : '' %>"<%- multiline ? ' style="white-space: pre-line"' : '' %>><%= value %><button class="btn btn-sm btn-icon btn-ghost-secondary ms-1 align-baseline" type="button" data-inline-open title="<%= t('Edit') %>" aria-label="<%= t('Edit') %>: <%= label %>"><i class="ti ti-pencil"></i></button></<%= tag %>>
+    <% } else { %>
+      <button class="btn btn-link px-0" type="button" data-inline-open><i class="ti ti-plus me-1"></i><%= typeof emptyText !== 'undefined' ? emptyText : t('Add') %></button>
+    <% } %>
+  </div>
+  <div class="z-inline-edit">
+    <% if (multiline) { %>
+      <textarea class="form-control mb-2" name="<%= name %>" rows="3" maxlength="<%= maxlength %>" aria-label="<%= label %>"><%= value %></textarea>
+    <% } else { %>
+      <input class="form-control form-control-lg mb-2" name="<%= name %>" value="<%= value %>" maxlength="<%= maxlength %>" required aria-label="<%= label %>">
+    <% } %>
+    <div class="d-flex gap-2"><button class="btn btn-sm btn-primary" type="submit"><%= t('Save') %></button><button class="btn btn-sm" type="button" data-inline-cancel><%= t('Cancel') %></button></div>
+  </div>
+</form>

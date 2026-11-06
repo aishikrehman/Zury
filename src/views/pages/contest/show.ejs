@@ -23,7 +23,11 @@
   <% } %>
 
   <%# ── About the event, then its wikis ── %>
-  <% if (contest.description) { %>
+  <% if (!wikiScope && can('editEvent')) { %>
+    <div class="card mb-3 z-about"><div class="card-body">
+      <%- include('../../partials/inlineEdit', { action: `${eventBase}/inline`, name: 'description', value: contest.description, label: t('Description'), multiline: true, maxlength: 10000, viewTag: 'p', viewClass: 'mb-0 z-lead', emptyText: t('Add a description') }) %>
+    </div></div>
+  <% } else if (contest.description) { %>
     <div class="card mb-3 z-about"><div class="card-body"><p class="mb-0 z-lead" style="white-space: pre-line"><%= contest.description %></p></div></div>
   <% } %>
   <% if (wikiParts.length) { %>

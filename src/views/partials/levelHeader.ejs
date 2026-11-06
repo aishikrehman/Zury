@@ -1,13 +1,13 @@
 <%# A series or edition page: breadcrumb, title and status on the left, its tabs on the right.
     Expects: crumbs [[label, href]], heading, status (CONTEST_STATUSES key or ''), meta (trusted HTML or ''),
-    base (the page's address), tab, tabs [[key, icon, label]]. %>
+    base (the page's address), tab, tabs [[key, icon, label]]; optional inline (inlineEdit options for the title). %>
 <% const st = status ? (CONTEST_STATUSES[status] || { label: status, badge: 'secondary' }) : null; %>
 <div class="page-header d-print-none">
   <div class="container-xl">
     <ol class="breadcrumb mb-1"><% crumbs.forEach(([label, href]) => { %><li class="breadcrumb-item"><a href="<%= href %>"><%= label %></a></li><% }) %><li class="breadcrumb-item active"><%= heading %></li></ol>
     <div class="z-account-bar">
       <div class="min-w-0">
-        <h2 class="page-title"><%= heading %></h2>
+        <% if (typeof inline !== 'undefined' && inline) { %><%- include('./inlineEdit', { ...inline, value: heading, viewTag: 'h2', viewClass: 'page-title', multiline: false }) %><% } else { %><h2 class="page-title"><%= heading %></h2><% } %>
         <div class="z-evhead-meta">
           <% if (st) { %><span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>"><i></i><%= t(st.label) %></span><% } %>
           <%- meta %>

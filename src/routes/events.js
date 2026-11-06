@@ -49,6 +49,7 @@ contest.post('/leave', requireAuth, contestController.leave);
 contest.get('/config', requirePermission('editEvent', 'manageEvent'), contestController.config);
 contest.post('/config', requirePermission('editEvent'), contestController.updateConfig);
 contest.post('/structure/:action(move|copy)', requirePermission('manageEvent'), contestController.structure);
+contest.post('/inline', requirePermission('editEvent'), contestController.inlineUpdate);
 contest.post('/config/follow', requirePermission('editEvent'), contestController.followSetting);
 contest.post('/status', requireEventWide('manageEvent'), contestController.changeStatus);
 contest.post('/delete', requireEventWide('deleteEvent'), contestController.destroy);

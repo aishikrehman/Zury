@@ -6,7 +6,7 @@
   const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
   const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
 %>
-<%- include('../../partials/levelHeader', { crumbs: [[sr.title, `/${sr.slug}`]], heading: edition.title, status: edition.status, meta: `${dates}<span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', events.length)}</span>`, base, tab, tabs }) %>
+<%- include('../../partials/levelHeader', { crumbs: [[sr.title, `/${sr.slug}`]], heading: edition.title, inline: canRun ? { action: `/series/${sr.slug}/${edition.slug}/update`, name: 'title', label: t('Title'), maxlength: 200, hidden: { description: edition.description, startDate: day(edition.startDate), endDate: day(edition.endDate), back: 'overview' } } : null, status: edition.status, meta: `${dates}<span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', events.length)}</span>`, base, tab, tabs }) %>
 <div class="page-body">
   <div class="container-xl">
 
@@ -31,7 +31,8 @@
           </form>
         <% } %>
       <% } %>
-      <% if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
+      <% if (canRun) { %><div class="mb-3"><%- include('../../partials/inlineEdit', { action: `/series/${sr.slug}/${edition.slug}/update`, name: 'description', value: edition.description, label: t('Description'), multiline: true, maxlength: 2000, hidden: { title: edition.title, startDate: day(edition.startDate), endDate: day(edition.endDate), back: 'overview' }, viewTag: 'p', viewClass: 'text-secondary m-0', emptyText: t('Add a description') }) %></div>
+      <% } else if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
       <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event'), table: false }) %><% } %>
       <% if (!events.length) { %>
         <div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div>
