@@ -108,11 +108,10 @@
     const s = slugify(series.value.trim()).slice(0, 40);
     const e = edition.value.trim().toLowerCase();
     // In an edition the event is named by its wiki's code (/wam/2026/bn): no name to type.
-    prefix.textContent = s && e ? `${prefix.dataset.origin}/${s}/${e}/…` : `${prefix.dataset.origin}/${s ? `${s}/` : ''}`;
-    slug.hidden = !!(s && e);
-    // In an edition the address is fixed: shown whole, without an empty box.
-    prefix.closest('.input-group').classList.toggle('z-addr-fixed', !!(s && e));
-    if (s && e) slug.value = e;
+    // In an edition the rest of the address is fixed (series/edition/wiki code): shown, greyed out.
+    prefix.textContent = s && e ? `${prefix.dataset.origin}/` : `${prefix.dataset.origin}/${s ? `${s}/` : ''}`;
+    slug.disabled = !!(s && e);
+    if (s && e) slug.value = `${s}/${e}/…`;
     else if (!slugEdited || slug.value === edition.dataset.current) slug.value = slugify(title.value);
     hint.textContent = '';
   }
@@ -134,8 +133,8 @@
         status.replaceChildren();
         const icon = Object.assign(document.createElement('i'), { className: 'ti me-1 ' + (r.free ? 'ti-circle-check' : 'ti-alert-circle') });
         const msg = r.free ? zt('Free: {path}', { path: r.path }) : r.reason === 'edition' ? zt('This edition already has an event for this wiki.') : r.reason === 'series' ? zt('That series name is taken.') : r.reason === 'form' ? zt('Use lowercase letters, numbers and hyphens.') : zt('Taken.');
-        const fixed = prefix.closest('.input-group').classList.contains('z-addr-fixed');
-        if (fixed && r.path) prefix.textContent = `${prefix.dataset.origin}${r.path}`;
+        const fixed = slug.disabled;
+        if (fixed && r.path) slug.value = r.path.slice(1);
         // The full address is already shown; only a problem needs a line of its own.
         if (fixed && r.free) { status.replaceChildren(); return; }
         status.append(icon, msg);
