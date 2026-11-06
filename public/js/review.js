@@ -1,40 +1,98 @@
-// Review window: buttons set the decision; keys A (accept), R (reject),
-// S (skip), 1–9 (values of the first mark) and Ctrl+Enter (save).
+// Review window: buttons set the decision; keys A (accept), R (reject), S (skip), 1–9 (values of
+// the first mark) and Ctrl+Enter (save). Saving and moving to another entry happen in place.
 (function () {
-  const form = document.querySelector('[data-review-form]');
-  if (!form) return;
-  const decision = form.querySelector('[data-decision]');
+  if (!document.querySelector('[data-review-form]')) return;
+  const formNow = () => document.querySelector('[data-review-form]');
 
-  form.querySelectorAll('[data-decide]').forEach((button) =>
-    button.addEventListener('click', () => {
-      decision.value = button.dataset.decide;
-    }),
-  );
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-decide]');
+    if (!btn) return;
+    const form = btn.closest('form');
+    if (btn.dataset.decide === 'reject') {
+      const box = form && form.querySelector('#comment');
+      if (box && !box.value.trim()) { e.preventDefault(); box.classList.add('is-invalid'); box.focus(); return; }
+    }
+    const field = form && form.querySelector('[data-decision]');
+    if (field) field.value = btn.dataset.decide;
+  }, true);
+
+  document.addEventListener('click', (e) => {
+    const r = e.target.closest && e.target.closest('[data-reason]');
+    if (!r) return;
+    const box = document.getElementById('comment');
+    if (!box) return;
+    box.value = box.value.trim() ? `${box.value.trim()}; ${r.dataset.reason}` : r.dataset.reason;
+    box.classList.remove('is-invalid');
+    box.focus();
+  });
+
+  // Swap in another entry (after saving, skipping or picking one) without a page change.
+  async function swapTo(url, response) {
+    const card = document.querySelector('.z-review-card');
+    if (!card) { location.href = url; return; }
+    card.classList.add('opacity-50');
+    try {
+      const res = response || (await fetch(url, { headers: { 'X-Requested-With': 'fetch' } }));
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const fresh = doc.querySelector('.z-review-card');
+      if (!fresh) { location.href = res.url || url; return; }
+      card.innerHTML = fresh.innerHTML;
+      history.replaceState(null, '', res.url || url);
+      document.dispatchEvent(new CustomEvent('zury:review-swapped'));
+    } catch { location.href = url; }
+    card.classList.remove('opacity-50');
+  }
+  window.zuryReviewSwap = swapTo;
+
+  document.addEventListener('submit', async (e) => {
+    const form = e.target;
+    if (form.method.toLowerCase() === 'get' && form.closest('.z-review-card')) { e.preventDefault(); swapTo(location.pathname + '?' + new URLSearchParams(new FormData(form))); return; }
+    if (!form.matches('[data-review-form]')) return;
+    e.preventDefault();
+    const body = new URLSearchParams(new FormData(form));
+    if (e.submitter && e.submitter.name) body.set(e.submitter.name, e.submitter.value);
+    const res = await fetch(form.action, { method: 'POST', body, headers: { 'X-Requested-With': 'fetch' } }).catch(() => null);
+    if (!res) { form.submit(); return; }
+    swapTo(res.url, res);
+  });
+
+  // Links to other entries inside the review card (skip, previous, next): in place.
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest && e.target.closest('.z-review-card a[href]');
+    if (!link || link.target || e.ctrlKey || e.metaKey) return;
+    const u = new URL(link.href, location.href);
+    if (u.pathname !== location.pathname) return;
+    e.preventDefault();
+    swapTo(u.href);
+  });
 
   document.addEventListener('keydown', (e) => {
+    const form = formNow();
+    if (!form) return;
+    const decision = form.querySelector('[data-decision]');
     const inField = e.target instanceof Element && e.target.closest('input[type="text"], textarea, select, [contenteditable]');
     if (inField) {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && decision.value) form.requestSubmit();
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && decision && decision.value) form.requestSubmit();
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const key = e.key.toLowerCase();
     if (key === 'a' || key === 'r') {
       e.preventDefault();
-      form.querySelector(`[data-decide="${key === 'a' ? 'accept' : 'reject'}"]`).click();
+      const btn = form.querySelector(`[data-decide="${key === 'a' ? 'accept' : 'reject'}"]`);
+      if (btn) btn.click();
     } else if (key === 's') {
       const skip = document.querySelector('[data-review-skip]');
-      if (skip) location.href = skip.href;
+      if (skip) swapTo(skip.href);
     } else if (/^[1-9]$/.test(key)) {
-      const options = form.querySelectorAll('[data-mark-group="0"] input');
-      const option = options[Number(key) - 1];
+      const option = form.querySelectorAll('[data-mark-group="0"] input')[Number(key) - 1];
       if (option) option.checked = true;
     }
   });
 })();
 
 // The entry picker on the review page: the queue in order, searchable, a page at a time.
-(function () {
+function initReviewPicker() {
   const el = document.querySelector('[data-review-picker]');
   if (!el || !window.TomSelect) return;
   const go = el.dataset.go;
@@ -84,7 +142,7 @@
       no_results: () => `<div class="no-results">${esc(zt('No matches'))}</div>`,
     },
     onChange(value) {
-      if (value) location.href = `${go}&entry=${encodeURIComponent(value)}`.replace('?&', '?');
+      if (value) { const to = `${go}&entry=${encodeURIComponent(value)}`.replace('?&', '?'); if (window.zuryReviewSwap) window.zuryReviewSwap(to); else location.href = to; }
     },
   });
   ts.on('focus', () => ts.setTextboxValue(''));
@@ -106,7 +164,9 @@
         state.busy = false;
       });
   });
-})();
+}
+initReviewPicker();
+document.addEventListener('zury:review-swapped', initReviewPicker);
 
 // Full screen: the review frame fills the window; the button again, or Esc, brings the page back.
 // Remembered on this device for the next entries.
@@ -117,33 +177,16 @@
   const KEY = 'zury.reviewFull';
   const set = (on) => {
     root.classList.toggle('z-review-full', on);
-    btn.setAttribute('aria-pressed', String(on));
-    btn.title = btn.ariaLabel = zt(on ? 'Leave full screen' : 'Full screen');
-    btn.querySelector('i').className = 'ti ' + (on ? 'ti-minimize' : 'ti-maximize');
+    const b2 = document.querySelector('[data-review-full]');
+    if (b2) { b2.setAttribute('aria-pressed', String(on)); b2.title = b2.ariaLabel = zt(on ? 'Leave full screen' : 'Full screen'); b2.querySelector('i').className = 'ti ' + (on ? 'ti-minimize' : 'ti-maximize'); }
     try { localStorage.setItem(KEY, on ? '1' : ''); } catch { /* not remembered */ }
   };
   let start = false;
   try { start = localStorage.getItem(KEY) === '1'; } catch { /* default: in the page */ }
   if (start) set(true);
-  btn.addEventListener('click', () => set(!root.classList.contains('z-review-full')));
+  document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-review-full]')) set(!root.classList.contains('z-review-full')); });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && root.classList.contains('z-review-full') && !(e.target.closest && e.target.closest('input, textarea, select, .ts-wrapper'))) set(false);
   });
 })();
 
-// Ready reasons: a click adds one to the comment. Rejecting needs a comment.
-document.querySelectorAll('[data-reason]').forEach((b) => b.addEventListener('click', () => {
-  const box = document.getElementById('comment');
-  if (!box) return;
-  box.value = box.value.trim() ? `${box.value.trim()}; ${b.dataset.reason}` : b.dataset.reason;
-  box.focus();
-}));
-document.querySelectorAll('[data-decide="reject"]').forEach((btn) => btn.addEventListener('click', (e) => {
-  const box = document.getElementById('comment');
-  if (box && !box.value.trim()) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    box.classList.add('is-invalid');
-    box.focus();
-  }
-}, true));
