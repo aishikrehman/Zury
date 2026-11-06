@@ -90,6 +90,7 @@ contest.get('/review/entries', entriesOnly, requireAuth, reviewController.entrie
 contest.post('/review/:submissionId(\\d+)', entriesOnly, requireAuth, reviewController.save);
 contest.get('/assignments', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.assignments);
 contest.post('/assignments/distribute', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.distribute);
+contest.post('/assignments/reassign', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.reassignInactive);
 contest.post('/assignments/add', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.addAssignment);
 contest.post('/assignments/:assignmentId(\\d+)/remove', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.removeAssignment);
 contest.post('/assignments/release/:jurorId(\\d+)', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.releaseJuror);

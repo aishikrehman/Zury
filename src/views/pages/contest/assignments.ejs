@@ -14,7 +14,15 @@
         <% if (assignedMode) { %><%= t('Only assigned reviewers') %><% } else { %><%= t('Any reviewer of the wiki') %><% } %>
       </div>
     </div>
-    <form method="post" action="<%= base %>/assignments/distribute" class="ms-auto">
+    <%# Entries of reviewers who haven't reviewed for some days go to the others. %>
+    <form method="post" action="<%= base %>/assignments/reassign" class="ms-auto d-flex align-items-center gap-2" data-confirm="<%= t('Give the entries of reviewers inactive for this many days to the other reviewers?') %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label class="small text-secondary text-nowrap" for="inactive-days"><%= t('Inactive for') %></label>
+      <input class="form-control form-control-sm" style="width: 4.5rem" type="number" min="1" max="90" id="inactive-days" name="days" value="7">
+      <span class="small text-secondary"><%= t('days') %></span>
+      <button class="btn" type="submit"<%= overview.jurors.length > 1 ? '' : ' disabled' %>><i class="ti ti-user-share me-1"></i><%= t('Reassign') %></button>
+    </form>
+    <form method="post" action="<%= base %>/assignments/distribute">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button class="btn btn-primary" type="submit"<%= overview.unassigned && overview.jurors.length ? '' : ' disabled' %>><i class="ti ti-arrows-split me-1"></i><%= t('Share out {n} entries', { n: overview.unassigned }) %></button>
     </form>
@@ -35,7 +43,7 @@
             <div class="d-flex align-items-center mb-2">
               <span class="z-avatar me-2"><%= j.username.charAt(0).toUpperCase() %></span>
               <div class="min-w-0">
-                <div class="fw-bold text-truncate"><%= j.username %></div>
+                <div class="fw-bold text-truncate"><%= j.username %><% if (j.remaining && (!j.lastAt || Date.now() - new Date(j.lastAt) > 7 * 864e5)) { %> <span class="badge bg-yellow-lt" title="<%= j.lastAt ? t('Last review {when}', { when: formatDate(j.lastAt) }) : t('No review yet') %>"><%= t('Inactive') %></span><% } %></div>
                 <% if (eventWikis.length > 1 && !wikiScope) { %><div class="text-secondary small text-truncate"><%= j.wikis.includes('') ? t('Whole event') : j.wikis.map(wikiLocal).join(', ') %></div><% } %>
               </div>
             </div>

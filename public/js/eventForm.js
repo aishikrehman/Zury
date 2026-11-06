@@ -189,7 +189,10 @@
   const form = document.querySelector('form[data-event-form]');
   if (!form) return;
   const rule = form.querySelector('[data-decision-rule]');
-  const picked = (name) => (form.querySelector(`input[name="${name}"]:checked`) || {}).value;
+  const picked = (name) => {
+    const sel = form.querySelector(`select[name="${name}"]`);
+    return sel ? sel.value : (form.querySelector(`input[name="${name}"]:checked`) || {}).value;
+  };
   const show = () => {
     form.querySelectorAll('[data-show-when], [data-show-for]').forEach((el) => {
       let on = null;

@@ -404,7 +404,7 @@ async function jurorsFor(contestId, wiki, settings = null) {
  */
 // ids: only these entries (new ones, when shared out automatically). actor: null when automatic.
 // With "a set number each", nobody gets more than assignPerJuror.
-async function distribute({ actor, contest, settings, wiki, ids = null }) {
+async function distribute({ actor, contest, settings, wiki, ids = null, exclude = [] }) {
   const required = Math.max(1, settings.requiredReviews || 1);
   const cap = settings.reviewAssignment === 'fixed' && settings.assignPerJuror > 0 ? settings.assignPerJuror : Infinity;
   const entries = await prisma.submission.findMany({
@@ -422,7 +422,7 @@ async function distribute({ actor, contest, settings, wiki, ids = null }) {
     if (!jurorCache.has(e.wiki)) jurorCache.set(e.wiki, await jurorsFor(contest.id, e.wiki, settings));
     const taken = new Set([...e.assignments.map((a) => a.jurorId), ...e.reviews.map((r) => r.jurorId)]);
     let missing = required - taken.size;
-    const pool = jurorCache.get(e.wiki).filter((id) => id !== e.participantId && !taken.has(id) && (loads.get(id) || 0) < cap);
+    const pool = jurorCache.get(e.wiki).filter((id) => id !== e.participantId && !taken.has(id) && !exclude.includes(id) && (loads.get(id) || 0) < cap);
     while (missing > 0 && pool.length) {
       pool.sort((a, b) => (loads.get(a) || 0) - (loads.get(b) || 0) || a - b);
       const jurorId = pool.shift();
@@ -447,6 +447,27 @@ async function distribute({ actor, contest, settings, wiki, ids = null }) {
 async function autoAssign({ contest, settings, ids }) {
   if (!ids.length || !settings.juryReviewEnabled || !['equal', 'fixed'].includes(settings.reviewAssignment)) return null;
   return distribute({ actor: null, contest, settings, wiki: null, ids });
+}
+
+// Reviewers who haven't reviewed here for `days` days (or never, having had entries that long)
+// give back the entries they haven't reviewed; those go to the active reviewers, in the usual
+// way (least busy first, never someone's own entry). Returns { reviewers, moved, unfilled }.
+async function reassignInactive({ actor, contest, settings, wiki = null, days = 7 }) {
+  const since = new Date(Date.now() - Math.max(1, days) * 864e5);
+  const open = await prisma.reviewAssignment.findMany({
+    where: { contestId: contest.id, submission: { status: { in: REVIEWABLE }, ...(wiki && { wiki }) } },
+    select: { id: true, jurorId: true, submissionId: true, createdAt: true, submission: { select: { reviews: { select: { jurorId: true } } } } },
+  });
+  const pending = open.filter((a) => !a.submission.reviews.some((r) => r.jurorId === a.jurorId));
+  const last = new Map((await prisma.review.groupBy({ by: ['jurorId'], where: { contestId: contest.id }, _max: { updatedAt: true } })).map((r) => [r.jurorId, r._max.updatedAt]));
+  const inactive = new Set(pending.filter((a) => { const l = last.get(a.jurorId); return l ? l < since : a.createdAt < since; }).map((a) => a.jurorId));
+  if (!inactive.size) return { reviewers: 0, moved: 0, unfilled: 0 };
+  const taken = pending.filter((a) => inactive.has(a.jurorId));
+  await prisma.reviewAssignment.deleteMany({ where: { id: { in: taken.map((a) => a.id) } } });
+  const ids = [...new Set(taken.map((a) => a.submissionId))];
+  const { created, unfilled } = await distribute({ actor, contest, settings, wiki, ids, exclude: [...inactive] });
+  await audit.record({ actorId: actor ? actor.id : null, contestId: contest.id, action: 'assignments.reassigned', entityType: 'Contest', entityId: contest.id, details: { days, reviewers: [...inactive], taken: taken.length, created, unfilled } });
+  return { reviewers: inactive.size, moved: taken.length, unfilled };
 }
 
 async function assign({ actor, contest, settings = null, submissionId, jurorId }) {
@@ -493,7 +514,8 @@ async function assignmentOverview({ contestId, settings, wiki }) {
   const pool = new Map();
   for (const w of wikiList) for (const id of await jurorsFor(contestId, w, settings)) pool.set(id, [...(pool.get(id) || []), w]);
   const people = await prisma.user.findMany({ where: { id: { in: [...pool.keys()] } }, select: { id: true, username: true } });
-  const jurors = new Map(people.map((u) => [u.id, { id: u.id, username: u.username, wikis: pool.get(u.id).length === wikiList.length && wikiList.length > 1 ? [''] : pool.get(u.id), assigned: 0, reviewed: 0 }]));
+  const lastReview = new Map((await prisma.review.groupBy({ by: ['jurorId'], where: { contestId }, _max: { updatedAt: true } })).map((r) => [r.jurorId, r._max.updatedAt]));
+  const jurors = new Map(people.map((u) => [u.id, { id: u.id, username: u.username, wikis: pool.get(u.id).length === wikiList.length && wikiList.length > 1 ? [''] : pool.get(u.id), assigned: 0, reviewed: 0, lastAt: lastReview.get(u.id) || null }]));
   const assignments = await prisma.reviewAssignment.findMany({
     where: { contestId, ...(wiki && { submission: { wiki } }) },
     select: { id: true, jurorId: true, submissionId: true, submission: { select: { reviews: { select: { jurorId: true } } } } },
@@ -593,6 +615,7 @@ function appeals(contestId) {
 }
 
 module.exports = {
+  reassignInactive,
   autoAssign,
   verdict, decide, DECISION_RULES, juryActivity, queuePage, QUEUE_SORTS,
   REVIEWABLE,

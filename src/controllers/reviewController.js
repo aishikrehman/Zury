@@ -339,6 +339,14 @@ const distribute = assignmentAction(async (req) => {
     : req.t('{n} assignments made.', { n: created });
 });
 
+// Entries of reviewers inactive for some days go to the others.
+const reassignInactive = assignmentAction(async (req) => {
+  const days = Math.max(1, Math.min(90, Number.parseInt(req.body.days, 10) || 7));
+  const r = await reviewService.reassignInactive({ actor: req.user, contest: req.contest, settings: req.eventSettings, wiki: req.wikiScope?.wiki, days });
+  if (!r.reviewers) return req.t('Every reviewer with entries has reviewed in the last {n} days.', { n: days });
+  return req.t('{m} entries of {r} inactive reviewers were given to the others.', { m: r.moved, r: r.reviewers }) + (r.unfilled ? ' ' + req.t('{n} still need a reviewer.', { n: r.unfilled }) : '');
+});
+
 const addAssignment = assignmentAction(async (req) => {
   const submissionId = Number(req.body.submissionId);
   await entryInScope(req, submissionId);
@@ -358,4 +366,4 @@ const releaseJuror = assignmentAction(async (req) => {
   return req.t('{n} unreviewed entries taken back.', { n });
 });
 
-module.exports = { juryEventsFor, entries, bulkSave, assignments, distribute, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+module.exports = { juryEventsFor, entries, bulkSave, assignments, distribute, reassignInactive, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
