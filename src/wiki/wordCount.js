@@ -1,9 +1,6 @@
-// Word counts. Two ways, chosen per event (settings.wordCountMethod):
-//   'ztools' – the rule ztools (ztools.toolforge.org, by RIFAT712) uses for Bengali writing
-//              contests, written again here step by step so both tools give the same numbers:
-//              clean the wikitext, then count the tokens with a Bengali letter and no Latin one.
-//   'plain'  – words in the article's plain text, in any script.
-//   'auto'   – 'ztools' on Bengali wikis, 'plain' elsewhere.
+// Word counts: the rule ztools (ztools.toolforge.org, by RIFAT712) uses, written again here step
+// by step so both tools give the same numbers: clean the wikitext, then count the tokens with a
+// Bengali letter and no Latin one. Used everywhere.
 const BENGALI = /[ঀ-৿]/;
 const LATIN = /[a-zA-Z]/;
 
@@ -34,10 +31,9 @@ function countPlain(text) {
 
 const METHODS = ['auto', 'ztools', 'plain'];
 
-// The method actually used for a wiki ('ztools' or 'plain').
-function methodFor(wiki, setting = 'auto') {
-  if (setting === 'ztools' || setting === 'plain') return setting;
-  return /^bn(wiki|wiktionary|wikibooks|wikisource|wikiquote|wikivoyage)$/.test(wiki) ? 'ztools' : 'plain';
+// Every wiki, every event: the ztools rule.
+function methodFor() {
+  return 'ztools';
 }
 
 module.exports = { countZtools, countPlain, methodFor, METHODS };
