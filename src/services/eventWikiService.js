@@ -34,6 +34,10 @@ async function uniqueCode(tx, contestId, dbname) {
 
 async function addWiki({ actorId, contest, wiki, status = 'active', requestedById = null, client = prisma }) {
   const run = async (tx) => {
+    // An edition's event is one wiki's (/wam/2026/bn); another wiki is another event of the edition.
+    if (contest.editionId && (await tx.contestWiki.count({ where: { contestId: contest.id } }))) {
+      throw new EventWikiError('An event in an edition has one wiki. Add another wiki as a new event of the edition.');
+    }
     if (await tx.contestWiki.findUnique({ where: { contestId_wiki: { contestId: contest.id, wiki } } })) {
       throw new EventWikiError(`${wiki} is already part of this event.`);
     }

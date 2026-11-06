@@ -1,6 +1,3 @@
-<%# A series or edition page: breadcrumb, title and status on the left, its tabs on the right.
-    Expects: crumbs [[label, href]], heading, status (CONTEST_STATUSES key or ''), meta (trusted HTML or ''),
-    base (the page's address), tab, tabs [[key, icon, label]]; optional inline (inlineEdit options for the title). %>
 <% const st = status ? (CONTEST_STATUSES[status] || { label: status, badge: 'secondary' }) : null; %>
 <div class="page-header d-print-none">
   <div class="container-xl">

@@ -1,4 +1,3 @@
-<%# Event header: path, title with status, one line of facts, actions, then the tabs. %>
 <%
   const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' };
   const color = st.badge === 'dark' ? 'secondary' : st.badge;
@@ -18,7 +17,7 @@
   else if (canAssign) tabs.push(['people', t('Assignments'), '/assignments', 'arrows-split']);
   if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'settings']);
   if (can('manageEvent')) tabs.push(['activity', t('Activity'), '/activity', 'history']);
-  const canSubmit = currentUser && contest.status === 'active' && active !== 'submit' && typeDef.entries !== false;
+  const canSubmit = contest.status === 'active' && active !== 'submit' && typeDef.entries !== false;
 %>
 <% const headProj = eventProject({ wikis: eventWikis, primaryWiki: contest.primaryWiki }); %>
     <%
@@ -69,7 +68,7 @@
               <a class="dropdown-item<%= wikiScope ? '' : ' active' %>" href="<%= eventBase %>"><%= t("All wikis") %></a>
               <div class="dropdown-divider"></div>
               <% allWikis.filter((w) => w.status !== 'pending' || scope.isGlobalController).forEach((w) => { %>
-                <a class="dropdown-item d-flex<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= eventBase %>/<%= w.code %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? wikiLocal(w.wiki) : t(w.status === 'paused' ? 'Paused' : 'Waiting for approval') %></span></a>
+                <a class="dropdown-item d-flex<%= wikiScope && wikiScope.id === w.id ? ' active' : '' %>" href="<%= wikiHref(w) %>">/<%= w.code %><span class="text-secondary ms-auto ps-3 small"><%= w.status === 'active' ? wikiLocal(w.wiki) : t(w.status === 'paused' ? 'Paused' : 'Waiting for approval') %></span></a>
               <% }) %>
             </div>
           </div>
@@ -110,8 +109,8 @@
         <% if (canReview) { %>
           <a href="<%= base %>/review" class="btn btn-outline-primary"><i class="ti ti-gavel me-1"></i><%= t('Review') %></a>
         <% } %>
-        <% if (canSubmit && (isParticipant || can('submitOnBehalf') || can('manageEvent'))) { %>
-          <a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
+        <% if (canSubmit) { %>
+          <a href="<%= currentUser ? base + '/submit' : '/login' %>" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
         <% } %>
         <% if (isParticipant && !['completed', 'archived'].includes(contest.status)) { %>
           <form method="post" action="<%= base %>/leave" data-confirm="<%= t('Leave this event?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>">

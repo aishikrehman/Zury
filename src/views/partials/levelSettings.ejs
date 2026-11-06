@@ -1,5 +1,3 @@
-<%# Settings this series or edition gives the events below it: this level's own rules only.
-    Expects: seriesSlug, editionId (null on a series), rules, history, KEYS. %>
 <div class="card mb-3" id="settings">
   <div class="card-header"><h3 class="card-title"><i class="ti ti-adjustments me-2"></i><%= t('Settings for the events below') %></h3></div>
   <form method="post" action="/series/<%= seriesSlug %>/settings" class="card-body border-bottom" data-level-setting>
@@ -11,7 +9,7 @@
       <div class="col-6 col-md-3"><label class="form-label" for="ls-mode"><%= t('How') %></label><select class="form-select" id="ls-mode" name="mode"><option value="default"><%= t('Default') %></option><option value="locked"><%= t('Locked') %></option><option value="optional"><%= t('Suggested') %></option></select></div>
       <div class="col-12 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Save') %></button></div>
     </div>
-    <div class="form-hint mt-2"><%= editionId ? t('These apply to every event of this edition.') : t('These apply to every edition and event of this series. An edition can add its own on its page.') %> <%= t('Locked: every event below uses it and cannot change it. Default: events use it until they set their own; their own values are never overwritten. Suggested: shown to organizers, not applied.') %></div>
+    
   </form>
   <% if (!rules.length) { %><div class="card-body text-secondary"><%= t('Nothing set here yet; each event has its own settings.') %></div><% } else { %>
     <div class="list-group list-group-flush">

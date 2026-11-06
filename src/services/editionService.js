@@ -57,11 +57,8 @@ async function sync(contestId, client = prisma) {
   const c = await client.contest.findUnique({ where: { id: contestId }, select: { id: true, slug: true, type: true, seriesId: true, editionId: true, deletedAt: true } });
   if (!c) return null;
   await client.seriesSlug.deleteMany({ where: { contestId: c.id, ...(c.seriesId && !c.deletedAt && { NOT: { seriesId: c.seriesId, slug: c.slug } }) } });
-  const before = (await client.contest.findUnique({ where: { id: c.id }, select: { path: true } })).path;
   const path = c.deletedAt ? null : await pathFor(c.slug, c, client, c.id);
   await client.contest.update({ where: { id: c.id }, data: { path } });
-  if (path) await client.oldPath.deleteMany({ where: { path } });
-  if (before && path && before !== path) await client.oldPath.upsert({ where: { path: before }, update: { contestId: c.id }, create: { path: before, contestId: c.id } });
   if (c.seriesId && !c.deletedAt) {
     await client.seriesSlug.upsert({
       where: { seriesId_slug: { seriesId: c.seriesId, slug: c.slug } },

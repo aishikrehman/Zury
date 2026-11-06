@@ -10,9 +10,10 @@
   const sum7 = s.last7.reduce((a, b) => a + b, 0);
 %>
 <section id="statistics" aria-label="<%= t('Statistics') %>">
-  <% if (statsPart !== 'breakdown') { %>
+  <% const tilesOnly = statsPart === 'tiles'; %>
+  <% if (['', 'summary', 'tiles'].includes(statsPart)) { %>
   <div class="row row-deck row-cards mb-3">
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
       <div class="card">
         <div class="card-body">
           <div class="d-flex align-items-center"><div class="subheader"><%= t("Submissions") %></div><div class="ms-auto text-secondary small"><%= t("all time") %></div></div>
@@ -27,7 +28,7 @@
         <%- include('./chart', { spec: { type: 'area', sparkline: true, height: 40, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: t('Daily submissions') }) %>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
       <div class="card">
         <div class="card-body">
           <div class="subheader"><%= t("Participants") %></div>
@@ -37,7 +38,7 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
       <div class="card">
         <div class="card-body">
           <div class="subheader"><%= t("Valid entries") %></div>
@@ -47,7 +48,7 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
+    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
       <div class="card">
         <div class="card-body">
           <div class="subheader"><%= t("Review progress") %></div>
@@ -58,9 +59,10 @@
       </div>
     </div>
   </div>
-
+  <% } %>
+  <% if (['', 'summary', 'charts'].includes(statsPart) && !(statsPart === 'charts' && !s.total)) { %>
   <div class="row row-cards mb-3">
-    <div class="col-lg-8">
+    <div class="<%= statsPart === 'charts' ? 'col-12' : 'col-lg-8' %>">
       <div class="card">
         <div class="card-header"><h3 class="card-title"><%= t("Submissions per day") %></h3><div class="card-actions text-secondary small"><%= contest.timezone %></div></div>
         <div class="card-body">
@@ -72,14 +74,13 @@
         </div>
       </div>
           <% if (settings.wordCountEnabled && s.wordSeries && s.wordSeries.values.some((n) => n > 0)) { %>
-            <%# Words added per day: of every entry submitted that day, and of those accepted so far. %>
             <div class="card mt-3">
               <div class="card-header"><h3 class="card-title"><%= t('Words per day') %></h3></div>
               <div class="card-body"><%- include('./chart', { spec: { type: 'area', height: 240, series: [{ name: t('Words'), data: s.wordSeries.values }, { name: t('Accepted'), data: s.wordSeries.accepted }], labels: s.wordSeries.labels, colors: ['primary', 'green'] }, label: t('Words per day') }) %></div>
             </div>
           <% } %>
     </div>
-    <div class="col-lg-4">
+    <div class="<%= statsPart === 'charts' ? 'col-12' : 'col-lg-4' %>">
       <div class="card">
         <div class="card-header"><h3 class="card-title"><%= t("By status") %></h3></div>
         <div class="card-body">
@@ -94,9 +95,7 @@
   </div>
 
   <% } %>
-  <% if (statsPart !== 'summary') { %>
-    <%# With the results: only what the ranking doesn't already say. Wikis and types appear
-        only when there is more than one of them. %>
+  <% if (!['summary', 'tiles', 'charts'].includes(statsPart)) { %>
     <% const wikis = Object.entries(s.byWiki).sort((a, b) => b[1] - a[1]); const types = Object.entries(s.byType); %>
     <% if (wikis.length > 1 || types.length > 1) { %>
       <div class="row row-cards">
@@ -125,7 +124,6 @@
     <% } %>
   <% } %>
   <% if (s.wordStats) { const w = s.wordStats; const tile = (label, x, color) => ({ label, x, color }); %>
-    <%# Results count words: the words of every kind of entry, per participant and per article. %>
     <div class="card mt-3">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-letter-case me-1"></i><%= t('Word statistics') %></h3></div>
       <div class="card-body">

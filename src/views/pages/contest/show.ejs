@@ -17,15 +17,11 @@
 <%- include('../../partials/contestHeader', { active: 'overview' }) %>
 <div class="page-body"><div class="container-xl">
 
-  <%# Why the Join button is missing, for someone who can't take part. %>
   <% if (signUp && signUp.url) { %>
     <div class="alert alert-info d-flex align-items-center gap-2"><i class="ti ti-list-check"></i><div class="flex-fill"><%= signUp.onwiki ? t('Sign up on the event page on the wiki, then join here.') : t('Add your name to the participants list on the wiki.') %></div><a class="btn btn-sm btn-primary" href="<%= signUp.url %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= t('Open the wiki page') %></a></div>
   <% } %>
-  <% if (currentUser && !isParticipant && !eligibility.eligible && eligibility.reasons.length) { %>
-    <div class="alert alert-warning"><i class="ti ti-info-circle"></i><div><% eligibility.reasons.forEach((r) => { %><div><%= t(r) %></div><% }) %></div></div>
-  <% } %>
 
-  <%# ── About the event, then its wikis ── %>
+
   <% if (!wikiScope && can('editEvent')) { %>
     <div class="card mb-3 z-about"><div class="card-body">
       <%- include('../../partials/inlineEdit', { action: `${eventBase}/inline`, name: 'description', value: contest.description, label: t('Description'), multiline: true, maxlength: 10000, viewTag: 'p', viewClass: 'mb-0 z-lead', emptyText: t('Add a description') }) %>
@@ -41,7 +37,7 @@
         <div class="row row-cards g-3">
           <% wikiParts.forEach((w) => { const st = CONTEST_STATUSES[w.status] || { label: t(w.status === 'paused' ? 'Paused' : 'Waiting for approval'), badge: 'secondary' }; const pr = eventProject({ primaryWiki: w.wiki }); %>
             <div class="col-sm-6 col-lg-4">
-              <a class="z-wiki-card" href="<%= eventBase %>/<%= w.code %>" style="--z-proj: <%= pr.color %>">
+              <a class="z-wiki-card" href="<%= wikiHref(w) %>" style="--z-proj: <%= pr.color %>">
                 <div class="d-flex align-items-start gap-2">
                   <span class="avatar avatar-sm z-proj-icon"><i class="ti ti-<%= pr.icon %>"></i></span>
                   <div class="min-w-0 flex-fill">
@@ -64,7 +60,6 @@
     </div>
   <% } %>
 
-  <%# ── Schedule and the event at a glance ── %>
   <%
     // One stop per day: things that happen the same day share it.
     const now = Date.now();
@@ -85,10 +80,18 @@
     const next = stops.find((x) => new Date(x.at).getTime() > now);
     const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' };
   %>
+
+
+  <div class="row row-cards">
+    <div class="col-lg-8">
+      <% if (stats) { %>
+        <%- include('../../partials/eventStats', { stats, part: 'tiles' }) %>
+        <%- include('../../partials/eventStats', { stats, part: 'charts' }) %>
+      <% } %>
+    </div>
+    <div class="col-lg-4">
   <% if (stops.length) { %>
-    <div class="row row-cards mb-3">
-      <div class="col-lg-7">
-        <div class="card h-100">
+        <div class="card mb-3">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2 text-secondary"></i><%= t('Schedule') %></h3><div class="card-actions text-secondary small"><%= tz %></div></div>
           <ol class="z-agenda">
             <% stops.forEach((x, i) => { const state = i < current ? 'done' : i === current ? 'now' : 'next'; const d = daysTo(x.at); %>
@@ -100,9 +103,7 @@
             <% }) %>
           </ol>
         </div>
-      </div>
-      <div class="col-lg-5">
-        <div class="card h-100 z-glance">
+        <div class="card mb-3 z-glance">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2 text-secondary"></i><%= t('At a glance') %></h3></div>
           <div class="card-body">
             <div class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %> mb-3"><i></i><%= t(st.label) %></div>
@@ -119,18 +120,9 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
   <% } %>
-
-  <%# ── Numbers ── %>
-  <% if (stats) { %><%- include('../../partials/eventStats', { stats, part: 'summary' }) %><% } %>
-
-  <%# ── Wikis, then the details and rules in one card ── %>
-  <div class="row row-cards">
-    <div class="col-lg-8">
       <% if (!series || wikiScope) { %>
-      <div class="card">
+      <div class="card mb-3">
             <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t("Rules") %></h3></div>
 
         <div class="list-group list-group-flush">
@@ -147,8 +139,6 @@
 
       </div>
       <% } %>
-    </div>
-    <div class="col-lg-4">
       <% if (requestableWikis && series && !wikiScope) { %>
         <div class="card mb-3">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-world-plus me-2"></i><%= t("Bring your wiki") %></h3></div>

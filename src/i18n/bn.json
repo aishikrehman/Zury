@@ -1731,5 +1731,6 @@
   "This edition already has an event for this wiki.": "এই সংস্করণে এই উইকির ইভেন্ট আগেই আছে।",
   "In an edition the address ends with the wiki’s code.": "সংস্করণে ঠিকানার শেষে উইকির কোড বসে (যেমন /bn)।",
   "Nothing is inside. Deleting removes it for good.": "ভেতরে কিছু নেই। মুছলে চিরতরে মুছে যাবে।",
-  "Edition deleted.": "সংস্করণ মোছা হয়েছে।"
+  "Edition deleted.": "সংস্করণ মোছা হয়েছে।",
+  "An event in an edition has one wiki. Add another wiki as a new event of the edition.": "সংস্করণের ইভেন্টে একটাই উইকি থাকে। অন্য উইকির জন্য সংস্করণে নতুন ইভেন্ট যোগ করুন।"
 }

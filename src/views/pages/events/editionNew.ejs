@@ -1,4 +1,3 @@
-<%# A new edition of a series: blank (completely new, nothing copied) or a copy of an earlier one, choosing what comes along. %>
 <% const csrf = `<input type="hidden" name="_csrf" value="${csrfToken}">`; %>
 <div class="page-header d-print-none"><div class="container-xl">
   <ol class="breadcrumb mb-1"><li class="breadcrumb-item"><a href="/events"><%= t('Events') %></a></li><li class="breadcrumb-item"><a href="/<%= sr.slug %>"><%= sr.title %></a></li><li class="breadcrumb-item active"><%= t('New edition') %></li></ol>
@@ -27,7 +26,7 @@
         <div class="col-6 col-md-3"><label class="form-label required" for="ne-edition"><%= t('Address') %></label><div class="input-group"><span class="input-group-text">/<%= sr.slug %>/</span><input class="form-control" id="ne-edition" name="edition" value="<%= suggested %>" maxlength="20" required pattern="[a-z0-9][a-z0-9\-]{0,19}"></div></div>
         <div class="col-6 col-md-5"><label class="form-label" for="ne-title"><%= t('Title') %></label><input class="form-control" id="ne-title" name="title" maxlength="200" placeholder="<%= sr.title %> <%= suggested %>"></div>
         <% if (method === 'copy') { %>
-          <div class="col-6 col-md-4"><label class="form-label" for="ne-years"><%= t('Move dates by (years)') %></label><input class="form-control" type="number" id="ne-years" name="years" min="0" max="10" value="1"><div class="form-hint"><%= t('Check every date before publishing.') %></div></div>
+          <div class="col-6 col-md-4"><label class="form-label" for="ne-years"><%= t('Move dates by (years)') %></label><input class="form-control" type="number" id="ne-years" name="years" min="0" max="10" value="1"></div>
         <% } else { %>
           <div class="col-6 col-md-2"><label class="form-label" for="ne-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ne-start" name="startDate"></div>
           <div class="col-6 col-md-2"><label class="form-label" for="ne-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ne-end" name="endDate"></div>
@@ -40,7 +39,7 @@
             <div class="col-md-6"><label class="form-check"><input class="form-check-input" type="checkbox" name="parts" value="<%= k %>"<%= k === 'events' ? ' data-needed-by' : '' %><%= k === 'people' ? '' : ' checked' %><%= k !== 'events' && k !== 'settings' && k !== 'people' ? ' data-needs-event' : '' %>><span class="form-check-label"><%= t(label) %></span></label></div>
           <% }) %>
         </div>
-        <div class="alert alert-info small mb-0"><i class="ti ti-info-circle me-1"></i><%= t('Never copied: participants and registrations, entries and files, reviews and decisions, appeals, results, certificates and personal details. The copy is a draft with new addresses; organizers are copied only when ticked.') %></div>
+        
       <% } %>
     </div>
     <div class="card-footer text-end"><a class="btn btn-link" href="/<%= sr.slug %>?tab=editions"><%= t('Cancel') %></a><button class="btn btn-primary" type="submit"><%= t('Create edition') %></button></div>

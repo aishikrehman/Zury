@@ -5,14 +5,13 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-user-plus me-1"></i><%= t("Join this event") %></h3></div>
       <div class="card-body">
-        <%# Details asked by the organizers; filled in from what you gave other events. %>
         <% ask.forEach((k) => { %>
           <div class="mb-3">
             <label class="form-label required" for="j-<%= k %>"><%= t(ASK[k]) %></label>
             <input class="form-control" id="j-<%= k %>" name="<%= k %>" required value="<%= profile[k] || '' %>" type="<%= k === 'email' ? 'email' : k === 'phone' ? 'tel' : 'text' %>">
           </div>
         <% }) %>
-        <% if (ask.length) { %><div class="form-hint mb-3"><%= t("Only the organizers see these. They are kept on your profile for the next event.") %></div><% } %>
+        
         <% if (teamMode !== 'individual') { %>
           <div class="mb-3">
             <label class="form-label<%= teamMode === 'team' ? ' required' : '' %>" for="j-team"><%= t("Team") %></label>

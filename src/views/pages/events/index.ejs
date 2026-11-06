@@ -28,7 +28,6 @@
 </div>
 <div class="page-body">
   <div class="container-xl">
-    <%# Filters: a sidebar on large screens, above the events on small ones. %>
     <div class="row g-4">
     <aside class="col-lg-3">
     <form method="get" action="<%= base %>" class="z-filterbar z-filter-side">
@@ -55,7 +54,6 @@
     </form>
     </aside>
     <div class="col-lg-9">
-      <%# Status on the left, grid or list on the right, above the events. %>
       <div class="z-filterbar-top z-results-bar mb-3">
         <nav class="z-seg" aria-label="<%= t('Events') %>">
           <a class="<%= !filters.group ? 'active' : '' %>" href="/events<%= qs({}) %>"><%= t('All') %></a>

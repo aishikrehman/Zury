@@ -1,4 +1,3 @@
-<%# People and the jury's assignments live together under one tab of the event. %>
 <% const showAssign = settings.juryReviewEnabled && EVENT_TYPES[contest.type].entries !== false && (can('assignJury') || can('manageAssignments')); %>
 <% const showPeople = can('manageParticipants') || can('manageJury') || can('manageEvent'); %>
 <% if (showAssign && showPeople) { %>

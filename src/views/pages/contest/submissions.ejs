@@ -115,7 +115,6 @@
                       <a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a>
                     <% } %>
                     <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= s.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
-                    <%# The event's template, added on the wiki in one click (own entries, or for organizers). %>
                     <% const tl = templateLink(s); if (tl && currentUser && (currentUser.id === s.participantId || canManage)) { %><a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= tl %>" target="_blank" rel="noopener" title="<%= t("Add the template") %>" aria-label="<%= t("Add the template") %>"><i class="ti ti-tag"></i></a><% } %>
                     <% if (canManage) { %>
                       <form method="post" action="<%= base %>/submissions/<%= s.id %>/revalidate"><%- hidden %>

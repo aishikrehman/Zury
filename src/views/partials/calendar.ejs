@@ -1,5 +1,3 @@
-<%# A month of events beside a summary of it. Expects cal { year, month, events }, calLang; optional calExtra (query to keep).
-    Its arrows swap in the next month without reloading the page. %>
 <%
   const loc = calLang === 'bn' ? 'bn-BD' : 'en-GB';
   const first = new Date(Date.UTC(cal.year, cal.month, 1));

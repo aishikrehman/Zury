@@ -1,5 +1,3 @@
-<%# A series (/wam), in tabs: overview (its introduction, the featured edition, totals), its editions, its
-    direct events and statistics; for those who run it also its people, settings and history. %>
 <%
   const base = `/${series.slug}`;
   const tabs = [
@@ -88,7 +86,6 @@
       </div>
 
     <% } else if (tab === 'events') { %>
-      <%# Events directly under the series (not in an edition). %>
       <% if (canRun) { %><div class="d-flex justify-content-end mb-3"><a class="btn btn-primary" href="/events/create?series=<%= series.slug %>"><i class="ti ti-plus me-1"></i><%= t('New event') %></a></div><% } %>
       <% if (!directEvents.length) { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events directly under this series') }) %></div><% } else { %>
         <div class="card"><div class="list-group list-group-flush">
@@ -124,7 +121,7 @@
           <div class="col-md-6"><span class="form-label d-block"><%= t('Who can see it') %></span>
             <% [['public', 'Public'], ['unlisted', 'Link only'], ['private', 'Members only']].forEach(([k, l]) => { %><label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="visibility" value="<%= k %>"<%= (series.visibility || 'public') === k ? ' checked' : '' %>><span class="form-check-label"><%= t(l) %></span></label><% }) %></div>
           <div class="col-md-6"><label class="form-label" for="sr-comm"><%= t('Communities taking part') %></label><textarea class="form-control" id="sr-comm" name="communities" rows="3" placeholder="<%= t('One per line') %>"><%= series.communities %></textarea></div>
-          <div class="col-md-6"><label class="form-label" for="sr-links"><%= t('Links') %></label><textarea class="form-control" id="sr-links" name="externalLinks" rows="3" placeholder="Meta | https://meta.wikimedia.org/wiki/…"><%= links.map((l) => (l.label === l.url ? l.url : `${l.label} | ${l.url}`)).join('\n') %></textarea><div class="form-hint"><%= t('One per line: label | address') %></div></div>
+          <div class="col-md-6"><label class="form-label" for="sr-links"><%= t('Links') %></label><textarea class="form-control" id="sr-links" name="externalLinks" rows="3" placeholder="Meta | https://meta.wikimedia.org/wiki/…"><%= links.map((l) => (l.label === l.url ? l.url : `${l.label} | ${l.url}`)).join('\n') %></textarea></div>
           <div class="col-12"><button class="btn btn-primary" type="submit"><%= t('Save') %></button></div>
         </div></div>
       </form>

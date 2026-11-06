@@ -1,8 +1,3 @@
-<%#
-  Shared by create and configure. Expects: form, errors, type, typeDef (null until a type is
-  chosen), action, submitLabel. Vertical steps on the left, the current step on the right.
-  Creating goes step by step and ends on a review; configuring opens any step directly.
-%>
 <%
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const v = (k) => (form[k] == null ? '' : Array.isArray(form[k]) ? form[k].join('\n') : form[k]);
@@ -48,7 +43,6 @@
 
 
   <div class="row g-4">
-    <%# New events and Configuration share one layout: the sections as tabs across the top. %>
     <div class="col-12">
       <div class="card z-config<%= sideTabs ? ' z-side-tabs' : '' %>" data-wizard="<%= pageMode ? 'page' : 'tabs' %>"<% if (creating && !can('deleteAnything')) { %> data-guard<% } %>>
         <% if (!pageMode) { %>
@@ -68,11 +62,9 @@
         <% if (!creating && !wikiMode) { %><input type="hidden" name="type" value="<%= type %>"><% } %>
         <div class="card-body" data-form-body>
 
-          <%# ── 1. Basic info: what, where, when; series and extras folded away. ── %>
           <% const openIf = (...keys) => keys.some((k) => errors[k] || v(k)) ? ' open' : ''; %>
           <section class="wizard-pane" id="step-basics" data-step="0">
             <% if (!wikiMode) { %>
-              <%# 1. The type of event. %>
               <div class="z-form-group">
                 <div class="row g-3">
                 <% if (creating && typeDef) { %>
@@ -99,7 +91,6 @@
               </div>
             <% } %>
             <% if (!wikiMode) { %>
-              <%# First: the series and edition decide the address below. Open on a new event. %>
               <details class="z-form-group z-form-fold"<%= creating ? ' open' : openIf('seriesSlug', 'edition', 'previousEditionUrl') %>>
                 <summary class="z-form-group-title"><%= t('Series') %> <span class="text-secondary fw-normal"><%= t('optional') %></span></summary>
                 <div class="row g-3 mt-1">
@@ -112,7 +103,6 @@
                 </div>
                 <div class="col-md-2">
                   <label class="form-label" for="edition"><%= t("Edition") %></label>
-                  <%# The chosen series' editions (filled in by eventForm.js); none: directly under the series. New editions are made on the series page. %>
                   <select class="form-select<%= inv('edition') %>" id="edition" name="edition" data-current="<%= v('edition') %>" data-none-label="<%= t('Directly under the series') %>">
                     <option value=""><%= t('Directly under the series') %></option>
                     <% if (v('edition')) { %><option value="<%= v('edition') %>" selected><%= v('edition') %></option><% } %>
@@ -152,7 +142,6 @@
               </div>
             <% } %>
             <% if (!wikiMode) { %>
-              <%# 4. Title and address: an edition's event is named by its wiki's code; else from the title. %>
               <div class="z-form-group">
                 <div class="row g-3">
                   <div class="col-12">
@@ -166,7 +155,7 @@
                       <span class="input-group-text" data-address-prefix data-origin="<%= origin %>"><%= origin %>/</span>
                       <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="<%= t("made-from-the-title") %>" data-slug>
                     </div>
-                    <div class="form-hint" data-address-hint><%= t("Made from the title; you can change it.") %></div>
+                    <div class="form-hint" data-address-hint></div>
                     <div data-address-status aria-live="polite"></div>
                     <%- err('slug') %>
                   </div>
@@ -198,11 +187,9 @@
             </div>
           </section>
 
-          <%# ── 2. Submission rules ───────────────────────────────────── %>
           <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-rules" data-step="1">
             <h3 class="mb-2"><%= t("Submission rules") %></h3>
-            <p class="text-secondary mb-4" data-guide="rules"><%= typeDef && typeDef.guide ? typeDef.guide.rules : '' %></p>
-            <div class="row g-3 mb-4">
+                        <div class="row g-3 mb-4">
               <% ['registrationOpensAt', 'registrationClosesAt', 'submissionOpensAt', 'submissionDeadline'].forEach((key) => { %>
                 <div class="col-sm-6 col-lg-3"><%- dateInput(key) %></div>
               <% }) %>
@@ -233,26 +220,25 @@
               <div class="col-md-6">
               </div>
             </div>
-            <%# How people take part, and which articles count. %>
             <div class="z-set-list mb-3">
               <div class="z-set-row"><div class="z-set-label"><%= t("How people take part") %></div><div class="z-set-control">
                 <select class="form-select form-select-sm" name="participation_mode" data-show-for>
                   <% Object.entries(PARTICIPATION.MODES).forEach(([k, label]) => { %><option value="<%= k %>"<%= (v('participation_mode') || 'submit') === k ? ' selected' : '' %>><%= t(label) %></option><% }) %>
                 </select></div></div>
-              <div class="z-set-row"><div class="z-set-label"><%= t("Ask when joining") %><div class="z-set-hint"><%= t("None: just the username. Kept on their profile for next time.") %></div></div><div class="z-set-control z-set-inline">
+              <div class="z-set-row"><div class="z-set-label"><%= t("Ask when joining") %></div><div class="z-set-control z-set-inline">
                 <% Object.entries(PARTICIPATION.ASK).forEach(([k, label]) => { %><label class="form-check form-check-inline mb-0"><input class="form-check-input" type="checkbox" name="participation_ask" value="<%= k %>"<%= [].concat(v('participation_ask') || []).includes(k) ? ' checked' : '' %>><span class="form-check-label"><%= t(label) %></span></label><% }) %>
               </div></div>
-              <div class="z-set-row"><div class="z-set-label"><%= t("On-wiki page") %><div class="z-set-hint"><%= t("The sign-up page; or, for other ways, a page where participants list themselves (they get a link to add their name).") %></div></div><div class="z-set-control">
+              <div class="z-set-row"><div class="z-set-label"><%= t("On-wiki page") %></div><div class="z-set-control">
                 <input class="form-control form-control-sm<%= inv('participation_page') %>" name="participation_page" value="<%= v('participation_page') || '' %>" placeholder="<%= t("E.g. Wikipedia:Asian Month 2026/Participants") %>"><%- err('participation_page') %></div></div>
-              <div class="z-set-row"><div class="z-set-label"><%= t("Participant list") %><div class="z-set-hint"><%= t("One username per line; added as participants when saved.") %></div></div><div class="z-set-control">
+              <div class="z-set-row"><div class="z-set-label"><%= t("Participant list") %></div><div class="z-set-control">
                 <textarea class="form-control form-control-sm<%= inv('participation_users') %>" name="participation_users" rows="2"><%= v('participation_users') || '' %></textarea><%- err('participation_users') %></div></div>
-              <div class="z-set-row"><div class="z-set-label"><%= t("Others may join too") %><div class="z-set-hint"><%= t("For the on-wiki page and the list: people not on them can also join.") %></div></div><div class="z-set-control">
+              <div class="z-set-row"><div class="z-set-label"><%= t("Others may join too") %></div><div class="z-set-control">
                 <label class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" name="participation_outsiders"<%= v('participation_outsiders') ? ' checked' : '' %>></label></div></div>
-              <div class="z-set-row"><div class="z-set-label"><%= t("Eligible articles") %><div class="z-set-hint"><%= t("Only these may be submitted. Fetched again each time the settings are saved.") %></div></div><div class="z-set-control">
+              <div class="z-set-row"><div class="z-set-label"><%= t("Eligible articles") %></div><div class="z-set-control">
                 <select class="form-select form-select-sm" name="eligible_source">
                   <% Object.entries(PARTICIPATION.SOURCES).forEach(([k, label]) => { %><option value="<%= k %>"<%= (v('eligible_source') || 'none') === k ? ' selected' : '' %>><%= t(label) %></option><% }) %>
                 </select></div></div>
-              <div class="z-set-row"><div class="z-set-label"><%= t("Where from") %><div class="z-set-hint"><%= t("The page or category name, the articles one per line, or the SPARQL query. Subcategory depth for a category.") %></div></div><div class="z-set-control">
+              <div class="z-set-row"><div class="z-set-label"><%= t("Where from") %></div><div class="z-set-control">
                 <textarea class="form-control form-control-sm<%= inv('eligible_value') %>" name="eligible_value" rows="2"><%= v('eligible_value') || '' %></textarea><%- err('eligible_value') %>
                 <input class="form-control form-control-sm mt-1" style="max-width:7rem" type="number" min="0" max="5" name="eligible_depth" value="<%= v('eligible_depth') || '0' %>" title="<%= t("Subcategory depth") %>"></div></div>
             </div>
@@ -294,7 +280,7 @@
                         <input class="form-control<%= current ? inv(name) : '' %>" name="<%= name %>" <%= f.type === 'int' ? `type=number min=${f.min} max=${f.max}` : '' %> value="<%= shown %>">
                       <% } %>
                     <% } %>
-                    <% if (f.help) { %><div class="form-hint"><%= f.help %></div><% } %>
+                    
                     <% if (current) { %><%- err(name) %><% } %>
                   </div>
                 <% }) %>
@@ -306,29 +292,24 @@
               <div class="col-md-6">
                 <label class="form-label" for="trackHashtags">Hashtags<%- mark('settings.trackHashtags') %></label>
                 <input class="form-control<%= inv('trackHashtags') %>" id="trackHashtags" name="trackHashtags" value="<%= v('trackHashtags') %>" placeholder="<%= t("wam2026, asianmonth") %>">
-                <div class="form-hint"><%= t("Edits with these hashtags in the summary are counted.") %></div>
                 <%- err('trackHashtags') %>
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="trackCategories">Categories<%- mark('settings.trackCategories') %></label>
                 <textarea class="form-control<%= inv('trackCategories') %>" id="trackCategories" name="trackCategories" rows="2" placeholder="<%= t("One per line") %>"><%= v('trackCategories') %></textarea>
-                <div class="form-hint"><%= t("Pages and files added to these categories during the event are counted.") %></div>
                 <%- err('trackCategories') %>
               </div>
             </div>
           </section>
 
-          <%# ── 3. Interaction and judging ────────────────────────────── %>
           <% if (judged) { %>
           <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-judging" data-step="2">
             <h3 class="mb-2"><%= t("Interaction and judging") %></h3>
-            <p class="text-secondary mb-4" data-guide="judging"><%= typeDef && typeDef.guide ? typeDef.guide.judging : '' %></p>
-            <div class="row g-3 mb-4">
+                        <div class="row g-3 mb-4">
               <% ['reviewOpensAt', 'reviewDeadline', 'appealDeadline', 'resultsAnnouncedAt'].forEach((key) => { %>
                 <div class="col-sm-6 col-lg-3"><%- dateInput(key) %></div>
               <% }) %>
             </div>
-            <%# Review: one row per setting, its name and a dropdown (or a switch) beside it. %>
             <%
               const row = (id, label, control, hint = '') => `
                 <div class="z-set-row">
@@ -364,7 +345,6 @@
                 </div>
                 </div>
               </div>
-              <%# Who reviews: any of the three, ticked side by side. %>
               <div class="z-set-row z-set-inline">
                 <span class="z-set-label"><%= t('Who reviews') %><%- mark('settings.reviewers') %></span>
                 <div class="z-set-control">
@@ -413,7 +393,6 @@
           </section>
           <% } %>
 
-          <%# ── Features: the event's on/off switches (every type). ── %>
           <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-features" data-step="<%= steps.findIndex(([k]) => k === 'features') %>">
             <h3 class="mb-1"><%= t("Features") %></h3>
             <p class="text-secondary mb-3"><%= t("Turn parts of the event on or off.") %></p>
@@ -427,7 +406,6 @@
             </div>
           </section>
 
-          <%# ── 4. User access levels ─────────────────────────────────── %>
           <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-access" data-step="<%= steps.findIndex(([k]) => k === 'access') %>">
             <div class="z-form-group">
               <h3 class="z-form-group-title"><%= t('More details') %> <span class="text-secondary fw-normal small"><%= t('optional') %></span></h3>
@@ -506,7 +484,6 @@
                     <select class="form-select" id="organizers" name="organizers" multiple data-picker="user" placeholder="<%= t("Search Wikimedia users…") %>">
                       <% [].concat(form.organizers || []).filter(Boolean).forEach((u) => { %><option value="<%= u %>" selected><%= u %></option><% }) %>
                     </select>
-                    <div class="form-hint"><%= t("You are an organizer already.") %></div>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label" for="jury"><%= t("Reviewers") %></label>

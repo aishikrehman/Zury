@@ -112,7 +112,7 @@
     slug.hidden = !!(s && e);
     if (s && e) slug.value = e;
     else if (!slugEdited || slug.value === edition.dataset.current) slug.value = slugify(title.value);
-    hint.textContent = zt(s && e ? 'In an edition the address ends with the wiki’s code.' : s ? 'An event directly under the series.' : 'Made from the title; you can change it.');
+    hint.textContent = '';
   }
   if (typeSelect) typeSelect.addEventListener('change', showAddress);
   // Live check: is the address free? Asked a moment after typing stops.

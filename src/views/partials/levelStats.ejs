@@ -1,6 +1,3 @@
-<%# Statistics of a series or an edition: totals (each person and entry once), a chart, and a row
-    per part. Expects: totals (statsService.rollup), rows [{ label, sub, href, status, stats }],
-    rowTitle, chartTitle; table: false to leave out the table (the page lists the rows itself). %>
 <div class="row row-cards mb-3">
   <% [[t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Words accepted'), totals.approvedWords, 'letter-case'], [t('Wikis'), totals.wikis.length, 'world']].forEach(([label, value, icon]) => { %>
     <div class="col-6 col-lg"><div class="card card-sm"><div class="card-body d-flex align-items-center">
@@ -9,7 +6,7 @@
     </div></div></div>
   <% }) %>
 </div>
-<div class="form-hint mb-3"><%= t('A person or an entry (a page on a wiki) in several events is counted once in these totals.') %><% if (rows.length > 1) { const records = rows.reduce((n, r) => n + (r.stats.participants || 0), 0); %> <%= t('Taking part, counted per edition or event: {n}.', { n: formatNumber(records) }) %><% } %></div>
+
 <% const chartRows = [...rows].reverse(); %>
 <% if (chartRows.length > 1) { %>
   <div class="card mb-3">

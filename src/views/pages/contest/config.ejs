@@ -60,11 +60,8 @@
     </div>
   <% } %>
 
-  <% if (editionAdmin) { %>
-    <div class="alert alert-info d-flex flex-wrap align-items-center gap-2 mb-3"><i class="ti ti-calendar"></i><span class="me-auto"><%= t('This event is the edition {name} of {series}. The edition has its own settings for its event, its people and its archive.', { name: edition.slug, series: series.title }) %></span><a class="btn btn-sm" href="<%= editionAdmin %>?tab=settings"><%= t('Edition settings') %></a><a class="btn btn-sm" href="<%= editionAdmin %>?tab=people"><%= t('Edition people') %></a></div>
-  <% } %>
 
-  <%# Settings from the series or edition: where each comes from, and whether this event follows it. %>
+
   <% if (inherited.length) { %>
     <div class="card mb-3" id="inherited" data-locked-settings="<%= JSON.stringify(inherited.filter((i) => i.mode === 'locked').map((i) => i.key)) %>">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-hierarchy-2 me-2"></i><%= t('From the series') %></h3></div>
@@ -87,7 +84,6 @@
     </div>
   <% } %>
 
-  <%# The settings in side tabs, as on New event; the event's data tools are its last tab. %>
   <% const dbPane = include('../../partials/configDatabase', locals); %>
   <% if (can('editEvent')) { %>
     <%- include('../../partials/contestForm', { action: `${base}/config`, submitLabel: 'Save settings', wikiMode, extraPane: dbPane.trim() ? dbPane : '' }) %>

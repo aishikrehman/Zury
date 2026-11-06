@@ -1,5 +1,3 @@
-<%# Deleting a series or edition: what is inside (which stops it), with a way to move each out.
-    Expects: inside (structureService.impact), seriesSlug, editionSlug (or null), canDelete. %>
 <% const csrf = `<input type="hidden" name="_csrf" value="${csrfToken}">`; %>
 <div class="card mt-3">
   <div class="card-header"><h3 class="card-title"><i class="ti ti-trash me-2"></i><%= editionSlug ? t('Delete edition') : t('Delete series') %></h3></div>

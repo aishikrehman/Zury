@@ -1,5 +1,3 @@
-<%# People of this series or edition: roles on this level only.
-    Expects: seriesSlug, editionId (null on a series), people, ROLES. %>
 <div class="card" id="people">
   <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('People') %></h3></div>
   <form method="post" action="/series/<%= seriesSlug %>/people" class="card-body border-bottom">
@@ -11,13 +9,13 @@
       <div class="col-6 col-md-3"><label class="form-check m-0 mb-2"><input class="form-check-input" type="checkbox" name="appliesToChildren"><span class="form-check-label"><%= editionId ? t('Also on its events') : t('Also on its editions and events') %></span></label></div>
       <div class="col-12 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Add') %></button></div>
     </div>
-    <div class="form-hint mt-2"><%= t('A role counts only where it is given. Roles on one event, or on one wiki of an event, are given on that event.') %></div>
+    
   </form>
   <% if (typeof inherited !== 'undefined' && inherited.length) { %>
     <div class="card-body border-bottom py-2">
       <div class="subheader mb-1"><%= t('From the series') %></div>
       <div class="d-flex flex-wrap gap-2"><% inherited.forEach((r) => { %><span class="badge bg-azure-lt"><%= r.user.username %> · <%= t(EVENT_ROLES[r.role] ? EVENT_ROLES[r.role].label : r.role) %></span><% }) %></div>
-      <div class="form-hint"><%= t('They have this role on every edition; they are managed on the series.') %></div>
+      
     </div>
     <div class="card-body pb-0"><div class="subheader"><%= t('Only this edition') %></div></div>
   <% } %>

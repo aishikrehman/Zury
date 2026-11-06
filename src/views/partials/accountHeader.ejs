@@ -1,4 +1,3 @@
-<%# Your own pages: the page's name and the links to the others, then the page (on the profile, who you are in a sidebar beside it); close with accountEnd. Expects: tab; optional actions (trusted HTML), eventCount. %>
 <%
   const me = currentUser;
   const tabs = [
@@ -30,7 +29,7 @@
                 <form action="/settings/avatar" method="post" class="collapse text-start mb-2" id="change-picture">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <input class="form-control form-control-sm mb-2" name="file" placeholder="File:Example.jpg" aria-label="<%= t('File name on Commons') %>" maxlength="250">
-                  <div class="form-hint mb-2"><%= t('A picture from Wikimedia Commons, by its file name.') %></div>
+                  
                   <div class="d-flex gap-2"><button class="btn btn-sm btn-primary flex-fill" type="submit"><%= t('Use this picture') %></button><% if (me.avatarUrl) { %><button class="btn btn-sm btn-ghost-danger" type="submit" name="remove" value="1" title="<%= t('Remove picture') %>"><i class="ti ti-trash"></i></button><% } %></div>
                 </form>
               <% } else { %>

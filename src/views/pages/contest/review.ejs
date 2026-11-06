@@ -1,9 +1,3 @@
-<%#
-  The review window, inside the event (its header and the site menu stay): the entry's page on the left, in its own scrolling frame;
-  everything a jury member needs sits in the panel on the right. After each verdict
-  the next entry matching the same filters comes up.
-  Keys: A accept, R reject, S skip, 1–9 values of the first mark, Ctrl+Enter save.
-%>
 <%
   const total = progress.waiting + progress.decided;
   const done = total ? Math.round((progress.decided / total) * 100) : 0;
@@ -32,7 +26,6 @@
       </select>
     </div>
     <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters"><i class="ti ti-filter me-1"></i><%= t('Filter') %></button>
-    <%# Full screen on request (the button again, or Esc, brings the page back). %>
     <button class="btn btn-icon" type="button" data-review-full title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>" aria-pressed="false"><i class="ti ti-maximize"></i></button>
     <% if (entry) { %>
       <a class="btn" href="<%= base %>/review?<%= fq({ after: entry.id }) %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-1 d-none d-md-inline">S</kbd></a>
@@ -127,7 +120,6 @@
   <% } else { %>
     <% const problems = [...(validation.errors || []), ...(validation.warnings || [])]; %>
     <div class="z-review-layout">
-      <%# ── The entry itself ── %>
       <section class="card z-review-entry" aria-label="<%= entry.title %>">
         <div class="card-header">
           <div class="flex-fill min-w-0">
@@ -153,7 +145,6 @@
         </div>
       </section>
 
-      <%# ── The jury member's tools ── %>
       <aside class="z-review-side">
         <form method="post" action="<%= base %>/review/<%= entry.id %>" class="card z-review-panel" data-review-form>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">

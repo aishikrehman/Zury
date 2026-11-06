@@ -1,4 +1,3 @@
-<%# Expects `s`: a permission subject (platformRoles, adminWikis); optional compact (one line of text, for tables). %>
 <% const keys = [...s.platformRoles].filter((k) => !(s.platformRoles.has('superuser') && k === 'platform-admin')); /* Superuser already includes the administrator */ const all = (role) => (role.scope === 'wiki' ? [...s.adminWikis].map(wikiLocal) : []); /* One wiki by name; several as a count, the names on hover. */ const wikis = (role) => { const w = all(role); return w.length > 1 ? tn('{n} wiki', '{n} wikis', w.length) : w[0] || ''; }; %>
 <% if (!keys.length) { %>
   <span class="text-secondary"><%= t("No Zury roles") %></span>

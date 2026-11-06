@@ -1,7 +1,3 @@
-<%#
-  Dashboard: a few numbers, then your events beside what waits for your approval, then the
-  calendar. Reviewing has its own page (Review); submissions have the My submissions tab.
-%>
 <%
   const organizing = myEvents.filter((e) => e.roles.includes('organizer')).length;
   const running = myEvents.filter((e) => e.contest.status === 'active').length;

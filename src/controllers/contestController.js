@@ -84,7 +84,7 @@ async function show(req, res, next) {
       typeDef: EVENT_TYPES[req.contest.type],
       typeConfig: readTypeConfig(req.contest.type, req.settings.typeConfig),
       wikiParts: await wikiParts(req, members),
-      requestableWikis: req.user && !req.scope.isGlobalController,
+      requestableWikis: req.user && !req.scope.isGlobalController && !req.contest.editionId,
       dateFields: contestForm.DATE_FIELDS,
       featureFields: contestForm.FEATURE_FIELDS,
       permissionList: Object.keys(PERMISSIONS).filter((p) => req.scope.permissions.has(p)),

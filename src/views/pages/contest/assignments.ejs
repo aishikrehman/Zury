@@ -14,7 +14,6 @@
         <% if (assignedMode) { %><%= t('Only assigned reviewers') %><% } else { %><%= t('Any reviewer of the wiki') %><% } %>
       </div>
     </div>
-    <%# Entries of reviewers who haven't reviewed for some days go to the others. %>
     <form method="post" action="<%= base %>/assignments/reassign" class="ms-auto d-flex align-items-center gap-2" data-confirm="<%= t('Give the entries of reviewers inactive for this many days to the other reviewers?') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <label class="small text-secondary text-nowrap" for="inactive-days"><%= t('Inactive for') %></label>
@@ -29,7 +28,7 @@
   </div>
 
   <% if (!assignedMode) { %>
-    <div class="alert alert-info mb-3"><i class="ti ti-info-circle"></i><div><%= t('Right now any reviewer of the wiki can review any entry, so assignments are a guide. To limit each reviewer to their assigned entries, choose “Only assigned reviewers” in Configuration → Interaction and judging.') %></div></div>
+    
   <% } %>
 
   <div class="row row-cards mb-3">
