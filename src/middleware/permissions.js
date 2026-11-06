@@ -70,6 +70,9 @@ async function setupEvent(req, res, next, contest, code) {
   req.permissions = scope.permissions;
   req.base = base;
   req.eventBase = eventBase;
+  try {
+    if (require('../services/participationService').read(settings).rules.editors === 'staff' && (scope.eventRoles || []).includes('jury')) scope.permissions.add('editEvent');
+  } catch { /* settings without rules */ }
   // Views show the effective values for the wiki in context; eventContest is the event as stored.
   Object.assign(res.locals, {
     contest: eff.contest,

@@ -122,7 +122,7 @@ async function window(req, res, next) {
       queue: q,
       progress: await reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }),
       // Reviewer statistics: for everyone when the event shows them, else for its organizers.
-      activity: req.eventSettings.juryStatsEnabled !== false || req.scope.permissions.has('manageEvent') ? await reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki }) : [],
+      activity: (() => { const r = require('../services/participationService').read(req.eventSettings).rules.stats; const org = req.scope.permissions.has('manageEvent'); return org ? r !== 'off' || true : r === 'anyone' || r === 'reviewers'; })() ? await reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki }) : [],
       position: id ? q.ids.indexOf(id) + 1 : 0,
       filters,
       filterQuery,

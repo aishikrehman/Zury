@@ -21,7 +21,11 @@ const MODES = {
   onwiki: 'Those who signed up on an on-wiki page',
   list: 'A fixed list of participants',
 };
-const ASK = { email: 'Email', legalName: 'Legal name', phone: 'Phone' };
+const ASK = { email: 'Email', phone: 'Phone', legalName: 'Legal name', nameEn: 'Name in English' };
+// The event's rules set on the Review tab (kept with participation).
+const RULES = {
+  maxReviews: null, onBehalf: 'staff', mass: 'anyone', bulk: 'reviewers', stats: 'reviewers', appeals: 'off', withdraw: 'participant', editors: 'organizers', results: 'always',
+};
 const SOURCES = {
   none: 'Any article',
   page: 'Articles linked from an on-wiki page',
@@ -42,6 +46,13 @@ function read(settings) {
   const e = p.eligible || {};
   return {
     mode,
+    who: mode === 'list' ? 'members' : 'anyone',
+    reg: mode === 'register' ? 'required' : 'auto',
+    regWindow: p.regWindow === 'event' ? 'event' : 'any',
+    createdAfter: p.createdAfter || '',
+    createdBefore: p.createdBefore || '',
+    group: p.group || '',
+    rules: { ...RULES, ...(p.rules || {}) },
     ask: (Array.isArray(p.ask) ? p.ask : []).filter((k) => ASK[k]),
     page: String(p.page || ''),
     users: Array.isArray(p.users) ? p.users : [],
@@ -55,11 +66,27 @@ const lines = (v) => str(v).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
 
 // From the settings form. Also sets the older registration switches the rest of Zury reads.
 function parse(body, errors) {
-  const mode = MODES[body.participation_mode] ? body.participation_mode : 'submit';
+  // The form's choices: anyone or chosen members; registration automatic or required first.
+  const mode = body.participation_who === 'members' ? 'list' : body.participation_reg === 'required' ? 'register' : body.participation_who ? 'submit' : MODES[body.participation_mode] ? body.participation_mode : 'submit';
+  const day = (x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x || '')) ? String(x) : '');
+  const ruleIn = (k, list) => (list.includes(body['rule_' + k]) ? body['rule_' + k] : RULES[k]);
+  const maxRev = Number.parseInt(body.rule_maxReviews, 10);
+  const rules = {
+    maxReviews: Number.isInteger(maxRev) && maxRev > 0 ? maxRev : null,
+    onBehalf: ruleIn('onBehalf', ['off', 'staff', 'anyone']),
+    mass: ruleIn('mass', ['off', 'anyone', 'reviewers']),
+    bulk: ruleIn('bulk', ['off', 'reviewers']),
+    stats: ruleIn('stats', ['off', 'anyone', 'reviewers', 'organizers']),
+    appeals: ruleIn('appeals', ['off', 'rejected', 'any']),
+    withdraw: ruleIn('withdraw', ['off', 'reviewers', 'participant', 'both']),
+    editors: ruleIn('editors', ['organizers', 'staff']),
+    results: ruleIn('results', ['always', 'afterReview', 'manual']),
+  };
   const ask = [].concat(body.participation_ask || []).filter((k) => ASK[k]);
   const page = str(body.participation_page).replace(/_/g, ' ').slice(0, 255);
   const users = [...new Set(lines(body.participation_users).map((u) => u.replace(/^(User|ব্যবহারকারী):/i, '').replace(/_/g, ' ').trim()).filter(Boolean))];
   if (mode === 'onwiki' && !page) errors.participation_page = 'Enter the on-wiki sign-up page.';
+  if (body.eligible_source === 'page' && !String(body.eligible_value || '').trim()) errors.eligible_value = 'Enter the wiki page that lists the articles.';
   if (mode === 'list' && !users.length) errors.participation_users = 'Enter at least one username.';
   if (users.length > 5000) errors.participation_users = 'At most 5000 usernames.';
   const source = SOURCES[body.eligible_source] ? body.eligible_source : 'none';
@@ -67,6 +94,10 @@ function parse(body, errors) {
   if (source !== 'none' && !value) errors.eligible_value = 'Enter where the articles come from.';
   const participation = {
     mode, ask, page, users, outsiders: body.participation_outsiders === 'on',
+    regWindow: body.participation_regWindow === 'event' ? 'event' : 'any',
+    createdAfter: day(body.participation_createdAfter), createdBefore: day(body.participation_createdBefore),
+    group: /^[a-z-]{2,40}$/.test(String(body.participation_group || '')) ? body.participation_group : '',
+    rules,
     eligible: { source, value: source === 'none' ? '' : value, depth: Math.min(Math.max(parseInt(body.eligible_depth, 10) || 0, 0), 5) },
   };
   return {
@@ -94,6 +125,19 @@ async function pageUsers(wiki, title) {
 // May this user join? (Modes onwiki and list check the page or the list, unless others may join.)
 async function joinCheck({ user, contest, settings }) {
   const p = read(settings);
+  const now = new Date();
+  if (p.regWindow === 'event' && ((contest.startDate && now < contest.startDate) || (contest.endDate && now > contest.endDate))) return 'Registration is open only while the event runs.';
+  const made = user.wikimediaRegisteredAt ? new Date(user.wikimediaRegisteredAt) : null;
+  if (p.createdAfter && made && made < new Date(p.createdAfter)) return 'Your Wikimedia account must be created after {date}.'.replace('{date}', p.createdAfter);
+  if (p.createdBefore && made && made > new Date(p.createdBefore)) return 'Your Wikimedia account must be created before {date}.'.replace('{date}', p.createdBefore);
+  if (p.group) {
+    try {
+      const data = await wikiApi.get(contest.primaryWiki, { action: 'query', list: 'users', ususers: user.username, usprop: 'groups' });
+      const groups = data.query?.users?.[0]?.groups;
+      // Unknown (the wiki didn't answer): not held against them.
+      if (Array.isArray(groups) && !groups.includes(p.group)) return 'You need the {group} right on the wiki.'.replace('{group}', p.group);
+    } catch { /* the wiki didn't answer */ }
+  }
   if (p.mode === 'submit') return null;
   if (p.outsiders || p.mode === 'register') return null;
   if (p.mode === 'list') return p.users.some((u) => u.toLowerCase() === user.username.toLowerCase()) ? null : 'Only the listed participants can take part.';
@@ -255,4 +299,4 @@ function teams(contestId) {
   return prisma.team.findMany({ where: { contestId }, orderBy: { name: 'asc' }, include: { members: { where: { status: 'active', role: 'participant' }, include: { user: { select: { id: true, username: true } } } } } });
 }
 
-module.exports = { MODES, ASK, SOURCES, read, parse, joinCheck, signUpUrl, importParticipants, resolveEligible, afterSave, eligibleSet, joinTeam, teams, pageUsers };
+module.exports = { RULES, MODES, ASK, SOURCES, read, parse, joinCheck, signUpUrl, importParticipants, resolveEligible, afterSave, eligibleSet, joinTeam, teams, pageUsers };

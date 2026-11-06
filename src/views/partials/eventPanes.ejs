@@ -1,0 +1,107 @@
+<%
+  const row = (label, control, show = '') => `<div class="z-set-row"${show ? ` data-show-when="${show}"` : ''}><span class="z-set-label">${esc(t(label))}</span><div class="z-set-control">${control}</div></div>`;
+  const sel = (name, options, current, attrs = '') => `<select class="form-select" id="${name}" name="${name}"${attrs}>${options.map(([k, l]) => `<option value="${k}"${String(current) === String(k) ? ' selected' : ''}>${esc(t(l))}</option>`).join('')}</select>`;
+  const warn = [].concat(v('type_warnOnly') || []);
+  // Each submission rule: must be met, or only a warning.
+  const need = (key) => type === 'writing' ? `<select class="form-select form-select-sm z-need" name="type_warnOnly" aria-label="${esc(t('Required'))}"><option value="">${esc(t('Required'))}</option><option value="${key}"${warn.includes(key) ? ' selected' : ''}>${esc(t('Not required'))}</option></select>` : '';
+  const pv = (k, d) => (v('participation_' + k) !== undefined && v('participation_' + k) !== '' ? v('participation_' + k) : d);
+  const tvRaw = (k) => v('type_' + k);
+  const tOn = (k) => { const x = tvRaw(k); return x === true || x === 'on' || x === 'true'; };
+  const ruleOf = (k, d) => (v('rule_' + k) || d);
+%>
+          <%# ── 2. Participation ── %>
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-participation" data-step="1">
+            <div class="row g-3 mb-3">
+              <div class="col-md-4"><label class="form-label" for="participation_regWindow"><%= t('Registration open') %></label><%- sel('participation_regWindow', [['any', 'Any time'], ['event', 'While the event runs']], pv('regWindow', 'any')) %></div>
+            </div>
+            <div class="z-set-list mb-3">
+              <%- row('Participants', sel('participation_who', [['anyone', 'Anyone'], ['members', 'Chosen members']], pv('who', 'anyone'))) %>
+              <div class="z-set-row" data-show-when="participation_who:members"><span class="z-set-label"><%= t('Members') %></span><div class="z-set-control"><textarea class="form-control<%= inv('participation_users') %>" name="participation_users" rows="3" placeholder="<%= t('One username per line') %>"><%= v('participation_users') || '' %></textarea><%- err('participation_users') %></div></div>
+              <div class="z-set-row"><span class="z-set-label"><%= t('Organizers and reviewers may also take part') %></span><div class="z-set-control"><label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="allowJuryParticipation"<%= on('allowJuryParticipation') ? ' checked' : '' %>></label></div></div>
+              <%- row('Registration', sel('participation_reg', [['auto', 'Automatic (on the first entry)'], ['required', 'Required first']], pv('reg', 'auto'))) %>
+              <div class="z-set-row" data-show-when="participation_reg:required"><span class="z-set-label"><%= t('Ask when registering') %></span><div class="z-set-control z-set-inline">
+                <% Object.entries(PARTICIPATION.ASK).forEach(([k, label]) => { %><label class="form-check form-check-inline mb-0"><input class="form-check-input" type="checkbox" name="participation_ask" value="<%= k %>"<%= [].concat(v('participation_ask') || []).includes(k) ? ' checked' : '' %>><span class="form-check-label"><%= t(label) %></span></label><% }) %>
+              </div></div>
+            </div>
+            <div class="z-form-group-title"><%= t('Extra conditions') %></div>
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label" for="participation_createdAfter"><%= t('Account created after') %></label><input type="date" class="form-control" id="participation_createdAfter" name="participation_createdAfter" value="<%= pv('createdAfter', '') %>"></div>
+              <div class="col-md-4"><label class="form-label" for="participation_createdBefore"><%= t('Account created before') %></label><input type="date" class="form-control" id="participation_createdBefore" name="participation_createdBefore" value="<%= pv('createdBefore', '') %>"></div>
+              <div class="col-md-4"><label class="form-label" for="participation_group"><%= t('Has the right') %></label><%- sel('participation_group', [['', '—'], ['autoconfirmed', 'Autoconfirmed'], ['extendedconfirmed', 'Extended confirmed'], ['autopatrolled', 'Autopatrolled'], ['patroller', 'Patroller'], ['rollbacker', 'Rollbacker'], ['reviewer', 'Reviewer'], ['sysop', 'Administrator']], pv('group', '')) %></div>
+            </div>
+          </section>
+
+          <%# ── 3. Submissions ── %>
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-submission" data-step="2">
+            <div class="z-set-list mb-3">
+              <div class="z-set-row"><span class="z-set-label"><%= t('Submission window') %></span><div class="z-set-control"><label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="sub_window"<%= v('submissionOpensAt') || v('submissionDeadline') ? ' checked' : '' %>></label></div></div>
+              <div class="z-set-row" data-show-when="sub_window:on"><span class="z-set-label"><%= t('From – to') %></span><div class="z-set-control d-flex gap-2"><input type="datetime-local" class="form-control" name="submissionOpensAt" value="<%= v('submissionOpensAt') %>" aria-label="<%= t('Submissions open') %>"><input type="datetime-local" class="form-control" name="submissionDeadline" value="<%= v('submissionDeadline') %>" aria-label="<%= t('Submission deadline') %>"></div></div>
+              <% if (type === 'writing') { %>
+                <div class="z-set-row"><span class="z-set-label"><%= t('Only articles created during the event') %></span><div class="z-set-control d-flex gap-2 align-items-center"><label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="type_createdDuringEventOnly"<%= tOn('createdDuringEventOnly') ? ' checked' : '' %>></label><%- need('created') %></div></div>
+                <div class="z-set-row"><span class="z-set-label"><%= t('Expansions of existing articles too') %></span><div class="z-set-control"><label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="type_allowExpansions"<%= tOn('allowExpansions') ? ' checked' : '' %>></label></div></div>
+                <div class="z-set-row"><span class="z-set-label"><%= t('Namespaces') %></span><div class="z-set-control d-flex gap-2 align-items-center"><select class="form-select<%= inv('eligibleNamespaces') %>" id="eligibleNamespaces" name="eligibleNamespaces" multiple data-picker="namespace" data-wiki-source="primaryWiki" placeholder="0"><% listVal('eligibleNamespaces').forEach((n) => { %><option value="<%= n %>" selected><%= n %></option><% }) %></select><%- need('namespace') %></div></div>
+                <div class="z-set-row"><span class="z-set-label"><%= t('Articles that can be submitted') %></span><div class="z-set-control d-flex gap-2 align-items-center"><%- sel('eligible_source', [['none', 'Any'], ['page', 'Listed on a wiki page']], v('eligible_source') === 'page' ? 'page' : 'none') %><%- need('eligible') %></div></div>
+                <div class="z-set-row" data-show-when="eligible_source:page"><span class="z-set-label"><%= t('List page') %></span><div class="z-set-control"><input class="form-control<%= inv('eligible_value') %>" name="eligible_value" value="<%= v('eligible_value') || '' %>" placeholder="<%= t('E.g. Wikipedia:Asian Month 2026/Articles') %>"><%- err('eligible_value') %></div></div>
+                <div class="z-set-row"><span class="z-set-label"><%= t('Size at least (bytes)') %></span><div class="z-set-control d-flex gap-2 align-items-center"><input type="number" min="0" class="form-control<%= inv('type_minBytes') %>" name="type_minBytes" value="<%= tvRaw('minBytes') ?? '' %>"><%- need('size') %></div></div>
+                <div class="z-set-row"><span class="z-set-label"><%= t('Words at least') %></span><div class="z-set-control d-flex gap-2 align-items-center"><input type="number" min="0" class="form-control<%= inv('type_minWordCount') %>" name="type_minWordCount" value="<%= tvRaw('minWordCount') ?? '' %>"><%- need('words') %></div></div>
+              <% } %>
+            </div>
+            <% if (type !== 'writing') { %>
+              <div class="row g-3 mb-3">
+                <div class="col-lg-6"><label class="form-label" for="eligibleNamespaces"><%= t("Namespaces") %></label><select class="form-select<%= inv('eligibleNamespaces') %>" id="eligibleNamespaces" name="eligibleNamespaces" multiple data-picker="namespace" data-wiki-source="primaryWiki"><% listVal('eligibleNamespaces').forEach((n) => { %><option value="<%= n %>" selected><%= n %></option><% }) %></select></div>
+              </div>
+              <% Object.entries(EVENT_TYPES).filter(([, td]) => td.fields.length).forEach(([key, td]) => { const current = key === type; %>
+                <fieldset class="row g-3 mb-3<%= current ? '' : ' d-none' %>" data-type-fields="<%= key %>"<%= current ? '' : ' disabled' %>>
+                  <% td.fields.forEach((f) => { const name = 'type_' + f.key; const val = current ? form[name] : f.default; const isOn = val === true || val === 'on' || val === 'true'; %>
+                    <div class="<%= f.type === 'list' ? 'col-md-6' : 'col-sm-6 col-lg-4' %>">
+                      <% if (f.type === 'bool') { %>
+                        <label class="form-check form-switch mt-md-4"><input class="form-check-input" type="checkbox" name="<%= name %>"<%= isOn ? ' checked' : '' %>><span class="form-check-label"><%= t(f.label) %></span></label>
+                      <% } else if (f.type === 'choices') { const selected = [].concat(val || []); %>
+                        <span class="form-label d-block"><%= t(f.label) %></span>
+                        <div class="form-selectgroup"><% Object.entries(f.choices).forEach(([ck, cl]) => { %><label class="form-selectgroup-item"><input type="checkbox" class="form-selectgroup-input" name="<%= name %>" value="<%= ck %>"<%= selected.includes(ck) ? ' checked' : '' %>><span class="form-selectgroup-label"><%= t(cl) %></span></label><% }) %></div>
+                      <% } else { const shown = Array.isArray(val) ? val.join('\n') : (val ?? ''); %>
+                        <label class="form-label"><%= t(f.label) %></label>
+                        <% if (f.type === 'list') { %><textarea class="form-control<%= current ? inv(name) : '' %>" name="<%= name %>" rows="3"><%= shown %></textarea>
+                        <% } else { %><input class="form-control<%= current ? inv(name) : '' %>" name="<%= name %>" <%= f.type === 'int' ? `type=number min=${f.min} max=${f.max}` : '' %> value="<%= shown %>"><% } %>
+                      <% } %>
+                      <% if (current) { %><%- err(name) %><% } %>
+                    </div>
+                  <% }) %>
+                </fieldset>
+              <% }) %>
+            <% } %>
+            <div class="z-form-group-title"><%= t('Tracking') %></div>
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label" for="trackHashtags"><%= t('Edit summary') %></label><input class="form-control<%= inv('trackHashtags') %>" id="trackHashtags" name="trackHashtags" value="<%= v('trackHashtags') %>" placeholder="#wam2026"><%- err('trackHashtags') %></div>
+              <div class="col-md-4"><label class="form-label" for="trackCategories"><%= t('Category') %></label><input class="form-control<%= inv('trackCategories') %>" id="trackCategories" name="trackCategories" value="<%= v('trackCategories') %>"><%- err('trackCategories') %></div>
+              <% if (type === 'writing') { %>
+                <div class="col-md-4"><label class="form-label" for="type_entryTemplate"><%= t('Template') %></label><div class="d-flex gap-2"><input class="form-control" id="type_entryTemplate" name="type_entryTemplate" value="<%= tvRaw('entryTemplate') || '' %>" placeholder="{{…}}"><select class="form-select" name="type_entryTemplateOnTalk" style="max-width:9rem" aria-label="<%= t('Where') %>"><option value="on"<%= tOn('entryTemplateOnTalk') ? ' selected' : '' %>><%= t('Talk page') %></option><option value=""<%= tOn('entryTemplateOnTalk') ? '' : ' selected' %>><%= t('Article') %></option></select></div></div>
+              <% } %>
+            </div>
+          </section>
+
+          <% if (judged) { %>
+          <%# ── 4. Review and results ── %>
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-judging" data-step="3">
+            <% const reviewersNow = Array.isArray(v('reviewers')) ? v('reviewers') : ['jury']; const whoReviews = reviewersNow.includes('participants') ? 'anyone' : reviewersNow.includes('localAdmins') && !reviewersNow.includes('jury') ? 'admins' : 'jury'; const method = v('reviewMethod') === 'number' ? (v('scoreMin') === '' && v('scoreMax') === '' ? 'anynumber' : 'number') : (v('reviewMethod') || 'yesno'); %>
+            <div class="z-set-list mb-3">
+              <%- row('How reviewers judge', sel('reviewMethodChoice', [['yesno', 'Yes / no / skip'], ['stars', 'Stars'], ['number', 'A number in a range'], ['anynumber', 'Any number']], method)) %>
+              <div class="z-set-row" data-show-when="reviewMethodChoice:number"><span class="z-set-label"><%= t('Range') %></span><div class="z-set-control d-flex gap-2"><input type="number" step="any" class="form-control" name="scoreMin" value="<%= v('scoreMin') %>" aria-label="<%= t('Lowest') %>"><input type="number" step="any" class="form-control<%= inv('scoreMax') %>" name="scoreMax" value="<%= v('scoreMax') %>" aria-label="<%= t('Highest') %>"></div></div>
+              <%- row('Reviewers', sel('reviewersChoice', [['jury', 'Organizers and reviewers'], ['admins', 'Administrators of the wiki'], ['anyone', 'Anyone']], whoReviews)) %>
+              <%- row('Who reviews which entry', sel('reviewAssignment', [['open', 'Anyone of them'], ['assigned', 'Assigned by hand'], ['equal', 'Shared out equally, automatically']], v('reviewAssignment') === 'fixed' ? 'equal' : (v('reviewAssignment') || 'open')), 'reviewersChoice:jury') %>
+              <div class="z-set-row"><span class="z-set-label"><%= t('Reviews per entry') %></span><div class="z-set-control d-flex gap-2"><select class="form-select" name="requiredReviews" aria-label="<%= t('At least') %>"><% for (let n = 1; n <= 10; n += 1) { %><option value="<%= n %>"<%= String(v('requiredReviews') || 1) === String(n) ? ' selected' : '' %>><%= t('At least {n}', { n }) %></option><% } %></select><select class="form-select" name="rule_maxReviews" aria-label="<%= t('At most') %>"><option value=""><%= t('No upper limit') %></option><% for (let n = 1; n <= 10; n += 1) { %><option value="<%= n %>"<%= String(ruleOf('maxReviews', '')) === String(n) ? ' selected' : '' %>><%= t('At most {n}', { n }) %></option><% } %></select></div></div>
+              <div class="z-set-row" data-show-when="reviewMethodChoice:yesno"><span class="z-set-label"><%= t('With more than one review') %></span><div class="z-set-control"><%- sel('decisionRule', [['unanimous', 'Everyone must accept'], ['any', 'One accept is enough'], ['majority', 'More than half accept'], ['last', 'The last review decides']], ['unanimous', 'any', 'majority', 'last'].includes(v('decisionRule')) ? v('decisionRule') : 'unanimous') %></div></div>
+              <div class="z-set-row" data-show-when="reviewMethodChoice:stars,number,anynumber"><span class="z-set-label"><%= t('Pass mark (average)') %></span><div class="z-set-control"><input type="number" min="0" step="0.5" class="form-control" name="passScore" value="<%= v('passScore') || 0 %>"></div></div>
+              <%- row('What the results count', sel('rankBy', [['words', 'Words'], ['articles', 'Articles'], ['points', 'Points'], ['both', 'Words and articles']], v('rankBy') || 'articles')) %>
+              <%- row('Submitting for others', sel('rule_onBehalf', [['off', 'Off'], ['staff', 'Organizers and reviewers'], ['anyone', 'Anyone']], ruleOf('onBehalf', 'staff'))) %>
+              <%- row('Many entries at once', sel('rule_mass', [['off', 'Off'], ['anyone', 'Anyone'], ['reviewers', 'Reviewers']], ruleOf('mass', 'anyone'))) %>
+              <%- row('Many reviews at once', sel('rule_bulk', [['off', 'Off'], ['reviewers', 'Reviewers']], ruleOf('bulk', 'reviewers'))) %>
+              <%- row('Reviewer statistics', sel('rule_stats', [['anyone', 'Anyone'], ['reviewers', 'Reviewers'], ['organizers', 'Organizers only'], ['off', 'Off']], ruleOf('stats', 'reviewers'))) %>
+              <%- row("Reviewers see each other's reviews", sel('rule_seeOthers', [['yes', 'Yes'], ['no', 'No']], v('secretBallot') ? 'no' : 'yes')) %>
+              <%- row('Asking for another review', sel('rule_appeals', [['off', 'Off'], ['rejected', 'Only entries not accepted'], ['any', 'Any entry']], ruleOf('appeals', 'off'))) %>
+              <%- row('Removing an entry', sel('rule_withdraw', [['off', 'Off'], ['reviewers', 'Reviewers'], ['participant', 'Participant'], ['both', 'Both']], ruleOf('withdraw', 'participant'))) %>
+              <%- row('Who can change the settings', sel('rule_editors', [['organizers', 'Organizers'], ['staff', 'Organizers and reviewers']], ruleOf('editors', 'organizers'))) %>
+              <%- row('Results and statistics', sel('rule_results', [['always', 'Always visible'], ['afterReview', 'When all reviews are done'], ['manual', 'When published']], ruleOf('results', 'always'))) %>
+            </div>
+          </section>
+          <% } %>

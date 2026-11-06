@@ -146,6 +146,7 @@ async function saveEntries({ actor, contest, settings, participant, items, ensur
           status: item.status,
           metadata: JSON.stringify(item.meta),
           wordCount: item.meta?.wordCount ?? null,
+          revId: item.meta?.revId ?? null,
           validation: JSON.stringify({ errors: [], warnings: item.warnings }),
           checkedAt: new Date(),
           history: {
@@ -293,8 +294,8 @@ async function revalidate({ actor, submission, contest, settings, eventWikis = [
     const updated = await tx.submission.update({
       where: { id: submission.id },
       data: {
-        metadata: JSON.stringify(meta.exists ? meta : { ...JSON.parse(submission.metadata), exists: false }),
-        ...(meta.exists && { wordCount: meta.wordCount ?? null }),
+        metadata: JSON.stringify(meta.exists ? { ...meta, currentRevId: meta.revId, revId: submission.revId || meta.revId } : { ...JSON.parse(submission.metadata), exists: false }),
+        ...(meta.exists && !submission.revId && { wordCount: meta.wordCount ?? null, revId: meta.revId ?? null }),
         validation: JSON.stringify({ errors, warnings: result.warnings }),
         checkedAt: new Date(),
         status,
@@ -364,7 +365,16 @@ async function myCountsByEvent(userId) {
   return out;
 }
 
+// Sent for another review: the page as it is now becomes the entry (its revision and word count).
+async function repin(submission) {
+  const contest = await prisma.contest.findUnique({ where: { id: submission.contestId }, select: { language: true } });
+  const meta = await fetchEntryMetadata({ wiki: submission.wiki, title: submission.title }, { language: contest?.language });
+  if (!meta.exists) return null;
+  return prisma.submission.update({ where: { id: submission.id }, data: { revId: meta.revId ?? null, wordCount: meta.wordCount ?? null, metadata: JSON.stringify({ ...meta, currentRevId: meta.revId }) } });
+}
+
 module.exports = {
+  repin,
   myEntries,
   myCountsByEvent, SORTS, MINE_SORTS,
   MAX_BATCH,

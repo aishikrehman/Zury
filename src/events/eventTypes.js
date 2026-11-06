@@ -178,7 +178,7 @@ for (const [type, guide] of Object.entries(GUIDES)) EVENT_TYPES[type].guide = gu
 const WARN_ONLY = {
   photo: { resolution: 'Resolution', category: 'Category', uploadDate: 'Upload date' },
   photowalk: { resolution: 'Resolution', category: 'Category', uploadDate: 'Upload date' },
-  writing: { size: 'Size', words: 'Word count', created: 'Created during the event' },
+  writing: { size: 'Size', words: 'Word count', created: 'Created during the event', namespace: 'Namespace', eligible: 'Eligible list' },
   data: { properties: 'Required properties', statements: 'Number of statements' },
   proofread: { level: 'Proofreading level', book: 'Book', edited: 'Changed during the event' },
   glam: { category: 'Batch category', license: 'Licence', uploadDate: 'Upload date' },

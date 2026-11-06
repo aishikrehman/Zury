@@ -94,6 +94,7 @@ async function fetchEntryMetadata(ref, { language = 'en', wordCountMethod = 'aut
     createdAt: firstRev?.timestamp || null,
     creator: firstRev?.user || null,
     sizeBytes: page.length ?? null,
+    revId: page.lastrevid ?? null,
     wordCount: page.extract != null ? countWords(page.extract) : null,
     categories: (page.categories || []).map((c) => c.title.replace(/^[^:]+:/, '')),
   };

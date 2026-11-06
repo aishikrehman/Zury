@@ -71,7 +71,7 @@ function verdict(settings, { decision, marks, score }) {
 // Reviewers see only the entries given to them: assigned by hand, shared out equally, or a set number each.
 const assignedMode = (settings) => ['assigned', 'equal', 'fixed'].includes(settings.reviewAssignment);
 
-const DECISION_RULES = ['majority', 'unanimous', 'any', 'veto', 'first', 'score'];
+const DECISION_RULES = ['majority', 'unanimous', 'any', 'veto', 'first', 'last', 'score'];
 
 /**
  * What the reviews so far make of an entry ({ status, score }), by the event's rule.
@@ -87,6 +87,11 @@ function decide(reviews, settings) {
   const waiting = { status: 'under_review', score: null };
   if (!reviews.length) return waiting;
   if (rule === 'first') return { status: reviews[0].decision === 'accept' ? 'approved' : 'rejected', score };
+  // The last review decides (once enough reviews are in).
+  if (rule === 'last' && reviews.length >= required) {
+    const last = [...reviews].sort((a, b) => new Date(a.updatedAt || a.createdAt || 0) - new Date(b.updatedAt || b.createdAt || 0)).pop();
+    return { status: last.decision === 'accept' ? 'approved' : 'rejected', score };
+  }
   if (rule === 'veto' && rejects) return { status: 'rejected', score };
   if (reviews.length < required) return waiting;
   switch (rule) {
@@ -234,6 +239,10 @@ async function saveReview({ actor, contest, settings, submission, decision, mark
     const assigned = await prisma.reviewAssignment.count({ where: { submissionId: submission.id, jurorId: actor.id } });
     if (!assigned) throw new ReviewError('This entry is not assigned to you.', 403);
   }
+  const maxReviews = require('./participationService').read(settings).rules.maxReviews;
+  if (maxReviews && !submission.reviews.some((r) => r.jurorId === actor.id) && submission.reviews.length >= maxReviews) {
+    throw new ReviewError('This entry already has all the reviews it takes.');
+  }
   const scored = given;
   const required = Math.max(1, settings.requiredReviews || 1);
 
@@ -302,7 +311,7 @@ async function leaderboard({ contest, settings, wiki }) {
   const where = { contestId: contest.id, ...(wiki && { wiki }) };
   const typeConfig = readTypeConfig(contest.type, settings.typeConfig);
   // What the results count: words, articles, or points (the reviewers' scores or marks).
-  let byWords = settings.rankBy ? settings.rankBy === 'words' : !!settings.wordCountEnabled;
+  let byWords = settings.rankBy ? ['words', 'both'].includes(settings.rankBy) : !!settings.wordCountEnabled;
   let entries;
   let pointsOf;
   if (contest.type === 'proofread') {
@@ -561,6 +570,8 @@ const APPEALABLE = ['rejected', 'disqualified'];
 function canAppeal({ submission, contest, settings, user, now = new Date() }) {
   if (!user || submission.participantId !== user.id) return false;
   if (!settings.appealsEnabled || !APPEALABLE.includes(submission.status)) return false;
+  const appealRule = require('./participationService').read(settings).rules.appeals;
+  if (appealRule === 'off' || (appealRule === 'rejected' && submission.status !== 'rejected')) return false;
   return !contest.appealDeadline || now <= contest.appealDeadline;
 }
 
@@ -568,6 +579,9 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
   if (!canAppeal({ submission, contest, settings, user })) throw new ReviewError('This entry cannot be appealed.');
   reason = String(reason || '').trim();
   if (reason.length < 10 || reason.length > 2000) throw new ReviewError('Explain the appeal in 10 to 2000 characters.');
+  if ((await prisma.appeal.count({ where: { submissionId: submission.id } })) >= 5) throw new ReviewError('This entry has been sent for another review 5 times already.');
+  // The page as it is now replaces the submitted revision.
+  await require('./submissionService').repin(submission).catch(() => null);
   return prisma.$transaction(async (tx) => {
     const appeal = await tx.appeal.create({ data: { contestId: contest.id, submissionId: submission.id, userId: user.id, reason } });
     await tx.submission.update({

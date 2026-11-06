@@ -1028,3 +1028,13 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 
 /* A reviewer's comment under a participant's own entry. */
 .z-review-note { padding: .35rem .6rem; border-radius: 8px; background: var(--z-hover, rgba(0,0,0,.04)); }
+
+/* Event header: a bigger logo, as it is (no frame or shadow); the banner fades out slowly. */
+.z-evhead-logo { width: 5rem; height: 5rem; border-radius: 0; box-shadow: none !important; background-color: transparent; }
+.z-evhead-logo.is-icon { border-radius: 18px; }
+.z-evhead.has-cover .z-evhead-cover { height: 220px; -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.85) 35%, rgba(0,0,0,.45) 65%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.85) 35%, rgba(0,0,0,.45) 65%, transparent 100%); }
+.z-evhead.has-cover > .container-xl { margin-top: -5rem; }
+.z-countdown { display: inline-flex; align-items: center; gap: .5rem; padding: .35rem .75rem; border-radius: 999px; background: var(--tblr-primary-lt, rgba(32,107,196,.1)); color: var(--z-brand); font-weight: 600; font-size: .85rem; white-space: nowrap; }
+.z-countdown-bar { display: inline-block; width: 3.5rem; height: .35rem; border-radius: 1rem; background: rgba(0,0,0,.08); overflow: hidden; }
+.z-countdown-bar i { display: block; height: 100%; background: currentColor; }
+@media (max-width: 575.98px) { .z-evhead-logo { width: 3.5rem; height: 3.5rem; } }

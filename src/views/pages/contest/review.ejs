@@ -214,6 +214,9 @@
               <% (validation.warnings || []).forEach((w) => { %><div class="text-warning"><i class="ti ti-alert-triangle me-1"></i><%= w %></div><% }) %>
             </div>
             <div class="d-flex flex-wrap gap-1 mt-2">
+              <% let em = {}; try { em = JSON.parse(entry.metadata || '{}'); } catch (e) { em = {}; } %>
+              <% if (entry.revId) { %><a class="btn btn-sm" href="<%= entry.url.split('/wiki/')[0] + '/w/index.php?oldid=' + entry.revId %>" target="_blank" rel="noopener"><i class="ti ti-pin me-1"></i><%= t('As submitted') %></a><% } %>
+              <% if (entry.revId && em.currentRevId && em.currentRevId !== entry.revId) { %><a class="btn btn-sm btn-outline-warning" href="<%= entry.url.split('/wiki/')[0] + '/w/index.php?diff=cur&oldid=' + entry.revId %>" target="_blank" rel="noopener"><i class="ti ti-git-compare me-1"></i><%= t('Changed since it was submitted') %></a><% } %>
               <a class="btn btn-sm" href="<%= entry.url %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= t('Open on wiki') %></a>
               <a class="btn btn-sm" href="<%= entry.url.replace(/\/wiki\/(.+)$/, '/w/index.php?title=$1&action=history') %>" target="_blank" rel="noopener"><i class="ti ti-history me-1"></i><%= t('History') %></a>
               <a class="btn btn-sm" href="<%= base %>/submissions/<%= entry.id %>"><i class="ti ti-file-info me-1"></i><%= t('Entry details') %></a>

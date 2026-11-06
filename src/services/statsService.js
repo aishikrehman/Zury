@@ -88,7 +88,7 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
   // Word statistics (when results count words): words by status, per participant, per article.
   let wordStats = null;
   const rankRow = await prisma.contestSettings.findUnique({ where: { contestId: contest.id }, select: { rankBy: true } });
-  if (rankRow && rankRow.rankBy === 'words') {
+  if (rankRow && ['words', 'both'].includes(rankRow.rankBy)) {
     const [byStatusW, byPerson, biggest] = await Promise.all([
       prisma.submission.groupBy({ by: ['status'], where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true }, _count: { _all: true } }),
       prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true }, _count: { _all: true }, orderBy: { _sum: { wordCount: 'desc' } }, take: 10 }),

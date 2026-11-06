@@ -76,7 +76,7 @@
     <% if (!groups.length) { %>
       <div class="card"><div class="card-body text-secondary"><%= t('Nothing matches these filters') %></div></div>
     <% } %>
-    <% groups.forEach((g) => { const st = CONTEST_STATUSES[g.contest.status] || { label: g.contest.status, badge: 'secondary' }; const path = eventPath(g.contest); const words = (g.contest.settings && (g.contest.settings.wordCountEnabled || g.contest.settings.rankBy === 'words')) || g.items.some((x) => x.wordCount); %>
+    <% groups.forEach((g) => { const st = CONTEST_STATUSES[g.contest.status] || { label: g.contest.status, badge: 'secondary' }; const path = eventPath(g.contest); const words = (g.contest.settings && (g.contest.settings.wordCountEnabled || ['words', 'both'].includes(g.contest.settings.rankBy))) || g.items.some((x) => x.wordCount); %>
       <div class="card mb-3">
         <div class="card-header flex-wrap gap-2">
           <div class="min-w-0 me-auto">

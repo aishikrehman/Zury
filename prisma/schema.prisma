@@ -460,6 +460,8 @@ model Submission {
   // JSON: { errors: [], warnings: [] } from the last rule check.
   validation    String    @default("{}") @db.Text
   checkedAt     DateTime?
+  // The page's revision when it was submitted (or sent for another review); reviews are of it.
+  revId         Int?
   submittedAt   DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

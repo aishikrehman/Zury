@@ -95,7 +95,32 @@ function intField(value, { min, max, optional = false }, errors, key) {
 // When the catalog hasn't been fetched yet, only the name format is checked.
 const PERMISSIVE = { empty: true, known: () => true, open: () => true, language: () => true };
 
-function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
+// The form's choices, written into the settings the rest of Zury reads.
+function fromChoices(input, type) {
+  const b = { ...input };
+  if (b.reviewMethodChoice) {
+    b.reviewMethod = b.reviewMethodChoice === 'anynumber' ? 'number' : b.reviewMethodChoice;
+    if (b.reviewMethodChoice === 'anynumber') { b.scoreMin = ''; b.scoreMax = ''; }
+  }
+  if (b.reviewersChoice) b.reviewers = { jury: ['jury'], admins: ['localAdmins'], anyone: ['jury', 'localAdmins', 'participants'] }[b.reviewersChoice] || ['jury'];
+  if (b.rule_seeOthers) b.secretBallot = b.rule_seeOthers === 'no' ? 'on' : '';
+  if (b.rule_bulk) b.bulkReviewEnabled = b.rule_bulk !== 'off' ? 'on' : '';
+  if (b.rule_stats) b.juryStatsEnabled = b.rule_stats === 'anyone' ? 'on' : '';
+  if (b.rule_appeals) b.appealsEnabled = b.rule_appeals !== 'off' ? 'on' : '';
+  if (b.rule_mass) b.massSubmissionEnabled = b.rule_mass !== 'off' ? 'on' : '';
+  if (b.rule_results) b.publicStatisticsEnabled = b.rule_results !== 'manual' ? 'on' : '';
+  if ('participation_who' in b) {
+    b.participantNotificationsEnabled = 'on';
+    if (!('contributionDiscoveryEnabled' in b)) b.contributionDiscoveryEnabled = EVENT_TYPES[type]?.defaults?.contributionDiscoveryEnabled ? 'on' : '';
+    if (b.sub_window !== 'on') { b.submissionOpensAt = ''; b.submissionDeadline = ''; }
+    // A writing contest's "Template / Where": a select gives '' for the article.
+    if (b.type_entryTemplateOnTalk === '') delete b.type_entryTemplateOnTalk;
+  }
+  return b;
+}
+
+function parse(rawBody, { type, wikiAllowed, catalog = PERMISSIVE }) {
+  const body = fromChoices(rawBody, type);
   const errors = {};
   const typeDef = EVENT_TYPES[type];
 
@@ -226,7 +251,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   settings.reviewAssignment = ['assigned', 'equal', 'fixed'].includes(body.reviewAssignment) ? body.reviewAssignment : 'open';
   settings.assignPerJuror = settings.reviewAssignment === 'fixed' ? intField(body.assignPerJuror, { min: 1, max: 100000 }, errors, 'assignPerJuror') ?? 1 : 0;
   // How results are counted, and how reviewers judge.
-  settings.rankBy = ['words', 'points'].includes(body.rankBy) ? body.rankBy : 'articles';
+  settings.rankBy = ['words', 'points', 'both'].includes(body.rankBy) ? body.rankBy : 'articles';
   settings.reviewMethod = ['stars', 'number', 'marks'].includes(body.reviewMethod) ? body.reviewMethod : 'yesno';
   const num = (v) => (str(v) === '' ? null : Number(v));
   settings.scoreMin = settings.reviewMethod === 'number' ? num(body.scoreMin) : 0;
@@ -242,7 +267,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   settings.juryStatsEnabled = bool(body.juryStatsEnabled);
   settings.wordCountMethod = 'auto';
   settings.requiredReviews = intField(body.requiredReviews, { min: 1, max: 20 }, errors, 'requiredReviews') ?? 1;
-  settings.decisionRule = ['stars', 'number'].includes(settings.reviewMethod) ? 'score' : ['majority', 'unanimous', 'any', 'veto', 'first', 'score'].includes(body.decisionRule) ? body.decisionRule : 'majority';
+  settings.decisionRule = ['stars', 'number'].includes(settings.reviewMethod) ? 'score' : ['majority', 'unanimous', 'any', 'veto', 'first', 'last', 'score'].includes(body.decisionRule) ? body.decisionRule : 'majority';
   settings.tieBreak = ['accept', 'wait'].includes(body.tieBreak) ? body.tieBreak : 'reject';
   settings.passScore = Math.max(0, Math.min(1000, Number(body.passScore) || 0));
   settings.secretBallot = body.secretBallot === 'on' || body.secretBallot === '1';
@@ -250,7 +275,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   settings.trackCategories = JSON.stringify([...new Set(categories)]);
   for (const [key] of FEATURE_FIELDS) settings[key] = bool(body[key]);
   // Results by words need the word counts shown.
-  settings.wordCountEnabled = settings.rankBy === 'words';
+  settings.wordCountEnabled = ['words', 'both'].includes(settings.rankBy);
 
   const typeInput = Object.fromEntries(
     typeDef.fields.map((f) => [f.key, body[`type_${f.key}`]]),
@@ -343,7 +368,7 @@ function toForm(contest, settings) {
   });
   for (const [key] of FEATURE_FIELDS) form[key] = s[key];
   const pp = require('./participationService').read(s);
-  Object.assign(form, { participation_mode: pp.mode, participation_ask: pp.ask, participation_page: pp.page, participation_users: pp.users.join(String.fromCharCode(10)), participation_outsiders: pp.outsiders, eligible_source: pp.eligible.source, eligible_value: pp.eligible.value, eligible_depth: String(pp.eligible.depth) });
+  Object.assign(form, { participation_who: pp.who, participation_reg: pp.reg, participation_regWindow: pp.regWindow, participation_createdAfter: pp.createdAfter, participation_createdBefore: pp.createdBefore, participation_group: pp.group, ...Object.fromEntries(Object.entries(pp.rules).map(([k, x]) => ['rule_' + k, x == null ? '' : String(x)])), participation_mode: pp.mode, participation_ask: pp.ask, participation_page: pp.page, participation_users: pp.users.join(String.fromCharCode(10)), participation_outsiders: pp.outsiders, eligible_source: pp.eligible.source, eligible_value: pp.eligible.value, eligible_depth: String(pp.eligible.depth) });
   const typeConfig = readTypeConfig(contest.type, s.typeConfig);
   for (const [key, value] of Object.entries(typeConfig)) form[`type_${key}`] = Array.isArray(value) ? value : value;
   return form;

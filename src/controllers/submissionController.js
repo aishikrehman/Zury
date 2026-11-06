@@ -32,7 +32,9 @@ function eventWindow(req) {
 // Decides whose entries these are and whether they may be submitted now.
 async function resolveSubmitter(req) {
   const { contest, settings, user } = req;
-  const canOthers = req.permissions.has('submitOthersEntry');
+  const rules = require('../services/participationService').read(req.settings).rules;
+  const staff = req.permissions.has('submitOthersEntry') || req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
+  const canOthers = rules.onBehalf === 'anyone' ? !!req.user : rules.onBehalf === 'staff' ? staff : req.permissions.has('deleteAnything');
   const window = eventWindow(req);
   if (!window.open && !canOthers) throw new SubmissionError(window.reason);
 
@@ -65,6 +67,12 @@ async function resolveSubmitter(req) {
 }
 
 function massAllowed(req) {
+  const rule = require('../services/participationService').read(req.settings).rules.mass;
+  if (rule === 'off') return req.permissions.has('massSubmit');
+  if (rule === 'reviewers') return (req.scope.eventRoles || []).includes('jury') || req.permissions.has('manageEvent') || req.permissions.has('massSubmit');
+  return true;
+}
+function massAllowedOld(req) {
   return req.settings.massSubmissionEnabled || req.permissions.has('massSubmit');
 }
 
@@ -234,7 +242,14 @@ function action(fn, successMessage) {
   };
 }
 
-const withdraw = action((req, s) => submissionService.withdraw({ actor: req.user, submission: s, contestId: req.contest.id }), 'Entry withdrawn.');
+const withdraw = action(async (req, s) => {
+  const rule = require('../services/participationService').read(req.settings).rules.withdraw;
+  const own = s.participantId === req.user.id;
+  const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
+  const ok = (own && ['participant', 'both'].includes(rule)) || (staff && ['reviewers', 'both'].includes(rule)) || req.permissions.has('deleteAnything');
+  if (!ok) throw new SubmissionError('Entries cannot be removed in this event.', 403);
+  return own ? submissionService.withdraw({ actor: req.user, submission: s, contestId: req.contest.id }) : submissionService.changeStatus({ actor: req.user, submission: s, contestId: req.contest.id, status: 'withdrawn', note: 'Removed by a reviewer' });
+}, 'Entry withdrawn.');
 const setStatus = action(
   (req, s) => submissionService.changeStatus({ actor: req.user, submission: s, contestId: req.contest.id, status: req.body.status, note: req.body.note }),
   'Status updated.',

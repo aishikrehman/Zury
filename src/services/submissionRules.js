@@ -46,9 +46,9 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
   if (!wikis.includes(meta.wiki)) rules.push(`Entries must come from ${wikis.join(' or ')}.`);
   // The event's list of eligible articles (on-wiki page, pasted list, category or Wikidata query).
   const eligible = require('./participationService').eligibleSet(settings);
-  if (eligible && meta.ns === 0 && !eligible.has(String(meta.title || '').replace(/_/g, ' '))) rules.push("This article is not on the event's list of eligible articles.");
+  if (eligible && meta.ns === 0 && !eligible.has(String(meta.title || '').replace(/_/g, ' '))) rule('eligible', "This article is not on the event's list of eligible articles.");
   const namespaces = eligibleNamespaces(contest, settings, typeConfig);
-  if (!namespaces.includes(meta.ns)) rules.push(`Pages in namespace ${meta.ns} are not eligible (allowed: ${namespaces.join(', ')}).`);
+  if (!namespaces.includes(meta.ns)) rule('namespace', `Pages in namespace ${meta.ns} are not eligible (allowed: ${namespaces.join(', ')}).`);
 
   if (contest.type === 'photo' || contest.type === 'photowalk') {
     if (meta.entryType !== 'file') rules.push('Only files are accepted.');
