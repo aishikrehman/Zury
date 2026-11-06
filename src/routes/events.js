@@ -134,9 +134,8 @@ router.post(`/series/:series(${SLUG})/people`, requireAuth, eventsController.gra
 router.post(`/series/:series(${SLUG})/people/:id(\\d+)/remove`, requireAuth, eventsController.revokeRole);
 router.post(`/series/:series(${SLUG})/settings`, requireAuth, eventsController.setLevelSetting);
 router.post(`/series/:series(${SLUG})/settings/:id(\\d+)/remove`, requireAuth, eventsController.removeLevelSetting);
-// Adding events to an edition from its page: from Fountain (importers only) or tracking only.
+// Adding events to an edition from its page: from Fountain (importers only).
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/fountain`, requirePermission('importEvents'), eventsController.editionFountain);
-router.post(`/series/:series(${SLUG})/:edition(${SLUG})/tracking`, requirePermission('createEvent'), eventsController.editionTracking);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 // An edition's own page, when the name under the series is an edition.
