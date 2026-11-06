@@ -931,11 +931,13 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-bell-menu { width: min(22rem, calc(100vw - 2rem)); padding: 0; overflow: hidden; }
 .z-bell-head { display: flex; align-items: center; gap: .5rem; padding: .65rem 1rem; border-bottom: 1px solid var(--tblr-border-color); }
 .z-bell-head .z-bell-readall { margin-inline-start: auto; padding: 0; border: 0; background: none; color: var(--tblr-primary); font-size: .8125rem; }
-.z-bell-head .z-bell-readall:hover { text-decoration: underline; }
+.z-bell-head .z-bell-readall:hover, .z-bell-link:hover { text-decoration: underline; }
+.z-bell-link { font-size: .8125rem; white-space: nowrap; }
+.z-bell-head .z-bell-readall:not([hidden]) + .z-bell-link { padding-inline-start: .5rem; border-inline-start: 1px solid var(--tblr-border-color); }
+.z-bell-head .z-bell-readall[hidden] + .z-bell-link { margin-inline-start: auto; }
 .z-bell-menu [data-bell-list] { max-height: 60vh; overflow-y: auto; }
 .z-bell-empty { padding: 1.25rem 1rem; color: var(--tblr-secondary); text-align: center; font-size: .875rem; }
 .z-bell-item { display: flex; gap: .5rem; align-items: flex-start; white-space: normal; padding: .6rem 1rem; }
 .z-bell-text { line-height: 1.35; }
 .z-unread .z-bell-text { font-weight: 500; }
 .z-dot { flex: none; width: .5rem; height: .5rem; margin-top: .45rem; border-radius: 50%; background: var(--tblr-primary); }
-.z-bell-all { display: block; padding: .6rem 1rem; border-top: 1px solid var(--tblr-border-color); text-align: center; font-size: .875rem; }

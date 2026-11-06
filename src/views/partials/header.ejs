@@ -41,9 +41,9 @@
             <div class="z-bell-head">
               <strong><%= t('Notifications') %></strong>
               <button class="z-bell-readall" type="button" data-bell-read-all<%= unreadNotifications ? '' : ' hidden' %>><%= t('Mark all as read') %></button>
+              <a class="z-bell-link" href="/notifications"><%= t('See all') %></a>
             </div>
             <div data-bell-list><div class="z-bell-empty"><%= t('Loading…') %></div></div>
-            <a class="z-bell-all" href="/notifications"><%= t('See all') %></a>
           </div>
         </div>
         <div class="dropdown">
