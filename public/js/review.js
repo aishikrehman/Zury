@@ -127,6 +127,6 @@
   if (start) set(true);
   btn.addEventListener('click', () => set(!root.classList.contains('z-review-full')));
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && root.classList.contains('z-review-full') && !e.target.closest('input, textarea, select, .ts-wrapper')) set(false);
+    if (e.key === 'Escape' && root.classList.contains('z-review-full') && !(e.target.closest && e.target.closest('input, textarea, select, .ts-wrapper'))) set(false);
   });
 })();
