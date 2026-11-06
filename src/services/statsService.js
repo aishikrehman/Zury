@@ -168,6 +168,21 @@ async function platformStats(now = new Date(), days = 30) {
 // - words are those of the distinct approved entries.
 const empty = () => ({ eventCount: 0, entries: 0, approved: 0, words: 0, approvedWords: 0, participants: 0, wikis: [] });
 
+async function topPeople(contestIds, take = 25) {
+  const ids = [...new Set(contestIds)].map(Number).filter(Number.isInteger);
+  if (!ids.length) return [];
+  const { Prisma } = require('@prisma/client');
+  const rows = await prisma.$queryRaw`
+    SELECT s.participantId AS id, u.username AS username, COUNT(DISTINCT s.pageKey) AS entries,
+           COUNT(DISTINCT CASE WHEN s.status = 'approved' THEN s.pageKey END) AS accepted,
+           COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.wordCount ELSE 0 END), 0) AS words,
+           COUNT(DISTINCT s.wiki) AS wikis
+    FROM Submission s JOIN User u ON u.id = s.participantId
+    WHERE s.contestId IN (${Prisma.join(ids)}) AND s.status <> 'withdrawn'
+    GROUP BY s.participantId, u.username ORDER BY accepted DESC, entries DESC LIMIT ${take}`;
+  return rows.map((r) => ({ username: r.username, entries: Number(r.entries), accepted: Number(r.accepted), words: Number(r.words), wikis: Number(r.wikis) }));
+}
+
 async function byWiki(contestIds) {
   const ids = [...new Set(contestIds)].map(Number).filter(Number.isInteger);
   if (!ids.length) return [];
@@ -211,4 +226,5 @@ async function rollup(contestIds) {
 }
 
 module.exports = {
+  topPeople,
   byWiki, eventStats, userStats, platformStats, dailySeries, rollup };

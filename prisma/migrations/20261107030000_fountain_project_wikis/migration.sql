@@ -1,0 +1,22 @@
+-- Fountain imports of other projects were saved with a code like "voy:bnwiki"; they become the real wiki (bnwikivoyage).
+UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 5), 'wiki', 1), '-wikivoyage'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 5), 'wiki', 1), 'wikivoyage') WHERE `wiki` LIKE 'voy:%';
+UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 5), 'wiki', 1), 'wikivoyage') WHERE `primaryWiki` LIKE 'voy:%';
+UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 5), 'wiki', 1), 'wikivoyage') WHERE `wiki` LIKE 'voy:%';
+UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), '-wikisource'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikisource') WHERE `wiki` LIKE 's:%';
+UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 3), 'wiki', 1), 'wikisource') WHERE `primaryWiki` LIKE 's:%';
+UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikisource') WHERE `wiki` LIKE 's:%';
+UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), '-wikiquote'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikiquote') WHERE `wiki` LIKE 'q:%';
+UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 3), 'wiki', 1), 'wikiquote') WHERE `primaryWiki` LIKE 'q:%';
+UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikiquote') WHERE `wiki` LIKE 'q:%';
+UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), '-wikibooks'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikibooks') WHERE `wiki` LIKE 'b:%';
+UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 3), 'wiki', 1), 'wikibooks') WHERE `primaryWiki` LIKE 'b:%';
+UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikibooks') WHERE `wiki` LIKE 'b:%';
+UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), '-wikinews'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikinews') WHERE `wiki` LIKE 'n:%';
+UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 3), 'wiki', 1), 'wikinews') WHERE `primaryWiki` LIKE 'n:%';
+UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikinews') WHERE `wiki` LIKE 'n:%';
+UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), '-wikiversity'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikiversity') WHERE `wiki` LIKE 'v:%';
+UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 3), 'wiki', 1), 'wikiversity') WHERE `primaryWiki` LIKE 'v:%';
+UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 3), 'wiki', 1), 'wikiversity') WHERE `wiki` LIKE 'v:%';
+UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 6), 'wiki', 1), '-wiktionary'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 6), 'wiki', 1), 'wiktionary') WHERE `wiki` LIKE 'wikt:%';
+UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 6), 'wiki', 1), 'wiktionary') WHERE `primaryWiki` LIKE 'wikt:%';
+UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 6), 'wiki', 1), 'wiktionary') WHERE `wiki` LIKE 'wikt:%';

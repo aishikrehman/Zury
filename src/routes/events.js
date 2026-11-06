@@ -52,11 +52,11 @@ contest.post('/structure/:action(move|copy)', requirePermission('manageEvent'), 
 contest.post('/inline', requirePermission('editEvent'), contestController.inlineUpdate);
 contest.post('/config/follow', requirePermission('editEvent'), contestController.followSetting);
 contest.post('/status', requireEventWide('manageEvent'), contestController.changeStatus);
-contest.post('/delete', requireEventWide('deleteEvent'), contestController.destroy);
+contest.post('/delete', requireEventWide('deleteAnything'), contestController.destroy);
 contest.get('/export/:dataset([a-z]+).:format([a-z]+)', requirePermission('manageEvent', 'exportData'), contestController.exportData);
 // Removing anything is for superusers and Zury administrators (deleteEvent).
-contest.post('/data/clear/:what([a-z]+)', requireEventWide('deleteEvent'), contestController.clearData);
-contest.post('/move', requireEventWide('deleteEvent'), contestController.move);
+contest.post('/data/clear/:what([a-z]+)', requireEventWide('deleteAnything'), contestController.clearData);
+contest.post('/move', requireEventWide('deleteAnything'), contestController.move);
 
 // Wikis taking part. Requests are open to logged-in users; the rest is for global controllers.
 contest.post('/wikis/request', requireAuth, wikiController.request);
@@ -65,7 +65,7 @@ contest.post('/fountain', requirePermission('importEvents'), fountainController.
 contest.post('/fountain/:wikiId(\\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
 contest.post('/fountain/:wikiId(\\d+)/:action(unlink)', requirePermission('importEvents'), fountainController.unlink);
 contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume)', requireEventWide('manageEvent'), wikiController.change);
-contest.post('/wikis/:wikiId(\\d+)/:action(remove)', requireEventWide('deleteEvent'), wikiController.change);
+contest.post('/wikis/:wikiId(\\d+)/:action(remove)', requireEventWide('deleteAnything'), wikiController.change);
 
 // Per-role permission checks happen in the controller/service.
 contest.get('/participants', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.people);
@@ -132,12 +132,14 @@ const SLUG = '[a-z0-9][a-z0-9-]{0,79}';
 router.get('/series', requirePermission('importEvents'), eventsController.manageSeries);
 router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
 router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
-router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnyEvent'), eventsController.seriesAction);
+router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnything'), eventsController.seriesAction);
 router.get(`/series/:series(${SLUG})/new-edition`, requireAuth, eventsController.newEditionForm);
 router.post(`/series/:series(${SLUG})/new-edition`, requireAuth, eventsController.newEdition);
 router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSeries);
 router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, eventsController.manageEdition);
 router.post('/series', requirePermission('importEvents'), eventsController.createSeries);
+router.post(`/series/:series(${SLUG})/fountain-sync`, requireAuth, eventsController.syncLevelFountain);
+router.post(`/series/:series(${SLUG})/:edition(${SLUG})/fountain-sync`, requireAuth, eventsController.syncLevelFountain);
 router.post(`/series/:series(${SLUG})/detach`, requireAuth, eventsController.detachEvent);
 router.post(`/series/:series(${SLUG})/order`, requireAuth, eventsController.seriesOrder);
 router.post(`/series/:series(${SLUG})/first-edition`, requireAuth, eventsController.firstEdition);

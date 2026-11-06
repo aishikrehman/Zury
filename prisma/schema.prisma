@@ -107,6 +107,8 @@ model Contest {
   status              String  @default("draft")
   // "auto": status follows the dates once published. "manual": pinned by an organizer.
   statusMode          String  @default("auto")
+  // approved | pending (waits for an approver) | rejected
+  approval            String  @default("approved")
   visibility          String  @default("public")
   // Order and featuring among the series' direct events.
   sortOrder           Int     @default(0)
@@ -203,6 +205,7 @@ model EventSeries {
   visibility  String    @default("public")
   // draft | active | paused | archived
   status      String    @default("active")
+  approval    String    @default("approved")
   createdById Int?
   archivedAt  DateTime?
   // While deleted the address is freed (slug renamed); the one it gets back on restore.
@@ -233,6 +236,7 @@ model Edition {
   description String    @default("") @db.Text
   // draft | planned | upcoming | active | completed | archived | cancelled
   status      String    @default("draft")
+  approval    String    @default("approved")
   visibility  String    @default("public")
   // Order on the series page (smaller first; 0: by date), and the one shown first.
   sortOrder   Int       @default(0)

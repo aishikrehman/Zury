@@ -3,6 +3,7 @@
 
 const PERMISSIONS = {
   createEvent: 'Create new events',
+  approveEvents: 'Approve or reject new events, series and editions',
   deleteEvent: 'Delete this event',
   deleteOwnEvent: 'Delete events you organize',
   deleteAnyEvent: 'Delete any event',
@@ -94,21 +95,21 @@ const PLATFORM_ROLES = {
     source: 'wikimedia',
     scope: 'global',
     description: 'Event authority across all communities.',
-    permissions: ['createEvent', 'importEvents', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
+    permissions: ['createEvent', 'approveEvents', 'importEvents', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
   },
   'global-sysop': {
     label: 'Global Sysop',
     source: 'wikimedia',
     scope: 'global',
     description: 'Can manage events across communities.',
-    permissions: ['createEvent', 'importEvents', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
+    permissions: ['createEvent', 'approveEvents', 'importEvents', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
   },
   'local-admin': {
     label: 'Local Admin',
     source: 'wikimedia',
     scope: 'wiki',
     description: 'Manages events whose primary wiki is one where they are an administrator.',
-    permissions: ['editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
+    permissions: ['approveEvents', 'editAnyEvent', 'manageAnyEvent', 'reviewAnyEvent', ...EVENT_MANAGEMENT],
     globalPermissions: ['createEvent', 'importEvents'],
   },
   // Every permission. Only grantable from the server command line, never the web UI.
@@ -125,7 +126,7 @@ const PLATFORM_ROLES = {
     source: 'zury',
     scope: 'global',
     description: 'Trusted organizer who runs Zury: creates events on any wiki and, with Superuser, is the only one who can delete events, data and series.',
-    permissions: ['createEvent', 'accessAdmin', 'deleteAnyEvent', 'managePlatformRoles', 'manageSiteConfig', 'viewAuditLog'],
+    permissions: ['createEvent', 'approveEvents', 'importEvents', 'accessAdmin', 'managePlatformRoles', 'manageSiteConfig', 'viewAuditLog'],
   },
 };
 
@@ -133,6 +134,7 @@ const PLATFORM_ROLES = {
 const NON_OVERRIDABLE = new Set([
   'viewDatabase',
   'createEvent',
+  'approveEvents',
   'importEvents',
   'deleteEvent',
   'deleteOwnEvent',

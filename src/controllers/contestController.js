@@ -14,7 +14,7 @@ const { eventPath } = require('../utils/format');
 
 // Events this one could move into: same type, run by this person as a global controller.
 async function moveTargets(req) {
-  if (req.wikiScope || req.contest.editionId || req.eventWikis.length !== 1 || !req.scope.global.has('deleteEvent')) return [];
+  if (req.wikiScope || req.contest.editionId || req.eventWikis.length !== 1 || !req.scope.global.has('deleteAnything')) return [];
   const candidates = await prisma.contest.findMany({
     where: { type: req.contest.type, deletedAt: null, editionId: null, id: { not: req.contest.id } },
     include: { series: true, wikis: true },

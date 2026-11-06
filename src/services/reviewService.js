@@ -231,6 +231,7 @@ async function entryForReview(contestId, submissionId) {
 async function saveReview({ actor, contest, settings, submission, decision, marks, score, comment }) {
   const given = verdict(settings, { decision, marks, score });
   decision = given.decision;
+  if (decision === 'reject' && !String(comment || '').trim()) throw new ReviewError('Give a reason to reject.');
   if (!REVIEWABLE.includes(submission.status) && !submission.reviews.some((r) => r.jurorId === actor.id)) {
     throw new ReviewError('This entry has already been decided.');
   }

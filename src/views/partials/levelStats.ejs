@@ -14,6 +14,21 @@
     <div class="card-body"><%- include('./chart', { spec: { type: 'bar', height: 220, series: [{ name: t('Entries'), data: chartRows.map((r) => r.stats.entries) }, { name: t('Approved'), data: chartRows.map((r) => r.stats.approved) }], labels: chartRows.map((r) => r.label), colors: ['primary', 'green'] }, label: chartTitle }) %></div>
   </div>
 <% } %>
+<% if (typeof wikiRows !== 'undefined' && wikiRows.length > 1) { %>
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-chart-pie me-2"></i><%= t('Entries by wiki') %></h3></div>
+    <div class="card-body"><%- include('./chart', { spec: { type: 'donut', height: 280, series: wikiRows.map((w) => w.entries), labels: wikiRows.map((w) => wikiLocal(w.wiki)), totalLabel: 'Entries' }, label: t('Entries by wiki') }) %></div>
+  </div>
+<% } %>
+<% if (typeof topPeople !== 'undefined' && topPeople.length) { %>
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('Participants, all wikis together') %></h3></div>
+    <div class="table-responsive"><table class="table table-vcenter card-table">
+      <thead><tr><th><%= t('Participant') %></th><th class="text-end"><%= t('Wikis') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Accepted') %></th><th class="text-end"><%= t('Words') %></th></tr></thead>
+      <tbody><% topPeople.forEach((p) => { %><tr><td class="z-user-name"><%= p.username %></td><td class="text-end"><%= formatNumber(p.wikis) %></td><td class="text-end"><%= formatNumber(p.entries) %></td><td class="text-end text-green"><%= formatNumber(p.accepted) %></td><td class="text-end"><%= formatNumber(p.words) %></td></tr><% }) %></tbody>
+    </table></div>
+  </div>
+<% } %>
 <% if (typeof wikiRows !== 'undefined' && wikiRows.length) { %>
   <div class="card mb-3">
     <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t('By wiki') %></h3></div>

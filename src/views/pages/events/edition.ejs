@@ -24,7 +24,7 @@
             <div class="card-header"><h3 class="card-title"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></h3></div>
             <div class="card-body"><div class="row g-2 align-items-end">
               <div class="col-12 col-md-6"><label class="form-label" for="af-code"><%= t('Fountain editathon code or address') %></label><input class="form-control" id="af-code" name="code" required placeholder="https://fountain.toolforge.org/editathons/wam2026-bn"></div>
-              <div class="col-6 col-md-3"><label class="form-label" for="af-type"><%= t('Type') %></label><select class="form-select" id="af-type" name="type"><option value="writing"><%= t('Writing contest') %></option><option value="editathon"><%= t('Edit-a-thon') %></option></select></div>
+              <% if (seriesType) { %><input type="hidden" name="type" value="<%= seriesType %>"><% } else { %><div class="col-6 col-md-3"><label class="form-label" for="af-type"><%= t('Type') %></label><select class="form-select" id="af-type" name="type"><option value="writing"><%= t('Writing contest') %></option><option value="editathon"><%= t('Edit-a-thon') %></option></select></div><% } %>
               <div class="col-6 col-md-3"><button class="btn btn-primary w-100" type="submit"><%= t('Import') %></button></div>
             </div></div>
           </form>
@@ -50,6 +50,7 @@
           <div class="col-12 col-md-6"><label class="form-label" for="ed-title"><%= t('Title') %></label><input class="form-control" id="ed-title" name="title" value="<%= edition.title %>" maxlength="200" required></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ed-start" name="startDate" value="<%= day(edition.startDate) %>"></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ed-end" name="endDate" value="<%= day(edition.endDate) %>"></div>
+          <div class="col-12 col-md-6"><label class="form-label" for="ed-slug"><%= t('Address') %></label><div class="input-group"><span class="input-group-text">zury.toolforge.org/<%= sr.slug %>/</span><input class="form-control" id="ed-slug" name="slug" value="<%= edition.slug %>" maxlength="20"></div></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-id"><%= t('Edition name') %></label><input class="form-control" id="ed-id" name="identifier" value="<%= edition.identifier || edition.slug %>" maxlength="100" placeholder="2026, Season 2…"></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-cycle"><%= t('Kind') %></label><select class="form-select" id="ed-cycle" name="cycleType"><option value="">—</option><% Object.entries(CYCLES).forEach(([k, l]) => { %><option value="<%= k %>"<%= edition.cycleType === k ? ' selected' : '' %>><%= t(l) %></option><% }) %></select></div>
           <div class="col-6 col-md-2"><label class="form-label" for="ed-year"><%= t('Year') %></label><input class="form-control" type="number" id="ed-year" name="year" min="1900" max="2200" value="<%= edition.year || '' %>"></div>
@@ -84,12 +85,13 @@
         </div>
       </div>
 
-      <%- include('../../partials/levelDelete', { inside, seriesSlug: sr.slug, editionSlug: edition.slug, canDelete: can('deleteAnyEvent') || can('deleteAnything') }) %>
+      <%- include('../../partials/levelDelete', { inside, seriesSlug: sr.slug, editionSlug: edition.slug, canDelete: can('deleteAnything') }) %>
 
     <% } else if (tab === 'people') { %>
       <%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, inherited, ROLES }) %>
     <% } else if (tab === 'statistics') { %>
-      <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %><% } else { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div><% } %>
+      <% if (events.length) { %><% if (canRun && fountainCount) { %><form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/fountain-sync" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Update all from Fountain') %> (<%= formatNumber(fountainCount) %>)</button></form><% } %>
+      <%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %><% } else { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div><% } %>
     <% } %>
   </div>
 </div>

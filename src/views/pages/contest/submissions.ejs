@@ -102,7 +102,7 @@
                 </td>
                 <td>
                   <% if (showNames || (currentUser && currentUser.id === s.participantId)) { %>
-                    <a href="<%= qs({ participant: s.participantId, page: null }) %>" title="<%= t('Only this participant') %>"><%= s.participant.username %></a>
+                    <a href="<%= qs({ participant: s.participantId, page: null }) %>" title="<%= t('Only this participant') %>" class="z-user-name"><%= s.participant.username %></a>
                   <% } else { %><span class="text-secondary"><%= t('Anonymous') %></span><% } %>
                 </td>
                 <td><%- include('../../partials/submissionStatus', { s: s.status }) %><% if (showReviewers && s.reviews && s.reviews.length) { %><div class="small text-secondary mt-1"><% s.reviews.forEach((rv, i) => { %><%= i ? ', ' : '' %><span class="<%= rv.decision === 'accept' ? 'text-green' : rv.decision === 'reject' ? 'text-red' : '' %>"><%= rv.juror.username %></span><% }) %></div><% } %></td>

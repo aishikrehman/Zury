@@ -97,8 +97,8 @@
               <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<%= base %>/submissions/<%= s.id %>">
                 <span class="fw-medium text-truncate"><%= s.title %></span>
                 <% if (s.participant && !settings.anonymousParticipants) { %><span class="text-secondary small text-truncate"><%= s.participant.username %></span><% } %>
-                <% if (s.wordCount) { %><span class="text-secondary small text-nowrap ms-auto"><%= t('{n} words', { n: formatNumber(s.wordCount) }) %></span><% } %>
-                <span class="badge bg-<%= st.color %>-lt<%= s.wordCount ? '' : ' ms-auto' %>"><%= t(st.label) %></span>
+                <% if (s.wordCount && settings.wordCountEnabled) { %><span class="text-secondary small text-nowrap ms-auto"><%= t('{n} words', { n: formatNumber(s.wordCount) }) %></span><% } %>
+                <span class="badge bg-<%= st.color %>-lt<%= s.wordCount && settings.wordCountEnabled ? '' : ' ms-auto' %>"><%= t(st.label) %></span>
               </a>
             <% }) %>
           </div>

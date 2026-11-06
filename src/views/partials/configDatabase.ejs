@@ -10,11 +10,11 @@
             <button type="submit" class="btn btn-<%= a.cls %>"><i class="ti ti-<%= a.icon %> me-1"></i><%= a.label %></button>
           </form>
         <% }) %>
-        <% if (can('deleteEvent')) { %>
+        <% if (can('deleteAnything')) { %>
           <button class="btn btn-ghost-danger" type="button" data-bs-toggle="collapse" data-bs-target="#delete-event" aria-expanded="false" aria-controls="delete-event"><i class="ti ti-trash me-1"></i><%= t('Delete') %></button>
         <% } %>
       </div>
-      <% if (can('deleteEvent')) { %>
+      <% if (can('deleteAnything')) { %>
         <div class="collapse" id="delete-event">
           <form method="post" action="<%= base %>/delete" class="card-body border-top d-flex flex-wrap align-items-end gap-2">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -80,7 +80,7 @@
                   <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ...(can('importEvents') ? [['unlink', t('Stop following'), 'ghost-secondary']] : [])].forEach(([action, label, cls]) => { %>
                     <form method="post" action="<%= eventBase %>/fountain/<%= w.id %>/<%= action %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button></form>
                   <% }) %><% } %>
-                  <% (wikiActions[w.status] || []).filter(([action]) => action !== 'remove' || can('deleteEvent')).forEach(([action, label, cls]) => { %>
+                  <% (wikiActions[w.status] || []).filter(([action]) => action !== 'remove' || can('deleteAnything')).forEach(([action, label, cls]) => { %>
                     <form method="post" action="<%= eventBase %>/wikis/<%= w.id %>/<%= action %>" class="d-inline">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button>
@@ -122,7 +122,7 @@
             <p class="text-secondary small mt-2 mb-0"><%= t('CSV and Excel open in spreadsheets; wikitext pastes into a wiki page; Markdown into GitHub or a document.') %></p>
           </div>
         </div>
-        <% if (can('deleteEvent')) { %>
+        <% if (can('deleteAnything')) { %>
         <div class="col-lg-6">
           <div class="card-body">
             <div class="subheader mb-2"><%= t('Clear') %></div>

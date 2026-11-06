@@ -51,7 +51,17 @@ function renderForm(res, { type, form, errors = {}, status = 200 }) {
   });
 }
 
-function createForm(req, res) {
+async function createForm(req, res, next) {
+  // In a series every event has the series' type: straight to that type's form.
+  if (/^[a-z0-9-]{1,80}$/.test(req.query.series || '')) {
+    const sr = await prisma.eventSeries.findFirst({ where: { slug: req.query.series, deletedAt: null }, select: { id: true } }).catch(() => null);
+    const fixed = sr ? await require('../services/editionService').seriesType(sr.id) : null;
+    if (fixed && req.query.type !== fixed) {
+      const q = new URLSearchParams({ ...req.query, type: fixed });
+      return res.redirect(`/events/create?${q}`);
+    }
+    res.locals.typeFixed = !!fixed;
+  }
   const type = EVENT_TYPES[req.query.type] ? req.query.type : '';
   const form = contestForm.newForm(type || 'writing');
   if (!type) form.type = '';
@@ -105,6 +115,10 @@ async function create(req, res, next) {
       autoSlug: parsed.autoSlug,
     });
     const problems = await addStartingTeam(req, contest, { ...contestForm.defaultSettings(type), ...parsed.settings });
+    if (!(await require('../services/approvalService').canApproveWiki(req, contest.primaryWiki))) {
+      await prisma.contest.update({ where: { id: contest.id }, data: { approval: 'pending' } });
+      req.flash('warning', req.t('The event waits for approval before it can be published.'));
+    }
     req.flash('success', 'Event created as a draft. Review the settings, then publish it when ready.');
     if (problems.length) req.flash('warning', `Not added: ${problems.join(' ')}`);
     const pr = await require('../services/participationService').afterSave({ actorId: req.user.id, contest }).catch(() => ({}));
@@ -230,6 +244,7 @@ async function firstEdition(req, res, next) {
     const edition = await seriesService.createEdition({
       actorId: req.user.id, series, slug: req.body.edition, title: req.body.title, startDate: day(req.body.startDate), endDate: day(req.body.endDate, true),
     });
+      if (!req.permissions.has('approveEvents')) await prisma.edition.update({ where: { id: edition.id }, data: { approval: 'pending' } });
     req.flash('success', req.t('Edition created. Add its events next.'));
     res.redirect(`/${series.slug}/${edition.slug}`);
   } catch (err) {
@@ -358,7 +373,7 @@ async function levelAction(req, res, next) {
     if (!allowed || (req.params.action === 'copy' && !(await canRunSeries(req, sr.id)))) return forbiddenPage(next);
     const level = edition ? { editionId: edition.id } : { seriesId: sr.id };
     if (req.params.action === 'delete') {
-      if (!req.permissions.has('deleteAnything') && !req.permissions.has('deleteAnyEvent')) return forbiddenPage(next);
+      if (!req.permissions.has('deleteAnything')) return forbiddenPage(next);
       await structureService.deleteLevel({ actorId: req.user.id, level });
       req.flash('success', req.t('Edition deleted.'));
       return res.redirect(`/${sr.slug}?tab=overview`);
@@ -381,10 +396,23 @@ async function levelAction(req, res, next) {
       if (req.body.visibility !== undefined) data.visibility = ['public', 'unlisted', 'private'].includes(req.body.visibility) ? req.body.visibility : 'public';
       // Archived has its own button.
       if (req.body.status !== undefined && ['draft', 'planned', 'upcoming', 'active', 'completed', 'cancelled'].includes(req.body.status) && edition.status !== 'archived') data.status = req.body.status;
+      // A new address: the edition and every event in it move there (the old address stops).
+      const newSlug = String(req.body.slug || '').trim().toLowerCase();
+      if (newSlug && newSlug !== edition.slug) {
+        if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(newSlug) || ['new-edition', 'detach', 'order', 'deleted', 'settings', 'people', 'fountain'].includes(newSlug)) throw new structureService.StructureError('Give the edition a short address, such as 2026.');
+        if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: sr.id, slug: newSlug } } })) throw new structureService.StructureError(`/${sr.slug}/${newSlug} is taken.`);
+        await prisma.$transaction(async (tx) => {
+          await tx.edition.update({ where: { id: edition.id }, data: { slug: newSlug, ...(data.identifier === edition.slug && { identifier: newSlug }), ...(data.title && data.title.includes(edition.slug) && { title: data.title.split(edition.slug).join(newSlug) }) } });
+          await tx.seriesSlug.updateMany({ where: { editionId: edition.id }, data: { slug: newSlug } });
+          for (const ev of await tx.contest.findMany({ where: { editionId: edition.id, deletedAt: null }, select: { id: true } })) await require('../services/editionService').sync(ev.id, tx);
+        });
+        edition.slug = newSlug;
+        if (data.identifier === req.body.identifier && /^d{4}$/.test(newSlug)) data.year = Number(newSlug);
+      }
       await prisma.edition.update({ where: { id: edition.id }, data });
       await require('../services/auditService').record({ actorId: req.user.id, action: 'edition.updated', entityType: 'Edition', entityId: edition.id, details: { title } });
       req.flash('success', req.t('Saved.'));
-      return res.redirect(back);
+      return res.redirect(`${req.body && req.body.back === 'overview' ? '' : ''}/series/${sr.slug}/${edition.slug}${req.body && req.body.back === 'overview' ? '' : '?tab=settings'}`);
     }
     if (req.params.action === 'copy') {
       const years = Math.max(0, Math.min(10, Number.parseInt(req.body.years, 10) || 0));
@@ -461,7 +489,11 @@ async function seriesPage(req, res, next) {
     const totals = await stats.rollup([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]);
     const rows = summary.map((e) => ({ label: e.slug, sub: e.title, href: `/${found.slug}/${e.slug}`, status: e.status, stats: e }));
     for (const c of directEvents) rows.push({ label: c.title, sub: req.t('Event of the series'), href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) });
-    const wikiRows = tab === 'statistics' ? await stats.byWiki([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]) : [];
+    const levelIds = [...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)];
+    const wikiRows = tab === 'statistics' ? await stats.byWiki(levelIds) : [];
+    const people = tab === 'statistics' ? await stats.topPeople(levelIds) : [];
+    res.locals.topPeople = people;
+    res.locals.fountainCount = canRun ? await prisma.contestWiki.count({ where: { contestId: { in: levelIds }, fountainCode: { not: '' } } }) : 0;
     res.render('pages/events/series', { wikiRows, title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, rows, canRun, tab, ...(await levelExtras({ seriesId: found.id }, tab)) });
   } catch (err) {
     next(err);
@@ -502,7 +534,10 @@ async function editionTabs(req, res, next) {
     // An edition with its one event shows that event's status (an archived edition stays archived).
     const shown = { ...edition, status: edition.status !== 'archived' && events.length === 1 ? events[0].status : edition.status };
     const wikiRows = tab === 'statistics' ? await stats.byWiki(events.map((ev) => ev.id)) : [];
-    res.render('pages/events/edition', { wikiRows, title: `${edition.title} — Zury`, sr, edition: shown, ownStatus: edition.status, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
+    res.locals.topPeople = tab === 'statistics' ? await stats.topPeople(events.map((ev) => ev.id)) : [];
+    res.locals.fountainCount = canRun ? await prisma.contestWiki.count({ where: { contestId: { in: events.map((ev) => ev.id) }, fountainCode: { not: '' } } }) : 0;
+    const seriesType = await require('../services/editionService').seriesType(sr.id);
+    res.render('pages/events/edition', { seriesType, wikiRows, title: `${edition.title} — Zury`, sr, edition: shown, ownStatus: edition.status, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
   } catch (err) {
     next(err);
   }
@@ -607,6 +642,7 @@ async function newEdition(req, res, next) {
       // An event's details go with it: its wikis and settings need the event.
       const years = Math.max(0, Math.min(10, Number.parseInt(req.body.years, 10) || 0));
       edition = await structureService.copyEdition({ actorId: req.user.id, edition: source, slug: req.body.edition, title: req.body.title, years, parts });
+      if (!req.permissions.has('approveEvents')) await prisma.edition.update({ where: { id: edition.id }, data: { approval: 'pending' } });
       req.flash('success', req.t('Edition created from {from}. Check its dates and settings before publishing.', { from: source.identifier || source.slug }));
     } else {
       // Blank: a completely new edition, nothing copied.
@@ -622,3 +658,25 @@ async function newEdition(req, res, next) {
 }
 module.exports.newEditionForm = newEditionForm;
 module.exports.newEdition = newEdition;
+
+async function syncLevelFountain(req, res, next) {
+  try {
+    const sr = await prisma.eventSeries.findFirst({ where: { slug: req.params.series, deletedAt: null } });
+    if (!sr) return next();
+    const edition = req.params.edition ? await prisma.edition.findFirst({ where: { seriesId: sr.id, slug: req.params.edition, deletedAt: null } }) : null;
+    if (req.params.edition && !edition) return next();
+    const allowed = edition ? await scopeRoles.canRunEdition(req, edition) : await canRunSeries(req, sr.id);
+    if (!allowed) return forbiddenPage(next);
+    const where = edition ? { editionId: edition.id } : { OR: [{ seriesId: sr.id }, { editionOf: { seriesId: sr.id } }] };
+    const wikis = await prisma.contestWiki.findMany({ where: { fountainCode: { not: '' }, contest: { deletedAt: null, ...where } } });
+    const fountain = require('../services/fountainService');
+    setImmediate(async () => {
+      for (const w of wikis) await fountain.sync(w, { actorId: req.user.id }).catch(() => null);
+    });
+    req.flash('success', req.t('Updating {n} from Fountain. It takes a few minutes; reload to see the numbers.', { n: wikis.length }));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(req.params.edition ? `/series/${req.params.series}/${req.params.edition}?tab=statistics` : `/${req.params.series}?tab=statistics`);
+}
+module.exports.syncLevelFountain = syncLevelFountain;

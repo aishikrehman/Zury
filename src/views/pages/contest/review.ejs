@@ -183,7 +183,10 @@
               </div>
             <% } %>
             <div class="mb-3">
-              <label class="form-label" for="comment"><%= t('Comment') %> <span class="text-secondary fw-normal"><%= t('(optional)') %></span></label>
+              <label class="form-label" for="comment"><%= t('Comment') %> <span class="text-secondary fw-normal small"><%= t('(needed to reject)') %></span></label>
+              <div class="d-flex flex-wrap gap-1 mb-1" data-reasons>
+                <% ['Too short', 'Not enough words', 'Created before the event', 'Machine translation', 'Not encyclopedic', 'No references', 'Copied text', 'Wrong namespace'].forEach((rsn) => { %><button type="button" class="btn btn-sm btn-ghost-secondary" data-reason="<%= t(rsn) %>"><%= t(rsn) %></button><% }) %>
+              </div>
               <textarea class="form-control" id="comment" name="comment" rows="2" maxlength="2000" placeholder="<%= t('What the organizers and other reviewers should know') %>"><%= mine ? mine.comment : '' %></textarea>
             </div>
             <% if (method === 'stars' || method === 'number') { %>

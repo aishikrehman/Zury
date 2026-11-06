@@ -100,6 +100,7 @@
       <% } %>
 
     <% } else if (tab === 'statistics') { %>
+      <% if (canRun && fountainCount) { %><form method="post" action="/series/<%= series.slug %>/fountain-sync" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Update all from Fountain') %> (<%= formatNumber(fountainCount) %>)</button></form><% } %>
       <%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
 
     <% } else if (tab === 'settings') { %>
@@ -135,7 +136,7 @@
           <form method="post" action="/series/<%= series.slug %>/<%= series.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= series.status === 'archived' ? t('Take this series out of the archive?') : t('Archive this series, its editions and their finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= series.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
         </div>
       </div>
-      <%- include('../../partials/levelDelete', { inside, seriesSlug: series.slug, editionSlug: null, canDelete: can('deleteAnyEvent') || can('deleteAnything') }) %>
+      <%- include('../../partials/levelDelete', { inside, seriesSlug: series.slug, editionSlug: null, canDelete: can('deleteAnything') }) %>
 
     <% } else if (tab === 'people') { %>
       <%- include('../../partials/levelPeople', { seriesSlug: series.slug, editionId: null, people, ROLES }) %>

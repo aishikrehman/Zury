@@ -130,3 +130,20 @@
     if (e.key === 'Escape' && root.classList.contains('z-review-full') && !(e.target.closest && e.target.closest('input, textarea, select, .ts-wrapper'))) set(false);
   });
 })();
+
+// Ready reasons: a click adds one to the comment. Rejecting needs a comment.
+document.querySelectorAll('[data-reason]').forEach((b) => b.addEventListener('click', () => {
+  const box = document.getElementById('comment');
+  if (!box) return;
+  box.value = box.value.trim() ? `${box.value.trim()}; ${b.dataset.reason}` : b.dataset.reason;
+  box.focus();
+}));
+document.querySelectorAll('[data-decide="reject"]').forEach((btn) => btn.addEventListener('click', (e) => {
+  const box = document.getElementById('comment');
+  if (box && !box.value.trim()) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    box.classList.add('is-invalid');
+    box.focus();
+  }
+}, true));

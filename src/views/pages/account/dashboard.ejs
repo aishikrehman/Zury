@@ -20,6 +20,22 @@
     </div>
   </div>
 
+  <% if (approvals && approvals.total) { const csrf = `<input type="hidden" name="_csrf" value="${csrfToken}">`; %>
+    <div class="card mb-4">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-shield-check me-2 text-warning"></i><%= t('Waiting for approval') %> <span class="badge bg-yellow-lt ms-1"><%= formatNumber(approvals.total) %></span></h3></div>
+      <div class="list-group list-group-flush">
+        <% [...approvals.events.map((x) => ['event', x, x.path, x.title, (x.createdBy ? x.createdBy.username + ' · ' : '') + wikiLocal(x.primaryWiki)]), ...approvals.series.map((x) => ['series', x, '/' + x.slug, x.title, t('Series')]), ...approvals.editions.map((x) => ['edition', x, '/series/' + x.series.slug + '/' + x.slug, x.series.title + ' · ' + x.title, t('Edition')])].forEach(([kind, x, href, title, sub]) => { %>
+          <div class="list-group-item d-flex flex-wrap align-items-center gap-2">
+            <a class="fw-medium" href="<%= href %>"><%= title %></a><span class="text-secondary small"><%= sub %></span>
+            <span class="ms-auto d-flex gap-1">
+              <form method="post" action="/approvals/<%= kind %>/<%= x.id %>/approve"><%- csrf %><button class="btn btn-sm btn-success" type="submit"><i class="ti ti-check me-1"></i><%= t('Approve') %></button></form>
+              <form method="post" action="/approvals/<%= kind %>/<%= x.id %>/reject"><%- csrf %><button class="btn btn-sm btn-ghost-danger" type="submit"><%= t('Reject') %></button></form>
+            </span>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  <% } %>
   <div class="row row-cards mb-4">
     <div class="<%= pendingWikis.length ? 'col-lg-7' : 'col-12' %>">
       <div class="card h-100">

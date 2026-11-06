@@ -48,7 +48,7 @@ function buildSubject(user, now = new Date()) {
 }
 
 function platformPermissions(subject, wiki) {
-  const keys = [];
+  const keys = subject.user ? ['createEvent', 'importEvents'] : [];
   for (const role of subject.platformRoles) {
     const def = PLATFORM_ROLES[role];
     if (def.scope === 'wiki') {
@@ -69,6 +69,8 @@ function globalPermissions(subject) {
 // can create events through a non-wiki-scoped role, otherwise only wikis where
 // they are a local admin.
 function canUseWikiForEvents(subject, wiki) {
+  // Anyone logged in, on any wiki: new events wait for approval.
+  if (subject.user) return true;
   for (const role of subject.platformRoles) {
     const def = PLATFORM_ROLES[role];
     if (def.scope !== 'wiki' && def.permissions.includes('createEvent')) return true;
@@ -78,6 +80,7 @@ function canUseWikiForEvents(subject, wiki) {
 
 // null means "any wiki"; otherwise the list of wikis this person may use.
 function eventWikiScope(subject) {
+  if (subject.user) return null;
   for (const role of subject.platformRoles) {
     const def = PLATFORM_ROLES[role];
     if (def.scope !== 'wiki' && def.permissions.includes('createEvent')) return null;

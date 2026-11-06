@@ -17,7 +17,9 @@ async function dashboard(req, res, next) {
       canSeePending ? prisma.contestWiki.findMany({ where: { status: 'pending', contest: { deletedAt: null } }, include: { contest: { include: { series: true } } }, orderBy: { createdAt: 'asc' }, take: 20 }) : [],
       require('../services/submissionService').myCountsByEvent(req.user.id),
     ]);
+    const approvals = await require('../services/approvalService').pendingFor(req);
     res.render('pages/account/dashboard', {
+      approvals,
       title: 'Dashboard — Zury',
       myEvents,
       myCounts,
@@ -76,3 +78,15 @@ async function updateAvatar(req, res, next) {
 }
 
 module.exports = { dashboard, showSettings, updateSettings, updateAvatar };
+
+async function approval(req, res, next) {
+  try {
+    const ok = await require('../services/approvalService').decide(req, req.params.kind, Number(req.params.id), req.params.action);
+    if (!ok) return next();
+    req.flash('success', req.params.action === 'approve' ? req.t('Approved.') : req.t('Not approved.'));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect('/dashboard');
+}
+module.exports.approval = approval;

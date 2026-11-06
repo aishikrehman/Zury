@@ -124,6 +124,10 @@
             </form>
           <% } %>
         <% } %>
+        <% const fountainWiki = allWikis.find((w) => w.fountainCode); %>
+        <% if (!canReview && fountainWiki && ((scope.eventRoles || []).includes('jury') || can('manageEvent'))) { %>
+          <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(fountainWiki.fountainCode) %>" target="_blank" rel="noopener" class="btn btn-outline-primary"><i class="ti ti-gavel me-1"></i><%= t('Review') %> <i class="ti ti-external-link ms-1"></i></a>
+        <% } %>
         <% if (canReview) { %>
           <a href="<%= base %>/review" class="btn btn-outline-primary"><i class="ti ti-gavel me-1"></i><%= t('Review') %></a>
         <% } %>

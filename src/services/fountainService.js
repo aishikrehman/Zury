@@ -45,8 +45,12 @@ async function fetchEditathon(code) {
 }
 
 // Fountain names wikis by language code ("bn"); Zury by database name ("bnwiki").
+const FOUNTAIN_PROJECTS = { voy: 'wikivoyage', s: 'wikisource', q: 'wikiquote', b: 'wikibooks', n: 'wikinews', v: 'wikiversity', wikt: 'wiktionary' };
 function wikiOf(editathon) {
-  return hostToDbname(`${editathon.wiki}.wikipedia.org`) || `${String(editathon.wiki).replace(/-/g, '_')}wiki`;
+  const raw = String(editathon.wiki || '');
+  const [prefix, lang] = raw.includes(':') ? raw.split(':') : ['', raw];
+  const project = FOUNTAIN_PROJECTS[prefix] || 'wikipedia';
+  return hostToDbname(`${lang}.${project}.org`) || `${lang.replace(/-/g, '_')}${project === 'wikipedia' ? 'wiki' : project}`;
 }
 
 // Fountain stores, per criterion, the position of the chosen option (0 = the first, "Yes").

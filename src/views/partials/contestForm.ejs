@@ -71,10 +71,10 @@
                   <div class="col-12">
                     <span class="form-label"><%= t("Type of event") %></span>
                     <input type="hidden" name="type" value="<%= type %>">
-                    <div class="d-flex align-items-center gap-2"><strong><%= t(typeDef.label) %></strong><a class="small" href="/events/create<%= form.seriesSlug ? `?series=${encodeURIComponent(form.seriesSlug)}${form.edition ? `&edition=${encodeURIComponent(form.edition)}` : ''}` : '' %>"><%= t('Change') %></a></div>
+                    <div class="d-flex align-items-center gap-2"><strong><%= t(typeDef.label) %></strong><% if (!locals.typeFixed) { %><a class="small" href="/events/create<%= form.seriesSlug ? `?series=${encodeURIComponent(form.seriesSlug)}${form.edition ? `&edition=${encodeURIComponent(form.edition)}` : ''}` : '' %>"><%= t('Change') %></a><% } %></div>
                     <div class="form-hint"><%= t(typeDef.description) %></div>
                   </div>
-                <% } else { const draftType = typeof contest !== 'undefined' && contest && contest.status === 'draft'; %>
+                <% } else { const draftType = typeof contest !== 'undefined' && contest && contest.status === 'draft' && !contest.seriesId && !contest.editionId; %>
                   <div class="col-12">
                     <span class="form-label"><%= t("Type of event") %></span>
                     <div class="d-flex align-items-center gap-2"><strong><%= typeDef ? t(typeDef.label) : '' %></strong><% if (draftType) { %><a class="small" href="#type-change" data-bs-toggle="collapse"><%= t('Change') %></a><% } %></div>
