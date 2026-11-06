@@ -1,0 +1,28 @@
+<%# People of this series or edition: roles on this level only.
+    Expects: seriesSlug, editionId (null on a series), people, ROLES. %>
+<div class="card" id="people">
+  <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('People') %></h3></div>
+  <form method="post" action="/series/<%= seriesSlug %>/people" class="card-body border-bottom">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (editionId) { %><input type="hidden" name="editionId" value="<%= editionId %>"><% } %>
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4"><label class="form-label" for="sp-user"><%= t('Username') %></label><input class="form-control" id="sp-user" name="username" required maxlength="255"></div>
+      <div class="col-6 col-md-3"><label class="form-label" for="sp-role"><%= t('Role') %></label><select class="form-select" id="sp-role" name="role"><% ROLES.forEach((r) => { %><option value="<%= r %>"><%= t(EVENT_ROLES[r].label) %></option><% }) %></select></div>
+      <div class="col-6 col-md-3"><label class="form-check m-0 mb-2"><input class="form-check-input" type="checkbox" name="appliesToChildren"><span class="form-check-label"><%= editionId ? t('Also on its events') : t('Also on its editions and events') %></span></label></div>
+      <div class="col-12 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Add') %></button></div>
+    </div>
+    <div class="form-hint mt-2"><%= t('A role counts only where it is given. Roles on one event, or on one wiki of an event, are given on that event.') %></div>
+  </form>
+  <% if (!people.length) { %><div class="card-body text-secondary"><%= t('No one has a role here yet') %></div><% } else { %>
+    <div class="list-group list-group-flush">
+      <% people.forEach((r) => { %>
+        <div class="list-group-item"><div class="row align-items-center">
+          <div class="col"><a href="/users/<%= encodeURIComponent(r.user.username) %>"><%= r.user.username %></a>
+            <span class="badge bg-secondary-lt ms-1"><%= t(EVENT_ROLES[r.role] ? EVENT_ROLES[r.role].label : r.role) %></span>
+            <% if (r.appliesToChildren) { %><span class="text-secondary small ms-1"><%= editionId ? t('and its events') : t('and its editions and events') %></span><% } %></div>
+          <div class="col-auto"><form method="post" action="/series/<%= seriesSlug %>/people/<%= r.id %>/remove" data-confirm="<%= t('Remove this role?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (editionId) { %><input type="hidden" name="editionId" value="<%= editionId %>"><% } %><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Remove') %>" aria-label="<%= t('Remove') %>"><i class="ti ti-x"></i></button></form></div>
+        </div></div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

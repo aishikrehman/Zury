@@ -1350,5 +1350,21 @@
   "Only those who run its series or edition can take the event out of it.": "কেবল এর সিরিজ বা সংস্করণের পরিচালকরাই ইভেন্টটি সেখান থেকে বের করতে পারেন।",
   "The event is already there.": "ইভেন্টটি সেখানেই আছে।",
   "Use lowercase letters, numbers and hyphens for the name.": "নামে ছোট হাতের অক্ষর, সংখ্যা ও হাইফেন ব্যবহার করুন।",
-  "Could not find a free name there; choose one.": "সেখানে খালি নাম পাওয়া যায়নি; একটি বাছুন।"
+  "Could not find a free name there; choose one.": "সেখানে খালি নাম পাওয়া যায়নি; একটি বাছুন।",
+  "Entries per event": "প্রতি ইভেন্টে জমা",
+  "Event of the series": "সিরিজের ইভেন্ট",
+  "A person or an entry (a page on a wiki) in several events is counted once in these totals.": "একজন ব্যক্তি বা একটি জমা (একটি উইকির একটি পাতা) একাধিক ইভেন্টে থাকলেও এই মোট হিসাবে একবারই গোনা হয়।",
+  "These apply to every event of this edition.": "এগুলো এই সংস্করণের প্রতিটি ইভেন্টে প্রযোজ্য।",
+  "These apply to every edition and event of this series. An edition can add its own on its page.": "এগুলো এই সিরিজের প্রতিটি সংস্করণ ও ইভেন্টে প্রযোজ্য। কোনো সংস্করণ তার নিজের পাতায় নিজস্ব সেটিং যোগ করতে পারে।",
+  "Also on its events": "এর ইভেন্টগুলোতেও",
+  "Also on its editions and events": "এর সংস্করণ ও ইভেন্টগুলোতেও",
+  "and its events": "এবং এর ইভেন্টগুলোতে",
+  "and its editions and events": "এবং এর সংস্করণ ও ইভেন্টগুলোতে",
+  "This edition is archived.": "এই সংস্করণটি আর্কাইভ করা।",
+  "This series is archived.": "এই সিরিজটি আর্কাইভ করা।",
+  "Archives the edition and its finished events. Not possible while an event is still running.": "সংস্করণ ও এর শেষ হওয়া ইভেন্টগুলো আর্কাইভ করে। কোনো ইভেন্ট চলমান থাকলে সম্ভব নয়।",
+  "Archives the series, its editions and their finished events. Not possible while an event is still running.": "সিরিজ, এর সংস্করণ ও শেষ হওয়া ইভেন্টগুলো আর্কাইভ করে। কোনো ইভেন্ট চলমান থাকলে সম্ভব নয়।",
+  "Give the edition a title.": "সংস্করণের একটি শিরোনাম দিন।",
+  "{n} edition": "{n}টি সংস্করণ",
+  "{n} editions": "{n}টি সংস্করণ"
 }

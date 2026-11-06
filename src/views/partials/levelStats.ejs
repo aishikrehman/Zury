@@ -1,0 +1,41 @@
+<%# Statistics of a series or an edition: totals (each person and entry once), a chart, and a row
+    per part. Expects: totals (statsService.rollup), rows [{ label, sub, href, status, stats }],
+    rowTitle, chartTitle. %>
+<div class="row row-cards mb-3">
+  <% [[t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Words accepted'), totals.approvedWords, 'letter-case'], [t('Wikis'), totals.wikis.length, 'world']].forEach(([label, value, icon]) => { %>
+    <div class="col-6 col-lg"><div class="card card-sm"><div class="card-body d-flex align-items-center">
+      <span class="avatar bg-primary-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
+      <div><div class="h2 m-0"><%= formatNumber(value) %></div><div class="text-secondary small"><%= label %></div></div>
+    </div></div></div>
+  <% }) %>
+</div>
+<div class="form-hint mb-3"><%= t('A person or an entry (a page on a wiki) in several events is counted once in these totals.') %></div>
+<% const chartRows = [...rows].reverse(); %>
+<% if (chartRows.length > 1) { %>
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><%= chartTitle %></h3></div>
+    <div class="card-body"><%- include('./chart', { spec: { type: 'bar', height: 220, series: [{ name: t('Entries'), data: chartRows.map((r) => r.stats.entries) }, { name: t('Approved'), data: chartRows.map((r) => r.stats.approved) }], labels: chartRows.map((r) => r.label), colors: ['primary', 'green'] }, label: chartTitle }) %></div>
+  </div>
+<% } %>
+<% if (rows.length) { %>
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead><tr><th><%= rowTitle %></th><th><%= t('Wikis') %></th><th class="text-end"><%= t('Participants') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Approved') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead>
+        <tbody>
+          <% rows.forEach((r) => { const st = CONTEST_STATUSES[r.status] || { label: r.status, badge: 'secondary' }; %>
+            <tr>
+              <td><a href="<%= r.href %>" class="fw-bold"><%= r.label %></a><% if (r.sub) { %><div class="text-secondary small"><%= r.sub %></div><% } %></td>
+              <td><div class="d-flex flex-wrap gap-1"><% r.stats.wikis.forEach((w) => { %><span class="badge bg-blue-lt" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></span><% }) %></div></td>
+              <td class="text-end"><%= formatNumber(r.stats.participants) %></td>
+              <td class="text-end"><%= formatNumber(r.stats.entries) %></td>
+              <td class="text-end"><%= formatNumber(r.stats.approved) %></td>
+              <td class="text-end"><%= formatNumber(r.stats.approvedWords) %></td>
+              <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>

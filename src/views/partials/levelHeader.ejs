@@ -1,0 +1,21 @@
+<%# A series or edition page: breadcrumb, title and status on the left, its tabs on the right.
+    Expects: crumbs [[label, href]], heading, status (CONTEST_STATUSES key or ''), meta (trusted HTML or ''),
+    base (the page's address), tab, tabs [[key, icon, label]]. %>
+<% const st = status ? (CONTEST_STATUSES[status] || { label: status, badge: 'secondary' }) : null; %>
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <ol class="breadcrumb mb-1"><% crumbs.forEach(([label, href]) => { %><li class="breadcrumb-item"><a href="<%= href %>"><%= label %></a></li><% }) %><li class="breadcrumb-item active"><%= heading %></li></ol>
+    <div class="z-account-bar">
+      <div class="min-w-0">
+        <h2 class="page-title"><%= heading %></h2>
+        <div class="z-evhead-meta">
+          <% if (st) { %><span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>"><i></i><%= t(st.label) %></span><% } %>
+          <%- meta %>
+        </div>
+      </div>
+      <nav class="z-seg ms-auto" aria-label="<%= heading %>">
+        <% tabs.forEach(([key, icon, label]) => { %><a href="<%= base %><%= key === tabs[0][0] ? '' : `?tab=${key}` %>" class="<%= key === tab ? 'active' : '' %>"<%- key === tab ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %>"></i><%= label %></a><% }) %>
+      </nav>
+    </div>
+  </div>
+</div>

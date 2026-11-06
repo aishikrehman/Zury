@@ -1,75 +1,88 @@
+<%# A series (/wam), in tabs: its editions (and events directly under it), statistics, and for
+    those who run it its settings (details, settings for the events below, archive) and people. %>
 <%
-  // The series across the years: one row per edition, and the totals.
-  const chartYears = [...summary].reverse();
+  const base = `/${series.slug}`;
+  const tabs = [['editions', 'calendar', t('Editions')], ['stats', 'chart-bar', t('Statistics')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
 %>
-<div class="page-header d-print-none">
-  <div class="container-xl">
-    <div class="row g-2 align-items-center">
-      <div class="col">
-        <div class="page-pretitle"><%= t('Event series') %></div>
-        <h2 class="page-title"><%= series.title %></h2>
-        <% if (series.description) { %><div class="text-secondary mt-1"><%= series.description %></div><% } %>
-      </div>
-      <% if (canRun) { %>
-        <div class="col-auto">
-          <form method="post" action="/<%= series.slug %>/next-edition" data-confirm="<%= t('Make next year’s edition from the latest one?') %>">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button class="btn btn-primary" type="submit"><i class="ti ti-calendar-plus me-1"></i><%= t('Create next edition') %></button>
-          </form>
-        </div>
-      <% } %>
-    </div>
-  </div>
-</div>
+<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events']], heading: series.title, status: series.status === 'archived' ? 'archived' : '', meta: `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span>`, base, tab, tabs }) %>
 <div class="page-body">
   <div class="container-xl">
-    <% if (!editions.length && !directEvents.length) { %>
-      <div class="card"><%- include('../../partials/emptyArt', { title: t('No editions yet') }) %></div>
-    <% } else { %>
-      <div class="row row-cards mb-3">
-        <% [[t('Editions'), summary.length, 'calendar'], [t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Words accepted'), totals.approvedWords, 'letter-case']].forEach(([label, value, icon]) => { %>
-          <div class="col-6 col-lg">
-            <div class="card card-sm"><div class="card-body d-flex align-items-center">
-              <span class="avatar bg-primary-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
-              <div><div class="h2 m-0"><%= formatNumber(value) %></div><div class="text-secondary small"><%= label %></div></div>
-            </div></div>
-          </div>
-        <% }) %>
-      </div>
 
-      <% if (chartYears.length > 1) { %>
-        <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><%= t('Entries per edition') %></h3></div>
-          <div class="card-body"><%- include('../../partials/chart', { spec: { type: 'bar', height: 220, series: [{ name: t('Entries'), data: chartYears.map((e) => e.entries) }, { name: t('Approved'), data: chartYears.map((e) => e.approved) }], labels: chartYears.map((e) => e.edition), colors: ['primary', 'green'] }, label: t('Entries per edition') }) %></div>
+    <% if (tab === 'editions') { %>
+      <% if (series.description) { %><p class="text-secondary" style="white-space: pre-line"><%= series.description %></p><% } %>
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3>
+          <% if (canRun) { %><div class="card-actions">
+            <% if (summary.length) { %><form method="post" action="/<%= series.slug %>/next-edition" class="d-inline" data-confirm="<%= t('Make next year’s edition from the latest one, with a copy of each of its events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-copy me-1"></i><%= t('Next edition from the latest') %></button></form><% } %>
+            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#new-edition" aria-expanded="false"><i class="ti ti-calendar-plus me-1"></i><%= t('New edition') %></button>
+          </div><% } %>
+        </div>
+        <% if (canRun) { %>
+          <form method="post" action="/series/<%= series.slug %>/first-edition" class="collapse border-bottom" id="new-edition">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="card-body"><div class="row g-3 align-items-end">
+              <div class="col-6 col-md-2"><label class="form-label" for="ne-edition"><%= t('Edition') %></label><input class="form-control" id="ne-edition" name="edition" value="<%= new Date().getFullYear() %>" maxlength="20" required></div>
+              <div class="col-6 col-md-4"><label class="form-label" for="ne-title"><%= t('Title') %></label><input class="form-control" id="ne-title" name="title" maxlength="200" placeholder="<%= series.title %> <%= new Date().getFullYear() %>"></div>
+              <div class="col-6 col-md-2"><label class="form-label" for="ne-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ne-start" name="startDate"></div>
+              <div class="col-6 col-md-2"><label class="form-label" for="ne-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ne-end" name="endDate"></div>
+              <div class="col-12 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Create') %></button></div>
+            </div></div>
+          </form>
+        <% } %>
+        <% if (!summary.length) { %><div class="card-body text-secondary"><%= t('No editions yet') %></div><% } else { %>
+          <div class="list-group list-group-flush">
+            <% summary.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
+              <a class="list-group-item list-group-item-action" href="/<%= series.slug %>/<%= e.slug %>">
+                <div class="row align-items-center">
+                  <div class="col-auto"><div class="h2 m-0"><%= e.slug %></div></div>
+                  <div class="col min-w-0">
+                    <div class="text-truncate"><%= e.title %></div>
+                    <div class="text-secondary small"><%= tn('{n} event', '{n} events', e.events.length) %> · <%= tn('{n} entry', '{n} entries', e.entries) %> · <%= tn('{n} participant', '{n} participants', e.participants) %></div>
+                  </div>
+                  <div class="col-auto d-none d-md-flex flex-wrap gap-1"><% e.wikis.slice(0, 8).forEach((w) => { %><span class="badge bg-blue-lt" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></span><% }) %></div>
+                  <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></div>
+                  <div class="col-auto text-secondary"><i class="ti ti-chevron-right"></i></div>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+      <% if (directEvents.length) { %>
+        <h3 class="mt-4 mb-3"><%= t('Events of the series') %></h3>
+        <div class="row row-cards">
+          <% directEvents.forEach((c) => { %><div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
         </div>
       <% } %>
 
+    <% } else if (tab === 'stats') { %>
+      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
+
+    <% } else if (tab === 'settings') { %>
+      <form method="post" action="/series/<%= series.slug %>/update" class="card mb-3">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t('Details') %></h3></div>
+        <div class="card-body"><div class="row g-3">
+          <div class="col-12 col-md-6"><label class="form-label" for="sr-title"><%= t('Name') %></label><input class="form-control" id="sr-title" name="title" value="<%= series.title %>" maxlength="120" required></div>
+          <div class="col-12 col-md-6"><label class="form-label"><%= t('Address') %></label><div class="form-control-plaintext">/<%= series.slug %></div></div>
+          <div class="col-12"><label class="form-label" for="sr-desc"><%= t('Description') %></label><textarea class="form-control" id="sr-desc" name="description" rows="2" maxlength="2000"><%= series.description %></textarea></div>
+          <div class="col-12"><button class="btn btn-primary" type="submit"><%= t('Save') %></button></div>
+        </div></div>
+      </form>
+
+      <%- include('../../partials/levelSettings', { seriesSlug: series.slug, editionId: null, rules, history, KEYS }) %>
+
       <div class="card">
-        <div class="table-responsive">
-          <table class="table table-vcenter card-table">
-            <thead><tr><th><%= t('Edition') %></th><th><%= t('Wikis') %></th><th class="text-end"><%= t('Participants') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Approved') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead>
-            <tbody>
-              <% summary.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
-                <tr>
-                  <td><a href="/<%= series.slug %>/<%= e.edition %>" class="fw-bold"><%= e.edition %></a><div class="text-secondary small"><%= e.title %></div></td>
-                  <td><div class="d-flex flex-wrap gap-1"><% e.wikis.forEach((w) => { %><span class="badge bg-blue-lt" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></span><% }) %></div><div class="text-secondary small"><%= tn('{n} event', '{n} events', e.events.length) %></div></td>
-                  <td class="text-end"><%= formatNumber(e.participants) %></td>
-                  <td class="text-end"><%= formatNumber(e.entries) %></td>
-                  <td class="text-end"><%= formatNumber(e.approved) %></td>
-                  <td class="text-end"><%= formatNumber(e.approvedWords) %></td>
-                  <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-archive me-2"></i><%= t('Archive') %></h3></div>
+        <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+          <span class="text-secondary small me-auto"><%= series.status === 'archived' ? t('This series is archived.') : t('Archives the series, its editions and their finished events. Not possible while an event is still running.') %></span>
+          <form method="post" action="/series/<%= series.slug %>/<%= series.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= series.status === 'archived' ? t('Take this series out of the archive?') : t('Archive this series, its editions and their finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= series.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
+          <% if (!summary.length && !directEvents.length && can('deleteAnyEvent')) { %><form method="post" action="/series/<%= series.slug %>/delete" data-confirm="<%= t('Delete this series?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button></form><% } %>
         </div>
       </div>
-    <% } %>
-    <% if (directEvents.length) { %>
-      <h3 class="mt-4 mb-3"><%= t('Events of the series') %></h3>
-      <div class="row row-cards">
-        <% directEvents.forEach((c) => { %><div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
-      </div>
+
+    <% } else if (tab === 'people') { %>
+      <%- include('../../partials/levelPeople', { seriesSlug: series.slug, editionId: null, people, ROLES }) %>
     <% } %>
   </div>
 </div>

@@ -1,82 +1,92 @@
-<%# An edition of a series (/wlm/2026): its events. An empty edition is fine. %>
-<% const st = CONTEST_STATUSES[edition.status] || { label: edition.status, badge: 'secondary' }; %>
-<div class="page-header d-print-none">
+<%# An edition of a series (/wlm/2026), in tabs: its events, statistics, and for those who run it
+    its settings (details, settings for its events, copy, archive) and people. %>
+<%
+  const base = `/${sr.slug}/${edition.slug}`;
+  const tabs = [['events', 'calendar-event', t('Events')], ['stats', 'chart-bar', t('Statistics')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
+  const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
+  const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
+%>
+<%- include('../../partials/levelHeader', { crumbs: [[sr.title, `/${sr.slug}`]], heading: edition.title, status: edition.status, meta: `${dates}<span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', events.length)}</span>`, base, tab, tabs }) %>
+<div class="page-body">
   <div class="container-xl">
-    <ol class="breadcrumb mb-1"><li class="breadcrumb-item"><a href="/<%= sr.slug %>"><%= sr.title %></a></li><li class="breadcrumb-item active"><%= edition.slug %></li></ol>
-    <div class="row g-2 align-items-center">
-      <div class="col">
-        <h2 class="page-title"><%= edition.title %></h2>
-        <div class="z-evhead-meta">
-          <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>"><i></i><%= t(st.label) %></span>
-          <% if (edition.startDate) { %><span><i class="ti ti-calendar"></i><%= formatDate(edition.startDate) %><% if (edition.endDate) { %> – <%= formatDate(edition.endDate) %><% } %></span><% } %>
-          <span><i class="ti ti-calendar-event"></i><%= tn('{n} event', '{n} events', events.length) %></span>
-        </div>
-      </div>
+
+    <% if (tab === 'events') { %>
       <% if (canRun) { %>
-        <%# Add an event: the full form, or an editathon from Fountain. %>
-        <div class="col-auto"><div class="dropdown">
+        <div class="d-flex justify-content-end mb-3"><div class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-plus me-1"></i><%= t('Add event') %></button>
           <div class="dropdown-menu dropdown-menu-end">
             <a class="dropdown-item" href="/events/create?series=<%= sr.slug %>&edition=<%= edition.slug %>"><i class="ti ti-file-plus me-2"></i><%= t('New event') %></a>
             <% if (can('importEvents')) { %><button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#add-fountain"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></button><% } %>
           </div>
         </div></div>
-        <div class="col-auto"><div class="dropdown">
-          <button class="btn btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('More') %>" aria-label="<%= t('More') %>"><i class="ti ti-dots"></i></button>
-          <div class="dropdown-menu dropdown-menu-end">
-            <button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#copy-edition"><i class="ti ti-copy me-2"></i><%= t('Copy edition') %></button>
-            <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/<%= edition.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= edition.status === 'archived' ? t('Take this edition out of the archive?') : t('Archive this edition and its finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="dropdown-item" type="submit"><i class="ti ti-archive me-2"></i><%= edition.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
-          </div>
-        </div></div>
+        <% if (can('importEvents')) { %>
+          <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/fountain" class="card collapse mb-3" id="add-fountain">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></h3></div>
+            <div class="card-body"><div class="row g-2 align-items-end">
+              <div class="col-12 col-md-6"><label class="form-label" for="af-code"><%= t('Fountain editathon code or address') %></label><input class="form-control" id="af-code" name="code" required placeholder="https://fountain.toolforge.org/editathons/wam2026-bn"></div>
+              <div class="col-6 col-md-3"><label class="form-label" for="af-type"><%= t('Type') %></label><select class="form-select" id="af-type" name="type"><option value="writing"><%= t('Writing contest') %></option><option value="editathon"><%= t('Edit-a-thon') %></option></select></div>
+              <div class="col-6 col-md-3"><button class="btn btn-primary w-100" type="submit"><%= t('Import') %></button></div>
+            </div><div class="form-hint mt-2"><%= t('The editathon becomes an event of this edition; its entries and Fountain’s decisions come along and stay in step.') %></div></div>
+          </form>
+        <% } %>
       <% } %>
-    </div>
-  </div>
-</div>
-<div class="page-body">
-  <div class="container-xl">
-    <% if (canRun) { %>
-      <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/copy" class="card collapse mb-3" id="copy-edition">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-copy me-2"></i><%= t('Copy edition') %></h3></div>
-        <div class="card-body"><div class="row g-2 align-items-end">
-          <% const nextName = /^\d{4}$/.test(edition.slug) ? String(Number(edition.slug) + 1) : ''; %>
-          <div class="col-6 col-md-2"><label class="form-label" for="ce-slug"><%= t('Edition') %></label><input class="form-control" id="ce-slug" name="slug" value="<%= nextName %>" maxlength="20" required></div>
-          <div class="col-6 col-md-4"><label class="form-label" for="ce-title"><%= t('Title') %></label><input class="form-control" id="ce-title" name="title" maxlength="200" placeholder="<%= nextName ? edition.title.split(edition.slug).join(nextName) : edition.title %>"></div>
-          <div class="col-6 col-md-3"><label class="form-label" for="ce-years"><%= t('Move dates by (years)') %></label><input class="form-control" type="number" id="ce-years" name="years" min="0" max="10" value="<%= nextName ? 1 : 0 %>"></div>
-          <div class="col-6 col-md-3"><button class="btn btn-primary w-100" type="submit"><%= t('Copy') %></button></div>
-        </div><div class="form-hint mt-2"><%= t('A new edition with a draft of each event (settings, wikis, organizers, jury), its people and its settings for the events below. Entries are not copied.') %></div></div>
-      </form>
-      <% if (can('importEvents')) { %>
+      <% if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
+      <% if (!events.length) { %>
+        <div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div>
+      <% } else { %>
+        <div class="row row-cards">
+          <% events.forEach((c) => { %><div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
+        </div>
+      <% } %>
 
-        <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/fountain" class="card collapse mb-3" id="add-fountain">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></h3></div>
-          <div class="card-body"><div class="row g-2 align-items-end">
-            <div class="col-12 col-md-6"><label class="form-label" for="af-code"><%= t('Fountain editathon code or address') %></label><input class="form-control" id="af-code" name="code" required placeholder="https://fountain.toolforge.org/editathons/wam2026-bn"></div>
-            <div class="col-6 col-md-3"><label class="form-label" for="af-type"><%= t('Type') %></label><select class="form-select" id="af-type" name="type"><option value="writing"><%= t('Writing contest') %></option><option value="editathon"><%= t('Edit-a-thon') %></option></select></div>
-            <div class="col-6 col-md-3"><button class="btn btn-primary w-100" type="submit"><%= t('Import') %></button></div>
-          </div><div class="form-hint mt-2"><%= t('The editathon becomes an event of this edition; its entries and Fountain’s decisions come along and stay in step.') %></div></div>
-        </form>
-      <% } %>
-    <% } %>
-    <% if (events.length) { %>
-      <%# The edition's totals: an entry or a person in several of its events counts once. %>
-      <div class="row row-cards mb-3">
-        <% [[t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Wikis'), totals.wikis.length, 'world']].forEach(([label, value, icon]) => { %>
-          <div class="col-6 col-lg-3"><div class="card card-sm"><div class="card-body d-flex align-items-center">
-            <span class="avatar bg-primary-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
-            <div><div class="h2 m-0"><%= formatNumber(value) %></div><div class="text-secondary small"><%= label %></div></div>
-          </div></div></div>
-        <% }) %>
-      </div>
-    <% } %>
-    <% if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
-    <% if (!events.length) { %>
-      <div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div>
-    <% } else { %>
+    <% } else if (tab === 'stats') { %>
+      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %>
+
+    <% } else if (tab === 'settings') { %>
+      <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/update" class="card mb-3">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t('Details') %></h3></div>
+        <div class="card-body"><div class="row g-3">
+          <div class="col-12 col-md-6"><label class="form-label" for="ed-title"><%= t('Title') %></label><input class="form-control" id="ed-title" name="title" value="<%= edition.title %>" maxlength="200" required></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="ed-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ed-start" name="startDate" value="<%= day(edition.startDate) %>"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="ed-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ed-end" name="endDate" value="<%= day(edition.endDate) %>"></div>
+          <div class="col-12"><label class="form-label" for="ed-desc"><%= t('Description') %></label><textarea class="form-control" id="ed-desc" name="description" rows="2" maxlength="2000"><%= edition.description %></textarea></div>
+          <div class="col-12"><button class="btn btn-primary" type="submit"><%= t('Save') %></button></div>
+        </div></div>
+      </form>
+
+      <%- include('../../partials/levelSettings', { seriesSlug: sr.slug, editionId: edition.id, rules, history, KEYS }) %>
+
       <div class="row row-cards">
-        <% events.forEach((c) => { %><div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
+        <% if (canRunSeries) { %>
+          <div class="col-md-8">
+            <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/copy" class="card h-100">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <div class="card-header"><h3 class="card-title"><i class="ti ti-copy me-2"></i><%= t('Copy edition') %></h3></div>
+              <div class="card-body"><div class="row g-2 align-items-end">
+                <% const nextName = /^\d{4}$/.test(edition.slug) ? String(Number(edition.slug) + 1) : ''; %>
+                <div class="col-6 col-md-3"><label class="form-label" for="ce-slug"><%= t('Edition') %></label><input class="form-control" id="ce-slug" name="slug" value="<%= nextName %>" maxlength="20" required></div>
+                <div class="col-6 col-md-4"><label class="form-label" for="ce-title"><%= t('Title') %></label><input class="form-control" id="ce-title" name="title" maxlength="200" placeholder="<%= nextName ? edition.title.split(edition.slug).join(nextName) : edition.title %>"></div>
+                <div class="col-6 col-md-3"><label class="form-label" for="ce-years"><%= t('Move dates by (years)') %></label><input class="form-control" type="number" id="ce-years" name="years" min="0" max="10" value="<%= nextName ? 1 : 0 %>"></div>
+                <div class="col-6 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Copy') %></button></div>
+              </div><div class="form-hint mt-2"><%= t('A new edition with a draft of each event (settings, wikis, organizers, jury), its people and its settings for the events below. Entries are not copied.') %></div></div>
+            </form>
+          </div>
+        <% } %>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-archive me-2"></i><%= t('Archive') %></h3></div>
+            <div class="card-body">
+              <p class="text-secondary small"><%= edition.status === 'archived' ? t('This edition is archived.') : t('Archives the edition and its finished events. Not possible while an event is still running.') %></p>
+              <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/<%= edition.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= edition.status === 'archived' ? t('Take this edition out of the archive?') : t('Archive this edition and its finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= edition.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
+            </div>
+          </div>
+        </div>
       </div>
+
+    <% } else if (tab === 'people') { %>
+      <%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, ROLES }) %>
     <% } %>
   </div>
 </div>
