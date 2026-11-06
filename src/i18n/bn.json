@@ -1573,5 +1573,15 @@
   "Your reviewers and local admins": "আপনার পর্যালোচক ও স্থানীয় প্রশাসক",
   "Your reviewers and any participant": "আপনার পর্যালোচক ও যেকোনো অংশগ্রহণকারী",
   "Local admins and any participant": "স্থানীয় প্রশাসক ও যেকোনো অংশগ্রহণকারী",
-  "All of them": "সবাই"
+  "All of them": "সবাই",
+  "Turn parts of the event on or off.": "ইভেন্টের বিভিন্ন অংশ চালু বা বন্ধ করুন।",
+  "Turn parts of the event on or off": "ইভেন্টের অংশ চালু/বন্ধ",
+  "How entries are reviewed and results counted": "জমা কীভাবে পর্যালোচনা ও ফলাফল গোনা হবে",
+  "Add the template": "টেমপ্লেট যোগ করুন",
+  "The event's template": "ইভেন্টের টেমপ্লেট",
+  "Add it to the article's talk page: the wiki opens with it filled in; just save.": "নিবন্ধের আলাপ পাতায় যোগ করুন: উইকি খুলবে টেমপ্লেট বসানো অবস্থায়; শুধু সংরক্ষণ করুন।",
+  "Add it to the article: the wiki opens with it filled in; just save.": "নিবন্ধে যোগ করুন: উইকি খুলবে টেমপ্লেট বসানো অবস্থায়; শুধু সংরক্ষণ করুন।",
+  "Template for entries": "জমার জন্য টেমপ্লেট",
+  "E.g. {{উইকিপিডিয়া এশীয় মাস ২০২৬}}. Participants get a link to add it to each entry.": "যেমন {{উইকিপিডিয়া এশীয় মাস ২০২৬}}। অংশগ্রহণকারীরা প্রতিটি জমায় এটি যোগ করার লিংক পাবেন।",
+  "Put the template on the talk page (else on the article)": "টেমপ্লেট আলাপ পাতায় বসান (নইলে নিবন্ধে)"
 }

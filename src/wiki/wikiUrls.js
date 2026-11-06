@@ -103,4 +103,15 @@ function parseEntry(input, defaultWiki) {
   return { wiki: defaultWiki, title: normalizeTitle(raw) };
 }
 
-module.exports = { hostToDbname, dbnameToHost, parseEntry, pageUrl, normalizeTitle };
+// Opens the editor of an entry's page (or its talk page) with the event's template added at
+// the end, ready to save. Only for articles (main namespace); null otherwise.
+function templateEditUrl({ wiki, title, namespace = 0 }, template, onTalk = true) {
+  const host = dbnameToHost(wiki);
+  if (!host || !template || namespace !== 0) return null;
+  const page = onTalk ? `Talk:${title}` : title;
+  const p = new URLSearchParams({ title: page.replace(/ /g, '_'), action: 'edit', section: 'new', preloadtitle: '', preloadtext: template, summary: template });
+  return `https://${host}/w/index.php?${p}`;
+}
+
+module.exports = {
+  templateEditUrl, hostToDbname, dbnameToHost, parseEntry, pageUrl, normalizeTitle };

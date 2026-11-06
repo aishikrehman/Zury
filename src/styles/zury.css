@@ -996,3 +996,6 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-set-grid > .z-set-row { grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--z-border); border-radius: 10px; }
 .z-set-grid > .z-set-row + .z-set-row { border-top: 1px solid var(--z-border); }
 .z-set-grid .z-set-control { width: auto; }
+
+.z-set-inline { grid-template-columns: minmax(12rem, 1fr) auto; }
+.z-set-inline .z-set-control { flex-wrap: wrap; gap: .4rem 1.25rem; width: auto; }

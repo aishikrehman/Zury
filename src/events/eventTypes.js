@@ -27,6 +27,8 @@ const EVENT_TYPES = {
       { key: 'minBytes', label: 'Minimum article size (bytes)', type: 'int', min: 0, max: 10000000, default: 3000 },
       { key: 'createdDuringEventOnly', label: 'Only articles created during the event', type: 'bool', default: true },
       { key: 'allowExpansions', label: 'Also accept substantial expansions of existing articles', type: 'bool', default: false },
+      { key: 'entryTemplate', label: 'Template for entries', type: 'string', maxLength: 255, default: '', help: 'E.g. {{উইকিপিডিয়া এশীয় মাস ২০২৬}}. Participants get a link to add it to each entry.' },
+      { key: 'entryTemplateOnTalk', label: 'Put the template on the talk page (else on the article)', type: 'bool', default: true },
     ],
   },
   data: {
@@ -51,6 +53,8 @@ const EVENT_TYPES = {
       { key: 'trackNewArticles', label: 'Count new articles', type: 'bool', default: true },
       { key: 'trackEdits', label: 'Count edits to existing pages', type: 'bool', default: true },
       { key: 'minBytesChanged', label: 'Minimum bytes changed per edit', type: 'int', min: 0, max: 1000000, default: 0 },
+      { key: 'entryTemplate', label: 'Template for entries', type: 'string', maxLength: 255, default: '', help: 'E.g. {{উইকিপিডিয়া এশীয় মাস ২০২৬}}. Participants get a link to add it to each entry.' },
+      { key: 'entryTemplateOnTalk', label: 'Put the template on the talk page (else on the article)', type: 'bool', default: true },
     ],
   },
 };

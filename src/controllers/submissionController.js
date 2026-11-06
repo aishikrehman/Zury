@@ -147,7 +147,10 @@ async function index(req, res, next) {
     const showNames = !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions');
     if (!showNames) filters.participant = null;
     const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki, page, ...filters });
+    const tc = readTypeConfig(req.contest.type, req.settings.typeConfig);
+    const templateLink = (s) => (tc.entryTemplate ? require('../wiki/wikiUrls').templateEditUrl({ wiki: s.wiki, title: s.title, namespace: s.entryType === 'article' ? 0 : -1 }, tc.entryTemplate, tc.entryTemplateOnTalk !== false) : null);
     res.render('pages/contest/submissions', {
+      templateLink,
       title: `Submissions — ${req.contest.title}`,
       result,
       filters,
@@ -191,7 +194,10 @@ async function show(req, res, next) {
     const submission = await load(req);
     if (!submission) return res.status(404).render('pages/404', { title: 'Submission Not Found' });
     const isOwner = req.user?.id === submission.participantId;
+    const tc2 = readTypeConfig(req.contest.type, req.settings.typeConfig);
     res.render('pages/contest/submission', {
+      templateLink: tc2.entryTemplate ? require('../wiki/wikiUrls').templateEditUrl({ wiki: submission.wiki, title: submission.title, namespace: submission.entryType === 'article' ? 0 : -1 }, tc2.entryTemplate, tc2.entryTemplateOnTalk !== false) : null,
+      templateOnTalk: tc2.entryTemplateOnTalk !== false,
       title: `${submission.title} — ${req.contest.title}`,
       submission,
       meta: JSON.parse(submission.metadata),

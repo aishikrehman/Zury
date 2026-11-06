@@ -26,7 +26,8 @@
   const steps = [
     ['basics', t('Basic info'), wikiMode ? t('Description, contact and dates') : t('Type, project, name, address and dates')],
     ['rules', t('Submission rules'), t('Who can take part and what counts')],
-    ...(judged ? [['judging', t('Interaction and judging'), t('Review, appeals, results and features')]] : []),
+    ...(judged ? [['judging', t('Review'), t('How entries are reviewed and results counted')]] : []),
+    ['features', t('Features'), t('Turn parts of the event on or off')],
     ...(wikiMode ? [] : [['access', t('User access levels'), t('Visibility, organizers and reviewers')]]),
   ];
   const dateInput = (key) => `
@@ -383,8 +384,15 @@
                 </div>
                 </div>
               </div>
-              <%# Who reviews: one choice, any mix of the three. %>
-              <%- row('reviewers', 'Who reviews', select('reviewers', [['jury', 'The reviewers you add'], ['localAdmins', 'Local admins of the wiki'], ['participants', 'Any participant'], ['jury,localAdmins', 'Your reviewers and local admins'], ['jury,participants', 'Your reviewers and any participant'], ['localAdmins,participants', 'Local admins and any participant'], ['jury,localAdmins,participants', 'All of them']], who.join(','))) %>
+              <%# Who reviews: any of the three, ticked side by side. %>
+              <div class="z-set-row z-set-inline">
+                <span class="z-set-label"><%= t('Who reviews') %><%- mark('settings.reviewers') %></span>
+                <div class="z-set-control">
+                  <% [['jury', 'The reviewers you add'], ['localAdmins', 'Local admins of the wiki'], ['participants', 'Any participant']].forEach(([key, label]) => { %>
+                    <label class="form-check form-check-inline m-0"><input class="form-check-input" type="checkbox" name="reviewers" value="<%= key %>"<%= who.includes(key) ? ' checked' : '' %>><span class="form-check-label"><%= t(label) %></span></label>
+                  <% }) %>
+                </div>
+              </div>
               <%- row('reviewAssignment', 'Who reviews which entry', select('reviewAssignment', [['open', 'Anyone who reviews (common queue)'], ['assigned', 'Assigned by hand'], ['equal', 'Shared out equally, automatically'], ['fixed', 'A set number each, automatically']], v('reviewAssignment') || 'open', ' data-show-source'), 'Nobody is given their own entry.') %>
               <div class="z-set-row" data-show-when="reviewAssignment:fixed">
                 <label class="z-set-label" for="assignPerJuror"><%= t('Entries per reviewer') %></label>
@@ -422,7 +430,13 @@
               </div>
             </div>
 
-            <h4 class="mb-3"><%= t("Features") %></h4>
+          </section>
+          <% } %>
+
+          <%# ── Features: the event's on/off switches (every type). ── %>
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-features" data-step="<%= steps.findIndex(([k]) => k === 'features') %>">
+            <h3 class="mb-1"><%= t("Features") %></h3>
+            <p class="text-secondary mb-3"><%= t("Turn parts of the event on or off.") %></p>
             <div class="z-set-grid">
               <% FEATURE_FIELDS.forEach(([key, label, help]) => { %>
                 <div class="z-set-row">
@@ -433,11 +447,9 @@
             </div>
           </section>
 
-          <% } %>
-
           <%# ── 4. User access levels ─────────────────────────────────── %>
           <% if (!wikiMode) { %>
-            <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-access" data-step="<%= judged ? 3 : 2 %>">
+            <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-access" data-step="<%= steps.findIndex(([k]) => k === 'access') %>">
               <h3 class="mb-4"><%= t("User access levels") %></h3>
               <div class="row g-3">
                 <div class="col-12">

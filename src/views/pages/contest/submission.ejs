@@ -56,6 +56,14 @@
     </div>
 
     <div class="col-lg-4">
+      <%# The event's template for entries: one click opens the wiki's editor with it filled in. %>
+      <% if (templateLink && currentUser && (currentUser.id === submission.participantId || can("manageEvent"))) { %>
+        <div class="card mb-3"><div class="card-body">
+          <div class="fw-medium mb-1"><i class="ti ti-tag me-1"></i><%= t("The event's template") %></div>
+          <p class="text-secondary small mb-2"><%= templateOnTalk ? t("Add it to the article's talk page: the wiki opens with it filled in; just save.") : t("Add it to the article: the wiki opens with it filled in; just save.") %></p>
+          <a class="btn btn-primary w-100" href="<%= templateLink %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= t("Add the template") %></a>
+        </div></div>
+      <% } %>
       <% if (canWithdraw || can('manageEvent')) { %>
         <div class="card mb-3">
           <div class="card-header"><h3 class="card-title"><%= t("Actions") %></h3></div>
