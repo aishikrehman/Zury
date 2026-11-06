@@ -501,7 +501,13 @@ async function assignmentOverview({ contestId, settings, wiki }) {
       reviews: { select: { jurorId: true } },
     },
   });
-  const unassigned = entries.filter((e) => e.assignments.length < required).length;
+  // Every waiting entry with fewer reviewers than it needs (the list above shows the first 300).
+  const { Prisma } = require('@prisma/client');
+  const [{ n }] = await prisma.$queryRaw`
+    SELECT COUNT(*) AS n FROM Submission s
+    WHERE s.contestId = ${contestId} AND s.status IN (${Prisma.join(REVIEWABLE)}) ${wiki ? Prisma.sql`AND s.wiki = ${wiki}` : Prisma.empty}
+      AND (SELECT COUNT(*) FROM ReviewAssignment a WHERE a.submissionId = s.id) < ${required}`;
+  const unassigned = Number(n);
   return {
     required,
     jurors: [...jurors.values()].map((j) => ({ ...j, remaining: j.assigned - j.reviewed })).sort((a, b) => a.username.localeCompare(b.username)),
