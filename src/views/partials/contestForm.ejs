@@ -50,7 +50,7 @@
           <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
             <% steps.forEach(([key, label, hint], i) => { %>
               <li class="nav-item step-item<%= i === 0 ? ' active' : '' %>" role="presentation">
-                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><% if (creating) { %><span class="z-step-num"><%= formatNumber(i + 1) %></span><% } %><%= label %></a>
+                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><% if (key !== 'database') { %><span class="z-step-num"><%= formatNumber(i + 1) %></span><% } %><%= label %></a>
               </li>
             <% }) %>
           </ul>
@@ -74,18 +74,24 @@
                     <div class="d-flex align-items-center gap-2"><strong><%= t(typeDef.label) %></strong><a class="small" href="/events/create<%= form.seriesSlug ? `?series=${encodeURIComponent(form.seriesSlug)}${form.edition ? `&edition=${encodeURIComponent(form.edition)}` : ''}` : '' %>"><%= t('Change') %></a></div>
                     <div class="form-hint"><%= t(typeDef.description) %></div>
                   </div>
-                <% } else { %>
-                <div class="col-12">
-                  <label class="form-label required" for="type"><%= t("Type of event") %></label>
-                  <select class="form-select<%= inv('type') %>" id="type" <%- creating || (typeof contest !== 'undefined' && contest && contest.status === 'draft' && !wikiMode) ? 'name="type" required' : 'disabled' %> data-type-select>
-                    <option value=""<%= type ? '' : ' selected' %>><%= t("Choose…") %></option>
-                    <% Object.entries(EVENT_TYPES).forEach(([key, td]) => { %>
-                      <option value="<%= key %>"<%= type === key ? ' selected' : '' %> data-defaults="<%= JSON.stringify(FEATURE_DEFAULTS[key]) %>" data-namespaces="<%= td.defaultNamespaces.join(', ') %>" data-description="<%= td.description %>" data-guide-rules="<%= (td.guide || {}).rules || '' %>" data-guide-judging="<%= (td.guide || {}).judging || '' %>"><%= td.label %></option>
-                    <% }) %>
-                  </select>
-                  <div class="form-hint" data-type-description><%= typeDef ? typeDef.description : '' %></div>
-                  <%- err('type') %>
-                </div>
+                <% } else { const draftType = typeof contest !== 'undefined' && contest && contest.status === 'draft'; %>
+                  <div class="col-12">
+                    <span class="form-label"><%= t("Type of event") %></span>
+                    <div class="d-flex align-items-center gap-2"><strong><%= typeDef ? t(typeDef.label) : '' %></strong><% if (draftType) { %><a class="small" href="#type-change" data-bs-toggle="collapse"><%= t('Change') %></a><% } %></div>
+                    <div class="form-hint" data-type-description><%= typeDef ? t(typeDef.description) : '' %></div>
+                    <% if (draftType) { %><div class="collapse mt-2" id="type-change">                <div class="col-12">
+                      <label class="form-label required" for="type"><%= t("Type of event") %></label>
+                      <select class="form-select<%= inv('type') %>" id="type" <%- creating || (typeof contest !== 'undefined' && contest && contest.status === 'draft' && !wikiMode) ? 'name="type" required' : 'disabled' %> data-type-select>
+                        <option value=""<%= type ? '' : ' selected' %>><%= t("Choose…") %></option>
+                        <% Object.entries(EVENT_TYPES).forEach(([key, td]) => { %>
+                          <option value="<%= key %>"<%= type === key ? ' selected' : '' %> data-defaults="<%= JSON.stringify(FEATURE_DEFAULTS[key]) %>" data-namespaces="<%= td.defaultNamespaces.join(', ') %>" data-description="<%= td.description %>" data-guide-rules="<%= (td.guide || {}).rules || '' %>" data-guide-judging="<%= (td.guide || {}).judging || '' %>"><%= td.label %></option>
+                        <% }) %>
+                      </select>
+                      <div class="form-hint" data-type-description><%= typeDef ? typeDef.description : '' %></div>
+                      <%- err('type') %>
+                    </div>
+    </div><% } %>
+                  </div>
                 <% } %>
                 </div>
               </div>
