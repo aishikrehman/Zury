@@ -77,7 +77,7 @@
         <div class="card-body d-flex flex-wrap gap-2 align-items-center">
           <span class="text-secondary small me-auto"><%= series.status === 'archived' ? t('This series is archived.') : t('Archives the series, its editions and their finished events. Not possible while an event is still running.') %></span>
           <form method="post" action="/series/<%= series.slug %>/<%= series.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= series.status === 'archived' ? t('Take this series out of the archive?') : t('Archive this series, its editions and their finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= series.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
-          <% if (!summary.length && !directEvents.length && can('deleteAnyEvent')) { %><form method="post" action="/series/<%= series.slug %>/delete" data-confirm="<%= t('Delete this series?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button></form><% } %>
+          <% if (can('deleteAnything') || (!summary.length && !directEvents.length && can('deleteAnyEvent'))) { %><form method="post" action="/series/<%= series.slug %>/delete" data-confirm="<%= summary.length || directEvents.length ? t('Delete this series with all its editions and events?') : t('Delete this series?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button></form><% } %>
         </div>
       </div>
 

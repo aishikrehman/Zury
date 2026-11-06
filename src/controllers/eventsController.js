@@ -192,7 +192,9 @@ async function seriesAction(req, res, next) {
       return next(err);
     }
     if (req.params.action === 'delete') {
-      await seriesService.remove({ actorId: req.user.id, series: found });
+      // Superusers delete a series with everything in it; others only an empty one.
+      if (req.permissions.has('deleteAnything')) await require('../services/structureService').deleteLevel({ actorId: req.user.id, level: { seriesId: found.id } });
+      else await seriesService.remove({ actorId: req.user.id, series: found });
       req.flash('success', 'Series deleted.');
     } else {
       await seriesService.update({ actorId: req.user.id, series: found, title: req.body.title, description: req.body.description });
@@ -352,6 +354,12 @@ async function levelAction(req, res, next) {
     // Copying an edition makes a new one in the series: that is for those who run the series.
     if (!allowed || (req.params.action === 'copy' && !(await canRunSeries(req, sr.id)))) return forbiddenPage(next);
     const level = edition ? { editionId: edition.id } : { seriesId: sr.id };
+    if (req.params.action === 'delete') {
+      if (!req.permissions.has('deleteAnything')) return forbiddenPage(next);
+      const { events } = await structureService.deleteLevel({ actorId: req.user.id, level });
+      req.flash('success', req.t('Edition deleted, with {n} events.', { n: events }));
+      return res.redirect(`/${sr.slug}?tab=overview`);
+    }
     if (req.params.action === 'update') {
       const title = String(req.body.title || '').trim().slice(0, 200);
       if (!title) throw new structureService.StructureError('Give the edition a title.');

@@ -145,6 +145,36 @@ async function archive({ actorId, level }) {
   });
 }
 
+// Deletes a series or an edition with everything in it (superusers): its events are deleted
+// (soft, like any event, so their names are free again), then the edition(s), their settings and
+// roles, and for a series the series itself.
+async function deleteLevel({ actorId, level }) {
+  const events = await prisma.contest.findMany({
+    where: { deletedAt: null, ...(level.editionId ? { editionId: level.editionId } : { OR: [{ seriesId: level.seriesId }, { editionOf: { seriesId: level.seriesId } }] }) },
+    select: { id: true, slug: true, title: true, path: true },
+  });
+  for (const c of events) {
+    await prisma.contest.update({ where: { id: c.id }, data: { deletedAt: new Date(), deletedById: actorId, slug: `deleted-${c.id}-${c.slug}`.slice(0, 190) } });
+    await editions.sync(c.id);
+    await audit.record({ actorId, contestId: c.id, action: 'contest.deleted', entityType: 'Contest', entityId: c.id, details: { title: c.title, path: c.path, with: level.editionId ? 'edition' : 'series' } });
+  }
+  if (level.editionId) {
+    const e = await prisma.edition.findUnique({ where: { id: level.editionId }, include: { series: true } });
+    await prisma.$transaction([
+      prisma.levelSetting.deleteMany({ where: { editionId: e.id } }),
+      prisma.scopeRole.deleteMany({ where: { editionId: e.id } }),
+      prisma.seriesSlug.deleteMany({ where: { editionId: e.id } }),
+      prisma.edition.update({ where: { id: e.id }, data: { deletedAt: new Date() } }),
+    ]);
+    await audit.record({ actorId, action: 'edition.deleted', entityType: 'Edition', entityId: e.id, details: { series: e.series.slug, edition: e.slug, events: events.length } });
+    return { events: events.length };
+  }
+  const series = await prisma.eventSeries.findUnique({ where: { id: level.seriesId } });
+  await prisma.edition.updateMany({ where: { seriesId: series.id, deletedAt: null }, data: { deletedAt: new Date() } });
+  await require('./seriesService').remove({ actorId, series });
+  return { events: events.length };
+}
+
 // Back from the archive: the level (a series with its editions); events stay archived until reopened one by one.
 async function unarchive({ actorId, level }) {
   if (level.editionId) await prisma.edition.update({ where: { id: level.editionId }, data: { status: 'completed' } });
@@ -156,4 +186,4 @@ async function unarchive({ actorId, level }) {
   await audit.record({ actorId, action: 'level.unarchived', entityType: level.editionId ? 'Edition' : 'EventSeries', entityId: level.editionId || level.seriesId });
 }
 
-module.exports = { StructureError, parentOf, moveEvent, copyEvent, copyEdition, archive, unarchive, DATE_KEYS };
+module.exports = { StructureError, parentOf, moveEvent, copyEvent, copyEdition, archive, unarchive, deleteLevel, DATE_KEYS };

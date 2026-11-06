@@ -167,3 +167,25 @@ async function cleanUp(req, res, next) {
 }
 
 module.exports = { setRolePermission, resetRolePermissions, maintenancePage, downloadBackup, cleanUp, index, users, grantRole, revokeRole, permissions, logs };
+
+// Superusers: remove an account from Zury, with its entries, reviews and roles (not one's own).
+async function deleteUser(req, res, next) {
+  try {
+    const id = Number(req.params.userId);
+    if (id === req.user.id) {
+      req.flash('danger', req.t("You can't delete your own account."));
+      return res.redirect('/admin/users');
+    }
+    const u = await prisma.user.findUnique({ where: { id }, select: { id: true, username: true } });
+    if (u) {
+      const [entries, reviews] = await Promise.all([prisma.submission.count({ where: { participantId: id } }), prisma.review.count({ where: { jurorId: id } })]);
+      await prisma.user.delete({ where: { id } });
+      await require('../services/auditService').record({ actorId: req.user.id, action: 'user.deleted', entityType: 'User', entityId: id, details: { username: u.username, entries, reviews } });
+      req.flash('success', req.t('Account {name} deleted.', { name: u.username }));
+    }
+    res.redirect('/admin/users');
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports.deleteUser = deleteUser;

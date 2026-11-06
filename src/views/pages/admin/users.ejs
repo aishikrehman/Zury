@@ -34,7 +34,10 @@
                 </td>
                 <td><%- include('../../partials/accessSummary', { s, compact: true }) %></td>
                 <td class="text-secondary text-nowrap"><%= u.lastLoginAt ? formatDate(u.lastLoginAt) : t('Never') %></td>
-                <td>
+                <td class="text-nowrap">
+                  <% if (can('deleteAnything') && u.id !== currentUser.id) { %>
+                    <form method="post" action="/admin/users/<%= u.id %>/delete" class="d-inline" data-confirm="<%= t('Delete the account {name} from Zury, with all their entries, reviews and roles? This cannot be undone.', { name: u.username }) %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Delete account') %>" aria-label="<%= t('Delete account') %>: <%= u.username %>"><i class="ti ti-trash"></i></button></form>
+                  <% } %>
                   <% if (can('managePlatformRoles')) { %>
                     <div class="dropdown">
                       <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-shield me-1"></i><%= t('Roles') %></button>

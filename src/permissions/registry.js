@@ -6,6 +6,7 @@ const PERMISSIONS = {
   deleteEvent: 'Delete this event',
   deleteOwnEvent: 'Delete events you organize',
   deleteAnyEvent: 'Delete any event',
+  deleteAnything: 'Delete anything: series and editions with their events, single entries and reviews, accounts',
   editEvent: 'Edit this event',
   editOwnEvent: 'Edit events you organize',
   editAnyEvent: 'Edit any event',

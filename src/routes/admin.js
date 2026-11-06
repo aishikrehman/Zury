@@ -9,6 +9,7 @@ router.use('/admin', requirePermission('accessAdmin'));
 router.get('/admin', adminController.index);
 router.get('/admin/users', adminController.users);
 router.post('/admin/users/:userId(\\d+)/roles', requirePermission('managePlatformRoles'), adminController.grantRole);
+router.post('/admin/users/:userId(\\d+)/delete', requirePermission('deleteAnything'), adminController.deleteUser);
 router.post('/admin/users/:userId(\\d+)/roles/revoke', requirePermission('managePlatformRoles'), adminController.revokeRole);
 router.get('/admin/permissions', adminController.permissions);
 router.post('/admin/permissions', requirePermission('maintainSite'), adminController.setRolePermission);

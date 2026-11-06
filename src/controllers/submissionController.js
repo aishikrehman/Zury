@@ -259,3 +259,39 @@ async function mine(req, res, next) {
 }
 
 module.exports = { submitForm, preview, submit, index, show, withdraw, setStatus, revalidate, mine };
+
+// Superusers: delete one entry for good (its reviews, assignments and history go with it).
+async function destroy(req, res, next) {
+  try {
+    const s = await prisma.submission.findFirst({ where: { id: Number(req.params.submissionId), contestId: req.contest.id } });
+    if (!s) return res.redirect(`${req.base}/submissions`);
+    await prisma.submission.delete({ where: { id: s.id } });
+    await require('../services/auditService').record({ actorId: req.user.id, contestId: req.contest.id, action: 'submission.deleted', entityType: 'Submission', entityId: s.id, details: { title: s.title, wiki: s.wiki, participantId: s.participantId } });
+    req.flash('success', req.t('Entry deleted.'));
+    res.redirect(`${req.base}/submissions`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Superusers: delete one review; the entry is decided again from the reviews left.
+async function destroyReview(req, res, next) {
+  try {
+    const review = require('../services/reviewService');
+    const r = await prisma.review.findFirst({ where: { id: Number(req.params.reviewId), submissionId: Number(req.params.submissionId), contestId: req.contest.id }, include: { juror: { select: { username: true } } } });
+    if (r) {
+      await prisma.review.delete({ where: { id: r.id } });
+      const s = await prisma.submission.findUnique({ where: { id: r.submissionId } });
+      const left = await prisma.review.findMany({ where: { submissionId: r.submissionId }, orderBy: { createdAt: 'asc' } });
+      const next = left.length ? review.decide(left, req.eventSettings) : { status: 'pending', score: null };
+      if (['pending', 'validated', 'under_review', 'approved', 'rejected'].includes(s.status)) await prisma.submission.update({ where: { id: s.id }, data: { status: next.status, score: next.score } });
+      await require('../services/auditService').record({ actorId: req.user.id, contestId: req.contest.id, action: 'review.deleted', entityType: 'Submission', entityId: s.id, details: { title: s.title, juror: r.juror.username, decision: r.decision } });
+      req.flash('success', req.t('Review deleted; the entry was decided again.'));
+    }
+    res.redirect(`${req.base}/submissions/${req.params.submissionId}`);
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports.destroy = destroy;
+module.exports.destroyReview = destroyReview;

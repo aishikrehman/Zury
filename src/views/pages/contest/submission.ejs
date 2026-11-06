@@ -75,6 +75,9 @@
                 <button class="btn btn-outline-secondary w-100" type="submit"><i class="ti ti-refresh me-1"></i><%= t("Check again on the wiki") %></button>
               </form>
             <% } %>
+            <% if (can('deleteAnything')) { %>
+              <form method="post" action="<%= base %>/submissions/<%= submission.id %>/delete" class="mb-2" data-confirm="<%= t('Delete this entry for good, with its reviews and history?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost-danger w-100" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete entry') %></button></form>
+            <% } %>
             <% if (canWithdraw) { %>
               <form method="post" action="<%= base %>/submissions/<%= submission.id %>/withdraw">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -106,6 +109,7 @@
                   <strong><%= r.juror.username %></strong>
                   <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt"><%= t(r.decision === 'accept' ? 'Accept' : 'Reject') %></span>
                   <span class="ms-auto text-secondary small"><%= t('{n} points', { n: r.points }) %></span>
+                  <% if (can('deleteAnything')) { %><form method="post" action="<%= base %>/submissions/<%= submission.id %>/reviews/<%= r.id %>/delete" data-confirm="<%= t('Delete this review? The entry is decided again from the other reviews.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Delete review') %>" aria-label="<%= t('Delete review') %>"><i class="ti ti-trash"></i></button></form><% } %>
                 </div>
                 <% if (Object.keys(marks).length) { %><div class="text-secondary small mt-1"><%= Object.entries(marks).map(([k, v]) => k + ': ' + v).join(' · ') %></div><% } %>
                 <% if (r.comment) { %><div class="small mt-1"><%= r.comment %></div><% } %>

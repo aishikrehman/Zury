@@ -1459,5 +1459,20 @@
   "Reviewer statistics for everyone": "সবার জন্য পর্যালোচক পরিসংখ্যান",
   "Bulk review is off for this event.": "এই ইভেন্টে বাল্ক পর্যালোচনা বন্ধ।",
   "cancelled": "বাতিল",
-  "archived": "আর্কাইভকৃত"
+  "archived": "আর্কাইভকৃত",
+  "Delete this entry for good, with its reviews and history?": "এই জমাটি এর পর্যালোচনা ও ইতিহাসসহ স্থায়ীভাবে মুছবেন?",
+  "Delete entry": "জমা মুছুন",
+  "Delete this review? The entry is decided again from the other reviews.": "এই পর্যালোচনা মুছবেন? বাকি পর্যালোচনা থেকে জমার সিদ্ধান্ত আবার হবে।",
+  "Delete review": "পর্যালোচনা মুছুন",
+  "Delete the account {name} from Zury, with all their entries, reviews and roles? This cannot be undone.": "জুরি থেকে {name} অ্যাকাউন্টটি এর সব জমা, পর্যালোচনা ও ভূমিকাসহ মুছবেন? এটি ফেরানো যাবে না।",
+  "Delete account": "অ্যাকাউন্ট মুছুন",
+  "Delete this edition with its event(s), their entries and settings?": "এই সংস্করণটি এর ইভেন্ট, জমা ও সেটিংসসহ মুছবেন?",
+  "Delete edition": "সংস্করণ মুছুন",
+  "Delete this series with all its editions and events?": "এই সিরিজটি এর সব সংস্করণ ও ইভেন্টসহ মুছবেন?",
+  "Edition deleted, with {n} events.": "সংস্করণ মুছে ফেলা হয়েছে, {n}টি ইভেন্টসহ।",
+  "Entry deleted.": "জমা মুছে ফেলা হয়েছে।",
+  "Review deleted; the entry was decided again.": "পর্যালোচনা মুছে ফেলা হয়েছে; জমার সিদ্ধান্ত আবার হয়েছে।",
+  "You can't delete your own account.": "আপনি নিজের অ্যাকাউন্ট মুছতে পারবেন না।",
+  "Account {name} deleted.": "{name} অ্যাকাউন্ট মুছে ফেলা হয়েছে।",
+  "Delete anything: series and editions with their events, single entries and reviews, accounts": "যেকোনো কিছু মোছা: ইভেন্টসহ সিরিজ ও সংস্করণ, একক জমা ও পর্যালোচনা, অ্যাকাউন্ট"
 }

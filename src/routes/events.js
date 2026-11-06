@@ -115,6 +115,9 @@ contest.post('/submit', entriesOnly, requireAuth, submissionController.submit);
 contest.get('/submissions', entriesOnly, submissionController.index);
 contest.get('/submissions/:submissionId(\\d+)', submissionController.show);
 contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissionController.withdraw);
+// Superusers delete a single entry, or a single review (the entry is then decided again).
+contest.post('/submissions/:submissionId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroy);
+contest.post('/submissions/:submissionId(\\d+)/reviews/:reviewId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroyReview);
 contest.post('/submissions/:submissionId(\\d+)/status', requirePermission('manageEvent'), submissionController.setStatus);
 contest.post('/submissions/:submissionId(\\d+)/revalidate', requirePermission('manageEvent'), submissionController.revalidate);
 
@@ -140,7 +143,7 @@ router.post(`/series/:series(${SLUG})/settings/:id(\\d+)/remove`, requireAuth, e
 // Adding events to an edition from its page: from Fountain (importers only).
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/fountain`, requirePermission('importEvents'), eventsController.editionFountain);
 router.post(`/series/:series(${SLUG})/:action(archive|unarchive)`, requireAuth, eventsController.levelAction);
-router.post(`/series/:series(${SLUG})/:edition(${SLUG})/:action(update|copy|archive|unarchive)`, requireAuth, eventsController.levelAction);
+router.post(`/series/:series(${SLUG})/:edition(${SLUG})/:action(update|copy|archive|unarchive|delete)`, requireAuth, eventsController.levelAction);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 // An edition's own page, when the name under the series is an edition.

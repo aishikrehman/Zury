@@ -81,6 +81,9 @@
             <div class="card-body">
               <p class="text-secondary small"><%= edition.status === 'archived' ? t('This edition is archived.') : t('Archives the edition and its finished events. Not possible while an event is still running.') %></p>
               <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/<%= edition.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= edition.status === 'archived' ? t('Take this edition out of the archive?') : t('Archive this edition and its finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= edition.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
+              <% if (can('deleteAnything')) { %>
+                <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/delete" class="mt-2" data-confirm="<%= t('Delete this edition with its event(s), their entries and settings?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete edition') %></button></form>
+              <% } %>
             </div>
           </div>
         </div>
