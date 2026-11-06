@@ -196,7 +196,7 @@ async function seriesAction(req, res, next) {
     if (req.params.action === 'delete') {
       // Only an empty series can be deleted (a soft delete; it can be restored).
       await require('../services/structureService').deleteLevel({ actorId: req.user.id, level: { seriesId: found.id } });
-      req.flash('success', 'Series deleted. It can be restored from the deleted list.');
+      req.flash('success', 'Series deleted.');
     } else {
       const { _csrf, back, ...fields } = req.body;
       await seriesService.update({ actorId: req.user.id, series: found, ...fields });
@@ -360,7 +360,7 @@ async function levelAction(req, res, next) {
     if (req.params.action === 'delete') {
       if (!req.permissions.has('deleteAnything') && !req.permissions.has('deleteAnyEvent')) return forbiddenPage(next);
       await structureService.deleteLevel({ actorId: req.user.id, level });
-      req.flash('success', req.t('Edition deleted. It can be restored from the deleted list.'));
+      req.flash('success', req.t('Edition deleted.'));
       return res.redirect(`/${sr.slug}?tab=overview`);
     }
     if (req.params.action === 'update') {
@@ -573,38 +573,7 @@ async function detachEvent(req, res, next) {
   res.redirect(back);
 }
 
-// Deleted series and editions: restore them, or (superusers) remove them for good.
-async function deletedPage(req, res, next) {
-  try {
-    const list = await require('../services/structureService').deletedLevels();
-    res.render('pages/events/seriesDeleted', { title: 'Deleted series and editions — Zury', list });
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function deletedAction(req, res, next) {
-  const structureService = require('../services/structureService');
-  const kind = req.params.kind === 'edition' ? 'edition' : 'series';
-  const id = Number(req.params.id);
-  try {
-    if (req.params.action === 'purge') {
-      if (!req.permissions.has('deleteAnything')) return forbiddenPage(next);
-      await structureService.purgeLevel({ actorId: req.user.id, kind, id });
-      req.flash('success', req.t('Removed for good.'));
-    } else {
-      const path = await structureService.restoreLevel({ actorId: req.user.id, kind, id });
-      req.flash('success', req.t('Restored at {path}.', { path }));
-    }
-  } catch (err) {
-    if (!(err instanceof structureService.StructureError)) return next(err);
-    req.flash('danger', req.t(err.message));
-  }
-  res.redirect('/series/deleted');
-}
 module.exports.detachEvent = detachEvent;
-module.exports.deletedPage = deletedPage;
-module.exports.deletedAction = deletedAction;
 
 // A new edition: blank (nothing copied) or copied from an earlier one, choosing what to copy.
 async function newEditionForm(req, res, next) {

@@ -201,8 +201,9 @@ async function impact(level) {
   return { editions: editionsIn, directEvents, editionEvents: [], blocked: editionsIn.length > 0 || directEvents.length > 0 };
 }
 
-// Deleting is refused while anything is inside (move, detach or delete those first). Then it is a
-// soft delete: the row stays (with its people and settings) and can be restored; its address is freed.
+// Deleting is refused while anything is inside (move, detach or delete those first). Then the
+// series or edition is removed for good, with its people and settings. Events deleted earlier keep
+// their entries; they only lose the link to it.
 async function deleteLevel({ actorId, level }) {
   const inside = await impact(level);
   if (inside.blocked) {
@@ -213,78 +214,29 @@ async function deleteLevel({ actorId, level }) {
   return prisma.$transaction(async (tx) => {
     if (level.editionId) {
       const e = await tx.edition.findUnique({ where: { id: level.editionId }, include: { series: true } });
-      await tx.seriesSlug.deleteMany({ where: { editionId: e.id } });
-      await tx.edition.update({ where: { id: e.id }, data: { deletedAt: new Date(), originalSlug: e.slug, slug: `~${e.id}-${e.slug}`.slice(0, 190) } });
+      await removeEdition(tx, e.id);
       await audit.record({ actorId, action: 'edition.deleted', entityType: 'Edition', entityId: e.id, details: { series: e.series.slug, edition: e.slug } }, tx);
       return { kind: 'edition', series: e.series };
     }
     const sr = await tx.eventSeries.findUnique({ where: { id: level.seriesId } });
-    await tx.eventSeries.update({ where: { id: sr.id }, data: { deletedAt: new Date(), originalSlug: sr.slug, slug: `~${sr.id}-${sr.slug}`.slice(0, 190) } });
+    // Editions deleted before (kept then) go with it.
+    for (const e of await tx.edition.findMany({ where: { seriesId: sr.id }, select: { id: true } })) await removeEdition(tx, e.id);
+    await tx.contest.updateMany({ where: { seriesId: sr.id }, data: { seriesId: null } });
+    await tx.levelSetting.deleteMany({ where: { seriesId: sr.id } });
+    await tx.scopeRole.deleteMany({ where: { seriesId: sr.id } });
+    await tx.seriesSlug.deleteMany({ where: { seriesId: sr.id } });
+    await tx.eventSeries.delete({ where: { id: sr.id } });
     await audit.record({ actorId, action: 'series.deleted', entityType: 'EventSeries', entityId: sr.id, details: { slug: sr.slug } }, tx);
     return { kind: 'series' };
   });
 }
 
-// Deleted series and editions, for those who may restore or purge them.
-async function deletedLevels() {
-  const [series, editionsList] = await Promise.all([
-    prisma.eventSeries.findMany({ where: { deletedAt: { not: null } }, orderBy: { deletedAt: 'desc' }, select: { id: true, title: true, originalSlug: true, deletedAt: true } }),
-    prisma.edition.findMany({ where: { deletedAt: { not: null } }, orderBy: { deletedAt: 'desc' }, select: { id: true, title: true, identifier: true, originalSlug: true, deletedAt: true, series: { select: { slug: true, title: true, deletedAt: true } } } }),
-  ]);
-  return { series, editions: editionsList };
-}
-
-// Back from deletion, at its old address if that is still free.
-async function restoreLevel({ actorId, kind, id }) {
-  const { RESERVED } = require('../middleware/permissions');
-  return prisma.$transaction(async (tx) => {
-    if (kind === 'edition') {
-      const e = await tx.edition.findUnique({ where: { id }, include: { series: true } });
-      if (!e || !e.deletedAt) throw new StructureError('Nothing to restore.');
-      if (e.series.deletedAt) throw new StructureError('Restore its series first.');
-      const slug = e.originalSlug || e.slug;
-      if (await tx.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: e.seriesId, slug } } })) throw new StructureError(`/${e.series.slug}/${slug} is taken now; free it first.`);
-      await tx.edition.update({ where: { id }, data: { deletedAt: null, slug, originalSlug: null } });
-      await tx.seriesSlug.create({ data: { seriesId: e.seriesId, slug, editionId: id } });
-      await audit.record({ actorId, action: 'edition.restored', entityType: 'Edition', entityId: id, details: { series: e.series.slug, edition: slug } }, tx);
-      return `/series/${e.series.slug}/${slug}`;
-    }
-    const sr = await tx.eventSeries.findUnique({ where: { id } });
-    if (!sr || !sr.deletedAt) throw new StructureError('Nothing to restore.');
-    const slug = sr.originalSlug || sr.slug;
-    if (RESERVED.has(slug) || (await tx.eventSeries.findFirst({ where: { slug, NOT: { id } } })) || (await tx.contest.findFirst({ where: { path: `/${slug}`, deletedAt: null }, select: { id: true } }))) {
-      throw new StructureError(`/${slug} is taken now; free it first.`);
-    }
-    await tx.eventSeries.update({ where: { id }, data: { deletedAt: null, slug, originalSlug: null } });
-    await audit.record({ actorId, action: 'series.restored', entityType: 'EventSeries', entityId: id, details: { slug } }, tx);
-    return `/${slug}`;
-  });
-}
-
-// Gone for good: only something already deleted (and, for a series, with no editions left).
-async function purgeLevel({ actorId, kind, id }) {
-  return prisma.$transaction(async (tx) => {
-    if (kind === 'edition') {
-      const e = await tx.edition.findUnique({ where: { id } });
-      if (!e || !e.deletedAt) throw new StructureError('Only a deleted edition can be removed for good.');
-      if (await tx.contest.count({ where: { editionId: id } })) throw new StructureError('Deleted events still point at this edition; remove them for good first.');
-      await tx.levelSetting.deleteMany({ where: { editionId: id } });
-      await tx.scopeRole.deleteMany({ where: { editionId: id } });
-      await tx.seriesSlug.deleteMany({ where: { editionId: id } });
-      await tx.edition.delete({ where: { id } });
-      await audit.record({ actorId, action: 'edition.purged', entityType: 'Edition', entityId: id, details: { slug: e.originalSlug || e.slug } }, tx);
-      return;
-    }
-    const sr = await tx.eventSeries.findUnique({ where: { id } });
-    if (!sr || !sr.deletedAt) throw new StructureError('Only a deleted series can be removed for good.');
-    if (await tx.edition.count({ where: { seriesId: id } })) throw new StructureError('Its deleted editions are still kept; remove them for good first.');
-    if (await tx.contest.count({ where: { seriesId: id } })) throw new StructureError('Deleted events still point at this series; remove them for good first.');
-    await tx.levelSetting.deleteMany({ where: { seriesId: id } });
-    await tx.scopeRole.deleteMany({ where: { seriesId: id } });
-    await tx.seriesSlug.deleteMany({ where: { seriesId: id } });
-    await tx.eventSeries.delete({ where: { id } });
-    await audit.record({ actorId, action: 'series.purged', entityType: 'EventSeries', entityId: id, details: { slug: sr.originalSlug || sr.slug } }, tx);
-  });
+async function removeEdition(tx, id) {
+  await tx.contest.updateMany({ where: { editionId: id }, data: { editionId: null } });
+  await tx.levelSetting.deleteMany({ where: { editionId: id } });
+  await tx.scopeRole.deleteMany({ where: { editionId: id } });
+  await tx.seriesSlug.deleteMany({ where: { editionId: id } });
+  await tx.edition.delete({ where: { id } });
 }
 
 // Back from the archive: the level (a series with its editions); events stay archived until reopened one by one.
@@ -301,7 +253,4 @@ async function unarchive({ actorId, level }) {
 module.exports = {
   COPY_PARTS,
   ALL_PARTS,
-  impact,
-  deletedLevels,
-  restoreLevel,
-  purgeLevel, StructureError, parentOf, moveEvent, copyEvent, copyEdition, archive, unarchive, deleteLevel, DATE_KEYS };
+  impact, StructureError, parentOf, moveEvent, copyEvent, copyEdition, archive, unarchive, deleteLevel, DATE_KEYS };

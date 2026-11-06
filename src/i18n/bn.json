@@ -1729,5 +1729,7 @@
   "Only this edition": "শুধু এই সংস্করণের",
   "Where it sits, wikis, downloads and clearing data": "অবস্থান, উইকি, ডাউনলোড ও ডেটা মোছা",
   "This edition already has an event for this wiki.": "এই সংস্করণে এই উইকির ইভেন্ট আগেই আছে।",
-  "In an edition the address ends with the wiki’s code.": "সংস্করণে ঠিকানার শেষে উইকির কোড বসে (যেমন /bn)।"
+  "In an edition the address ends with the wiki’s code.": "সংস্করণে ঠিকানার শেষে উইকির কোড বসে (যেমন /bn)।",
+  "Nothing is inside. Deleting removes it for good.": "ভেতরে কিছু নেই। মুছলে চিরতরে মুছে যাবে।",
+  "Edition deleted.": "সংস্করণ মোছা হয়েছে।"
 }

@@ -25,7 +25,7 @@
         <% }) %>
       </div>
     <% } else if (canDelete) { %>
-      <p class="text-secondary small"><%= t('Nothing is inside. It is kept as deleted and can be restored later.') %></p>
+      <p class="text-secondary small"><%= t('Nothing is inside. Deleting removes it for good.') %></p>
       <form method="post" action="/series/<%= seriesSlug %><%= editionSlug ? `/${editionSlug}` : '' %>/delete" data-confirm="<%= editionSlug ? t('Delete this edition?') : t('Delete this series?') %>"><%- csrf %><button class="btn btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= editionSlug ? t('Delete edition') : t('Delete series') %></button></form>
     <% } else { %>
       <p class="text-secondary small mb-0"><%= t('Nothing is inside. Zury administrators can delete it.') %></p>

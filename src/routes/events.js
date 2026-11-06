@@ -131,9 +131,6 @@ const SLUG = '[a-z0-9][a-z0-9-]{0,79}';
 // organizers (a role on the series; the controller checks it); deleting one: superusers and Zury administrators.
 router.get('/series', requirePermission('importEvents'), eventsController.manageSeries);
 router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
-// Deleted series and editions: restore (Zury administrators), remove for good (superusers, checked inside).
-router.get('/series/deleted', requirePermission('deleteAnyEvent'), eventsController.deletedPage);
-router.post('/series/deleted/:kind(series|edition)/:id(\\d+)/:action(restore|purge)', requirePermission('deleteAnyEvent'), eventsController.deletedAction);
 router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
 router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnyEvent'), eventsController.seriesAction);
 router.get(`/series/:series(${SLUG})/new-edition`, requireAuth, eventsController.newEditionForm);
