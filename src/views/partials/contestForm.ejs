@@ -227,9 +227,8 @@
               <div class="col-md-6">
                 <label class="form-label" for="wordCountMethod"><%= t('Word count') %><%- mark('settings.wordCountMethod') %></label>
                 <select class="form-select" id="wordCountMethod" name="wordCountMethod">
-                  <% [['auto', 'Auto: the ztools rule on Bengali wikis'], ['ztools', 'ztools rule (Bengali words in the wikitext)'], ['plain', 'Plain count (all words in the text)']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('wordCountMethod') || 'auto') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+                  <% [['auto', 'Auto: Bengali words in the wikitext on Bengali wikis'], ['ztools', 'Bengali words in the wikitext'], ['plain', 'Plain count (all words in the text)']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('wordCountMethod') || 'auto') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
                 </select>
-                <div class="form-hint"><%= t('Same counting as ztools, so both tools give the same numbers.') %></div>
               </div>
               <div class="col-md-6">
               </div>

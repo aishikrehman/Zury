@@ -124,4 +124,38 @@
       </div>
     <% } %>
   <% } %>
+  <% if (s.wordStats) { const w = s.wordStats; const tile = (label, x, color) => ({ label, x, color }); %>
+    <%# Results count words: the words of every kind of entry, per participant and per article. %>
+    <div class="card mt-3">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-letter-case me-1"></i><%= t('Word statistics') %></h3></div>
+      <div class="card-body">
+        <div class="row g-2 mb-3">
+          <% [tile('All entries', w.all, ''), tile('Accepted', w.accepted, 'green'), tile('Pending', w.pending, 'yellow'), tile('Not accepted', w.rejected, 'red')].forEach((x) => { %>
+            <div class="col-6 col-lg-3"><div class="border rounded p-2">
+              <div class="subheader"><%= t(x.label) %></div>
+              <div class="h2 mb-0<%= x.color ? ' text-' + x.color : '' %>"><%= formatNumber(x.x.words) %></div>
+              <div class="small text-secondary"><%= tn('{n} article', '{n} articles', x.x.count) %></div>
+            </div></div>
+          <% }) %>
+        </div>
+        <div class="small text-secondary mb-3"><%= t('Average per article: {n} words', { n: formatNumber(w.average) }) %> · <%= t('Average per accepted article: {n} words', { n: formatNumber(w.averageAccepted) }) %></div>
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <h4 class="mb-2"><%= t('Participants by words') %></h4>
+            <table class="table table-sm table-vcenter mb-0"><thead><tr><th><%= t('Participant') %></th><th class="text-end"><%= t('Articles') %></th><th class="text-end"><%= t('Words') %></th><th class="text-end"><%= t('Accepted') %></th></tr></thead><tbody>
+              <% w.people.forEach((x) => { %><tr><td><%= x.username %></td><td class="text-end"><%= formatNumber(x.count) %></td><td class="text-end"><%= formatNumber(x.words) %></td><td class="text-end text-green"><%= formatNumber(x.accepted) %></td></tr><% }) %>
+              <% if (!w.people.length) { %><tr><td colspan="4" class="text-secondary"><%= t('No entries yet.') %></td></tr><% } %>
+            </tbody></table>
+          </div>
+          <div class="col-lg-6">
+            <h4 class="mb-2"><%= t('Longest articles') %></h4>
+            <table class="table table-sm table-vcenter mb-0"><thead><tr><th><%= t('Article') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead><tbody>
+              <% w.biggest.forEach((x) => { %><tr><td><a href="<%= base %>/submissions/<%= x.id %>"><%= x.title %></a><div class="small text-secondary"><%= x.username %></div></td><td class="text-end"><%= formatNumber(x.words) %></td><td><span class="badge bg-<%= (SUBMISSION_STATUSES[x.status] || {}).color || 'secondary' %>-lt"><%= (SUBMISSION_STATUSES[x.status] || {}).label || x.status %></span></td></tr><% }) %>
+              <% if (!w.biggest.length) { %><tr><td colspan="3" class="text-secondary"><%= t('No entries yet.') %></td></tr><% } %>
+            </tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
 </section>
