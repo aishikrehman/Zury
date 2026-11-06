@@ -952,12 +952,10 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-stars label:hover, .z-stars label:hover ~ label, .z-stars input:checked ~ label { color: #f59f00; }
 .z-stars input:focus-visible + label { outline: 2px solid var(--tblr-primary); outline-offset: 2px; border-radius: 4px; }
 
-/* All events: the filters as a sidebar on large screens (sticky), stacked; above the events on small ones. */
+/* All events: search and filters as a sticky sidebar on large screens (above the events on small
+   ones); the status tabs and the grid/list switch in a bar above the events. */
 @media (min-width: 992px) {
   .z-filter-side { position: sticky; top: 5rem; }
-  .z-filter-side .z-filterbar-top { flex-direction: column; align-items: stretch; }
-  .z-filter-side .z-filterbar-top .z-seg { margin: 0 !important; }
-  .z-filter-side .z-filterbar-top .z-seg:first-child { flex-direction: column; }
-  .z-filter-side .z-filterbar-top .z-seg:first-child a { justify-content: flex-start; }
   .z-filter-side .z-filterbar-fields { grid-template-columns: 1fr; }
 }
+.z-results-bar { margin-bottom: 1rem; }

@@ -33,16 +33,6 @@
     <aside class="col-lg-3">
     <form method="get" action="<%= base %>" class="z-filterbar z-filter-side">
       <% if (filters.view !== 'grid') { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
-      <div class="z-filterbar-top">
-        <nav class="z-seg" aria-label="<%= t('Events') %>">
-          <a class="<%= !filters.group ? 'active' : '' %>" href="/events<%= qs({}) %>"><%= t('All') %></a>
-          <% groups.forEach((g) => { %><a class="<%= filters.group === g ? 'active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><%= t(groupLabels[g]) %></a><% }) %>
-        </nav>
-        <div class="z-seg ms-auto" role="group" aria-label="<%= t('View') %>">
-          <a class="<%= filters.view === 'grid' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'grid' }).replace('view=grid', '').replace(/[?&]$/, '') %>" title="<%= t('Cards') %>" aria-label="<%= t('Cards') %>"><i class="ti ti-layout-grid"></i></a>
-          <a class="<%= filters.view === 'list' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'list' }) %>" title="<%= t('List') %>" aria-label="<%= t('List') %>"><i class="ti ti-list"></i></a>
-        </div>
-      </div>
       <div class="z-filterbar-fields">
         <div class="input-icon z-filter-search"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t('Title or community') %>" aria-label="<%= t('Search events') %>"></div>
         <select name="project" class="form-select" aria-label="<%= t('Project') %>" data-autosubmit>
@@ -65,6 +55,17 @@
     </form>
     </aside>
     <div class="col-lg-9">
+      <%# Status on the left, grid or list on the right, above the events. %>
+      <div class="z-filterbar-top z-results-bar mb-3">
+        <nav class="z-seg" aria-label="<%= t('Events') %>">
+          <a class="<%= !filters.group ? 'active' : '' %>" href="/events<%= qs({}) %>"><%= t('All') %></a>
+          <% groups.forEach((g) => { %><a class="<%= filters.group === g ? 'active' : '' %>" href="/events/<%= g %><%= qs({}) %>"><%= t(groupLabels[g]) %></a><% }) %>
+        </nav>
+        <div class="z-seg ms-auto" role="group" aria-label="<%= t('View') %>">
+          <a class="<%= filters.view === 'grid' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'grid' }).replace('view=grid', '').replace(/[?&]$/, '') %>" title="<%= t('Cards') %>" aria-label="<%= t('Cards') %>"><i class="ti ti-layout-grid"></i></a>
+          <a class="<%= filters.view === 'list' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'list' }) %>" title="<%= t('List') %>" aria-label="<%= t('List') %>"><i class="ti ti-list"></i></a>
+        </div>
+      </div>
         <% if (!result.items.length) { %>
           <div class="card">
             <div class="empty">
