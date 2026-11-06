@@ -28,7 +28,10 @@
 <%- include('../../partials/contestHeader', { active: 'submissions' }) %>
 <div class="page-body"><div class="container-xl">
 
-  <div class="card">
+  <% if (canManage) { %>
+    <form method="post" action="<%= base %>/submissions/revalidate-all" class="d-flex justify-content-end mb-2"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Check all again') %><%= allWikis && allWikis.some((w) => w.fountainCode) ? ' · Fountain' : '' %></button></form>
+  <% } %>
+  <div class="card" data-live>
     <div class="card-header flex-wrap gap-2">
       <ul class="nav nav-pills card-header-pills">
         <li class="nav-item"><a class="nav-link<%= !filters.status ? ' active' : '' %>" href="<%= qs({ status: null, page: null }) %>"><%= t("All") %> <span class="badge bg-secondary-lt ms-1"><%= totalAll %></span></a></li>
@@ -82,11 +85,11 @@
     <% } else { %>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><% if (bulk) { %><th class="w-1"><input class="form-check-input m-0" type="checkbox" data-check-all="bulk-ids" aria-label="<%= t('Select all') %>"></th><% } %><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><% if (settings.wordCountEnabled) { %><%- sortHead('words', t('Words'), 'text-end') %><% } %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
+          <thead><tr><% if (bulk || canManage) { %><th class="w-1"><input class="form-check-input m-0" type="checkbox" data-check-all="bulk-ids" aria-label="<%= t('Select all') %>"></th><% } %><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><% if (settings.wordCountEnabled) { %><%- sortHead('words', t('Words'), 'text-end') %><% } %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
           <tbody>
             <% result.items.forEach((s) => { const meta = JSON.parse(s.metadata); %>
               <tr>
-                <% if (bulk) { %><td><% if (reviewable(s)) { %><input class="form-check-input m-0" type="checkbox" name="ids" value="<%= s.id %>" form="bulk-review" data-check="bulk-ids" aria-label="<%= t('Select') %> <%= s.title %>"><% } %></td><% } %>
+                <% if (bulk || canManage) { %><td><% if (canManage || reviewable(s)) { %><input class="form-check-input m-0" type="checkbox" name="ids" value="<%= s.id %>" form="bulk-review" data-check="bulk-ids" aria-label="<%= t('Select') %> <%= s.title %>"><% } %></td><% } %>
                 <td>
                   <div class="d-flex align-items-center">
                     <% if (meta.file && meta.file.thumbUrl) { %>
@@ -110,16 +113,14 @@
                 <td class="text-secondary text-nowrap"><%= formatDateTime(s.submittedAt, contest.timezone) %></td>
                 <td>
                   <div class="z-row-actions">
-                    <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= base %>/submissions/<%= s.id %>" title="<%= t('View') %>" aria-label="<%= t('View') %>"><i class="ti ti-eye"></i></a>
+                    <a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= currentUser && canReview(s) ? `${base}/review?entry=${s.id}` : `${base}/submissions/${s.id}` %>" data-popup title="<%= t('Quick look') %>" aria-label="<%= t('Quick look') %>"><i class="ti ti-eye"></i></a>
                     <% if (currentUser && canReview(s) && ['pending', 'validated', 'under_review'].includes(s.status)) { %>
                       <a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a>
                     <% } %>
                     <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= s.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
                     <% const tl = templateLink(s); if (tl && currentUser && (currentUser.id === s.participantId || canManage)) { %><a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= tl %>" target="_blank" rel="noopener" title="<%= t("Add the template") %>" aria-label="<%= t("Add the template") %>"><i class="ti ti-tag"></i></a><% } %>
                     <% if (canManage) { %>
-                      <form method="post" action="<%= base %>/submissions/<%= s.id %>/revalidate"><%- hidden %>
-                        <button class="btn btn-sm btn-ghost-secondary btn-icon" type="submit" title="<%= t('Check again') %>" aria-label="<%= t('Check again') %>"><i class="ti ti-refresh"></i></button>
-                      </form>
+
                       <% if (s.status !== 'disqualified') { %>
                         <form method="post" action="<%= base %>/submissions/<%= s.id %>/status" data-confirm="<%= t('Remove this entry from the event?') %>"><%- hidden %>
                           <input type="hidden" name="status" value="disqualified">
@@ -138,7 +139,7 @@
           </tbody>
         </table>
       </div>
-      <% if (bulk) { %>
+      <% if (bulk || canManage) { %>
         <form method="post" action="<%= base %>/review/bulk" id="bulk-review" class="card-footer z-bulkbar" data-bulk-bar="bulk-ids" hidden>
           <%- hidden %>
           <span class="fw-medium" data-bulk-count></span>
@@ -151,6 +152,7 @@
           <input class="form-control form-control-sm w-auto flex-fill" name="comment" maxlength="2000" placeholder="<%= t('Comment (optional)') %>" aria-label="<%= t('Comment (optional)') %>">
           <button class="btn btn-sm btn-success" type="submit" name="decision" value="accept"><i class="ti ti-check me-1"></i><%= t('Accept selected') %></button>
           <button class="btn btn-sm btn-danger" type="submit" name="decision" value="reject"><i class="ti ti-x me-1"></i><%= t('Reject selected') %></button>
+          <% if (canManage) { %><button class="btn btn-sm btn-ghost-danger" type="submit" formaction="<%= base %>/submissions/remove" data-confirm="<%= t('Remove the selected entries from the event?') %>"><i class="ti ti-trash me-1"></i><%= t('Remove selected') %></button><% } %>
         </form>
       <% } %>
       <% if (pages > 1) { %>

@@ -85,7 +85,7 @@
           <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-judging" data-step="3">
             <% const reviewersNow = Array.isArray(v('reviewers')) ? v('reviewers') : ['jury']; const whoReviews = reviewersNow.includes('participants') ? 'anyone' : reviewersNow.includes('localAdmins') && !reviewersNow.includes('jury') ? 'admins' : 'jury'; const method = v('reviewMethod') === 'number' ? (v('scoreMin') === '' && v('scoreMax') === '' ? 'anynumber' : 'number') : (v('reviewMethod') || 'yesno'); %>
             <div class="z-set-list mb-3">
-              <%- row('How reviewers judge', sel('reviewMethodChoice', [['yesno', 'Yes / no / skip'], ['stars', 'Stars'], ['number', 'A number in a range'], ['anynumber', 'Any number']], method)) %>
+              <%- row('How reviewers judge', sel('reviewMethodChoice', [['yesno', 'Yes / No'], ['stars', 'Stars'], ['number', 'A number in a range'], ['anynumber', 'Any number']], method)) %>
               <div class="z-set-row" data-show-when="reviewMethodChoice:number"><span class="z-set-label"><%= t('Range') %></span><div class="z-set-control d-flex gap-2"><input type="number" step="any" class="form-control" name="scoreMin" value="<%= v('scoreMin') %>" aria-label="<%= t('Lowest') %>"><input type="number" step="any" class="form-control<%= inv('scoreMax') %>" name="scoreMax" value="<%= v('scoreMax') %>" aria-label="<%= t('Highest') %>"></div></div>
               <%- row('Reviewers', sel('reviewersChoice', [['jury', 'Organizers and reviewers'], ['admins', 'Administrators of the wiki'], ['anyone', 'Anyone']], whoReviews)) %>
               <%- row('Who reviews which entry', sel('reviewAssignment', [['open', 'Anyone of them'], ['assigned', 'Assigned by hand'], ['equal', 'Shared out equally, automatically']], v('reviewAssignment') === 'fixed' ? 'equal' : (v('reviewAssignment') || 'open')), 'reviewersChoice:jury') %>
@@ -97,6 +97,7 @@
               <%- row('Many entries at once', sel('rule_mass', [['off', 'Off'], ['anyone', 'Anyone'], ['reviewers', 'Reviewers']], ruleOf('mass', 'anyone'))) %>
               <%- row('Many reviews at once', sel('rule_bulk', [['off', 'Off'], ['reviewers', 'Reviewers']], ruleOf('bulk', 'reviewers'))) %>
               <%- row('Reviewer statistics', sel('rule_stats', [['anyone', 'Anyone'], ['reviewers', 'Reviewers'], ['organizers', 'Organizers only'], ['off', 'Off']], ruleOf('stats', 'reviewers'))) %>
+              <%- row('Revision reviewed', sel('rule_revision', [['pinned', 'As submitted (or when another review was asked)'], ['latest', 'Always the latest']], ruleOf('revision', 'pinned'))) %>
               <%- row("Show reviewers' names", sel('rule_reviewerNames', [['yes', 'To everyone'], ['no', 'Only to organizers and reviewers']], ruleOf('reviewerNames', 'yes'))) %>
               <%- row("Reviewers see each other's reviews", sel('rule_seeOthers', [['yes', 'Yes'], ['no', 'No']], v('secretBallot') ? 'no' : 'yes')) %>
               <%- row('Asking for another review', sel('rule_appeals', [['off', 'Off'], ['rejected', 'Only entries not accepted'], ['any', 'Any entry']], ruleOf('appeals', 'off'))) %>

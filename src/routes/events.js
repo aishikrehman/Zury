@@ -120,6 +120,9 @@ contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissio
 contest.post('/submissions/:submissionId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroy);
 contest.post('/submissions/:submissionId(\\d+)/reviews/:reviewId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroyReview);
 contest.post('/submissions/:submissionId(\\d+)/status', requirePermission('manageEvent'), submissionController.setStatus);
+contest.post('/submissions/:submissionId(\\d+)/latest', requireAuth, submissionController.useLatest);
+contest.post('/submissions/revalidate-all', requirePermission('manageEvent'), submissionController.revalidateAll);
+contest.post('/submissions/remove', requirePermission('manageEvent'), submissionController.removeMany);
 contest.post('/submissions/:submissionId(\\d+)/revalidate', requirePermission('manageEvent'), submissionController.revalidate);
 
 router.use('/contest/:contestId(\\d+)', loadContest, contest);

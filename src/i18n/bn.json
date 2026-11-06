@@ -1696,5 +1696,18 @@
   "Your event {event} was approved.": "আপনার ইভেন্ট {event} অনুমোদিত হয়েছে।",
   "Your event {event} was not approved.": "আপনার ইভেন্ট {event} অনুমোদিত হয়নি।",
   "Approved.": "অনুমোদিত হয়েছে।",
-  "Not approved.": "অনুমোদিত হয়নি।"
+  "Not approved.": "অনুমোদিত হয়নি।",
+  "Yes / No": "হ্যাঁ / না",
+  "Revision reviewed": "যে সংস্করণ পর্যালোচনা হবে",
+  "As submitted (or when another review was asked)": "জমার সময়ের (বা পুনঃপর্যালোচনার সময়ের)",
+  "Always the latest": "সবসময় সর্বশেষ",
+  "Use the latest revision": "সর্বশেষ সংস্করণ নিন",
+  "The entry is now the latest revision.": "জমাটি এখন সর্বশেষ সংস্করণের।",
+  "Checking {n} entries again; reload in a minute to see them.": "{n}টি জমা আবার যাচাই হচ্ছে; এক মিনিট পর পাতা আবার খুলুন।",
+  "{n} entries removed.": "{n}টি জমা সরানো হয়েছে।",
+  "Stop following Fountain? The entries stay.": "ফাউন্টেন অনুসরণ বন্ধ করবেন? জমাগুলো থেকে যাবে।",
+  "Check all again": "সব আবার যাচাই",
+  "Remove selected": "বাছাইগুলো সরান",
+  "Quick look": "দ্রুত দেখুন",
+  "Remove the selected entries from the event?": "বাছাই করা জমাগুলো ইভেন্ট থেকে সরাবেন?"
 }

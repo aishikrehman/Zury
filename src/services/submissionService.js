@@ -295,7 +295,7 @@ async function revalidate({ actor, submission, contest, settings, eventWikis = [
       where: { id: submission.id },
       data: {
         metadata: JSON.stringify(meta.exists ? { ...meta, currentRevId: meta.revId, revId: submission.revId || meta.revId } : { ...JSON.parse(submission.metadata), exists: false }),
-        ...(meta.exists && !submission.revId && { wordCount: meta.wordCount ?? null, revId: meta.revId ?? null }),
+        ...(meta.exists && (!submission.revId || require('./participationService').read(settings).rules.revision === 'latest') && { wordCount: meta.wordCount ?? null, revId: meta.revId ?? null }),
         validation: JSON.stringify({ errors, warnings: result.warnings }),
         checkedAt: new Date(),
         status,

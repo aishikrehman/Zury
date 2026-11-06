@@ -318,3 +318,53 @@ async function destroyReview(req, res, next) {
 }
 module.exports.destroy = destroy;
 module.exports.destroyReview = destroyReview;
+
+// Review tools: the entry becomes the page as it is now (revision and word count).
+async function useLatest(req, res, next) {
+  try {
+    const s = await prisma.submission.findFirst({ where: { id: Number(req.params.submissionId), contestId: req.contest.id } });
+    if (!s) return next();
+    const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
+    if (!staff) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
+    await submissionService.repin(s);
+    if (req.get('X-Requested-With') === 'fetch') return res.json({ ok: true });
+    req.flash('success', req.t('The entry is now the latest revision.'));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`));
+}
+
+// One button: every entry checked again (in the background), and Fountain wikis brought up to date.
+async function revalidateAll(req, res, next) {
+  try {
+    const list = await prisma.submission.findMany({ where: { contestId: req.contest.id, status: { in: ['pending', 'validated', 'invalid'] } }, take: 2000 });
+    const fountain = req.eventWikis.filter((w) => w.fountainCode);
+    const actor = req.user; const contest = req.contest; const settings = req.eventSettings; const eventWikis = req.eventWikis;
+    setImmediate(async () => {
+      for (const w of fountain) await require('../services/fountainService').sync(w, { actorId: actor.id }).catch(() => null);
+      for (const s of list) await submissionService.revalidate({ actor, submission: s, contest, settings, eventWikis }).catch(() => null);
+    });
+    req.flash('success', req.t('Checking {n} entries again; reload in a minute to see them.', { n: list.length }));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(backTo(req, `${req.base}/submissions`));
+}
+
+// Several entries removed from the event at once (ticked in the list).
+async function removeMany(req, res, next) {
+  try {
+    const ids = [].concat(req.body.ids || []).map(Number).filter(Number.isInteger).slice(0, 500);
+    const rows = await prisma.submission.findMany({ where: { contestId: req.contest.id, id: { in: ids }, status: { not: 'disqualified' } } });
+    for (const s of rows) await submissionService.changeStatus({ actor: req.user, submission: s, contestId: req.contest.id, status: 'disqualified', note: 'Removed with others' });
+    if (req.get('X-Requested-With') === 'fetch') return res.json({ ok: true, n: rows.length });
+    req.flash('success', req.t('{n} entries removed.', { n: rows.length }));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(backTo(req, `${req.base}/submissions`));
+}
+module.exports.useLatest = useLatest;
+module.exports.revalidateAll = revalidateAll;
+module.exports.removeMany = removeMany;

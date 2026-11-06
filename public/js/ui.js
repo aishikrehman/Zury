@@ -204,3 +204,60 @@ document.querySelectorAll('form').forEach((form) => {
     setInterval(tick, 1000);
   });
 });
+
+(() => {
+  const live = document.querySelector('[data-live]');
+  if (!live) return;
+  let busy = false;
+  async function load(url, push) {
+    if (busy) return;
+    busy = true;
+    try {
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'fetch' } });
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const fresh = doc.querySelector('[data-live]');
+      if (fresh) {
+        live.innerHTML = fresh.innerHTML;
+        if (push) history.pushState(null, '', url);
+        live.dispatchEvent(new CustomEvent('zury:refreshed', { bubbles: true }));
+      }
+    } catch { /* keep the list as it is */ }
+    busy = false;
+  }
+  const sameList = (href) => { try { const u = new URL(href, location.href); return u.pathname === location.pathname; } catch { return false; } };
+  live.addEventListener('click', (e) => {
+    const pop = e.target.closest('a[data-popup]');
+    if (pop) { e.preventDefault(); return openPopup(pop.href); }
+    const a = e.target.closest('a[href]');
+    if (a && !a.target && sameList(a.href) && !e.ctrlKey && !e.metaKey) { e.preventDefault(); load(a.href, true); }
+  });
+  live.addEventListener('submit', async (e) => {
+    const form = e.target;
+    if (form.method.toLowerCase() === 'get') { e.preventDefault(); load(`${location.pathname}?${new URLSearchParams(new FormData(form))}`, true); return; }
+    if (form.dataset.confirm && !confirm(form.dataset.confirm)) { e.preventDefault(); return; }
+    e.preventDefault();
+    const action = e.submitter && e.submitter.getAttribute('formaction') ? e.submitter.formAction : form.action;
+    const body = new FormData(form);
+    if (e.submitter && e.submitter.name) body.append(e.submitter.name, e.submitter.value);
+    await fetch(action, { method: 'POST', body: new URLSearchParams(body), headers: { 'X-Requested-With': 'fetch' } }).catch(() => null);
+    load(location.href, false);
+  }, true);
+  window.addEventListener('popstate', () => load(location.href, false));
+  setInterval(() => {
+    if (document.hidden || document.querySelector('.z-popup') || live.querySelector('input[type=checkbox]:checked') || live.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+    load(location.href, false);
+  }, 20000);
+  function openPopup(href) {
+    const wrap = document.createElement('div');
+    wrap.className = 'z-popup';
+    wrap.innerHTML = '<div class="z-popup-box"><button type="button" class="btn-close z-popup-close" aria-label="Close"></button><iframe title="Entry"></iframe></div>';
+    wrap.querySelector('iframe').src = href;
+    const close = () => { wrap.remove(); load(location.href, false); };
+    wrap.addEventListener('click', (e) => { if (e.target === wrap || e.target.closest('.z-popup-close')) close(); });
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { document.removeEventListener('keydown', esc); close(); } });
+    document.body.appendChild(wrap);
+  }
+})();
+
+// Inside the quick-look popup: only the page itself, without the site's header and footer.
+if (window.self !== window.top) document.documentElement.classList.add('z-embed');
