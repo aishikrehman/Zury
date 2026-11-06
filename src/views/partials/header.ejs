@@ -38,12 +38,12 @@
             <i class="ti ti-bell"></i><% if (unreadNotifications) { %><span class="z-bell-count" data-bell-count><%= unreadNotifications > 99 ? '99+' : formatNumber(unreadNotifications) %></span><% } %>
           </button>
           <div class="dropdown-menu dropdown-menu-end z-bell-menu">
-            <div class="d-flex align-items-center px-3 py-2 border-bottom">
-              <strong class="me-auto"><%= t('Notifications') %></strong>
-              <button class="btn btn-sm btn-link p-0" type="button" data-bell-read-all><%= t('Mark all as read') %></button>
+            <div class="z-bell-head">
+              <strong><%= t('Notifications') %></strong>
+              <button class="z-bell-readall" type="button" data-bell-read-all<%= unreadNotifications ? '' : ' hidden' %>><%= t('Mark all as read') %></button>
             </div>
-            <div data-bell-list><div class="px-3 py-3 text-secondary small"><%= t('Loading…') %></div></div>
-            <a class="dropdown-item text-center border-top small" href="/notifications"><%= t('See all') %></a>
+            <div data-bell-list><div class="z-bell-empty"><%= t('Loading…') %></div></div>
+            <a class="z-bell-all" href="/notifications"><%= t('See all') %></a>
           </div>
         </div>
         <div class="dropdown">

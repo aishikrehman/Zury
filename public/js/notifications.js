@@ -6,6 +6,7 @@
   const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_csrf"]')?.value || '';
   const setCount = (n) => {
     let badge = box.querySelector('[data-bell-count]');
+    box.querySelector('[data-bell-read-all]').hidden = !n;
     if (!n) return badge && badge.remove();
     if (!badge) {
       badge = Object.assign(document.createElement('span'), { className: 'z-bell-count' });
@@ -16,7 +17,7 @@
   };
   function render(items) {
     if (!items.length) {
-      list.replaceChildren(Object.assign(document.createElement('div'), { className: 'px-3 py-3 text-secondary small', textContent: zt('No notifications yet') }));
+      list.replaceChildren(Object.assign(document.createElement('div'), { className: 'z-bell-empty', textContent: zt('No notifications yet') }));
       return;
     }
     list.replaceChildren(...items.map((n) => {

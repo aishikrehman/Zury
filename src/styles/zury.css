@@ -923,3 +923,19 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-inline.is-editing .z-inline-edit{display:block}
 .z-inline-view [data-inline-open]{opacity:.45;transition:opacity .15s}
 .z-inline-view:hover [data-inline-open],.z-inline-view [data-inline-open]:focus{opacity:1}
+
+/* The notification bell */
+.z-bell-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--tblr-secondary); font-size: 1.25rem; }
+.z-bell-btn:hover, .z-bell-btn[aria-expanded="true"] { background: var(--tblr-bg-surface-secondary); color: var(--tblr-body-color); }
+.z-bell-count { position: absolute; top: .1rem; inset-inline-end: .05rem; min-width: 1.05rem; height: 1.05rem; padding: 0 .25rem; border-radius: 999px; background: var(--tblr-danger); color: #fff; font-size: .65rem; font-weight: 600; line-height: 1.05rem; text-align: center; }
+.z-bell-menu { width: min(22rem, calc(100vw - 2rem)); padding: 0; overflow: hidden; }
+.z-bell-head { display: flex; align-items: center; gap: .5rem; padding: .65rem 1rem; border-bottom: 1px solid var(--tblr-border-color); }
+.z-bell-head .z-bell-readall { margin-inline-start: auto; padding: 0; border: 0; background: none; color: var(--tblr-primary); font-size: .8125rem; }
+.z-bell-head .z-bell-readall:hover { text-decoration: underline; }
+.z-bell-menu [data-bell-list] { max-height: 60vh; overflow-y: auto; }
+.z-bell-empty { padding: 1.25rem 1rem; color: var(--tblr-secondary); text-align: center; font-size: .875rem; }
+.z-bell-item { display: flex; gap: .5rem; align-items: flex-start; white-space: normal; padding: .6rem 1rem; }
+.z-bell-text { line-height: 1.35; }
+.z-unread .z-bell-text { font-weight: 500; }
+.z-dot { flex: none; width: .5rem; height: .5rem; margin-top: .45rem; border-radius: 50%; background: var(--tblr-primary); }
+.z-bell-all { display: block; padding: .6rem 1rem; border-top: 1px solid var(--tblr-border-color); text-align: center; font-size: .875rem; }
