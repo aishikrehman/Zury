@@ -213,21 +213,16 @@
                   <%- err('organizingCommunity') %>
                 </div>
               <% } %>
-              <div class="col-md-6">
-                <label class="form-label" for="contactInfo"><%= t("Contact") %><%- mark('contest.contactInfo') %></label>
-                <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="<%= t("Talk page, email list or similar") %>">
+              <div class="col-12">
+<% const ct = (() => { try { const x = JSON.parse(v('contactInfo') || ''); return x && typeof x === 'object' ? x : { page: v('contactInfo') }; } catch (e) { return { page: v('contactInfo') || '' }; } })(); %>
+                <div class="row g-2">
+                  <% [['page', 'Contact page'], ['eventPage', 'On-wiki event page'], ['email', 'Email'], ['phone', 'Phone'], ['website', 'Website']].forEach(([k, label]) => { %>
+                    <div class="col-md-6"><label class="form-label" for="contact_<%= k %>"><%= t(label) %></label><input class="form-control" id="contact_<%= k %>" name="contact_<%= k %>" maxlength="300" value="<%= ct[k] || '' %>"<%= k === 'email' ? ' type=email' : '' %>></div>
+                  <% }) %>
+                </div>
                 <%- err('contactInfo') %>
               </div>
-<% if (!wikiMode) { %>
-                <div class="col-md-6">
-                  <label class="form-label" for="mainCategory"><%= t("Main category") %></label>
-                  <div class="input-group">
-                    <span class="input-group-text"><%= t("Category:") %></span>
-                    <input class="form-control<%= inv('mainCategory') %>" id="mainCategory" name="mainCategory" maxlength="200" value="<%= v('mainCategory') %>" placeholder="<%= t("Wiki Loves Monuments 2026 in Bangladesh") %>">
-                  </div>
-                  <%- err('mainCategory') %>
-                </div>
-<% } %>
+
               </div>
             </div>
           <% if (!wikiMode) { %>
@@ -259,7 +254,6 @@
                     </label>
                   </div>
                 </div>
-                <div class="col-12"><%- toggle('anonymousParticipants', 'Hide participant names from the public') %></div>
                 <% if (creating) { %>
                   <div class="col-md-6">
                     <label class="form-label" for="organizers"><%= t("Co-organizers") %></label>

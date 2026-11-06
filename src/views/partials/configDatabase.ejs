@@ -1,3 +1,33 @@
+  <% if (can('manageEvent') && !wikiMode) { %>
+    <div class="card mb-4 z-statebar">
+      <div class="card-body d-flex flex-wrap align-items-center gap-2">
+        <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt fs-5 me-1"><%= statusLabel(contest.status) %></span>
+        <span class="text-secondary small me-auto"><%= ['draft', 'paused', 'cancelled', 'archived'].includes(contest.status) ? '' : t('Follows the event dates.') %></span>
+        <% actions.forEach((a) => { %>
+          <form method="post" action="<%= base %>/status"<% if (a.confirm) { %> data-confirm="<%= a.confirm %>"<% } %>>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="action" value="<%= a.name %>">
+            <button type="submit" class="btn btn-<%= a.cls %>"><i class="ti ti-<%= a.icon %> me-1"></i><%= a.label %></button>
+          </form>
+        <% }) %>
+        <% if (can('deleteEvent')) { %>
+          <button class="btn btn-ghost-danger" type="button" data-bs-toggle="collapse" data-bs-target="#delete-event" aria-expanded="false" aria-controls="delete-event"><i class="ti ti-trash me-1"></i><%= t('Delete') %></button>
+        <% } %>
+      </div>
+      <% if (can('deleteEvent')) { %>
+        <div class="collapse" id="delete-event">
+          <form method="post" action="<%= base %>/delete" class="card-body border-top d-flex flex-wrap align-items-end gap-2">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="flex-fill" style="max-width: 24rem">
+              <label class="form-label" for="confirmation"><%- th('Type {address} to confirm', { address: '<code>' + h(contest.slug) + '</code>' }) %></label>
+              <input class="form-control" id="confirmation" name="confirmation" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-danger"><i class="ti ti-trash me-1"></i><%= t("Delete event") %></button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  <% } %>
   <% if (!wikiMode && can('manageEvent') && (places.length || contest.seriesId || contest.editionId)) { %>
     <form method="post" action="<%= eventBase %>/structure/move" class="card mb-3" id="structure">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">

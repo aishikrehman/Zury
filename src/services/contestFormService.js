@@ -167,7 +167,11 @@ function parse(rawBody, { type, wikiAllowed, catalog = PERMISSIVE }) {
   if (description.length > 5000) errors.description = 'At most 5000 characters.';
   const organizingCommunity = str(body.organizingCommunity);
   if (organizingCommunity.length > 200) errors.organizingCommunity = 'At most 200 characters.';
-  const contactInfo = str(body.contactInfo);
+  const contactKeys = ['page', 'eventPage', 'email', 'phone', 'website'];
+  const contactInfo = contactKeys.some((k) => `contact_${k}` in body)
+    ? (() => { const o = Object.fromEntries(contactKeys.map((k) => [k, str(body[`contact_${k}`]).slice(0, 300)]).filter(([, x]) => x)); return Object.keys(o).length ? JSON.stringify(o) : ''; })()
+    : str(body.contactInfo);
+  if (body.contact_email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(str(body.contact_email))) errors.contactInfo = 'Enter a valid email address.';
   if (contactInfo.length > 500) errors.contactInfo = 'At most 500 characters.';
 
   const primaryWiki = str(body.primaryWiki).toLowerCase();

@@ -1668,5 +1668,8 @@
   "This entry already has all the reviews it takes.": "এই জমার প্রয়োজনীয় সব পর্যালোচনা হয়ে গেছে।",
   "This entry has been sent for another review 5 times already.": "এই জমা ইতিমধ্যে ৫ বার পুনঃপর্যালোচনায় গেছে।",
   "Entries cannot be removed in this event.": "এই ইভেন্টে জমা অপসারণ করা যায় না।",
-  "Enter the wiki page that lists the articles.": "নিবন্ধের তালিকার উইকি পাতাটি লিখুন।"
+  "Enter the wiki page that lists the articles.": "নিবন্ধের তালিকার উইকি পাতাটি লিখুন।",
+  "Contact page": "যোগাযোগের পাতা",
+  "On-wiki event page": "উইকিতে ইভেন্টের পাতা",
+  "Website": "ওয়েবসাইট"
 }
