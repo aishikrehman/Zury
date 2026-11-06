@@ -182,15 +182,28 @@ const QUEUE_SORTS = {
 // Each jury member's work: reviews, accepted and rejected, and when they last reviewed.
 async function juryActivity(contestId, { wiki } = {}) {
   const where = { contestId, ...(wiki && { submission: { wiki } }) };
-  const [byDecision, last] = await Promise.all([
+  const { Prisma } = require('@prisma/client');
+  const [byDecision, last, agreeRows] = await Promise.all([
     prisma.review.groupBy({ by: ['jurorId', 'decision'], where, _count: { _all: true } }),
     prisma.review.groupBy({ by: ['jurorId'], where, _max: { updatedAt: true } }),
+    // Agreement: on decided entries that had at least two reviews, how often the reviewer's
+    // verdict matched the decision.
+    prisma.$queryRaw`
+      SELECT r.jurorId AS jurorId, COUNT(*) AS n,
+             SUM((r.decision = 'accept' AND s.status = 'approved') OR (r.decision = 'reject' AND s.status = 'rejected')) AS agree
+      FROM Review r JOIN Submission s ON s.id = r.submissionId
+      WHERE r.contestId = ${contestId} ${wiki ? Prisma.sql`AND s.wiki = ${wiki}` : Prisma.empty}
+        AND s.status IN ('approved', 'rejected')
+        AND (SELECT COUNT(*) FROM Review r2 WHERE r2.submissionId = r.submissionId) >= 2
+      GROUP BY r.jurorId`,
   ]);
+  const agreement = new Map(agreeRows.map((a) => [Number(a.jurorId), { n: Number(a.n), pct: Number(a.n) ? Math.round((Number(a.agree) / Number(a.n)) * 100) : null }]));
   const users = await prisma.user.findMany({ where: { id: { in: last.map((r) => r.jurorId) } }, select: { id: true, username: true } });
   const name = Object.fromEntries(users.map((u) => [u.id, u.username]));
   const rows = last.map((r) => {
     const of = (d) => byDecision.find((x) => x.jurorId === r.jurorId && x.decision === d)?._count._all || 0;
-    return { id: r.jurorId, username: name[r.jurorId], accepted: of('accept'), rejected: of('reject'), reviews: of('accept') + of('reject'), lastAt: r._max.updatedAt };
+    const ag = agreement.get(r.jurorId);
+    return { id: r.jurorId, username: name[r.jurorId], accepted: of('accept'), rejected: of('reject'), reviews: of('accept') + of('reject'), lastAt: r._max.updatedAt, agreement: ag ? ag.pct : null, agreementOf: ag ? ag.n : 0 };
   });
   const most = Math.max(1, ...rows.map((r) => r.reviews));
   return rows.sort((x, y) => y.reviews - x.reviews).map((r) => ({ ...r, share: Math.round((r.reviews / most) * 100) }));

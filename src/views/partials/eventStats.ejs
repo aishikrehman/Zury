@@ -71,6 +71,13 @@
           <% } %>
         </div>
       </div>
+          <% if (settings.wordCountEnabled && s.wordSeries && s.wordSeries.values.some((n) => n > 0)) { %>
+            <%# Words added per day: of every entry submitted that day, and of those accepted so far. %>
+            <div class="card mt-3">
+              <div class="card-header"><h3 class="card-title"><%= t('Words per day') %></h3></div>
+              <div class="card-body"><%- include('./chart', { spec: { type: 'area', height: 240, series: [{ name: t('Words'), data: s.wordSeries.values }, { name: t('Accepted'), data: s.wordSeries.accepted }], labels: s.wordSeries.labels, colors: ['primary', 'green'] }, label: t('Words per day') }) %></div>
+            </div>
+          <% } %>
     </div>
     <div class="col-lg-4">
       <div class="card">

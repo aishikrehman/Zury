@@ -254,7 +254,7 @@
                 <div class="mb-2 small">
                   <div class="d-flex"><span class="fw-medium<%= j.id === currentUser.id ? ' text-primary' : '' %>"><%= j.username %></span><span class="ms-auto text-secondary"><%= formatNumber(j.reviews) %></span></div>
                   <div class="progress progress-xs my-1"><div class="progress-bar bg-green" style="width: <%= j.reviews ? Math.round(j.share * j.accepted / j.reviews) : 0 %>%"></div><div class="progress-bar bg-red" style="width: <%= j.reviews ? j.share - Math.round(j.share * j.accepted / j.reviews) : 0 %>%"></div></div>
-                  <div class="text-secondary"><%= t('{a} accepted, {r} rejected', { a: formatNumber(j.accepted), r: formatNumber(j.rejected) }) %><% if (j.lastAt) { %> · <%= formatDate(j.lastAt, contest.timezone) %><% } %></div>
+                  <div class="text-secondary"><%= t('{a} accepted, {r} rejected', { a: formatNumber(j.accepted), r: formatNumber(j.rejected) }) %><% if (j.agreement !== null) { %> · <span title="<%= t('Agreed with the final decision on {n} entries with more than one review', { n: formatNumber(j.agreementOf) }) %>"><%= t('{n}% agreement', { n: j.agreement }) %></span><% } %><% if (j.lastAt) { %> · <%= formatDate(j.lastAt, contest.timezone) %><% } %></div>
                 </div>
               <% }) %>
             </div>

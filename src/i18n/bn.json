@@ -1543,5 +1543,8 @@
   "Create: {type}": "তৈরি করুন: {type}",
   "What kind of event? Its settings come next, on one page.": "কোন ধরনের ইভেন্ট? এরপর এর সেটিংস আসবে, এক পাতায়।",
   "Change": "বদলান",
-  "It is made as a draft: nothing is public until you publish it.": "এটি খসড়া হিসেবে তৈরি হয়: প্রকাশ না করা পর্যন্ত কিছুই সবার জন্য দেখা যায় না।"
+  "It is made as a draft: nothing is public until you publish it.": "এটি খসড়া হিসেবে তৈরি হয়: প্রকাশ না করা পর্যন্ত কিছুই সবার জন্য দেখা যায় না।",
+  "Words per day": "প্রতিদিন শব্দ",
+  "{n}% agreement": "{n}% মিল",
+  "Agreed with the final decision on {n} entries with more than one review": "একাধিক পর্যালোচনা হওয়া {n}টি জমায় চূড়ান্ত সিদ্ধান্তের সাথে মিল"
 }

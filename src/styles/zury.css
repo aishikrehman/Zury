@@ -963,3 +963,17 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 /* New event on one page: the sections one after the other, each with a line above. */
 form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--z-border); }
 .z-type-card .avatar { font-size: 1.35rem; }
+
+/* New event: the sections as tabs down the side on large screens (across the top on small ones). */
+@media (min-width: 992px) {
+  .z-side-tabs { display: grid; grid-template-columns: 15rem minmax(0, 1fr); }
+  .z-side-tabs > .card-header { grid-row: 1 / span 2; align-items: flex-start; border-bottom: 0; border-inline-end: 1px solid var(--z-border); padding: 1rem .5rem; }
+  .z-side-tabs .z-config-tabs { flex-direction: column; width: 100%; margin: 0; border: 0; overflow: visible; }
+  .z-side-tabs .z-config-tabs .nav-link { border: 0; border-radius: 8px; padding: .6rem .75rem; text-align: start; }
+  .z-side-tabs .z-config-tabs .step-item.active .nav-link { background: var(--tblr-primary-lt, rgba(32,107,196,.08)); border: 0; }
+  .z-side-tabs > .card-footer { grid-column: 2; }
+}
+@media (min-width: 992px) {
+  .z-side-tabs .z-config-tabs .nav-item { width: 100%; }
+  .z-side-tabs .z-config-tabs .nav-link { display: flex; align-items: center; justify-content: flex-start; gap: .6rem; width: 100%; white-space: normal; }
+}

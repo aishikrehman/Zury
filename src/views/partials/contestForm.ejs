@@ -17,8 +17,9 @@
   const marks = locals.wikiMode ? locals.overridden : new Set();
   const mark = (key) => (marks.has(key) ? `<span class="badge bg-orange-lt ms-1">${esc(t('this wiki'))}</span>` : '');
   const creating = action === '/events/create';
-  // New events: one page with every section of the chosen type (no steps). Configuration: tabs.
-  const pageMode = creating;
+  // New events: the sections as tabs down the side (any can be opened); Configuration: tabs across the top.
+  const pageMode = false;
+  const sideTabs = creating;
   const judged = !typeDef || typeDef.entries !== false;
   const dateLabel = Object.fromEntries(DATE_FIELDS);
   const origin = 'zury.toolforge.org';
@@ -50,7 +51,7 @@
   <div class="row g-4">
     <%# New events and Configuration share one layout: the sections as tabs across the top. %>
     <div class="col-12">
-      <div class="card z-config">
+      <div class="card z-config<%= sideTabs ? ' z-side-tabs' : '' %>">
         <% if (!pageMode) { %>
         <div class="card-header">
           <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
@@ -68,10 +69,39 @@
           <% const openIf = (...keys) => keys.some((k) => errors[k] || v(k)) ? ' open' : ''; %>
           <section class="wizard-pane" id="step-basics" data-step="0">
             <% if (!wikiMode) { %>
+              <%# First: the series and edition decide the address below. Open on a new event. %>
+              <details class="z-form-group z-form-fold"<%= creating ? ' open' : openIf('seriesSlug', 'edition', 'previousEditionUrl') %>>
+                <summary class="z-form-group-title"><%= t('Series') %> <span class="text-secondary fw-normal"><%= t('optional') %></span></summary>
+                <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                  <label class="form-label" for="seriesSlug"><%= t("Part of") %></label>
+                  <select class="form-select<%= inv('seriesSlug') %>" id="seriesSlug" name="seriesSlug" data-picker="series" placeholder="<%= t("e.g. Wiki Loves Monuments") %>">
+                    <% if (v('seriesSlug')) { %><option value="<%= v('seriesSlug') %>" selected><%= v('seriesSlug') %></option><% } %>
+                  </select>
+                  <%- err('seriesSlug') %>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label" for="edition"><%= t("Edition") %></label>
+                  <%# The chosen series' editions (filled in by eventForm.js); none: directly under the series. New editions are made on the series page. %>
+                  <select class="form-select<%= inv('edition') %>" id="edition" name="edition" data-current="<%= v('edition') %>" data-none-label="<%= t('Directly under the series') %>">
+                    <option value=""><%= t('Directly under the series') %></option>
+                    <% if (v('edition')) { %><option value="<%= v('edition') %>" selected><%= v('edition') %></option><% } %>
+                  </select>
+                  <%- err('edition') %>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="previousEditionUrl"><%= t("Previous edition") %></label>
+                  <input class="form-control<%= inv('previousEditionUrl') %>" id="previousEditionUrl" name="previousEditionUrl" value="<%= v('previousEditionUrl') %>" placeholder="<%= t("https://…") %>">
+                  <%- err('previousEditionUrl') %>
+                </div>
+                </div>
+              </details>
+            <% } %>
+            <% if (!wikiMode) { %>
               <div class="z-form-group">
                 <h3 class="z-form-group-title"><%= t('What') %></h3>
                 <div class="row g-3">
-                <% if (pageMode && typeDef) { %>
+                <% if (creating && typeDef) { %>
                   <div class="col-md-4">
                     <span class="form-label"><%= t("Type of event") %></span>
                     <input type="hidden" name="type" value="<%= type %>">
@@ -159,34 +189,6 @@
               </div>
               </div>
             </div>
-            <% if (!wikiMode) { %>
-              <details class="z-form-group z-form-fold"<%= openIf('seriesSlug', 'edition', 'previousEditionUrl') %>>
-                <summary class="z-form-group-title"><%= t('Series') %> <span class="text-secondary fw-normal"><%= t('optional') %></span></summary>
-                <div class="row g-3 mt-1">
-                <div class="col-md-4">
-                  <label class="form-label" for="seriesSlug"><%= t("Part of") %></label>
-                  <select class="form-select<%= inv('seriesSlug') %>" id="seriesSlug" name="seriesSlug" data-picker="series" placeholder="<%= t("e.g. Wiki Loves Monuments") %>">
-                    <% if (v('seriesSlug')) { %><option value="<%= v('seriesSlug') %>" selected><%= v('seriesSlug') %></option><% } %>
-                  </select>
-                  <%- err('seriesSlug') %>
-                </div>
-                <div class="col-md-2">
-                  <label class="form-label" for="edition"><%= t("Edition") %></label>
-                  <%# The chosen series' editions (filled in by eventForm.js); none: directly under the series. New editions are made on the series page. %>
-                  <select class="form-select<%= inv('edition') %>" id="edition" name="edition" data-current="<%= v('edition') %>" data-none-label="<%= t('Directly under the series') %>">
-                    <option value=""><%= t('Directly under the series') %></option>
-                    <% if (v('edition')) { %><option value="<%= v('edition') %>" selected><%= v('edition') %></option><% } %>
-                  </select>
-                  <%- err('edition') %>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label" for="previousEditionUrl"><%= t("Previous edition") %></label>
-                  <input class="form-control<%= inv('previousEditionUrl') %>" id="previousEditionUrl" name="previousEditionUrl" value="<%= v('previousEditionUrl') %>" placeholder="<%= t("https://…") %>">
-                  <%- err('previousEditionUrl') %>
-                </div>
-                </div>
-              </details>
-            <% } %>
             <details class="z-form-group z-form-fold"<%= openIf('organizingCommunity', 'contactInfo', 'mainCategory', 'logoUrl', 'bannerUrl') %>>
               <summary class="z-form-group-title"><%= t('More details') %> <span class="text-secondary fw-normal"><%= t('optional') %></span></summary>
               <div class="row g-3 mt-1">
@@ -511,7 +513,7 @@
         </div>
 
         <div class="card-footer d-flex align-items-center">
-          <% if (pageMode) { %>
+          <% if (creating) { %>
             <span class="text-secondary small me-auto"><%= t('It is made as a draft: nothing is public until you publish it.') %></span>
             <button type="submit" class="btn btn-primary btn-lg"><i class="ti ti-check me-1"></i><%= t(submitLabel) %></button>
           <% } else { %>

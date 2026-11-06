@@ -52,7 +52,7 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
       take: 10,
     }),
     prisma.contestMembership.groupBy({ by: ['role'], where: { contestId: contest.id, status: 'active' }, _count: { _all: true } }),
-    prisma.submission.findMany({ where, select: { submittedAt: true }, orderBy: { submittedAt: 'asc' } }),
+    prisma.submission.findMany({ where, select: { submittedAt: true, wordCount: true, status: true }, orderBy: { submittedAt: 'asc' } }),
     prisma.submission.aggregate({ where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true } }),
     prisma.submission.aggregate({ where: { ...where, status: 'approved' }, _sum: { wordCount: true } }),
   ]);
@@ -74,6 +74,16 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
   const from = contest.startDate && contest.startDate < now ? contest.startDate : dates[0]?.submittedAt || new Date(now - 13 * DAY_MS);
   const until = contest.endDate && contest.endDate < now ? contest.endDate : now;
   const series = dailySeries(dates.map((d) => d.submittedAt), from, until > from ? until : now, contest.timezone);
+  // Words of the day's entries (not withdrawn), and of those accepted so far.
+  const wordsOn = new Map();
+  const acceptedOn = new Map();
+  for (const d of dates) {
+    if (INACTIVE.includes(d.status) || !d.wordCount) continue;
+    const key = dayKey(new Date(d.submittedAt), contest.timezone);
+    wordsOn.set(key, (wordsOn.get(key) || 0) + d.wordCount);
+    if (d.status === 'approved') acceptedOn.set(key, (acceptedOn.get(key) || 0) + d.wordCount);
+  }
+  const wordSeries = { labels: series.labels, values: series.labels.map((l) => wordsOn.get(l) || 0), accepted: series.labels.map((l) => acceptedOn.get(l) || 0) };
 
   return {
     total,
@@ -87,6 +97,7 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     roles: toMap(memberships, 'role'),
     topParticipants: top.map((t) => ({ username: name[t.participantId], count: t._count._all, approved: approvedMap[t.participantId] || 0 })),
     series,
+    wordSeries,
     last7: series.values.slice(-7),
     words: words._sum.wordCount || 0,
     approvedWords: approvedWords._sum.wordCount || 0,
