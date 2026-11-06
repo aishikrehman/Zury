@@ -40,8 +40,10 @@ async function mapLimit(items, limit, fn) {
   return out;
 }
 
-async function activeKeys(contestId, client = prisma) {
-  const rows = await client.submission.findMany({ where: { contestId, status: { notIn: INACTIVE } }, select: { pageKey: true } });
+// The keys already entered in the event; keys: only check these (big events have many entries).
+async function activeKeys(contestId, client = prisma, keys = null) {
+  if (keys && !keys.length) return new Set();
+  const rows = await client.submission.findMany({ where: { contestId, status: { notIn: INACTIVE }, ...(keys && { pageKey: { in: keys } }) }, select: { pageKey: true } });
   return new Set(rows.map((r) => r.pageKey));
 }
 
@@ -66,7 +68,7 @@ async function prepare({ contest, settings, participantId, text, eventWikis, def
 
   const wikis = eventWikis && eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki, overrides: '{}', status: 'active' }];
   const byWiki = new Map(wikis.map((w) => [w.wiki, w]));
-  const [existing, count] = await Promise.all([activeKeys(contest.id), activeCount(contest.id, participantId)]);
+  const count = await activeCount(contest.id, participantId);
 
   const looked = await mapLimit(lines, 4, async (input) => {
     const ref = parseEntry(input, defaultWiki || contest.primaryWiki);
@@ -79,6 +81,7 @@ async function prepare({ contest, settings, participantId, text, eventWikis, def
     }
   });
 
+  const existing = await activeKeys(contest.id, prisma, [...new Set(looked.filter((i) => i.meta).map((i) => pageKeyFor(i.meta)))]);
   const seen = new Set(existing);
   let accepted = count;
   return looked.map((item) => {
@@ -124,7 +127,7 @@ async function saveEntries({ actor, contest, settings, participant, items, ensur
   return prisma.$transaction(async (tx) => {
     if (ensureParticipant) await ensureParticipant(tx);
     // Re-check inside the transaction in case someone else submitted meanwhile.
-    const keys = await activeKeys(contest.id, tx);
+    const keys = await activeKeys(contest.id, tx, valid.map((i) => pageKeyFor(i.meta)));
     const created = [];
     for (const item of valid) {
       const pageKey = pageKeyFor(item.meta);
@@ -271,7 +274,7 @@ async function revalidate({ actor, submission, contest, settings, eventWikis = [
   const meta = await fetchEntryMetadata({ wiki: submission.wiki, title: submission.title }, { language: contest.language, wordCountMethod: settings?.wordCountMethod });
   const eventWiki = eventWikis.find((w) => w.wiki === submission.wiki);
   const eff = effectiveFor(contest, settings, eventWiki);
-  const others = await activeKeys(contest.id);
+  const others = await activeKeys(contest.id, prisma, [pageKeyFor(meta)]);
   others.delete(submission.pageKey);
   const result = checkEntry({
     meta,

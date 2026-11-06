@@ -136,13 +136,19 @@ async function queue({ contestId, settings, jurorId, wikis = null, after = 0, fi
     ...(!settings.selfReview && { NOT: { participantId: jurorId } }),
   };
   const order = QUEUE_SORTS[filters.sort] || QUEUE_SORTS.oldest;
-  const candidates = await prisma.submission.findMany({
-    where,
-    orderBy: [...order, { id: 'asc' }],
-    select: { id: true, _count: { select: { reviews: true } } },
-  });
+  const candidates = await prisma.submission.findMany({ where, orderBy: [...order, { id: 'asc' }], select: { id: true } });
   // Entries that already have all their reviews are waiting to be decided, not for this person.
-  const list = mode === 'waiting' ? candidates.filter((c) => c._count.reviews < required) : candidates;
+  // Counted apart (counting inside the query above is slow on big events).
+  let list = candidates;
+  if (mode === 'waiting' && candidates.length) {
+    const full = new Set();
+    for (let i = 0; i < candidates.length; i += 5000) {
+      const ids = candidates.slice(i, i + 5000).map((c) => c.id);
+      const counts = await prisma.review.groupBy({ by: ['submissionId'], where: { submissionId: { in: ids } }, _count: { _all: true } });
+      for (const r of counts) if (r._count._all >= required) full.add(r.submissionId);
+    }
+    list = candidates.filter((c) => !full.has(c.id));
+  }
   // The next one is the one after "after" in this order (from the start once past the end).
   const from = after ? list.findIndex((c) => c.id === after) : -1;
   const next = (from >= 0 ? list[from + 1] : null) || (from >= 0 ? list.find((c) => c.id !== after) : list[0]) || null;

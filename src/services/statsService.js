@@ -129,28 +129,32 @@ async function platformStats(now = new Date(), days = 30) {
 const empty = () => ({ eventCount: 0, entries: 0, approved: 0, words: 0, approvedWords: 0, participants: 0, wikis: [] });
 
 async function rollup(contestIds) {
-  const ids = [...new Set(contestIds)];
+  const ids = [...new Set(contestIds)].map(Number).filter(Number.isInteger);
   if (!ids.length) return empty();
-  const [subs, people, wikis] = await Promise.all([
-    prisma.submission.findMany({ where: { contestId: { in: ids }, status: { not: 'withdrawn' } }, select: { wiki: true, pageKey: true, status: true, wordCount: true, participantId: true } }),
-    prisma.contestMembership.findMany({ where: { contestId: { in: ids }, role: 'participant', status: 'active' }, select: { userId: true } }),
+  const { Prisma } = require('@prisma/client');
+  const inIds = Prisma.join(ids);
+  // Counted by the database (a series can hold hundreds of thousands of entries): one row per
+  // distinct page (pageKey, which names its wiki: bnwiki:123), approved if approved anywhere,
+  // with its largest word count.
+  const [[totals], [people], wikis] = await Promise.all([
+    prisma.$queryRaw`
+      SELECT COUNT(*) AS entries, COALESCE(SUM(w), 0) AS words, COALESCE(SUM(a), 0) AS approved, COALESCE(SUM(CASE WHEN a = 1 THEN w ELSE 0 END), 0) AS approvedWords
+      FROM (SELECT MAX(COALESCE(wordCount, 0)) AS w, MAX(status = 'approved') AS a FROM Submission
+            WHERE contestId IN (${inIds}) AND status <> 'withdrawn' GROUP BY pageKey) AS pages`,
+    prisma.$queryRaw`
+      SELECT COUNT(*) AS n FROM (
+        SELECT participantId AS u FROM Submission WHERE contestId IN (${inIds}) AND status <> 'withdrawn'
+        UNION SELECT userId FROM ContestMembership WHERE contestId IN (${inIds}) AND role = 'participant' AND status = 'active') AS people`,
     prisma.contestWiki.findMany({ where: { contestId: { in: ids }, status: { not: 'pending' } }, select: { wiki: true, code: true } }),
   ]);
-  const entries = new Map();
-  for (const s of subs) {
-    const key = `${s.wiki}\u0000${s.pageKey}`;
-    const had = entries.get(key);
-    // Approved anywhere counts as approved; keep the larger word count seen.
-    entries.set(key, { approved: (had && had.approved) || s.status === 'approved', words: Math.max(had ? had.words : 0, s.wordCount || 0) });
-  }
-  const approved = [...entries.values()].filter((e) => e.approved);
+  const num = (v) => Number(v || 0);
   return {
     eventCount: ids.length,
-    entries: entries.size,
-    words: [...entries.values()].reduce((n, e) => n + e.words, 0),
-    approved: approved.length,
-    approvedWords: approved.reduce((n, e) => n + e.words, 0),
-    participants: new Set([...people.map((p) => p.userId), ...subs.map((s) => s.participantId)]).size,
+    entries: num(totals.entries),
+    words: num(totals.words),
+    approved: num(totals.approved),
+    approvedWords: num(totals.approvedWords),
+    participants: num(people.n),
     wikis: [...new Map(wikis.map((w) => [w.wiki, w])).values()],
   };
 }

@@ -20,6 +20,14 @@
 
   const show = ['blocked', ...roleOrder].includes(query.show) ? query.show : '';
   const matches = (p) => !show || (show === 'blocked' ? !!p.block : p.roles.some((m) => m.role === show));
+  // Shown 50 at a time (an event can have thousands of participants); the name search runs on the server.
+  const q = (query.q || '').toLowerCase();
+  const shown = rows.filter(matches).filter((p) => !q || p.user.username.toLowerCase().includes(q));
+  const PER = 50;
+  const pages = Math.max(1, Math.ceil(shown.length / PER));
+  const pageNo = Math.min(pages, Math.max(1, query.page || 1));
+  const pageRows = shown.slice((pageNo - 1) * PER, pageNo * PER);
+  const pageHref = (n) => `?${new URLSearchParams({ ...(show && { show }), ...(q && { q }), ...(n > 1 && { page: n }) })}`;
   const count = (key) => rows.filter((p) => (key === 'blocked' ? p.block : p.roles.some((m) => m.role === key))).length;
   const canRemove = (m) => (m.wiki ? scope.forWiki(m.wiki) : (wikiScope && m.role !== 'participant' ? scope.global : scope.permissions)).has(ROLE_MANAGEMENT_PERMISSION[m.role]);
   const manage = can('manageEvent');
@@ -41,10 +49,11 @@
         <% } %>
       </ul>
       <div class="ms-auto d-flex flex-wrap gap-2">
-        <div class="input-icon">
+        <form method="get" class="input-icon" role="search">
+          <% if (show) { %><input type="hidden" name="show" value="<%= show %>"><% } %>
           <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-          <input class="form-control" type="search" placeholder="<%= t('Find a person') %>" aria-label="<%= t('Find a person') %>" data-filter-rows="#people-table">
-        </div>
+          <input class="form-control" type="search" name="q" value="<%= query.q || '' %>" placeholder="<%= t('Find a person') %>" aria-label="<%= t('Find a person') %>">
+        </form>
         <% if (can('sendNotifications')) { %><a href="<%= base %>/message" class="btn btn-outline-primary"><i class="ti ti-mail me-1"></i><%= t('Message') %></a><% } %>
         <% if (roleOptions.length) { %><button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#add-person" aria-expanded="false" aria-controls="add-person"><i class="ti ti-user-plus me-1"></i><%= t('Add person') %></button><% } %>
         <% if (canBlock) { %><button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#block-person" aria-expanded="false" aria-controls="block-person"><i class="ti ti-ban me-1"></i><%= t('Block someone') %></button><% } %>
@@ -104,8 +113,8 @@
       <table class="table table-vcenter card-table" id="people-table">
         <thead><tr><th><%= t('User') %></th><th><%= t('Roles') %></th><th><%= t('Status') %></th><th><%= t('Since') %></th><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
         <tbody>
-          <% if (!rows.filter(matches).length) { %><tr><td colspan="5" class="text-secondary"><%= t('No members yet.') %></td></tr><% } %>
-          <% rows.filter(matches).forEach((p) => { const u = p.user; const panel = `person-${u.id}`; %>
+          <% if (!pageRows.length) { %><tr><td colspan="5" class="text-secondary"><%= t('No members yet.') %></td></tr><% } %>
+          <% pageRows.forEach((p) => { const u = p.user; const panel = `person-${u.id}`; %>
             <tr data-filter-text="<%= u.username.toLowerCase() %>">
               <td>
                 <div class="d-flex align-items-center">
@@ -212,6 +221,15 @@
           <% }) %>
         </tbody>
       </table>
+    </div>
+    <% if (pages > 1) { %>
+      <div class="card-footer d-flex align-items-center gap-2">
+        <span class="text-secondary small me-auto"><%= t('{a}–{b} of {n}', { a: formatNumber((pageNo - 1) * PER + 1), b: formatNumber(Math.min(pageNo * PER, shown.length)), n: formatNumber(shown.length) }) %></span>
+        <% if (pageNo > 1) { %><a class="btn btn-sm" href="<%= pageHref(pageNo - 1) %>"><i class="ti ti-chevron-left"></i><%= t('Previous') %></a><% } %>
+        <% if (pageNo < pages) { %><a class="btn btn-sm" href="<%= pageHref(pageNo + 1) %>"><%= t('Next') %><i class="ti ti-chevron-right"></i></a><% } %>
+      </div>
+    <% } %>
+    <div>
     </div>
   </div>
 </div>

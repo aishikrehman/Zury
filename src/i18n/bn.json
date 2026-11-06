@@ -1474,5 +1474,7 @@
   "Review deleted; the entry was decided again.": "পর্যালোচনা মুছে ফেলা হয়েছে; জমার সিদ্ধান্ত আবার হয়েছে।",
   "You can't delete your own account.": "আপনি নিজের অ্যাকাউন্ট মুছতে পারবেন না।",
   "Account {name} deleted.": "{name} অ্যাকাউন্ট মুছে ফেলা হয়েছে।",
-  "Delete anything: series and editions with their events, single entries and reviews, accounts": "যেকোনো কিছু মোছা: ইভেন্টসহ সিরিজ ও সংস্করণ, একক জমা ও পর্যালোচনা, অ্যাকাউন্ট"
+  "Delete anything: series and editions with their events, single entries and reviews, accounts": "যেকোনো কিছু মোছা: ইভেন্টসহ সিরিজ ও সংস্করণ, একক জমা ও পর্যালোচনা, অ্যাকাউন্ট",
+  "{a}–{b} of {n}": "{n}টির মধ্যে {a}–{b}",
+  "Previous": "আগের"
 }

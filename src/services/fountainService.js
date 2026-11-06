@@ -149,7 +149,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
   const ended = finish && Date.now() > finish.getTime();
   const isFinal = (s) => { try { return Boolean(JSON.parse(s.metadata || '{}').wordsAtFinish); } catch { return false; } };
   const counts = ended
-    ? await finalCounts(wiki, [...new Set(ids.values())].filter((id) => !byKey.has(String(id)) || !isFinal(byKey.get(String(id)))), finish, settings?.wordCountMethod)
+    ? await finalCounts(wiki, [...new Set(ids.values())].filter((id) => !byKey.has(`${wiki}:${id}`) || !isFinal(byKey.get(`${wiki}:${id}`))), finish, settings?.wordCountMethod)
     : await wordCounts(wiki, [...new Set(ids.values())], settings?.wordCountMethod).catch(() => new Map());
   let added = 0;
   let updated = 0;
@@ -158,13 +158,15 @@ async function sync(eventWiki, { actorId = null } = {}) {
     const pageid = ids.get(a.name);
     const u = await person(a.user);
     if (!pageid || !u) continue;
-    const pageKey = String(pageid);
+    // Word counts come by page id; the entry's key is wiki:pageid, like any entry's.
+    const idKey = String(pageid);
+    const pageKey = `${wiki}:${pageid}`;
     const { status, score } = decision(a, editathon.marks);
-    const wordCount = counts.has(pageKey) ? counts.get(pageKey) : null;
+    const wordCount = counts.has(idKey) ? counts.get(idKey) : null;
     const have = byKey.get(pageKey);
     if (have) {
       const newWords = wordCount ?? have.wordCount;
-      const markFinal = ended && counts.has(pageKey);
+      const markFinal = ended && counts.has(idKey);
       if (have.status !== status || have.score !== score || have.wordCount !== newWords || markFinal) {
         const meta = markFinal ? JSON.stringify({ ...JSON.parse(have.metadata || '{}'), wordsAtFinish: finish.toISOString() }) : undefined;
         await prisma.submission.update({ where: { id: have.id }, data: { status, score, wordCount: newWords, ...(meta && { metadata: meta }) } });
@@ -182,7 +184,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
         url: pageUrl(wiki, a.name),
         entryType: 'article',
         submittedAt: a.dateAdded ? new Date(a.dateAdded) : new Date(),
-        metadata: JSON.stringify({ source: 'fountain', fountainId: a.id, ...(ended && counts.has(pageKey) && { wordsAtFinish: finish.toISOString() }) }),
+        metadata: JSON.stringify({ source: 'fountain', fountainId: a.id, ...(ended && counts.has(idKey) && { wordsAtFinish: finish.toISOString() }) }),
       },
     });
     byKey.set(pageKey, row);
