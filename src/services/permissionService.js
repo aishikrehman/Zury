@@ -169,6 +169,24 @@ async function inheritedRoles(userId, contest) {
   return rows.map((r) => ({ role: r.role, wiki: '', status: 'active', inheritedFrom: r.editionId ? 'edition' : 'series' }));
 }
 
+// The event's choice of reviewers (settings.reviewers: jury, localAdmins, participants) as roles:
+// without "jury" the jury list gives no review rights; with "participants" every participant
+// reviews (peer review); with "localAdmins" the admins of a wiki review that wiki's entries.
+function reviewerRoles(subject, memberships, { settings, wikis = [] } = {}) {
+  if (!settings || !settings.reviewers) return memberships;
+  let who;
+  try {
+    who = JSON.parse(settings.reviewers);
+  } catch {
+    who = ['jury'];
+  }
+  const active = (m) => m.status === 'active';
+  const out = who.includes('jury') ? [...memberships] : memberships.filter((m) => m.role !== 'jury');
+  if (who.includes('participants') && memberships.some((m) => active(m) && m.role === 'participant')) out.push({ role: 'jury', wiki: '', status: 'active', reviewer: 'participant' });
+  if (who.includes('localAdmins')) for (const w of wikis) if (subject.adminWikis.has(w)) out.push({ role: 'jury', wiki: w, status: 'active', reviewer: 'localAdmin' });
+  return out;
+}
+
 // opts: { wikis: event's active wiki database names, wiki: current wiki context }
 async function contestScope(subject, contest, opts = {}) {
   if (!subject.user) return computeContestScope(subject, contest, [], [], opts);
@@ -178,10 +196,11 @@ async function contestScope(subject, contest, opts = {}) {
     prisma.contestPermission.findMany({ where }),
     inheritedRoles(subject.user.id, contest),
   ]);
-  return computeContestScope(subject, contest, [...memberships, ...inherited], overrides, opts);
+  return computeContestScope(subject, contest, reviewerRoles(subject, [...memberships, ...inherited], opts), overrides, opts);
 }
 
 module.exports = {
+  reviewerRoles,
   inheritedRoles,
   EMPTY_SUBJECT,
   RIGHTS_MAX_AGE_MS,

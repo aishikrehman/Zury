@@ -40,6 +40,7 @@ async function setupEvent(req, res, next, contest, code) {
     if (!wikiScope) return notFound(res);
   }
   const scope = await permissionService.contestScope(req.subject, rest, {
+    settings,
     wikis: participating.map((w) => w.wiki),
     wiki: wikiScope?.wiki,
   });

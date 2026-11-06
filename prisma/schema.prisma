@@ -334,7 +334,25 @@ model ContestSettings {
   secretBallot                Boolean   @default(false)
   // open: any jury member of the entry's wiki may review it.
   // assigned: jury members review only the entries assigned to them.
+  // open: any reviewer may take any entry; assigned: by hand; equal: shared out automatically
+  // in equal parts as entries arrive; fixed: automatically, at most assignPerJuror each.
   reviewAssignment            String    @default("open")
+  assignPerJuror              Int       @default(0)
+  // What the results count: words | articles | points (marks or scores).
+  rankBy                      String    @default("articles")
+  // How a reviewer judges: yesno (1/0) | stars (1–5) | number (scoreMin–scoreMax; no limit when
+  // empty) | marks (the custom marks).
+  reviewMethod                String    @default("yesno")
+  scoreMin                    Float?    @default(0)
+  scoreMax                    Float?    @default(10)
+  // Who reviews, JSON list of: jury (the event's chosen reviewers), localAdmins (admins of the
+  // entry's wiki), participants (any participant: peer review).
+  reviewers                   String    @default("[\"jury\"]") @db.Text
+  // May someone review their own entry?
+  selfReview                  Boolean   @default(false)
+  bulkReviewEnabled           Boolean   @default(true)
+  // Reviewer statistics shown to everyone (else only to the organizers).
+  juryStatsEnabled            Boolean   @default(true)
   // Settings taken from the series or edition, JSON { key: "series" | "edition" }. A key listed
   // here follows its parent; one the event changes itself drops out and stays its own.
   followed                    String    @default("{}") @db.Text

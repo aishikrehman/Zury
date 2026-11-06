@@ -19,6 +19,7 @@ class ReviewError extends Error {
 }
 
 function markScheme(settings) {
+  if (settings.reviewMethod && settings.reviewMethod !== 'marks') return [];
   try {
     const marks = JSON.parse(settings.marks || '[]');
     return Array.isArray(marks) ? marks : [];
@@ -41,11 +42,34 @@ function scoreMarks(scheme, chosen) {
   return { marks: clean, points };
 }
 
+const METHODS = ['yesno', 'stars', 'number', 'marks'];
+
+// A review's verdict and points by the event's method: yes/no (1/0), stars (1–5), a number
+// (in the range when there is one), or the custom marks. With a score, the verdict follows the
+// pass mark, and the entry is decided by the average (decisionRule "score").
+function verdict(settings, { decision, marks, score }) {
+  const method = METHODS.includes(settings.reviewMethod) ? settings.reviewMethod : 'marks';
+  const pass = Number(settings.passScore) || 0;
+  if (method === 'stars' || method === 'number') {
+    const n = Number(score);
+    if (score === undefined || score === null || String(score).trim() === '' || !Number.isFinite(n)) throw new ReviewError('Give a score.');
+    if (method === 'stars' && (!Number.isInteger(n) || n < 1 || n > 5)) throw new ReviewError('Give one to five stars.');
+    if (method === 'number' && ((settings.scoreMin != null && n < settings.scoreMin) || (settings.scoreMax != null && n > settings.scoreMax))) {
+      throw new ReviewError('The score is outside the allowed range.');
+    }
+    return { decision: n >= pass ? 'accept' : 'reject', marks: {}, points: n };
+  }
+  if (!DECISIONS.includes(decision)) throw new ReviewError('Choose accept or reject.');
+  if (method === 'yesno') return { decision, marks: {}, points: decision === 'accept' ? 1 : 0 };
+  return { decision, ...scoreMarks(markScheme(settings), marks) };
+}
+
 /**
  * The next entry for a jury member. wikis: the wikis they may judge (null = all).
  * after: skip entries up to this id (the "skip" button).
  */
-const assignedMode = (settings) => settings.reviewAssignment === 'assigned';
+// Reviewers see only the entries given to them: assigned by hand, shared out equally, or a set number each.
+const assignedMode = (settings) => ['assigned', 'equal', 'fixed'].includes(settings.reviewAssignment);
 
 const DECISION_RULES = ['majority', 'unanimous', 'any', 'veto', 'first', 'score'];
 
@@ -56,7 +80,7 @@ const DECISION_RULES = ['majority', 'unanimous', 'any', 'veto', 'first', 'score'
  */
 function decide(reviews, settings) {
   const required = Math.max(1, settings.requiredReviews || 1);
-  const rule = DECISION_RULES.includes(settings.decisionRule) ? settings.decisionRule : 'majority';
+  const rule = ['stars', 'number'].includes(settings.reviewMethod) ? 'score' : DECISION_RULES.includes(settings.decisionRule) ? settings.decisionRule : 'majority';
   const score = reviews.length ? Math.round((reviews.reduce((n, r) => n + (r.points || 0), 0) / reviews.length) * 100) / 100 : null;
   const accepts = reviews.filter((r) => r.decision === 'accept').length;
   const rejects = reviews.filter((r) => r.decision === 'reject').length;
@@ -109,7 +133,7 @@ async function queue({ contestId, settings, jurorId, wikis = null, after = 0, fi
     ...(filters.reviews === 'none' && { reviews: { none: {} } }),
     ...(filters.reviews === 'some' && { reviews: { some: {} } }),
     ...(filters.checks === 'warnings' && { validation: { contains: '"warnings":["' } }),
-    NOT: { participantId: jurorId },
+    ...(!settings.selfReview && { NOT: { participantId: jurorId } }),
   };
   const order = QUEUE_SORTS[filters.sort] || QUEUE_SORTS.oldest;
   const candidates = await prisma.submission.findMany({
@@ -180,17 +204,18 @@ async function entryForReview(contestId, submissionId) {
  * Saves (or updates) one jury member's review, then decides the entry once it
  * has enough reviews. Returns { status, decided }.
  */
-async function saveReview({ actor, contest, settings, submission, decision, marks, comment }) {
-  if (!DECISIONS.includes(decision)) throw new ReviewError('Choose accept or reject.');
+async function saveReview({ actor, contest, settings, submission, decision, marks, score, comment }) {
+  const given = verdict(settings, { decision, marks, score });
+  decision = given.decision;
   if (!REVIEWABLE.includes(submission.status) && !submission.reviews.some((r) => r.jurorId === actor.id)) {
     throw new ReviewError('This entry has already been decided.');
   }
-  if (submission.participantId === actor.id) throw new ReviewError("You can't review your own entry.", 403);
+  if (submission.participantId === actor.id && !settings.selfReview) throw new ReviewError("You can't review your own entry.", 403);
   if (assignedMode(settings) && !submission.reviews.some((r) => r.jurorId === actor.id)) {
     const assigned = await prisma.reviewAssignment.count({ where: { submissionId: submission.id, jurorId: actor.id } });
     if (!assigned) throw new ReviewError('This entry is not assigned to you.', 403);
   }
-  const scored = scoreMarks(markScheme(settings), marks);
+  const scored = given;
   const required = Math.max(1, settings.requiredReviews || 1);
 
   return prisma.$transaction(async (tx) => {
@@ -257,7 +282,8 @@ async function progress(contestId, { wiki } = {}) {
 async function leaderboard({ contest, settings, wiki }) {
   const where = { contestId: contest.id, ...(wiki && { wiki }) };
   const typeConfig = readTypeConfig(contest.type, settings.typeConfig);
-  let byWords = !!settings.wordCountEnabled;
+  // What the results count: words, articles, or points (the reviewers' scores or marks).
+  let byWords = settings.rankBy ? settings.rankBy === 'words' : !!settings.wordCountEnabled;
   let entries;
   let pointsOf;
   if (contest.type === 'proofread') {
@@ -280,7 +306,7 @@ async function leaderboard({ contest, settings, wiki }) {
     // Added up by the database, one row per person: fast with 100,000+ entries.
     // Everyone who submitted is listed; points and words come from the accepted entries.
     const jury = settings.juryReviewEnabled;
-    const hasMarks = jury && markScheme(settings).length > 0;
+    const byPoints = jury && (settings.rankBy ? settings.rankBy === 'points' : markScheme(settings).length > 0);
     const [all, counted] = await Promise.all([
       prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: { notIn: ['withdrawn'] } }, _count: { _all: true } }),
       prisma.submission.groupBy({
@@ -293,7 +319,7 @@ async function leaderboard({ contest, settings, wiki }) {
     for (const g of all) rows.set(g.participantId, { participantId: g.participantId, submitted: g._count._all, entries: 0, points: 0, words: 0 });
     for (const g of counted) {
       const row = rows.get(g.participantId) || { participantId: g.participantId, submitted: g._count._all };
-      rows.set(g.participantId, { ...row, entries: g._count._all, points: hasMarks ? g._sum.score || 0 : g._count._all, words: g._sum.wordCount || 0 });
+      rows.set(g.participantId, { ...row, entries: g._count._all, points: byPoints ? g._sum.score || 0 : g._count._all, words: g._sum.wordCount || 0 });
     }
   }
   // Ranking by words only means something when the entries have word counts.
@@ -322,18 +348,34 @@ async function setResultsPublished({ actor, contest, published }) {
 // ── Assignments ────────────────────────────────────────────────────────────
 
 // Jury members who may review entries from this wiki: event-wide jury and that wiki's jury.
-async function jurorsFor(contestId, wiki) {
-  const rows = await prisma.contestMembership.findMany({
-    where: {
-      contestId,
-      role: 'jury',
-      status: 'active',
-      wiki: { in: ['', wiki] },
-      user: { eventBlocks: { none: { contestId, liftedAt: null } } },
-    },
-    select: { userId: true },
-  });
-  return [...new Set(rows.map((r) => r.userId))];
+// Who may review a wiki's entries, by the event's choice of reviewers: its jury, the wiki's
+// local admins (signed in to Zury, rights checked in the last week), and/or its participants.
+async function jurorsFor(contestId, wiki, settings = null) {
+  let who = ['jury'];
+  try {
+    if (settings && settings.reviewers) who = JSON.parse(settings.reviewers);
+  } catch {
+    /* the jury */
+  }
+  const notBlocked = { eventBlocks: { none: { contestId, liftedAt: null } } };
+  const ids = [];
+  const roles = [...(who.includes('jury') ? ['jury'] : []), ...(who.includes('participants') ? ['participant'] : [])];
+  if (roles.length) {
+    const rows = await prisma.contestMembership.findMany({
+      where: { contestId, role: { in: roles }, status: 'active', OR: [{ role: 'participant' }, { wiki: { in: ['', wiki] } }], user: notBlocked },
+      select: { userId: true },
+    });
+    ids.push(...rows.map((r) => r.userId));
+  }
+  if (who.includes('localAdmins')) {
+    const { RIGHTS_MAX_AGE_MS } = require('./permissionService');
+    const admins = await prisma.userWikiRole.findMany({
+      where: { wiki, rightName: 'sysop', verifiedAt: { gte: new Date(Date.now() - RIGHTS_MAX_AGE_MS) }, user: { status: 'active', ...notBlocked } },
+      select: { userId: true },
+    });
+    ids.push(...admins.map((r) => r.userId));
+  }
+  return [...new Set(ids)];
 }
 
 /**
@@ -341,10 +383,13 @@ async function jurorsFor(contestId, wiki) {
  * needs reviews, picking the least busy each time and never the entry's own
  * author. Existing assignments are kept. Returns { created, unfilled }.
  */
-async function distribute({ actor, contest, settings, wiki }) {
+// ids: only these entries (new ones, when shared out automatically). actor: null when automatic.
+// With "a set number each", nobody gets more than assignPerJuror.
+async function distribute({ actor, contest, settings, wiki, ids = null }) {
   const required = Math.max(1, settings.requiredReviews || 1);
+  const cap = settings.reviewAssignment === 'fixed' && settings.assignPerJuror > 0 ? settings.assignPerJuror : Infinity;
   const entries = await prisma.submission.findMany({
-    where: { contestId: contest.id, status: { in: REVIEWABLE }, ...(wiki && { wiki }) },
+    where: { contestId: contest.id, status: { in: REVIEWABLE }, ...(wiki && { wiki }), ...(ids && { id: { in: ids } }) },
     orderBy: { id: 'asc' },
     select: { id: true, wiki: true, participantId: true, assignments: { select: { jurorId: true } }, reviews: { select: { jurorId: true } } },
   });
@@ -355,14 +400,14 @@ async function distribute({ actor, contest, settings, wiki }) {
   const data = [];
   let unfilled = 0;
   for (const e of entries) {
-    if (!jurorCache.has(e.wiki)) jurorCache.set(e.wiki, await jurorsFor(contest.id, e.wiki));
+    if (!jurorCache.has(e.wiki)) jurorCache.set(e.wiki, await jurorsFor(contest.id, e.wiki, settings));
     const taken = new Set([...e.assignments.map((a) => a.jurorId), ...e.reviews.map((r) => r.jurorId)]);
     let missing = required - taken.size;
-    const pool = jurorCache.get(e.wiki).filter((id) => id !== e.participantId && !taken.has(id));
+    const pool = jurorCache.get(e.wiki).filter((id) => id !== e.participantId && !taken.has(id) && (loads.get(id) || 0) < cap);
     while (missing > 0 && pool.length) {
       pool.sort((a, b) => (loads.get(a) || 0) - (loads.get(b) || 0) || a - b);
       const jurorId = pool.shift();
-      data.push({ contestId: contest.id, submissionId: e.id, jurorId, assignedById: actor.id });
+      data.push({ contestId: contest.id, submissionId: e.id, jurorId, assignedById: actor ? actor.id : null });
       loads.set(jurorId, (loads.get(jurorId) || 0) + 1);
       missing -= 1;
     }
@@ -373,17 +418,23 @@ async function distribute({ actor, contest, settings, wiki }) {
   const perJuror = new Map();
   for (const d of data) perJuror.set(d.jurorId, (perJuror.get(d.jurorId) || 0) + 1);
   for (const [jurorId, n] of perJuror) {
-    if (jurorId !== actor.id) await notifications.notify(jurorId, { kind: 'review.assigned', message: 'You have {n} new entries to review in {event}.', params: { n, event: contest.title }, link: `${pathOf(contest)}/review`, contestId: contest.id });
+    if (!actor || jurorId !== actor.id) await notifications.notify(jurorId, { kind: 'review.assigned', message: 'You have {n} new entries to review in {event}.', params: { n, event: contest.title }, link: `${pathOf(contest)}/review`, contestId: contest.id });
   }
-  await audit.record({ actorId: actor.id, contestId: contest.id, action: 'assignments.distributed', entityType: 'Contest', entityId: contest.id, details: { created: data.length, unfilled, wiki: wiki || undefined } });
+  if (data.length || !ids) await audit.record({ actorId: actor ? actor.id : null, contestId: contest.id, action: 'assignments.distributed', entityType: 'Contest', entityId: contest.id, details: { created: data.length, unfilled, wiki: wiki || undefined, automatic: !actor || undefined } });
   return { created: data.length, unfilled };
 }
 
-async function assign({ actor, contest, submissionId, jurorId }) {
+// New entries go to reviewers right away when the event shares them out automatically.
+async function autoAssign({ contest, settings, ids }) {
+  if (!ids.length || !settings.juryReviewEnabled || !['equal', 'fixed'].includes(settings.reviewAssignment)) return null;
+  return distribute({ actor: null, contest, settings, wiki: null, ids });
+}
+
+async function assign({ actor, contest, settings = null, submissionId, jurorId }) {
   const entry = await prisma.submission.findFirst({ where: { id: submissionId, contestId: contest.id } });
   if (!entry) throw new ReviewError('That entry no longer exists.');
   if (entry.participantId === jurorId) throw new ReviewError("Jury members can't review their own entries.");
-  if (!(await jurorsFor(contest.id, entry.wiki)).includes(jurorId)) throw new ReviewError('This person is not on the jury for this wiki.');
+  if (!(await jurorsFor(contest.id, entry.wiki, settings)).includes(jurorId)) throw new ReviewError('This person is not on the jury for this wiki.');
   await prisma.reviewAssignment.upsert({
     where: { submissionId_jurorId: { submissionId, jurorId } },
     update: {},
@@ -418,16 +469,12 @@ async function releaseJuror({ actor, contest, jurorId, wiki }) {
  */
 async function assignmentOverview({ contestId, settings, wiki }) {
   const required = Math.max(1, settings.requiredReviews || 1);
-  const jury = await prisma.contestMembership.findMany({
-    where: { contestId, role: 'jury', status: 'active', ...(wiki && { wiki: { in: ['', wiki] } }) },
-    include: { user: { select: { id: true, username: true } } },
-  });
-  const jurors = new Map();
-  for (const m of jury) {
-    const j = jurors.get(m.userId) || { id: m.userId, username: m.user.username, wikis: [], assigned: 0, reviewed: 0 };
-    j.wikis.push(m.wiki);
-    jurors.set(m.userId, j);
-  }
+  // The reviewers, by the event's choice (jury, local admins, participants), with the wikis they review.
+  const wikiList = wiki ? [wiki] : (await prisma.contestWiki.findMany({ where: { contestId, status: { not: 'pending' } }, select: { wiki: true } })).map((w) => w.wiki);
+  const pool = new Map();
+  for (const w of wikiList) for (const id of await jurorsFor(contestId, w, settings)) pool.set(id, [...(pool.get(id) || []), w]);
+  const people = await prisma.user.findMany({ where: { id: { in: [...pool.keys()] } }, select: { id: true, username: true } });
+  const jurors = new Map(people.map((u) => [u.id, { id: u.id, username: u.username, wikis: pool.get(u.id).length === wikiList.length && wikiList.length > 1 ? [''] : pool.get(u.id), assigned: 0, reviewed: 0 }]));
   const assignments = await prisma.reviewAssignment.findMany({
     where: { contestId, ...(wiki && { submission: { wiki } }) },
     select: { id: true, jurorId: true, submissionId: true, submission: { select: { reviews: { select: { jurorId: true } } } } },
@@ -520,7 +567,9 @@ function appeals(contestId) {
   });
 }
 
-module.exports = { decide, DECISION_RULES, juryActivity, queuePage, QUEUE_SORTS,
+module.exports = {
+  autoAssign,
+  verdict, decide, DECISION_RULES, juryActivity, queuePage, QUEUE_SORTS,
   REVIEWABLE,
   assignedMode,
   jurorsFor,

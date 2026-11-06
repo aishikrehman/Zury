@@ -177,14 +177,32 @@
                 </div>
               </div>
             <% }) %>
+            <% const method = settings.reviewMethod || 'marks'; %>
+            <% if (method === 'stars') { %>
+              <div class="mb-3">
+                <div class="form-label"><%= t('Stars') %> <span class="text-secondary fw-normal small">· <%= t('pass mark {n}', { n: settings.passScore || 0 }) %></span></div>
+                <div class="z-stars" role="radiogroup" aria-label="<%= t('Stars') %>">
+                  <% for (let n = 5; n >= 1; n -= 1) { %><input type="radio" id="star-<%= n %>" name="score" value="<%= n %>"<%= mine && mine.points === n ? ' checked' : '' %> required><label for="star-<%= n %>" title="<%= tn('{n} star', '{n} stars', n) %>"><span aria-hidden="true">★</span></label><% } %>
+                </div>
+              </div>
+            <% } else if (method === 'number') { %>
+              <div class="mb-3">
+                <label class="form-label" for="score"><%= t('Score') %> <span class="text-secondary fw-normal small"><%= settings.scoreMin != null || settings.scoreMax != null ? `${settings.scoreMin ?? '…'}–${settings.scoreMax ?? '…'}` : '' %> · <%= t('pass mark {n}', { n: settings.passScore || 0 }) %></span></label>
+                <input type="number" step="any" class="form-control form-control-lg" id="score" name="score" required<% if (settings.scoreMin != null) { %> min="<%= settings.scoreMin %>"<% } %><% if (settings.scoreMax != null) { %> max="<%= settings.scoreMax %>"<% } %> value="<%= mine ? mine.points : '' %>">
+              </div>
+            <% } %>
             <div class="mb-3">
               <label class="form-label" for="comment"><%= t('Comment') %> <span class="text-secondary fw-normal"><%= t('(optional)') %></span></label>
               <textarea class="form-control" id="comment" name="comment" rows="2" maxlength="2000" placeholder="<%= t('What the organizers and other jury members should know') %>"><%= mine ? mine.comment : '' %></textarea>
             </div>
+            <% if (method === 'stars' || method === 'number') { %>
+              <button type="submit" class="btn btn-primary w-100"><i class="ti ti-device-floppy me-1"></i><%= t('Save the score') %><kbd class="ms-2 d-none d-md-inline">Ctrl+Enter</kbd></button>
+            <% } else { %>
             <div class="z-decide">
               <button type="submit" class="btn btn-success" data-decide="accept"><i class="ti ti-check me-1"></i><%= t('Accept') %><kbd class="ms-2 d-none d-md-inline">A</kbd></button>
               <button type="submit" class="btn btn-danger" data-decide="reject"><i class="ti ti-x me-1"></i><%= t('Reject') %><kbd class="ms-2 d-none d-md-inline">R</kbd></button>
             </div>
+            <% } %>
           </div>
         </form>
 

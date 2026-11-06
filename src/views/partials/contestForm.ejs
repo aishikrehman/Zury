@@ -257,8 +257,6 @@
               </div>
               <div class="col-md-6">
                 <%- toggle('registrationRequired', 'Participants must register before submitting') %>
-                <%- toggle('allowJuryParticipation', 'Jury members may also participate') %>
-                <%- toggle('allowOrganizerParticipation', 'Organizers may also participate') %>
               </div>
             </div>
 
@@ -332,6 +330,57 @@
                 <div class="col-sm-6 col-lg-3"><%- dateInput(key) %></div>
               <% }) %>
             </div>
+            <%# Review: what counts, how reviewers judge, who reviews, the rules, and how entries are shared out. %>
+            <% const radios = (name, options, current) => options.map(([key, icon, label, hint]) => `
+                  <label class="form-selectgroup-item flex-fill">
+                    <input type="radio" name="${name}" value="${key}" class="form-selectgroup-input"${current === key ? ' checked' : ''}>
+                    <span class="form-selectgroup-label d-flex align-items-start gap-2 p-2 text-start"><i class="ti ti-${icon} mt-1"></i><span><strong class="d-block">${esc(t(label))}</strong>${hint ? `<span class="text-secondary small">${esc(t(hint))}</span>` : ''}</span></span>
+                  </label>`).join(''); %>
+            <div class="z-form-group mb-4">
+              <h4 class="mb-1"><%= t('What the results count') %><%- mark('settings.rankBy') %></h4>
+              <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2 mt-2">
+                <%- radios('rankBy', [['articles', 'files', 'Number of articles', 'Each accepted article counts once.'], ['words', 'letter-case', 'Word count', 'The words in the accepted articles.'], ['points', 'star', 'Points', 'The reviewers’ scores or marks added up.']], v('rankBy') || 'articles') %>
+              </div>
+            </div>
+
+            <div class="z-form-group mb-4">
+              <h4 class="mb-1"><%= t('How reviewers judge') %><%- mark('settings.reviewMethod') %></h4>
+              <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-lg-row gap-2 mt-2">
+                <%- radios('reviewMethod', [['yesno', 'circle-check', 'Yes or no', 'Accept counts 1, reject 0.'], ['stars', 'star', 'Stars', 'One to five stars.'], ['number', 'number', 'A number', 'A score typed in, within a range or not.'], ['marks', 'list-check', 'Custom marks', 'Your own marks with points, e.g. Quality 0–3.']], v('reviewMethod') || 'yesno') %>
+              </div>
+              <div class="row g-3 mt-1" data-show-when="reviewMethod:number">
+                <div class="col-6 col-md-3"><label class="form-label" for="scoreMin"><%= t('Lowest score') %></label><input type="number" step="any" class="form-control" id="scoreMin" name="scoreMin" value="<%= v('scoreMin') %>" placeholder="<%= t('No limit') %>"></div>
+                <div class="col-6 col-md-3"><label class="form-label" for="scoreMax"><%= t('Highest score') %></label><input type="number" step="any" class="form-control<%= inv('scoreMax') %>" id="scoreMax" name="scoreMax" value="<%= v('scoreMax') %>" placeholder="<%= t('No limit') %>"><%- err('scoreMax') %></div>
+                <div class="col-12 col-md-6 form-hint align-self-end"><%= t('Leave both empty for any number.') %></div>
+              </div>
+              <div class="mt-3" data-show-when="reviewMethod:marks">
+                <p class="text-secondary small mb-2"><%= t("What the jury give each entry, and the points each value is worth. Points add up to the leaderboard.") %></p>
+                <div data-marks-editor>
+                  <input type="hidden" name="marks" value="<%= v('marks') || '[]' %>" data-marks-input>
+                  <div data-marks-rows></div>
+                  <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button type="button" class="btn btn-sm" data-marks-add><i class="ti ti-plus me-1"></i><%= t("Add a mark") %></button>
+                    <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="accept"><%= t("Accepted or not") %></button>
+                    <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="quality"><%= t("Quality 0–3") %></button>
+                  </div>
+                  <%- err('marks') %>
+                </div>
+              </div>
+            </div>
+
+            <div class="z-form-group mb-4">
+              <h4 class="mb-1"><%= t('Who reviews') %><%- mark('settings.reviewers') %></h4>
+              <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2 mt-2">
+                <% const who = Array.isArray(v('reviewers')) ? v('reviewers') : ['jury']; %>
+                <% [['jury', 'gavel', 'The jury', 'People you add as jury (People tab).'], ['localAdmins', 'shield', 'Local admins', 'Administrators of the entry’s wiki.'], ['participants', 'users', 'Any participant', 'Peer review among the participants.']].forEach(([key, icon, label, hint]) => { %>
+                  <label class="form-selectgroup-item flex-fill">
+                    <input type="checkbox" name="reviewers" value="<%= key %>" class="form-selectgroup-input"<%= who.includes(key) ? ' checked' : '' %>>
+                    <span class="form-selectgroup-label d-flex align-items-start gap-2 p-2 text-start"><i class="ti ti-<%= icon %> mt-1"></i><span><strong class="d-block"><%= t(label) %></strong><span class="text-secondary small"><%= t(hint) %></span></span></span>
+                  </label>
+                <% }) %>
+              </div>
+            </div>
+
             <div class="row g-3 mb-4">
               <div class="col-sm-6 col-lg-4">
                 <label class="form-label" for="requiredReviews"><%= t('Reviews needed per entry') %><%- mark('settings.requiredReviews') %></label>
@@ -339,10 +388,10 @@
                 <div class="form-hint"><%= t('Its score is the average of the reviews.') %></div>
                 <%- err('requiredReviews') %>
               </div>
-              <div class="col-sm-6 col-lg-4">
+              <div class="col-sm-6 col-lg-4" data-show-when="reviewMethod:yesno,marks">
                 <label class="form-label" for="decisionRule"><%= t('How reviews decide') %><%- mark('settings.decisionRule') %></label>
                 <select class="form-select" id="decisionRule" name="decisionRule" data-decision-rule>
-                  <% [['majority', 'Majority of the reviews'], ['unanimous', 'Every reviewer must accept'], ['any', 'One accept is enough'], ['veto', 'One reject is enough to reject'], ['first', 'The first review decides (like Fountain)'], ['score', 'Average score at least a pass mark']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('decisionRule') || 'majority') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
+                  <% [['majority', 'Majority of the reviews'], ['unanimous', 'Every reviewer must accept'], ['any', 'One accept is enough'], ['veto', 'One reject is enough to reject'], ['first', 'The first review decides (like Fountain)'], ['score', 'An average score of at least the pass mark']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('decisionRule') || 'majority') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
                 </select>
               </div>
               <div class="col-sm-6 col-lg-4" data-show-for="majority">
@@ -351,39 +400,35 @@
                   <% [['reject', 'Reject'], ['accept', 'Accept'], ['wait', 'Wait for one more review']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('tieBreak') || 'reject') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
                 </select>
               </div>
-              <div class="col-sm-6 col-lg-4" data-show-for="score">
+              <div class="col-sm-6 col-lg-4" data-show-for="score" data-show-when="reviewMethod:stars,number">
                 <label class="form-label" for="passScore"><%= t('Pass mark (average points)') %></label>
                 <input type="number" min="0" step="0.5" class="form-control" id="passScore" name="passScore" value="<%= v('passScore') || 0 %>">
-              </div>
-              <div class="col-12">
-                <label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="secretBallot"<%= v('secretBallot') ? ' checked' : '' %>><span class="form-check-label"><%= t("Secret ballot: reviewers do not see each other's reviews until the entry is decided") %></span></label>
-              </div>
-              <div class="col-sm-6 col-lg-8">
-                <span class="form-label d-block"><%= t('Who reviews which entry') %><%- mark('settings.reviewAssignment') %></span>
-                <div class="form-selectgroup">
-                  <label class="form-selectgroup-item">
-                    <input type="radio" name="reviewAssignment" value="open" class="form-selectgroup-input"<%= v('reviewAssignment') !== 'assigned' ? ' checked' : '' %>>
-                    <span class="form-selectgroup-label"><i class="ti ti-users me-1"></i><%= t('Any jury member of the wiki') %></span>
-                  </label>
-                  <label class="form-selectgroup-item">
-                    <input type="radio" name="reviewAssignment" value="assigned" class="form-selectgroup-input"<%= v('reviewAssignment') === 'assigned' ? ' checked' : '' %>>
-                    <span class="form-selectgroup-label"><i class="ti ti-arrows-split me-1"></i><%= t('Only assigned jury members') %></span>
-                  </label>
-                </div>
-                <div class="form-hint"><%= t('With assignments, organizers share the entries out on the Assignments page.') %></div>
+                <div class="form-hint"><%= t('An entry whose average reaches it is accepted.') %></div>
               </div>
             </div>
-            <h4 class="mb-1"><%= t("Marks") %></h4>
-            <p class="text-secondary small mb-3"><%= t("What the jury give each entry, and the points each value is worth. Points add up to the leaderboard.") %></p>
-            <div class="mb-4" data-marks-editor>
-              <input type="hidden" name="marks" value="<%= v('marks') || '[]' %>" data-marks-input>
-              <div data-marks-rows></div>
-              <div class="d-flex flex-wrap gap-2 mt-2">
-                <button type="button" class="btn btn-sm" data-marks-add><i class="ti ti-plus me-1"></i><%= t("Add a mark") %></button>
-                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="accept"><%= t("Accepted or not") %></button>
-                <button type="button" class="btn btn-sm btn-ghost-primary" data-marks-preset="quality"><%= t("Quality 0–3") %></button>
+
+            <div class="row g-2 mb-4">
+              <div class="col-md-6">
+                <%- toggle('allowJuryParticipation', 'Reviewers may also take part') %>
+                <%- toggle('allowOrganizerParticipation', 'Organizers may also take part') %>
+                <%- toggle('selfReview', 'Reviewers may review their own entries') %>
               </div>
-              <%- err('marks') %>
+              <div class="col-md-6">
+                <%- toggle('bulkReviewEnabled', 'Bulk review: decide many entries at once') %>
+                <%- toggle('juryStatsEnabled', 'Reviewer statistics for everyone (else only for organizers)') %>
+                <label class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="secretBallot"<%= v('secretBallot') ? ' checked' : '' %>><span class="form-check-label"><%= t("Secret ballot: reviewers do not see each other's reviews until the entry is decided") %></span></label>
+              </div>
+            </div>
+
+            <div class="z-form-group mb-4">
+              <h4 class="mb-1"><%= t('Who reviews which entry') %><%- mark('settings.reviewAssignment') %></h4>
+              <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-lg-row gap-2 mt-2">
+                <%- radios('reviewAssignment', [['open', 'users', 'Anyone who reviews', 'Each reviewer takes entries from the common queue.'], ['assigned', 'hand-finger', 'Assigned by hand', 'Organizers assign entries on the Assignments page.'], ['equal', 'arrows-split', 'Shared out equally', 'New entries go to the reviewers in equal parts, automatically.'], ['fixed', 'list-numbers', 'A set number each', 'Automatically, up to a number per reviewer.']], v('reviewAssignment') || 'open') %>
+              </div>
+              <div class="row g-3 mt-1" data-show-when="reviewAssignment:fixed">
+                <div class="col-6 col-md-3"><label class="form-label" for="assignPerJuror"><%= t('Entries per reviewer') %></label><input type="number" min="1" class="form-control<%= inv('assignPerJuror') %>" id="assignPerJuror" name="assignPerJuror" value="<%= v('assignPerJuror') %>"><%- err('assignPerJuror') %></div>
+              </div>
+              <div class="form-hint mt-2"><%= t('Nobody is given their own entry.') %></div>
             </div>
 
             <h4 class="mb-3"><%= t("Features") %></h4>

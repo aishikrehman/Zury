@@ -121,7 +121,8 @@ async function window(req, res, next) {
       required: Math.max(1, req.eventSettings.requiredReviews || 1),
       queue: q,
       progress: await reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }),
-      activity: await reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki }),
+      // Reviewer statistics: for everyone when the event shows them, else for its organizers.
+      activity: req.eventSettings.juryStatsEnabled !== false || req.scope.permissions.has('manageEvent') ? await reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki }) : [],
       position: id ? q.ids.indexOf(id) + 1 : 0,
       filters,
       filterQuery,
@@ -152,6 +153,7 @@ async function save(req, res, next) {
       submission: entry,
       decision: req.body.decision,
       marks,
+      score: req.body.score,
       comment: req.body.comment,
     });
     req.flash('success', result.decided ? 'Review saved; the entry is decided.' : 'Review saved.');
@@ -166,6 +168,10 @@ async function save(req, res, next) {
 // One verdict for many entries, chosen on the submissions table. Each entry is
 // checked as if reviewed alone (the person's wikis, assignments, own entries).
 async function bulkSave(req, res, next) {
+  if (req.eventSettings.bulkReviewEnabled === false) {
+    req.flash('danger', req.t('Bulk review is off for this event.'));
+    return res.redirect(`${req.base}/submissions`);
+  }
   const ids = [].concat(req.body.ids || []).map(Number).filter(Boolean).slice(0, 200);
   const marks = {};
   for (const [key, value] of Object.entries(req.body)) if (key.startsWith('mark:')) marks[key.slice(5)] = value;
@@ -210,7 +216,7 @@ async function results(req, res, next) {
       rows: showRanking ? await reviewService.leaderboard({ contest: req.contest, settings: req.eventSettings, wiki }) : [],
       // Events without word counts are ranked by points, with no word column.
       showRanking,
-      progress: insider ? await reviewService.progress(req.contest.id, { wiki }) : null,
+      progress: insider || req.eventSettings.juryStatsEnabled !== false ? await reviewService.progress(req.contest.id, { wiki }) : null,
       stats: showStats ? await require('../services/statsService').eventStats(req.contest, { wiki }) : null,
       published: req.contest.resultsPublishedAt,
       showNames: !req.settings.anonymousParticipants || insider || !!req.contest.resultsPublishedAt,
@@ -336,7 +342,7 @@ const distribute = assignmentAction(async (req) => {
 const addAssignment = assignmentAction(async (req) => {
   const submissionId = Number(req.body.submissionId);
   await entryInScope(req, submissionId);
-  await reviewService.assign({ actor: req.user, contest: req.contest, submissionId, jurorId: Number(req.body.jurorId) });
+  await reviewService.assign({ actor: req.user, contest: req.contest, settings: req.eventSettings, submissionId, jurorId: Number(req.body.jurorId) });
   return 'Assigned.';
 });
 

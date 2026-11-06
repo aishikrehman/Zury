@@ -112,6 +112,13 @@ async function prepare({ contest, settings, participantId, text, eventWikis, def
 }
 
 async function save({ actor, contest, settings, participant, items, ensureParticipant }) {
+  const created = await saveEntries({ actor, contest, settings, participant, items, ensureParticipant });
+  // Shared out to reviewers at once when the event does that automatically.
+  await require('./reviewService').autoAssign({ contest, settings, ids: created.map((c) => c.id) }).catch((err) => console.error('Automatic assignment failed:', err.message));
+  return created;
+}
+
+async function saveEntries({ actor, contest, settings, participant, items, ensureParticipant }) {
   const valid = items.filter((i) => i.ok);
   if (!valid.length) throw new SubmissionError('None of these entries can be submitted.');
   return prisma.$transaction(async (tx) => {

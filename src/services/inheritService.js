@@ -30,7 +30,12 @@ const KEYS = {
   passScore: { label: 'Pass mark', type: 'float', min: 0, max: 1000 },
   tieBreak: { label: 'A tie', type: 'enum', options: ['reject', 'accept', 'wait'] },
   secretBallot: { label: 'Secret ballot', type: 'bool' },
-  reviewAssignment: { label: 'Who reviews which entry', type: 'enum', options: ['open', 'assigned'] },
+  reviewAssignment: { label: 'Who reviews which entry', type: 'enum', options: ['open', 'assigned', 'equal', 'fixed'] },
+  rankBy: { label: 'What the results count', type: 'enum', options: ['articles', 'words', 'points'] },
+  reviewMethod: { label: 'How reviewers judge', type: 'enum', options: ['yesno', 'stars', 'number', 'marks'] },
+  selfReview: { label: 'Reviewers may review their own entries', type: 'bool' },
+  bulkReviewEnabled: { label: 'Bulk review', type: 'bool' },
+  juryStatsEnabled: { label: 'Reviewer statistics for everyone', type: 'bool' },
   wordCountMethod: { label: 'How words are counted', type: 'enum', options: ['auto', 'ztools', 'plain'] },
   // The event's on/off features, with the labels the event form uses.
   ...Object.fromEntries(require('./contestFormService').FEATURE_FIELDS.map(([key, label]) => [key, { label, type: 'bool' }])),

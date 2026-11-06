@@ -22,7 +22,7 @@
   const canManage = can('manageEvent');
   const canReview = (s) => reviewWikis === null || (reviewWikis || []).includes(s.wiki);
   const reviewable = (s) => juryOn && currentUser && canReview(s) && ['pending', 'validated', 'under_review'].includes(s.status);
-  const bulk = juryOn && currentUser && reviewWikis !== undefined && (reviewWikis === null || reviewWikis.length > 0) && result.items.some(reviewable);
+  const bulk = juryOn && settings.bulkReviewEnabled !== false && currentUser && reviewWikis !== undefined && (reviewWikis === null || reviewWikis.length > 0) && result.items.some(reviewable);
   const hidden = `<input type="hidden" name="_csrf" value="${h(csrfToken)}"><input type="hidden" name="back" value="${h(back)}">`;
 %>
 <%- include('../../partials/contestHeader', { active: 'submissions' }) %>

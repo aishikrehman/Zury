@@ -225,10 +225,26 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   else if (marks.some((m) => !m.values.length || m.values.length > 10)) errors.marks = 'Each mark needs 1 to 10 values.';
   else if (marks.some((m) => m.values.some((v) => !Number.isInteger(v.points) || v.points < -100 || v.points > 100))) errors.marks = 'Points must be whole numbers from -100 to 100.';
   settings.marks = JSON.stringify(marks);
-  settings.reviewAssignment = body.reviewAssignment === 'assigned' ? 'assigned' : 'open';
+  settings.reviewAssignment = ['assigned', 'equal', 'fixed'].includes(body.reviewAssignment) ? body.reviewAssignment : 'open';
+  settings.assignPerJuror = settings.reviewAssignment === 'fixed' ? intField(body.assignPerJuror, { min: 1, max: 100000 }, errors, 'assignPerJuror') ?? 1 : 0;
+  // How results are counted, and how reviewers judge.
+  settings.rankBy = ['words', 'points'].includes(body.rankBy) ? body.rankBy : 'articles';
+  settings.reviewMethod = ['stars', 'number', 'marks'].includes(body.reviewMethod) ? body.reviewMethod : 'yesno';
+  const num = (v) => (str(v) === '' ? null : Number(v));
+  settings.scoreMin = settings.reviewMethod === 'number' ? num(body.scoreMin) : 0;
+  settings.scoreMax = settings.reviewMethod === 'number' ? num(body.scoreMax) : 10;
+  if ([settings.scoreMin, settings.scoreMax].some((n) => n !== null && !Number.isFinite(n))) errors.scoreMax = 'Enter numbers for the range, or leave it empty.';
+  else if (settings.scoreMin !== null && settings.scoreMax !== null && settings.scoreMax <= settings.scoreMin) errors.scoreMax = 'The highest score must be above the lowest.';
+  if (settings.reviewMethod === 'marks' && !marks.length) errors.marks = 'Add at least one mark, or choose another way to judge.';
+  // Who reviews: any of the event's jury, the wiki's local admins, any participant.
+  const reviewers = listOf(body.reviewers).filter((r) => ['jury', 'localAdmins', 'participants'].includes(r));
+  settings.reviewers = JSON.stringify(reviewers.length ? reviewers : ['jury']);
+  settings.selfReview = bool(body.selfReview);
+  settings.bulkReviewEnabled = bool(body.bulkReviewEnabled);
+  settings.juryStatsEnabled = bool(body.juryStatsEnabled);
   settings.wordCountMethod = ['ztools', 'plain'].includes(body.wordCountMethod) ? body.wordCountMethod : 'auto';
   settings.requiredReviews = intField(body.requiredReviews, { min: 1, max: 20 }, errors, 'requiredReviews') ?? 1;
-  settings.decisionRule = ['majority', 'unanimous', 'any', 'veto', 'first', 'score'].includes(body.decisionRule) ? body.decisionRule : 'majority';
+  settings.decisionRule = ['stars', 'number'].includes(settings.reviewMethod) ? 'score' : ['majority', 'unanimous', 'any', 'veto', 'first', 'score'].includes(body.decisionRule) ? body.decisionRule : 'majority';
   settings.tieBreak = ['accept', 'wait'].includes(body.tieBreak) ? body.tieBreak : 'reject';
   settings.passScore = Math.max(0, Math.min(1000, Number(body.passScore) || 0));
   settings.secretBallot = body.secretBallot === 'on' || body.secretBallot === '1';
@@ -310,6 +326,15 @@ function toForm(contest, settings) {
     passScore: String(s.passScore ?? 0),
     secretBallot: Boolean(s.secretBallot),
     reviewAssignment: s.reviewAssignment || 'open',
+    assignPerJuror: String(s.assignPerJuror || ''),
+    rankBy: s.rankBy || 'articles',
+    reviewMethod: s.reviewMethod || 'yesno',
+    scoreMin: s.scoreMin == null ? '' : String(s.scoreMin),
+    scoreMax: s.scoreMax == null ? '' : String(s.scoreMax),
+    reviewers: JSON.parse(s.reviewers || '["jury"]'),
+    selfReview: Boolean(s.selfReview),
+    bulkReviewEnabled: s.bulkReviewEnabled !== false,
+    juryStatsEnabled: s.juryStatsEnabled !== false,
     wordCountMethod: s.wordCountMethod || 'auto',
     trackHashtags: JSON.parse(s.trackHashtags || '[]').join(', '),
     trackCategories: JSON.parse(s.trackCategories || '[]').join('\n'),
@@ -351,6 +376,15 @@ function defaultSettings(type) {
     passScore: 0,
     secretBallot: false,
     reviewAssignment: 'open',
+    assignPerJuror: 0,
+    rankBy: 'articles',
+    reviewMethod: 'yesno',
+    scoreMin: 0,
+    scoreMax: 10,
+    reviewers: '["jury"]',
+    selfReview: false,
+    bulkReviewEnabled: true,
+    juryStatsEnabled: true,
     wordCountMethod: 'auto',
     typeConfig: JSON.stringify(readTypeConfig(type, '{}')),
   };

@@ -944,3 +944,10 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 .z-review-full .z-review-frame { height: calc(100vh - 150px); }
 .z-review-full .z-review-side { top: .75rem; max-height: calc(100vh - 1.5rem); }
 @media (max-width: 991.98px) { .z-review-full .z-review-frame { height: 65vh; } }
+
+/* Stars in the review panel: five, the chosen one and those before it lit. */
+.z-stars { display: inline-flex; flex-direction: row-reverse; gap: .1rem; font-size: 2rem; }
+.z-stars input { position: absolute; opacity: 0; pointer-events: none; }
+.z-stars label { color: var(--z-border, #d0d5dd); cursor: pointer; line-height: 1; }
+.z-stars label:hover, .z-stars label:hover ~ label, .z-stars input:checked ~ label { color: #f59f00; }
+.z-stars input:focus-visible + label { outline: 2px solid var(--tblr-primary); outline-offset: 2px; border-radius: 4px; }

@@ -152,12 +152,25 @@
   showAddress();
 })();
 
-// Review settings: the tie choice is for a majority, the pass mark for a score.
+// Review settings: parts that belong to one choice. data-show-when="reviewMethod:stars,number" follows
+// a radio group; data-show-for="score" follows the decision rule (shown when either matches).
 (function () {
-  const rule = document.querySelector('[data-decision-rule]');
-  if (!rule) return;
-  const show = () => document.querySelectorAll('[data-show-for]').forEach((el) => { el.hidden = el.dataset.showFor !== rule.value; });
-  rule.addEventListener('change', show);
+  const form = document.querySelector('form[data-event-form]');
+  if (!form) return;
+  const rule = form.querySelector('[data-decision-rule]');
+  const picked = (name) => (form.querySelector(`input[name="${name}"]:checked`) || {}).value;
+  const show = () => {
+    form.querySelectorAll('[data-show-when], [data-show-for]').forEach((el) => {
+      let on = null;
+      if (el.dataset.showWhen) {
+        const [name, values] = el.dataset.showWhen.split(':');
+        on = values.split(',').includes(picked(name));
+      }
+      if (el.dataset.showFor && rule && !rule.closest('[hidden]')) on = on || el.dataset.showFor === rule.value;
+      el.hidden = !on;
+    });
+  };
+  form.addEventListener('change', show);
   show();
 })();
 
