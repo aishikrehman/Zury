@@ -82,45 +82,15 @@
   %>
 
 
+  <% const hasSide = (!series || wikiScope) || (requestableWikis && series && !wikiScope); %>
   <div class="row row-cards">
-    <div class="col-lg-8">
+    <div class="<%= hasSide ? 'col-lg-8' : 'col-12' %>">
       <% if (stats) { %>
-        <%- include('../../partials/eventStats', { stats, part: 'tiles' }) %>
+        <%- include('../../partials/eventStats', { stats, part: 'tiles', wide: !hasSide }) %>
         <%- include('../../partials/eventStats', { stats, part: 'charts' }) %>
       <% } %>
     </div>
-    <div class="col-lg-4">
-  <% if (stops.length) { %>
-        <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2 text-secondary"></i><%= t('Schedule') %></h3><div class="card-actions text-secondary small"><%= tz %></div></div>
-          <ol class="z-agenda">
-            <% stops.forEach((x, i) => { const state = i < current ? 'done' : i === current ? 'now' : 'next'; const d = daysTo(x.at); %>
-              <li class="z-agenda-item is-<%= state %>" title="<%= formatDateTime(x.at, tz) %>">
-                <span class="z-agenda-date"><b><%= dayPart(x.at, { day: 'numeric' }) %></b><small><%= dayPart(x.at, { month: 'short' }) %></small></span>
-                <span class="z-agenda-text"><%= x.labels.join(' · ') %><small><%= dayPart(x.at, { weekday: 'long' }) %></small></span>
-                <span class="z-agenda-when"><% if (state === 'done') { %><i class="ti ti-check"></i><% } else if (state === 'now') { %><%= t('Now') %><% } else if (d >= 0 && d <= 90) { %><%= d === 0 ? t('Today') : tn('in {n} day', 'in {n} days', d) %><% } %></span>
-              </li>
-            <% }) %>
-          </ol>
-        </div>
-        <div class="card mb-3 z-glance">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2 text-secondary"></i><%= t('At a glance') %></h3></div>
-          <div class="card-body">
-            <div class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %> mb-3"><i></i><%= t(st.label) %></div>
-            <% if (done !== null) { %>
-              <div class="d-flex justify-content-between small text-secondary mb-1"><span><%= formatDate(contest.startDate, tz) %></span><span><%= formatDate(contest.endDate, tz) %></span></div>
-              <div class="progress progress-sm mb-1"><div class="progress-bar" style="width: <%= done %>%" role="progressbar" aria-valuenow="<%= done %>" aria-valuemin="0" aria-valuemax="100" aria-label="<%= t('Time passed') %>"></div></div>
-              <div class="small text-secondary mb-3"><%= now < start ? tn('Starts in {n} day', 'Starts in {n} days', daysTo(contest.startDate)) : now > finish ? t('Ended') : t('{p}% of the time has passed', { p: formatNumber(done) }) %></div>
-            <% } %>
-            <div class="datagrid">
-              <% if (length) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Length') %></div><div class="datagrid-content"><%= tn('{n} day', '{n} days', length) %></div></div><% } %>
-              <% if (finish && now >= start && now <= finish) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Days left') %></div><div class="datagrid-content"><%= formatNumber(daysTo(contest.endDate)) %></div></div><% } %>
-              <% if (next) { %><div class="datagrid-item"><div class="datagrid-title"><%= t('Next') %></div><div class="datagrid-content"><%= next.labels[0] %> · <%= next.day %></div></div><% } %>
-              <div class="datagrid-item"><div class="datagrid-title"><%= t('Wikis') %></div><div class="datagrid-content"><%= formatNumber(eventWikis.length || 1) %></div></div>
-            </div>
-          </div>
-        </div>
-  <% } %>
+    <% if (hasSide) { %><div class="col-lg-4">
       <% if (!series || wikiScope) { %>
       <div class="card mb-3">
             <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t("Rules") %></h3></div>
@@ -151,7 +121,7 @@
           </div>
         </div>
       <% } %>
-    </div>
+    </div><% } %>
   </div>
 </div>
 </div>

@@ -10,7 +10,7 @@
   const sum7 = s.last7.reduce((a, b) => a + b, 0);
 %>
 <section id="statistics" aria-label="<%= t('Statistics') %>">
-  <% const tilesOnly = statsPart === 'tiles'; %>
+  <% const tilesOnly = statsPart === 'tiles' && !locals.wide; %>
   <% if (['', 'summary', 'tiles'].includes(statsPart)) { %>
   <div class="row row-deck row-cards mb-3">
     <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">

@@ -1019,3 +1019,9 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 @media (min-width: 992px) {
   .z-side-tabs > .z-extra-pane { grid-column: 2; grid-row: 1 / span 2; }
 }
+
+/* The event's dates in its header, with a small bar for how far along it is. */
+.z-evhead-dates { display: inline-flex; align-items: center; gap: .4rem; }
+.z-evhead-dates b { font-weight: 600; color: var(--z-brand); }
+.z-evhead-bar { display: inline-block; width: 4.5rem; height: .35rem; border-radius: 1rem; background: var(--z-border); overflow: hidden; }
+.z-evhead-bar i { display: block; height: 100%; background: var(--z-brand); border-radius: inherit; }

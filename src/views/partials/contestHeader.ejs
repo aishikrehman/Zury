@@ -56,7 +56,22 @@
           <span class="z-evhead-status is-<%= color %>"><i></i><%= t(st.label) %></span>
           <span><i class="ti ti-<%= typeDef.icon || 'calendar-event' %>"></i><%= t(typeDef.label) %></span>
           <% if (contest.visibility === 'private') { %><span><i class="ti ti-lock"></i><%= t('Private') %></span><% } %>
-          <% if (contest.startDate) { %><span><i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %> – <%= formatDate(contest.endDate, contest.timezone) %></span><% } %>
+          <% if (contest.startDate) { %>
+            <%
+              const hNow = Date.now();
+              const hStart = new Date(contest.startDate).getTime();
+              const hEnd = contest.endDate ? new Date(contest.endDate).getTime() : null;
+              const hDone = hEnd && hEnd > hStart ? Math.min(100, Math.max(0, Math.round(((hNow - hStart) / (hEnd - hStart)) * 100))) : null;
+              const hDays = (at) => Math.ceil((at - hNow) / 86400000);
+              const hNext = DATE_FIELDS.map(([k, label]) => ({ label, at: contest[k] ? new Date(contest[k]).getTime() : null })).filter((x) => x.at && x.at > hNow).sort((a, b) => a.at - b.at)[0];
+            %>
+            <span class="z-evhead-dates" title="<%= formatDateTime(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDateTime(contest.endDate, contest.timezone) : '' %>">
+              <i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDate(contest.endDate, contest.timezone) : '' %>
+              <% if (hDone !== null && hDone > 0 && hDone < 100) { %><span class="z-evhead-bar" aria-hidden="true"><i style="width: <%= hDone %>%"></i></span><% } %>
+              <% if (hNow < hStart) { %><b><%= tn('in {n} day', 'in {n} days', hDays(hStart)) %></b><% } else if (hEnd && hNow <= hEnd) { %><b><%= tn('{n} day left', '{n} days left', hDays(hEnd)) %></b><% } %>
+            </span>
+            <% if (hNext) { %><span><i class="ti ti-flag"></i><%= hNext.label %>: <%= formatDate(new Date(hNext.at), contest.timezone) %></span><% } %>
+          <% } %>
           <% facts.forEach((f) => { %><span><%= f %></span><% }) %>
         </div>
       </div>
