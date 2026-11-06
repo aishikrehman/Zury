@@ -27,6 +27,8 @@ const CLIENT_STRINGS = [
   'Search Wikimedia users…',
   '{n} selected',
   'Loading…',
+  'No notifications yet',
+  'Locked by the series or edition',
 ];
 
 // { English: translation } for one language, safe to put inside a <script> element.

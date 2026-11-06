@@ -33,6 +33,19 @@
       </div>
 
       <% if (currentUser) { %>
+        <div class="dropdown" data-notifications>
+          <button class="z-bell-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t('Notifications') %><%= unreadNotifications ? ` (${unreadNotifications})` : '' %>" title="<%= t('Notifications') %>">
+            <i class="ti ti-bell"></i><% if (unreadNotifications) { %><span class="z-bell-count" data-bell-count><%= unreadNotifications > 99 ? '99+' : formatNumber(unreadNotifications) %></span><% } %>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end z-bell-menu">
+            <div class="d-flex align-items-center px-3 py-2 border-bottom">
+              <strong class="me-auto"><%= t('Notifications') %></strong>
+              <button class="btn btn-sm btn-link p-0" type="button" data-bell-read-all><%= t('Mark all as read') %></button>
+            </div>
+            <div data-bell-list><div class="px-3 py-3 text-secondary small"><%= t('Loading…') %></div></div>
+            <a class="dropdown-item text-center border-top small" href="/notifications"><%= t('See all') %></a>
+          </div>
+        </div>
         <div class="dropdown">
           <button class="z-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Open user menu') %>">
             <%- include('./avatar', { u: currentUser, size: 'sm' }) %>

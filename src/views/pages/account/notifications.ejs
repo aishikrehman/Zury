@@ -1,0 +1,33 @@
+<%# Every notification of the signed-in person, newest first. %>
+<div class="page-body">
+  <div class="container-xl" style="max-width: 760px">
+    <div class="z-account-bar mb-3">
+      <h1 class="z-account-title"><i class="ti ti-bell"></i><%= t('Notifications') %></h1>
+      <% if (items.some((n) => n.unread)) { %>
+        <form method="post" action="/notifications/read-all" class="ms-auto"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-checks me-1"></i><%= t('Mark all as read') %></button></form>
+      <% } %>
+    </div>
+    <div class="card">
+      <% if (!items.length) { %>
+        <%- include('../../partials/emptyArt', { title: t('No notifications yet') }) %>
+      <% } else { %>
+        <div class="list-group list-group-flush">
+          <% items.forEach((n) => { %>
+            <a class="list-group-item list-group-item-action<%= n.unread ? ' z-unread' : '' %>" href="<%= n.href %>">
+              <div class="d-flex gap-2 align-items-start">
+                <span class="z-dot<%= n.unread ? '' : ' invisible' %>" aria-hidden="true"></span>
+                <div class="min-w-0"><div<%- n.unread ? ' class="fw-medium"' : '' %>><%= n.text %></div><div class="text-secondary small"><%= n.when %></div></div>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+    <% if (total > page * perPage || page > 1) { %>
+      <div class="d-flex justify-content-between mt-3">
+        <% if (page > 1) { %><a class="btn" href="/notifications?page=<%= page - 1 %>"><%= t('Newer') %></a><% } else { %><span></span><% } %>
+        <% if (total > page * perPage) { %><a class="btn" href="/notifications?page=<%= page + 1 %>"><%= t('Older') %></a><% } %>
+      </div>
+    <% } %>
+  </div>
+</div>

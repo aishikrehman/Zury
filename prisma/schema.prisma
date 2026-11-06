@@ -45,6 +45,7 @@ model User {
   scopeRoles          ScopeRole[]         @relation("ScopeRoleHolder")
   scopeRolesAssigned  ScopeRole[]         @relation("ScopeRoleAssigner")
   levelSettings       LevelSetting[]
+  notifications       Notification[]
   permissionOverrides ContestPermission[]
   contestsCreated     Contest[]           @relation("ContestCreator")
   contestsDeleted     Contest[]           @relation("ContestDeleter")
@@ -725,4 +726,24 @@ model LevelSetting {
 
   @@index([seriesId])
   @@index([editionId])
+}
+
+// Zury's own notifications (the bell). The text is a message key with values, shown in the
+// reader's language; link is where it leads.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  // entry.decided | appeal.resolved | review.assigned | role.given
+  kind      String    @db.VarChar(40)
+  message   String    @db.VarChar(255)
+  params    String    @default("{}") @db.Text
+  link      String    @default("") @db.VarChar(1000)
+  contestId Int?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
 }

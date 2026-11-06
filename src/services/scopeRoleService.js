@@ -7,6 +7,12 @@
 // (other editions, other events, other local events) never share roles.
 const prisma = require('../config/prisma');
 const audit = require('./auditService');
+const notifications = require('./notificationService');
+const LEVEL_MESSAGES = {
+  organizer: 'You were made an organizer of {name}.',
+  jury: 'You were added to the jury of {name}.',
+  viewer: 'You can now follow {name}.',
+};
 
 const ROLES = ['organizer', 'jury', 'viewer'];
 
@@ -90,6 +96,13 @@ async function grant({ actorId, username, role, level, appliesToChildren }) {
   const row = existing
     ? await prisma.scopeRole.update({ where: { id: existing.id }, data: { appliesToChildren: !!appliesToChildren } })
     : await prisma.scopeRole.create({ data: { ...where, appliesToChildren: !!appliesToChildren, assignedById: actorId } });
+  if (!existing && user.id !== actorId) {
+    const lvl = level.seriesId
+      ? await prisma.eventSeries.findUnique({ where: { id: level.seriesId } })
+      : await prisma.edition.findUnique({ where: { id: level.editionId }, include: { series: true } });
+    const link = level.seriesId ? `/${lvl.slug}` : `/${lvl.series.slug}/${lvl.slug}`;
+    await notifications.notify(user.id, { kind: 'role.given', message: LEVEL_MESSAGES[role], params: { name: lvl.title }, link });
+  }
   await audit.record({ actorId, action: 'scopeRole.grant', entityType: level.seriesId ? 'EventSeries' : 'Edition', entityId: level.seriesId || level.editionId, details: { user: user.username, role, appliesToChildren: !!appliesToChildren } });
   return row;
 }

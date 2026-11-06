@@ -3,6 +3,8 @@
 // decides, and its score is the average of the points. Also results and appeals.
 const prisma = require('../config/prisma');
 const audit = require('./auditService');
+const notifications = require('./notificationService');
+const pathOf = (contest) => contest.path || `/contest/${contest.id}`;
 const { readTypeConfig } = require('../events/eventTypes');
 
 // Entries the jury can still decide on.
@@ -212,6 +214,16 @@ async function saveReview({ actor, contest, settings, submission, decision, mark
         },
       });
     }
+    // The participant hears when their entry is decided (if the event notifies participants).
+    if (status !== submission.status && ['approved', 'rejected'].includes(status) && settings.participantNotificationsEnabled !== false && submission.participantId !== actor.id) {
+      await notifications.notify(submission.participantId, {
+        kind: 'entry.decided',
+        message: status === 'approved' ? 'Your entry “{title}” in {event} was accepted.' : 'Your entry “{title}” in {event} was not accepted.',
+        params: { title: submission.title, event: contest.title },
+        link: `${pathOf(contest)}/submissions/${submission.id}`,
+        contestId: contest.id,
+      }, tx);
+    }
     // No activity-log row per review: the review and the entry's history already record it,
     // and big events have hundreds of thousands of them.
     return { status, decided: status !== 'under_review' };
@@ -357,6 +369,12 @@ async function distribute({ actor, contest, settings, wiki }) {
     if (missing > 0) unfilled += 1;
   }
   if (data.length) await prisma.reviewAssignment.createMany({ data });
+  // Each juror hears once how many entries came their way.
+  const perJuror = new Map();
+  for (const d of data) perJuror.set(d.jurorId, (perJuror.get(d.jurorId) || 0) + 1);
+  for (const [jurorId, n] of perJuror) {
+    if (jurorId !== actor.id) await notifications.notify(jurorId, { kind: 'review.assigned', message: 'You have {n} new entries to review in {event}.', params: { n, event: contest.title }, link: `${pathOf(contest)}/review`, contestId: contest.id });
+  }
   await audit.record({ actorId: actor.id, contestId: contest.id, action: 'assignments.distributed', entityType: 'Contest', entityId: contest.id, details: { created: data.length, unfilled, wiki: wiki || undefined } });
   return { created: data.length, unfilled };
 }
@@ -371,6 +389,7 @@ async function assign({ actor, contest, submissionId, jurorId }) {
     update: {},
     create: { contestId: contest.id, submissionId, jurorId, assignedById: actor.id },
   });
+  if (jurorId !== actor.id) await notifications.notify(jurorId, { kind: 'review.assigned', message: 'You have a new entry to review in {event}.', params: { event: contest.title }, link: `${pathOf(contest)}/review`, contestId: contest.id });
   await audit.record({ actorId: actor.id, contestId: contest.id, action: 'assignment.added', entityType: 'Submission', entityId: submissionId, details: { title: entry.title, jurorId } });
 }
 
@@ -482,6 +501,13 @@ async function resolveAppeal({ actor, contest, appealId, action, response }) {
       where: { id: appeal.submissionId },
       data: { status, score: upheld ? null : appeal.submission.score, history: { create: { actorId: actor.id, action: upheld ? 'appeal_upheld' : 'appeal_dismissed', previousValue: 'appealed', newValue: status } } },
     });
+    await notifications.notify(appeal.submission.participantId, {
+      kind: 'appeal.resolved',
+      message: upheld ? 'Your appeal for “{title}” was upheld: the entry will be reviewed again.' : 'Your appeal for “{title}” was dismissed.',
+      params: { title: appeal.submission.title },
+      link: `${pathOf(contest)}/submissions/${appeal.submissionId}`,
+      contestId: contest.id,
+    }, tx);
     await audit.record({ actorId: actor.id, contestId: contest.id, action: `appeal.${upheld ? 'upheld' : 'dismissed'}`, entityType: 'Submission', entityId: appeal.submissionId, details: { title: appeal.submission.title } }, tx);
   });
 }

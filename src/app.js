@@ -179,6 +179,7 @@ app.use(displayPreferences);
 app.use(csrfProtection);
 app.use(flashMessages);
 
+app.use('/', require('./routes/notifications'));
 app.use('/', require('./routes/preferences'));
 app.use('/', require('./routes'));
 app.use('/', require('./routes/auth'));

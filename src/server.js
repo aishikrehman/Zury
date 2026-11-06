@@ -45,6 +45,8 @@ const server = app.listen(env.port, () => {
   const backupNow = () => require('./services/backupService').write('daily').then((f) => console.log(`Backup written: ${f}`)).catch((err) => console.error('Backup failed:', err.message));
   setTimeout(backupNow, 60 * 60 * 1000).unref();
   setInterval(backupNow, 24 * 60 * 60 * 1000).unref();
+  // Read notifications older than 90 days are dropped, once a day.
+  setInterval(() => require('./services/notificationService').prune().catch(() => {}), 24 * 60 * 60 * 1000).unref();
   setInterval(trackingSweep, TRACKING_SWEEP_MS).unref();
   // Editathons followed on Fountain: entries and jury decisions, every hour.
   const fountainNow = () => require('./services/fountainService').syncAll().catch((err) => console.error('Fountain sync failed:', err.message));

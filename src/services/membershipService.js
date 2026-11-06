@@ -1,4 +1,11 @@
 const prisma = require('../config/prisma');
+const notifications = require('./notificationService');
+const ROLE_MESSAGES = {
+  organizer: 'You were added to {event} as an organizer.',
+  jury: 'You were added to the jury of {event}.',
+  participant: 'You were added to {event} as a participant.',
+  viewer: 'You can now follow {event}.',
+};
 const audit = require('./auditService');
 const { EVENT_ROLES, OVERRIDABLE_PERMISSIONS, ROLE_MANAGEMENT_PERMISSION } = require('../permissions/registry');
 const { wikimediaBans } = require('../wiki/banCheck');
@@ -96,6 +103,8 @@ async function addMember({ actorId, contest, settings, user, role, wiki = '' }) 
       throw new MembershipError('The event has reached its participant limit.');
     }
     const membership = await upsertActive(tx, { contestId: contest.id, userId: user.id, role, actorId, wiki });
+    // Told when someone else adds them (not when they join themselves).
+    if (actorId && actorId !== user.id) await notifications.notify(user.id, { kind: 'role.given', message: ROLE_MESSAGES[role], params: { event: contest.title }, link: contest.path || `/contest/${contest.id}`, contestId: contest.id }, tx);
     await audit.record(
       { actorId, contestId: contest.id, action: 'membership.added', entityType: 'User', entityId: user.id, details: { username: user.username, role, wiki: wiki || undefined } },
       tx,
