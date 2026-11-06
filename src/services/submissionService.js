@@ -316,7 +316,7 @@ async function listMine(userId, { status = '', contestId = null, q = '', sort = 
       where,
       orderBy: [MINE_SORTS[sort] || MINE_SORTS.newest, { id: 'desc' }],
       take: 500,
-      include: { contest: { select: { id: true, title: true, status: true, slug: true, path: true, series: { select: { slug: true } }, settings: { select: { wordCountEnabled: true } } } } },
+      include: { contest: { select: { id: true, title: true, status: true, slug: true, path: true, series: { select: { slug: true } }, settings: { select: { wordCountEnabled: true, rankBy: true } } } }, reviews: { where: { comment: { not: '' } }, select: { comment: true }, orderBy: { createdAt: 'asc' } } },
     }),
     prisma.submission.groupBy({ by: ['status'], where: base, _count: { _all: true } }),
     prisma.submission.aggregate({ where: { ...base, status: 'approved' }, _sum: { wordCount: true } }),
