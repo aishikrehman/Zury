@@ -110,6 +110,8 @@
     // In an edition the event is named by its wiki's code (/wam/2026/bn): no name to type.
     prefix.textContent = s && e ? `${prefix.dataset.origin}/${s}/${e}/…` : `${prefix.dataset.origin}/${s ? `${s}/` : ''}`;
     slug.hidden = !!(s && e);
+    // In an edition the address is fixed: shown whole, without an empty box.
+    prefix.closest('.input-group').classList.toggle('z-addr-fixed', !!(s && e));
     if (s && e) slug.value = e;
     else if (!slugEdited || slug.value === edition.dataset.current) slug.value = slugify(title.value);
     hint.textContent = '';
@@ -132,6 +134,10 @@
         status.replaceChildren();
         const icon = Object.assign(document.createElement('i'), { className: 'ti me-1 ' + (r.free ? 'ti-circle-check' : 'ti-alert-circle') });
         const msg = r.free ? zt('Free: {path}', { path: r.path }) : r.reason === 'edition' ? zt('This edition already has an event for this wiki.') : r.reason === 'series' ? zt('That series name is taken.') : r.reason === 'form' ? zt('Use lowercase letters, numbers and hyphens.') : zt('Taken.');
+        const fixed = prefix.closest('.input-group').classList.contains('z-addr-fixed');
+        if (fixed && r.path) prefix.textContent = `${prefix.dataset.origin}${r.path}`;
+        // The full address is already shown; only a problem needs a line of its own.
+        if (fixed && r.free) { status.replaceChildren(); return; }
         status.append(icon, msg);
         if (!r.free && r.suggestion) {
           const b = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-link btn-sm p-0 ms-2', textContent: zt('Use {name}', { name: r.suggestion }) });

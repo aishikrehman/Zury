@@ -1038,3 +1038,6 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-countdown-bar { display: inline-block; width: 3.5rem; height: .35rem; border-radius: 1rem; background: rgba(0,0,0,.08); overflow: hidden; }
 .z-countdown-bar i { display: block; height: 100%; background: currentColor; }
 @media (max-width: 575.98px) { .z-evhead-logo { width: 3.5rem; height: 3.5rem; } }
+
+/* An edition event's address: fixed, shown whole. */
+.input-group.z-addr-fixed > .input-group-text { flex: 1 1 auto; border-radius: var(--tblr-border-radius); background: transparent; justify-content: flex-start; white-space: normal; word-break: break-all; }
