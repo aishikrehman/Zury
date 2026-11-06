@@ -1583,5 +1583,8 @@
   "Add it to the article: the wiki opens with it filled in; just save.": "নিবন্ধে যোগ করুন: উইকি খুলবে টেমপ্লেট বসানো অবস্থায়; শুধু সংরক্ষণ করুন।",
   "Template for entries": "জমার জন্য টেমপ্লেট",
   "E.g. {{উইকিপিডিয়া এশীয় মাস ২০২৬}}. Participants get a link to add it to each entry.": "যেমন {{উইকিপিডিয়া এশীয় মাস ২০২৬}}। অংশগ্রহণকারীরা প্রতিটি জমায় এটি যোগ করার লিংক পাবেন।",
-  "Put the template on the talk page (else on the article)": "টেমপ্লেট আলাপ পাতায় বসান (নইলে নিবন্ধে)"
+  "Put the template on the talk page (else on the article)": "টেমপ্লেট আলাপ পাতায় বসান (নইলে নিবন্ধে)",
+  "More details and access": "আরও তথ্য ও প্রবেশাধিকার",
+  "Contact, images, visibility, organizers and reviewers": "যোগাযোগ, ছবি, দৃশ্যমানতা, আয়োজক ও পর্যালোচক",
+  "Contact, images and more": "যোগাযোগ, ছবি ও অন্যান্য"
 }

@@ -113,6 +113,8 @@
         count.textContent = zt('Step {n} of {total}', { n: i + 1, total: panes.length });
         if (last) buildReview();
       }
+      // The open tab is in the address, so a refresh (or a shared link) opens it again.
+      if (!sequential && panes[i].id) history.replaceState(null, '', `#${panes[i].id}`);
       if (scroll) form.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
 
@@ -121,6 +123,11 @@
         e.preventDefault();
         // While creating, only steps already reached (or the next one, if this one is complete) open.
         if (sequential && n > reached && !(n === current + 1 && checkStep(current))) return;
+        // A new event: a later tab opens only when the tabs before it have their required fields
+        // (superusers can go anywhere).
+        if (form.hasAttribute('data-guard') && n > current) {
+          for (let k = current; k < n; k += 1) if (!checkStep(k)) return show(k);
+        }
         show(n);
       }),
     );

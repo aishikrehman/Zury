@@ -28,7 +28,7 @@
     ['rules', t('Submission rules'), t('Who can take part and what counts')],
     ...(judged ? [['judging', t('Review'), t('How entries are reviewed and results counted')]] : []),
     ['features', t('Features'), t('Turn parts of the event on or off')],
-    ...(wikiMode ? [] : [['access', t('User access levels'), t('Visibility, organizers and reviewers')]]),
+    ['access', wikiMode ? t('More details') : t('More details and access'), wikiMode ? t('Contact, images and more') : t('Contact, images, visibility, organizers and reviewers')],
   ];
   const dateInput = (key) => `
     <label class="form-label" for="${key}">${esc(dateLabel[key])}${mark('contest.' + key)}</label>
@@ -44,7 +44,7 @@
   <div class="alert alert-danger" role="alert"><%= tn('Please fix the {n} highlighted field.', 'Please fix the {n} highlighted fields.', errorCount) %></div>
 <% } %>
 
-<form method="post" action="<%= action %>" novalidate<% if (!creating && typeof contest !== 'undefined' && contest) { %> data-event-id="<%= contest.id %>"<% } %> data-wizard="<%= pageMode ? 'page' : 'tabs' %>" data-event-form>
+<form method="post" action="<%= action %>" novalidate<% if (creating && !can('deleteAnything')) { %> data-guard<% } %><% if (!creating && typeof contest !== 'undefined' && contest) { %> data-event-id="<%= contest.id %>"<% } %> data-wizard="<%= pageMode ? 'page' : 'tabs' %>" data-event-form>
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <% if (wikiMode) { %><input type="hidden" id="primaryWiki" value="<%= v('primaryWiki') %>"><% } %>
   <% if (!creating && !wikiMode) { %><input type="hidden" name="type" value="<%= type %>"><% } %>
@@ -190,47 +190,6 @@
               </div>
               </div>
             </div>
-            <details class="z-form-group z-form-fold"<%= openIf('organizingCommunity', 'contactInfo', 'mainCategory', 'logoUrl', 'bannerUrl') %>>
-              <summary class="z-form-group-title"><%= t('More details') %> <span class="text-secondary fw-normal"><%= t('optional') %></span></summary>
-              <div class="row g-3 mt-1">
-              <% if (!wikiMode) { %>
-                <div class="col-md-6">
-                  <label class="form-label" for="organizingCommunity"><%= t("Organizing community") %></label>
-                  <select class="form-select<%= inv('organizingCommunity') %>" id="organizingCommunity" name="organizingCommunity" data-picker="community" placeholder="<%= t("Choose or type a name…") %>">
-                    <% if (v('organizingCommunity')) { %><option value="<%= v('organizingCommunity') %>" selected><%= v('organizingCommunity') %></option><% } %>
-                  </select>
-                  <%- err('organizingCommunity') %>
-                </div>
-              <% } %>
-              <div class="col-md-6">
-                <label class="form-label" for="contactInfo"><%= t("Contact") %><%- mark('contest.contactInfo') %></label>
-                <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="<%= t("Talk page, email list or similar") %>">
-                <%- err('contactInfo') %>
-              </div>
-<% if (!wikiMode) { %>
-                <div class="col-md-6">
-                  <label class="form-label" for="mainCategory"><%= t("Main category") %></label>
-                  <div class="input-group">
-                    <span class="input-group-text"><%= t("Category:") %></span>
-                    <input class="form-control<%= inv('mainCategory') %>" id="mainCategory" name="mainCategory" maxlength="200" value="<%= v('mainCategory') %>" placeholder="<%= t("Wiki Loves Monuments 2026 in Bangladesh") %>">
-                  </div>
-                  <%- err('mainCategory') %>
-                </div>
-<% } %>
-              <% if (!wikiMode) { %>
-                <div class="col-md-6">
-                  <label class="form-label" for="logoUrl"><%= t("Logo") %></label>
-                  <input class="form-control<%= inv('logoUrl') %>" id="logoUrl" name="logoUrl" value="<%= v('logoUrl') %>" placeholder="<%= t("https://upload.wikimedia.org/…") %>">
-                  <%- err('logoUrl') %>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label" for="bannerUrl"><%= t("Banner") %></label>
-                  <input class="form-control<%= inv('bannerUrl') %>" id="bannerUrl" name="bannerUrl" value="<%= v('bannerUrl') %>" placeholder="<%= t("https://upload.wikimedia.org/…") %>">
-                  <%- err('bannerUrl') %>
-                </div>
-              <% } %>
-              </div>
-            </details>
           </section>
 
           <%# ── 2. Submission rules ───────────────────────────────────── %>
@@ -448,9 +407,50 @@
           </section>
 
           <%# ── 4. User access levels ─────────────────────────────────── %>
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-access" data-step="<%= steps.findIndex(([k]) => k === 'access') %>">
+            <div class="z-form-group">
+              <h3 class="z-form-group-title"><%= t('More details') %> <span class="text-secondary fw-normal small"><%= t('optional') %></span></h3>
+              <div class="row g-3 mt-1">
+              <% if (!wikiMode) { %>
+                <div class="col-md-6">
+                  <label class="form-label" for="organizingCommunity"><%= t("Organizing community") %></label>
+                  <select class="form-select<%= inv('organizingCommunity') %>" id="organizingCommunity" name="organizingCommunity" data-picker="community" placeholder="<%= t("Choose or type a name…") %>">
+                    <% if (v('organizingCommunity')) { %><option value="<%= v('organizingCommunity') %>" selected><%= v('organizingCommunity') %></option><% } %>
+                  </select>
+                  <%- err('organizingCommunity') %>
+                </div>
+              <% } %>
+              <div class="col-md-6">
+                <label class="form-label" for="contactInfo"><%= t("Contact") %><%- mark('contest.contactInfo') %></label>
+                <input class="form-control<%= inv('contactInfo') %>" id="contactInfo" name="contactInfo" maxlength="500" value="<%= v('contactInfo') %>" placeholder="<%= t("Talk page, email list or similar") %>">
+                <%- err('contactInfo') %>
+              </div>
+<% if (!wikiMode) { %>
+                <div class="col-md-6">
+                  <label class="form-label" for="mainCategory"><%= t("Main category") %></label>
+                  <div class="input-group">
+                    <span class="input-group-text"><%= t("Category:") %></span>
+                    <input class="form-control<%= inv('mainCategory') %>" id="mainCategory" name="mainCategory" maxlength="200" value="<%= v('mainCategory') %>" placeholder="<%= t("Wiki Loves Monuments 2026 in Bangladesh") %>">
+                  </div>
+                  <%- err('mainCategory') %>
+                </div>
+<% } %>
+              <% if (!wikiMode) { %>
+                <div class="col-md-6">
+                  <label class="form-label" for="logoUrl"><%= t("Logo") %></label>
+                  <input class="form-control<%= inv('logoUrl') %>" id="logoUrl" name="logoUrl" value="<%= v('logoUrl') %>" placeholder="<%= t("https://upload.wikimedia.org/…") %>">
+                  <%- err('logoUrl') %>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="bannerUrl"><%= t("Banner") %></label>
+                  <input class="form-control<%= inv('bannerUrl') %>" id="bannerUrl" name="bannerUrl" value="<%= v('bannerUrl') %>" placeholder="<%= t("https://upload.wikimedia.org/…") %>">
+                  <%- err('bannerUrl') %>
+                </div>
+              <% } %>
+              </div>
+            </div>
           <% if (!wikiMode) { %>
-            <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-access" data-step="<%= steps.findIndex(([k]) => k === 'access') %>">
-              <h3 class="mb-4"><%= t("User access levels") %></h3>
+              <h3 class="z-form-group-title mt-3"><%= t("User access levels") %></h3>
               <div class="row g-3">
                 <div class="col-12">
                   <span class="form-label d-block"><%= t("Who can see the event") %></span>
@@ -490,8 +490,8 @@
                   <div class="col-12"><a class="btn btn-outline-primary" href="<%= base %>/participants"><i class="ti ti-users me-1"></i><%= t("Manage organizers, reviewers and participants") %></a></div>
                 <% } %>
               </div>
-            </section>
           <% } %>
+          </section>
 
         </div>
 

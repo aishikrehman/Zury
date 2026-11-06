@@ -999,3 +999,17 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 
 .z-set-inline { grid-template-columns: minmax(12rem, 1fr) auto; }
 .z-set-inline .z-set-control { flex-wrap: wrap; gap: .4rem 1.25rem; width: auto; }
+
+/* Event settings, tighter: smaller gaps between groups and fields. */
+.z-config > .card-body { padding: 1rem 1.25rem; }
+.z-config .z-form-group { margin-bottom: 1rem; padding-bottom: .75rem; }
+.z-config .z-form-group-title { font-size: .95rem; margin-bottom: .5rem; }
+.z-config .wizard-pane > h3 { font-size: 1rem; margin-bottom: .25rem !important; }
+.z-config .wizard-pane > h3 + p { margin-bottom: .75rem !important; font-size: .85rem; }
+.z-config .row.g-3 { --tblr-gutter-y: .6rem; --tblr-gutter-x: .9rem; }
+.z-config .row.mb-4, .z-config .mb-4 { margin-bottom: 1rem !important; }
+.z-config .form-label { margin-bottom: .25rem; }
+.z-config .form-hint { margin-top: .15rem; font-size: .78rem; }
+.z-config .form-check { margin-bottom: .25rem; }
+.z-config textarea.form-control { min-height: 4.5rem; }
+.z-config .z-set-row { padding: .5rem .85rem; }
