@@ -60,6 +60,28 @@
     </div>
   <% } %>
 
+  <%# Where the event sits: move it to another series or edition, take it out (detach), or copy it there as a draft. %>
+  <% if (!wikiMode && can('manageEvent') && (places.length || contest.seriesId || contest.editionId)) { %>
+    <form method="post" action="<%= eventBase %>/structure/move" class="card mb-3" id="structure">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-arrows-move me-2"></i><%= t('Move or copy') %></h3></div>
+      <div class="card-body">
+        <div class="text-secondary small mb-2"><%= t('Now at') %> <code><%= contest.path %></code></div>
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5"><label class="form-label" for="st-target"><%= t('To') %></label>
+            <select class="form-select" id="st-target" name="target">
+              <option value="none"><%= t('No series (/events/…)') %></option>
+              <% places.forEach((p) => { %><option value="<%= p.value %>"<%= (p.editionId && p.editionId === contest.editionId) || (p.seriesId && p.seriesId === contest.seriesId) ? ' selected' : '' %>><%= p.label %></option><% }) %>
+            </select></div>
+          <div class="col-12 col-md-3"><label class="form-label" for="st-slug"><%= t('Name there') %></label><input class="form-control" id="st-slug" name="slug" maxlength="80" placeholder="<%= contest.slug %>"></div>
+          <div class="col-6 col-md-2"><button class="btn w-100" type="submit" data-confirm="<%= t('Move this event? Its address changes and the old one stops working.') %>"><i class="ti ti-arrows-move me-1"></i><%= t('Move') %></button></div>
+          <div class="col-6 col-md-2"><button class="btn w-100" type="submit" formaction="<%= eventBase %>/structure/copy"><i class="ti ti-copy me-1"></i><%= t('Copy') %></button></div>
+        </div>
+        <div class="form-hint mt-2"><%= t('Move: the event, its entries and people go there; choose “No series” to detach it. Copy: a new draft with the same settings, wikis, organizers and jury, but no entries.') %></div>
+      </div>
+    </form>
+  <% } %>
+
   <%# Settings from the series or edition: where each comes from, and whether this event follows it. %>
   <% if (inherited.length) { %>
     <div class="card mb-3" id="inherited" data-locked-settings="<%= JSON.stringify(inherited.filter((i) => i.mode === 'locked').map((i) => i.key)) %>">

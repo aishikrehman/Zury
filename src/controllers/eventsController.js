@@ -154,8 +154,8 @@ async function nextEdition(req, res, next) {
     res.redirect(`/${found.slug}/${created.slug}`);
   } catch (err) {
     const seriesService = require('../services/seriesService');
-    if (!(err instanceof seriesService.SeriesError)) return next(err);
-    req.flash('danger', err.message);
+    if (!(err instanceof seriesService.SeriesError || err instanceof require('../services/structureService').StructureError)) return next(err);
+    req.flash('danger', req.t(err.message));
     res.redirect(`/${req.params.series}`);
   }
 }
@@ -413,3 +413,41 @@ async function editionFountain(req, res, next) {
 }
 
 module.exports.editionFountain = editionFountain;
+
+// Stage 5 on an edition or a series: copy an edition, archive or unarchive a level.
+async function levelAction(req, res, next) {
+  const structureService = require('../services/structureService');
+  const back = req.params.edition ? `/${req.params.series}/${req.params.edition}` : `/series/${req.params.series}`;
+  try {
+    const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!sr) return next();
+    let edition = null;
+    if (req.params.edition) {
+      edition = await prisma.edition.findFirst({ where: { seriesId: sr.id, slug: req.params.edition, deletedAt: null } });
+      if (!edition) return next();
+    }
+    const allowed = edition ? await scopeRoles.canRunEdition(req, edition) : await canRunSeries(req, sr.id);
+    // Copying an edition makes a new one in the series: that is for those who run the series.
+    if (!allowed || (req.params.action === 'copy' && !(await canRunSeries(req, sr.id)))) return forbiddenPage(next);
+    const level = edition ? { editionId: edition.id } : { seriesId: sr.id };
+    if (req.params.action === 'copy') {
+      const years = Math.max(0, Math.min(10, Number.parseInt(req.body.years, 10) || 0));
+      const created = await structureService.copyEdition({ actorId: req.user.id, edition, slug: req.body.slug, title: req.body.title, years });
+      req.flash('success', req.t('Edition copied, with a draft of each event. Check their dates and settings, then publish them.'));
+      return res.redirect(`/${sr.slug}/${created.slug}`);
+    }
+    if (req.params.action === 'archive') {
+      await structureService.archive({ actorId: req.user.id, level });
+      req.flash('success', req.t('Archived.'));
+    } else {
+      await structureService.unarchive({ actorId: req.user.id, level });
+      req.flash('success', req.t('Taken out of the archive.'));
+    }
+    res.redirect(back);
+  } catch (err) {
+    if (!(err instanceof structureService.StructureError)) return next(err);
+    req.flash('danger', req.t(err.message));
+    res.redirect(back);
+  }
+}
+module.exports.levelAction = levelAction;

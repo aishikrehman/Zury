@@ -48,6 +48,7 @@ contest.post('/leave', requireAuth, contestController.leave);
 
 contest.get('/config', requirePermission('editEvent', 'manageEvent'), contestController.config);
 contest.post('/config', requirePermission('editEvent'), contestController.updateConfig);
+contest.post('/structure/:action(move|copy)', requirePermission('manageEvent'), contestController.structure);
 contest.post('/config/follow', requirePermission('editEvent'), contestController.followSetting);
 contest.post('/status', requireEventWide('manageEvent'), contestController.changeStatus);
 contest.post('/delete', requireEventWide('deleteEvent'), contestController.destroy);
@@ -136,6 +137,8 @@ router.post(`/series/:series(${SLUG})/settings`, requireAuth, eventsController.s
 router.post(`/series/:series(${SLUG})/settings/:id(\\d+)/remove`, requireAuth, eventsController.removeLevelSetting);
 // Adding events to an edition from its page: from Fountain (importers only).
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/fountain`, requirePermission('importEvents'), eventsController.editionFountain);
+router.post(`/series/:series(${SLUG})/:action(archive|unarchive)`, requireAuth, eventsController.levelAction);
+router.post(`/series/:series(${SLUG})/:edition(${SLUG})/:action(copy|archive|unarchive)`, requireAuth, eventsController.levelAction);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 // An edition's own page, when the name under the series is an edition.

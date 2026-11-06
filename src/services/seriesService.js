@@ -12,13 +12,6 @@ class SeriesError extends Error {
 }
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const DATE_KEYS = ['registrationOpensAt', 'startDate', 'endDate', 'submissionOpensAt', 'submissionDeadline', 'reviewOpensAt', 'reviewDeadline', 'appealDeadline', 'resultsAnnouncedAt'];
-const inAYear = (d) => {
-  if (!d) return null;
-  const n = new Date(d);
-  n.setUTCFullYear(n.getUTCFullYear() + 1);
-  return n;
-};
 
 async function create({ actorId, slug, title, description = '' }) {
   slug = String(slug || '').trim().toLowerCase();
@@ -78,11 +71,9 @@ async function summary(seriesId, { drafts = false } = {}) {
 // wikis, organizers and jury, dates a year later) as drafts. An empty latest edition gives
 // an empty next one.
 async function nextEdition({ actorId, series }) {
-  const editionService = require('./editionService');
   const latest = await prisma.edition.findFirst({
     where: { seriesId: series.id, deletedAt: null },
     orderBy: [{ year: 'desc' }, { slug: 'desc' }],
-    include: { events: { where: { deletedAt: null }, include: { settings: true, wikis: true, memberships: { where: { status: 'active', role: { in: ['organizer', 'jury'] } } } } } },
   });
   if (!latest) throw new SeriesError('This series has no edition to start from.');
   const year = Number.parseInt(latest.slug, 10);
@@ -90,44 +81,8 @@ async function nextEdition({ actorId, series }) {
   const slug = String(year + 1);
   if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: series.id, slug } } })) throw new SeriesError(`/${series.slug}/${slug} already exists.`);
 
-  return prisma.$transaction(async (tx) => {
-    const edition = await editionService.findOrCreate(series.id, slug, { title: latest.title.replace(String(year), slug), startDate: inAYear(latest.startDate), endDate: inAYear(latest.endDate) }, tx);
-    for (const ev of latest.events) {
-      const { id, path, createdAt, updatedAt, status, statusMode, resultsPublishedAt, mergedIntoId, mergedWikiCode, settings, wikis, memberships, editionId, seriesId, deletedAt, deletedById, ...rest } = ev;
-      const { id: _sid, contestId: _cid, trackedAt: _t, ...copySettings } = settings || {};
-      const contest = await tx.contest.create({
-        data: {
-          ...rest,
-          ...Object.fromEntries(DATE_KEYS.map((k) => [k, inAYear(ev[k])])),
-          editionId: edition.id,
-          title: ev.title.replace(String(year), slug),
-          mainCategory: (ev.mainCategory || '').replace(String(year), slug),
-          previousEditionUrl: '',
-          status: 'draft',
-          statusMode: 'auto',
-          createdById: actorId,
-          settings: { create: copySettings },
-          wikis: { create: wikis.map((w) => ({ wiki: w.wiki, code: w.code, status: w.status === 'pending' ? 'pending' : 'active', overrides: w.overrides })) },
-          memberships: { create: [...new Map([[`${actorId}:organizer:`, { userId: actorId, role: 'organizer', wiki: '' }], ...memberships.map((m) => [`${m.userId}:${m.role}:${m.wiki}`, { userId: m.userId, role: m.role, wiki: m.wiki }])]).values()].map((m) => ({ ...m, assignedById: actorId })) },
-        },
-      });
-      await editionService.sync(contest.id, tx);
-      await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, from: ev.path } }, tx);
-    }
-    // The latest edition's people keep their roles in the new one; whoever makes it runs it.
-    const roles = await tx.scopeRole.findMany({ where: { editionId: latest.id } });
-    const keep = new Map([[`${actorId}:organizer`, { userId: actorId, role: 'organizer', appliesToChildren: false }], ...roles.map((r) => [`${r.userId}:${r.role}`, r])]);
-    // Its settings for the events below carry over too, and the copied events follow them.
-    for (const r of await tx.levelSetting.findMany({ where: { editionId: latest.id } })) {
-      await tx.levelSetting.create({ data: { editionId: edition.id, key: r.key, value: r.value, mode: r.mode, updatedById: actorId } });
-    }
-    for (const c of await tx.contest.findMany({ where: { editionId: edition.id }, select: { id: true } })) {
-      await require('./inheritService').applyToEvent(c.id, { actorId }, tx);
-    }
-    for (const r of keep.values()) await tx.scopeRole.create({ data: { userId: r.userId, role: r.role, editionId: edition.id, appliesToChildren: r.appliesToChildren, assignedById: actorId } });
-    await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: edition.id, details: { series: series.slug, edition: slug, from: latest.slug, events: latest.events.length } }, tx);
-    return edition;
-  });
+  // A copy of the latest edition, a year later: its events (as drafts), people and settings.
+  return require('./structureService').copyEdition({ actorId, edition: latest, slug, title: latest.title.replace(String(year), slug), years: 1 });
 }
 
 // An empty edition (events are added to it afterwards).

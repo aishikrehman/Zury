@@ -136,8 +136,10 @@ async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
     return req.next(err);
   }
   const inherited = await require('../services/inheritService').viewFor(req.contest, req.eventSettings).catch(() => []);
+  const places = req.wikiScope || !req.scope.global.has('manageEvent') ? [] : await require('../services/scopeRoleService').placesFor(req);
   res.status(status).render('pages/contest/config', {
     inherited,
+    places,
     moveTargets: targets,
     wikiMode: !!req.wikiScope,
     canManageWikis: !req.wikiScope && req.scope.isGlobalController,
@@ -475,3 +477,35 @@ async function followSetting(req, res, next) {
   res.redirect(`${req.eventBase}/config#inherited`);
 }
 module.exports.followSetting = followSetting;
+
+// Stage 5 on one event: move it (or detach it) to another series or edition, or copy it there.
+// The event's managers may do it when they also run the place it goes to; taking it out of a
+// series or edition needs whoever runs that series or edition (or a platform manager).
+async function structure(req, res, next) {
+  const structureService = require('../services/structureService');
+  const scopeRoles = require('../services/scopeRoleService');
+  try {
+    const raw = String(req.body.target || 'none');
+    const m = /^([se]):(\d+)$/.exec(raw);
+    const target = m ? (m[1] === 's' ? { seriesId: Number(m[2]) } : { editionId: Number(m[2]) }) : {};
+    if (m && !(await scopeRoles.placesFor(req)).some((p) => p.value === raw)) throw new structureService.StructureError('Choose a series or edition you run.');
+    const slug = String(req.body.slug || '').trim().toLowerCase() || undefined;
+    if (req.params.action === 'move') {
+      const parentRun = req.contest.editionId
+        ? await scopeRoles.canRunEdition(req, req.edition)
+        : req.contest.seriesId ? await scopeRoles.canRunSeries(req, req.contest.seriesId) : true;
+      if (!parentRun) throw new structureService.StructureError('Only those who run its series or edition can take the event out of it.');
+      const moved = await structureService.moveEvent({ actorId: req.user.id, contest: req.contest, target, slug });
+      req.flash('success', req.t('Moved. The event is now at {path}; the old address no longer works.', { path: moved.path }));
+      return res.redirect(`${moved.path}/config`);
+    }
+    const copy = await structureService.copyEvent({ actorId: req.user.id, contest: req.contest, target, slug });
+    req.flash('success', req.t('Copied as a draft at {path}. Check its dates and settings, then publish it.', { path: copy.path }));
+    res.redirect(`${copy.path}/config`);
+  } catch (err) {
+    if (!(err instanceof structureService.StructureError)) return next(err);
+    req.flash('danger', req.t(err.message));
+    res.redirect(`${req.eventBase}/config#structure`);
+  }
+}
+module.exports.structure = structure;

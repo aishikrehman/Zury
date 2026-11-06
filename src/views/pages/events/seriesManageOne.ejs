@@ -18,7 +18,8 @@
           </div>
         </div>
       </form>
-      <div class="text-secondary small">/<%= sr.slug %> · <a href="/<%= sr.slug %>"><%= t('Public page') %></a></div></div>
+      <div class="text-secondary small">/<%= sr.slug %> · <a href="/<%= sr.slug %>"><%= t('Public page') %></a><% if (sr.status === 'archived') { %> · <span class="badge bg-secondary-lt"><%= t('Archived') %></span><% } %></div></div>
+    <div class="col-auto"><form method="post" action="/series/<%= sr.slug %>/<%= sr.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= sr.status === 'archived' ? t('Take this series out of the archive?') : t('Archive this series, its editions and their finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= sr.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form></div>
   </div>
 </div></div>
 <div class="page-body"><div class="container-xl">

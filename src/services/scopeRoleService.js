@@ -50,6 +50,27 @@ async function mayPlace(req, target, current = {}) {
   return current.editionId === edition.id || canRunEdition(req, edition);
 }
 
+// Series and editions this person may put events in, for a "Move to" or "Copy to" list.
+async function placesFor(req) {
+  if (!req.user) return [];
+  const all = platformRuns(req);
+  const roles = all ? [] : await prisma.scopeRole.findMany({ where: { userId: req.user.id, role: 'organizer' } });
+  const series = await prisma.eventSeries.findMany({
+    where: { deletedAt: null, status: { not: 'archived' } },
+    include: { editionRecords: { where: { deletedAt: null, status: { not: 'archived' } }, orderBy: { slug: 'desc' } } },
+    orderBy: { title: 'asc' },
+  });
+  const out = [];
+  for (const s of series) {
+    const sr = roles.find((r) => r.seriesId === s.id);
+    if (all || sr) out.push({ value: `s:${s.id}`, label: `${s.title} (/${s.slug})`, seriesId: s.id });
+    for (const e of s.editionRecords) {
+      if (all || sr?.appliesToChildren || roles.some((r) => r.editionId === e.id)) out.push({ value: `e:${e.id}`, label: `${e.title} (/${s.slug}/${e.slug})`, editionId: e.id });
+    }
+  }
+  return out;
+}
+
 function list({ seriesId, editionIds = [] }) {
   return prisma.scopeRole.findMany({
     where: { OR: [{ seriesId }, ...(editionIds.length ? [{ editionId: { in: editionIds } }] : [])] },
@@ -80,4 +101,4 @@ async function revoke({ actorId, id, seriesId, editionIds }) {
   await audit.record({ actorId, action: 'scopeRole.revoke', entityType: row.seriesId ? 'EventSeries' : 'Edition', entityId: row.seriesId || row.editionId, details: { user: row.user.username, role: row.role } });
 }
 
-module.exports = { ROLES, ScopeRoleError, canRunSeries, canRunEdition, canSeeEdition, mayPlace, list, grant, revoke };
+module.exports = { ROLES, ScopeRoleError, canRunSeries, canRunEdition, canSeeEdition, mayPlace, placesFor, list, grant, revoke };
