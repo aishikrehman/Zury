@@ -225,12 +225,6 @@
                 <%- err('participantLimit') %>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="wordCountMethod"><%= t('Word count') %><%- mark('settings.wordCountMethod') %></label>
-                <select class="form-select" id="wordCountMethod" name="wordCountMethod">
-                  <% [['auto', 'Auto: Bengali words in the wikitext on Bengali wikis'], ['ztools', 'Bengali words in the wikitext'], ['plain', 'Plain count (all words in the text)']].forEach(([key, label]) => { %><option value="<%= key %>"<%= (v('wordCountMethod') || 'auto') === key ? ' selected' : '' %>><%= t(label) %></option><% }) %>
-                </select>
-              </div>
-              <div class="col-md-6">
               </div>
             </div>
             <%# How people take part, and which articles count. %>
