@@ -46,15 +46,20 @@ async function seriesFields(tx, series, title, actorId = null, selfId = null, ty
   const edition = await editions.findOrCreate(row.id, series.edition, { title }, tx);
   if (edition && !existed && actorId) await tx.scopeRole.create({ data: { userId: actorId, role: 'organizer', editionId: edition.id, assignedById: actorId } });
   if (!edition) throw new EventError(`/${series.slug}/${series.edition} is already the address of an event of this series.`, 'edition');
-  const has = await editions.eventOf(edition.id, { excludeId: selfId }, tx);
-  if (has) throw new EventError('This edition already has its event. Add your wiki to that event instead.', 'edition');
   return { seriesId: null, editionId: edition.id };
+}
+
+// Under an edition an event is named by its wiki's code (/wam/2026/bn); one event per wiki.
+async function editionSlug(tx, parent, wiki, excludeId = null) {
+  const code = await defaultCode(wiki, tx);
+  if (!(await editions.slugFree(code, parent, { excludeId }, tx))) throw new EventError(`This edition already has an event for ${code}. Open that one, or choose another wiki.`, 'primaryWiki');
+  return code;
 }
 
 async function create({ actorId, type, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
     const series = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, null, type);
-    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, parent: { ...series, type } });
+    const slug = series.editionId ? await editionSlug(tx, series, parsed.contest.primaryWiki) : await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, parent: { ...series, type } });
     const contest = await tx.contest.create({
       data: {
         ...parsed.contest,
@@ -90,7 +95,7 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
     const newType = parsed.type && parsed.type !== contest.type && contest.status === 'draft' ? parsed.type : contest.type;
     const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, contest.id, newType);
-    const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
+    const slug = parent.editionId ? await editionSlug(tx, parent, parsed.contest.primaryWiki || contest.primaryWiki, contest.id) : await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
     const data = { ...parsed.contest, ...parent, slug, ...(newType !== contest.type && { type: newType }) };
     const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).filter((k) => k !== 'followed').map((k) => `settings.${k}`)];
     if (!changed.length) return contest;

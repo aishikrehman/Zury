@@ -14,7 +14,7 @@
   const langs = json(series.supportedLanguages, []);
   const communities = (series.communities || '').split('\n').filter(Boolean);
   const edName = (e) => e.identifier || e.slug;
-  const edHref = (e) => (e.events.length === 1 && e.events[0].path ? e.events[0].path : `/${series.slug}/${e.slug}`);
+  const edHref = (e) => `/${series.slug}/${e.slug}`;
   const featured = summary.find((e) => e.featured) || summary.find((e) => ['active', 'upcoming', 'published'].includes(e.status)) || summary[0];
   const SERIES_STATUS = { draft: ['Draft', 'secondary'], active: ['Active', 'success'], paused: ['Paused', 'warning'], archived: ['Archived', 'secondary'] };
   const meta = `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span><span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', directEvents.length)}</span>${series.visibility !== 'public' ? `<span><i class="ti ti-eye-off"></i>${t(series.visibility === 'private' ? 'Members only' : 'Link only')}</span>` : ''}`;

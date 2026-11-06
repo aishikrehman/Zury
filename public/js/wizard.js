@@ -1,7 +1,7 @@
 // Step wizard for <form data-wizard>: "steps" goes one step at a time with
 // Back / Next and ends on a review; "tabs" lets any step be opened directly.
 (function () {
-  document.querySelectorAll('form[data-wizard]').forEach((form) => {
+  document.querySelectorAll('[data-wizard]').forEach((form) => {
     // One page (new events): every section is shown; nothing to step through.
     if (form.dataset.wizard === 'page') return;
     const sequential = form.dataset.wizard === 'steps';
@@ -104,6 +104,9 @@
       current = i;
       reached = Math.max(reached, i);
       panes.forEach((p, n) => p.classList.toggle('d-none', n !== i));
+      // A tab outside the settings form (Database) hides the form's body and its Save button.
+      const outside = panes[i].hasAttribute('data-outside');
+      form.querySelectorAll('[data-form-body], [data-form-footer]').forEach((el) => el.classList.toggle('d-none', outside));
       links.forEach((a, n) => (a.closest('.step-item') || a).classList.toggle('active', n === i));
       if (sequential) {
         const last = i === panes.length - 1;

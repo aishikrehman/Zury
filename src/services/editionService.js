@@ -1,6 +1,6 @@
 // Where an event sits, and so its address. An event has at most one parent: a series directly
-// (/<series>/<slug>), an edition (/<series>/<edition>: an edition has one event, at its own
-// address; the edition's own pages are at /series/<series>/<edition>), or none: a standalone event
+// (/<series>/<slug>), an edition (/<series>/<edition>/<wiki code>: one event per wiki; the
+// edition's own page is /<series>/<edition>), or none: a standalone event
 // at the top (/<slug>), sharing those names with the series.
 // The address is worked out from that parent and stored, so every page resolves an event by
 // one lookup and nothing is guessed from the shape of an address.
@@ -17,15 +17,13 @@ const EVENT_TABS = new Set([
 ]);
 
 // The address for an event with this slug under this parent ({ seriesId } or { editionId } or neither).
-// selfId: the event itself. An edition's event takes the edition's address; an older edition that
-// already holds several keeps the others under it (/<series>/<edition>/<slug>).
+// An edition's events sit under it, one per wiki, named by the wiki's code (/wam/2026/bn).
+// eslint-disable-next-line no-unused-vars
 async function pathFor(slug, { seriesId = null, editionId = null } = {}, client = prisma, selfId = null) {
   if (editionId) {
     const e = await client.edition.findUnique({ where: { id: editionId }, select: { slug: true, series: { select: { slug: true } } } });
     if (!e) return null;
-    const base = `/${e.series.slug}/${e.slug}`;
-    const holder = await client.contest.findFirst({ where: { path: base, deletedAt: null, ...(selfId && { NOT: { id: selfId } }) }, select: { id: true } });
-    return holder ? `${base}/${slug}` : base;
+    return `/${e.series.slug}/${e.slug}/${slug}`;
   }
   if (seriesId) {
     const s = await client.eventSeries.findUnique({ where: { id: seriesId }, select: { slug: true } });

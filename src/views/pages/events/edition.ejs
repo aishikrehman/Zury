@@ -12,8 +12,8 @@
   <div class="container-xl">
 
     <% if (tab === 'overview') { %>
-      <%# An edition has one event; its wikis carry the different projects. %>
-      <% if (canRun && !events.length) { %>
+      <%# An edition has one event per wiki (/wam/2026/bn, /wam/2026/as…). %>
+      <% if (canRun) { %>
         <div class="d-flex justify-content-end mb-3"><div class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-plus me-1"></i><%= t('Add event') %></button>
           <div class="dropdown-menu dropdown-menu-end">

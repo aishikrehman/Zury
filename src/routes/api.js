@@ -37,9 +37,11 @@ router.get('/api/address', requireAuth, async (req, res, next) => {
       }
     }
     if (parent.editionId) {
-      // An edition's event is the edition's address.
-      const has = await editions.eventOf(parent.editionId, { excludeId });
-      return res.json({ free: !has, path: await editions.pathFor(slug, parent, prisma, excludeId), reason: has ? 'edition' : '' });
+      // Under an edition: named by the wiki's code (/wam/2026/bn), one event per wiki.
+      const wiki = String(req.query.wiki || '');
+      const code = wiki ? await require('../services/eventWikiService').defaultCode(wiki) : slug;
+      const free = await editions.slugFree(code, parent, { excludeId });
+      return res.json({ free, path: await editions.pathFor(code, parent, prisma, excludeId), reason: free ? '' : 'edition' });
     }
     if (bad) return res.json({ free: false, reason: 'form' });
     const free = await editions.slugFree(slug, parent, { excludeId });

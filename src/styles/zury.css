@@ -1013,3 +1013,9 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-config .form-check { margin-bottom: .25rem; }
 .z-config textarea.form-control { min-height: 4.5rem; }
 .z-config .z-set-row { padding: .5rem .85rem; }
+
+/* The settings form inside the tabbed card: only a wrapper, its body and footer are the card's. */
+.z-form-contents { display: contents; }
+@media (min-width: 992px) {
+  .z-side-tabs > .z-extra-pane { grid-column: 2; grid-row: 1 / span 2; }
+}

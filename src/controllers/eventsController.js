@@ -459,7 +459,7 @@ async function seriesPage(req, res, next) {
     const stats = require('../services/statsService');
     // The whole series at once: a person or an entry in several editions counts once.
     const totals = await stats.rollup([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]);
-    const rows = summary.map((e) => ({ label: e.slug, sub: e.title, href: e.events.length === 1 && e.events[0].path ? e.events[0].path : `/${found.slug}/${e.slug}`, status: e.status, stats: e }));
+    const rows = summary.map((e) => ({ label: e.slug, sub: e.title, href: `/${found.slug}/${e.slug}`, status: e.status, stats: e }));
     for (const c of directEvents) rows.push({ label: c.title, sub: req.t('Event of the series'), href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) });
     const wikiRows = tab === 'statistics' ? await stats.byWiki([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]) : [];
     res.render('pages/events/series', { wikiRows, title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, rows, canRun, tab, ...(await levelExtras({ seriesId: found.id }, tab)) });

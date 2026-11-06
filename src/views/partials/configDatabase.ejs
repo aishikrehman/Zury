@@ -1,0 +1,132 @@
+<%# Configuration's "Database" tab: where the event sits (move or copy), its wikis, its data
+    (download or clear) and moving it into another event. Same locals as the configuration page. %>
+  <%# Where the event sits: move it to another series or edition, take it out (detach), or copy it there as a draft. %>
+  <% if (!wikiMode && can('manageEvent') && (places.length || contest.seriesId || contest.editionId)) { %>
+    <form method="post" action="<%= eventBase %>/structure/move" class="card mb-3" id="structure">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-arrows-move me-2"></i><%= t('Move or copy') %></h3></div>
+      <div class="card-body">
+        <div class="text-secondary small mb-2"><%= t('Now at') %> <code><%= contest.path %></code></div>
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5"><label class="form-label" for="st-target"><%= t('To') %></label>
+            <select class="form-select" id="st-target" name="target">
+              <option value="none"><%= t('No series (/…)') %></option>
+              <% places.forEach((p) => { %><option value="<%= p.value %>"<%= (p.editionId && p.editionId === contest.editionId) || (p.seriesId && p.seriesId === contest.seriesId) ? ' selected' : '' %>><%= p.label %></option><% }) %>
+            </select></div>
+          <div class="col-12 col-md-3"><label class="form-label" for="st-slug"><%= t('Name there') %></label><input class="form-control" id="st-slug" name="slug" maxlength="80" placeholder="<%= contest.slug %>"></div>
+          <div class="col-6 col-md-2"><button class="btn w-100" type="submit" data-confirm="<%= t('Move this event? Its address changes and the old one stops working.') %>"><i class="ti ti-arrows-move me-1"></i><%= t('Move') %></button></div>
+          <div class="col-6 col-md-2"><button class="btn w-100" type="submit" formaction="<%= eventBase %>/structure/copy"><i class="ti ti-copy me-1"></i><%= t('Copy') %></button></div>
+        </div>
+        <div class="form-hint mt-2"><%= t('Move: the event, its entries and people go there; choose “No series” to detach it. Copy: a new draft with the same settings, wikis, organizers and reviewers, but no entries.') %></div>
+      </div>
+    </form>
+  <% } %>
+
+
+  <% if (!wikiMode && (canManageWikis || can('manageEvent'))) { const wikiActions = { pending: [['approve', 'Approve', 'primary']], active: [['pause', 'Pause', 'outline-secondary'], ['remove', 'Remove', 'ghost-danger']], paused: [['resume', 'Resume', 'outline-primary'], ['remove', 'Remove', 'ghost-danger']] }; %>
+    <div class="card mt-4" id="wikis">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3></div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead><tr><th><%= t("Address") %></th><th><%= t("Wiki") %></th><th><%= t("Status") %></th><th>Fountain</th><th class="w-1"></th></tr></thead>
+          <tbody>
+            <% allWikis.forEach((w) => { %>
+              <tr>
+                <td><a href="<%= eventBase %>/<%= w.code %>"><%= eventBase %>/<%= w.code %></a></td>
+                <td><%- wikiLabel(w.wiki) %></td>
+                <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= t(w.status) %></span></td>
+                <td class="text-nowrap">
+                  <% if (w.fountainCode) { %>
+                    <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(w.fountainCode) %>" rel="noopener" target="_blank"><%= w.fountainCode %></a>
+                    <div class="text-secondary small"><%= w.fountainSyncedAt ? t('Updated {when}', { when: formatDateTime(w.fountainSyncedAt, contest.timezone) }) : '' %></div>
+                  <% } else { %><span class="text-secondary">—</span><% } %>
+                </td>
+                <td class="text-nowrap">
+                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ...(can('importEvents') ? [['unlink', t('Stop following'), 'ghost-secondary']] : [])].forEach(([action, label, cls]) => { %>
+                    <form method="post" action="<%= eventBase %>/fountain/<%= w.id %>/<%= action %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button></form>
+                  <% }) %><% } %>
+                  <% (wikiActions[w.status] || []).filter(([action]) => action !== 'remove' || can('deleteEvent')).forEach(([action, label, cls]) => { %>
+                    <form method="post" action="<%= eventBase %>/wikis/<%= w.id %>/<%= action %>" class="d-inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button>
+                    </form>
+                  <% }) %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <form method="post" action="<%= eventBase %>/wikis" class="row g-2 align-items-center">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col"><select class="form-select" name="wiki" data-picker="wiki" placeholder="<%= t("Add a wiki…") %>" required></select></div>
+          <div class="col-auto"><button class="btn btn-primary" type="submit"><i class="ti ti-plus me-1"></i><%= t("Add wiki") %></button></div>
+        </form>
+        <% if (can('importEvents')) { %><form method="post" action="<%= eventBase %>/fountain" class="row g-2 align-items-center mt-2">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col"><input class="form-control" name="code" placeholder="<%= t('Fountain editathon code or address') %>" aria-label="<%= t('Fountain editathon code or address') %>" required></div>
+          <div class="col-auto"><button class="btn" type="submit"><%= t("Follow on Fountain") %></button></div>
+        </form><% } %>
+      </div>
+    </div>
+  <% } %>
+
+  <%# ── The event's data: take it out in any format, or clear what's no longer needed ── %>
+  <% if (can('manageEvent') && !wikiMode && typeof dataCounts !== 'undefined') { %>
+    <div class="card mt-4" id="data">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-database me-2"></i><%= t('Data') %></h3></div>
+      <div class="row g-0">
+        <div class="col-lg-6 border-end">
+          <div class="card-body">
+            <div class="subheader mb-2"><%= t('Download') %></div>
+            <div class="d-flex flex-wrap gap-2">
+              <% [['entries', t('Entries')], ['results', t('Results')], ['people', t('People')], ['reviews', t('Reviews')]].forEach(([ds, label]) => { %>
+                <%- include('./exportMenu', { dataset: ds, label, btn: '' }) %>
+              <% }) %>
+            </div>
+            <p class="text-secondary small mt-2 mb-0"><%= t('CSV and Excel open in spreadsheets; wikitext pastes into a wiki page; Markdown into GitHub or a document.') %></p>
+          </div>
+        </div>
+        <% if (can('deleteEvent')) { %>
+        <div class="col-lg-6">
+          <div class="card-body">
+            <div class="subheader mb-2"><%= t('Clear') %></div>
+            <% Object.entries(dataCounts).forEach(([key, d]) => { %>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="flex-fill"><%= t(d.label) %> <span class="text-secondary small">· <%= formatNumber(d.count) %></span></div>
+                <form method="post" action="<%= base %>/data/clear/<%= key %>" data-confirm="<%= t('Delete these rows for good? Download them first if you may need them.') %>">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-sm btn-ghost-danger" type="submit"<%= d.count ? '' : ' disabled' %>><i class="ti ti-trash me-1"></i><%= t('Delete') %></button>
+                </form>
+              </div>
+            <% }) %>
+            <p class="text-secondary small mb-0"><%= t('Entries, reviews and results stay. Only what you delete here goes, for good.') %></p>
+          </div>
+        <% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <% if (moveTargets.length) { %>
+    <div class="card mt-4" id="move">
+      <div class="card-status-start bg-warning"></div>
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-arrow-merge me-2"></i><%= t("Move into another event") %></h3></div>
+      <div class="card-body">
+        <p class="text-secondary"><%= t("This event becomes one wiki of the event you choose. Its entries, participants, sessions and tracked edits move with it, its organizers and reviewers run that wiki, and this address will lead there. You'll see what moves before confirming.") %></p>
+        <form method="post" action="<%= base %>/move" class="row g-2 align-items-end">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="col-md-8">
+            <label class="form-label" for="moveTarget"><%= t("Event") %></label>
+            <select class="form-select" id="moveTarget" name="target" required>
+              <option value=""><%= t("Choose…") %></option>
+              <% moveTargets.forEach((m) => { %><option value="<%= m.id %>"><%= m.title %> (<%= m.path %>)</option><% }) %>
+            </select>
+          </div>
+          <div class="col-md-4"><button type="submit" class="btn btn-outline-warning w-100"><%= t("Continue") %></button></div>
+        </form>
+      </div>
+    </div>
+  <% } %>
+
