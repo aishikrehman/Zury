@@ -28,7 +28,7 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="col-md"><input class="form-control" name="response" maxlength="2000" placeholder="<%= t('Reply to the participant (optional)') %>"></div>
                 <div class="col-auto btn-list">
-                  <button class="btn btn-success" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/uphold"><i class="ti ti-arrow-back-up me-1"></i><%= t('Uphold: back to the jury') %></button>
+                  <button class="btn btn-success" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/uphold"><i class="ti ti-arrow-back-up me-1"></i><%= t('Uphold: back to the reviewers') %></button>
                   <button class="btn" type="submit"><i class="ti ti-x me-1"></i><%= t('Dismiss') %></button>
                 </div>
               </form>

@@ -1,7 +1,7 @@
-<%- include('../../partials/pageHeader', { pretitle: t('Jury'), heading: t('Review') }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Reviewers'), heading: t('Review') }) %>
 <div class="page-body"><div class="container-xl">
   <% if (!events.length) { %>
-    <div class="card"><%- include('../../partials/emptyArt', { title: t('You are not on any jury'), text: t('Organizers add jury members on the People page of their event.') }) %></div>
+    <div class="card"><%- include('../../partials/emptyArt', { title: t('You are not on any reviewers'), text: t('Organizers add reviewers on the People page of their event.') }) %></div>
   <% } else { %>
     <div class="row row-cards">
       <% events.forEach((e) => { %>

@@ -262,7 +262,7 @@ async function appealsList(req, res, next) {
 async function resolve(req, res, next) {
   try {
     await reviewService.resolveAppeal({ actor: req.user, contest: req.contest, appealId: Number(req.params.appealId), action: req.params.action, response: req.body.response });
-    req.flash('success', req.params.action === 'uphold' ? 'Appeal upheld; the entry goes back to the jury.' : 'Appeal dismissed.');
+    req.flash('success', req.params.action === 'uphold' ? 'Appeal upheld; the entry goes back to the reviewers.' : 'Appeal dismissed.');
   } catch (err) {
     if (!(err instanceof ReviewError)) return next(err);
     req.flash('danger', err.message);
@@ -335,7 +335,7 @@ async function entryInScope(req, submissionId) {
 const distribute = assignmentAction(async (req) => {
   const { created, unfilled } = await reviewService.distribute({ actor: req.user, contest: req.contest, settings: req.eventSettings, wiki: req.wikiScope?.wiki });
   return unfilled
-    ? req.t('{n} assignments made; {m} entries still need more jury members.', { n: created, m: unfilled })
+    ? req.t('{n} assignments made; {m} entries still need more reviewers.', { n: created, m: unfilled })
     : req.t('{n} assignments made.', { n: created });
 });
 

@@ -81,7 +81,7 @@
           <div class="col-6 col-md-2"><button class="btn w-100" type="submit" data-confirm="<%= t('Move this event? Its address changes and the old one stops working.') %>"><i class="ti ti-arrows-move me-1"></i><%= t('Move') %></button></div>
           <div class="col-6 col-md-2"><button class="btn w-100" type="submit" formaction="<%= eventBase %>/structure/copy"><i class="ti ti-copy me-1"></i><%= t('Copy') %></button></div>
         </div>
-        <div class="form-hint mt-2"><%= t('Move: the event, its entries and people go there; choose “No series” to detach it. Copy: a new draft with the same settings, wikis, organizers and jury, but no entries.') %></div>
+        <div class="form-hint mt-2"><%= t('Move: the event, its entries and people go there; choose “No series” to detach it. Copy: a new draft with the same settings, wikis, organizers and reviewers, but no entries.') %></div>
       </div>
     </form>
   <% } %>
@@ -118,16 +118,12 @@
       <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t("Wikis") %></h3></div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th><%= t("Address") %></th><th><%= t("Wiki") %></th><th><%= t("Type") %></th><th><%= t("Status") %></th><th>Fountain</th><th class="w-1"></th></tr></thead>
+          <thead><tr><th><%= t("Address") %></th><th><%= t("Wiki") %></th><th><%= t("Status") %></th><th>Fountain</th><th class="w-1"></th></tr></thead>
           <tbody>
             <% allWikis.forEach((w) => { %>
               <tr>
                 <td><a href="<%= eventBase %>/<%= w.code %>"><%= eventBase %>/<%= w.code %></a></td>
                 <td><%- wikiLabel(w.wiki) %></td>
-                <%# Each wiki can have its own type: photos on Commons in a writing event. %>
-                <td><form method="post" action="<%= eventBase %>/wikis/<%= w.id %>/type" class="d-flex gap-1"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <select class="form-select form-select-sm" name="type" aria-label="<%= t("Type") %>: <%= w.wiki %>"><% Object.entries(EVENT_TYPES).forEach(([k, d]) => { %><option value="<%= k %>"<%= (w.type || contest.type) === k ? " selected" : "" %>><%= t(d.label) %><%= k === contest.type ? ` (${t("as the event")})` : "" %></option><% }) %></select>
-                  <button class="btn btn-sm btn-icon" type="submit" title="<%= t("Save") %>" aria-label="<%= t("Save") %>"><i class="ti ti-check"></i></button></form></td>
                 <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= t(w.status) %></span></td>
                 <td class="text-nowrap">
                   <% if (w.fountainCode) { %>
@@ -208,7 +204,7 @@
       <div class="card-status-start bg-warning"></div>
       <div class="card-header"><h3 class="card-title"><i class="ti ti-arrow-merge me-2"></i><%= t("Move into another event") %></h3></div>
       <div class="card-body">
-        <p class="text-secondary"><%= t("This event becomes one wiki of the event you choose. Its entries, participants, sessions and tracked edits move with it, its organizers and jury run that wiki, and this address will lead there. You'll see what moves before confirming.") %></p>
+        <p class="text-secondary"><%= t("This event becomes one wiki of the event you choose. Its entries, participants, sessions and tracked edits move with it, its organizers and reviewers run that wiki, and this address will lead there. You'll see what moves before confirming.") %></p>
         <form method="post" action="<%= base %>/move" class="row g-2 align-items-end">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="col-md-8">

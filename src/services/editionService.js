@@ -78,9 +78,19 @@ async function findOrCreate(seriesId, slug, { title, startDate = null, endDate =
   return edition;
 }
 
+// The type of a series' events (its first live event's), or null when it has none yet.
+async function seriesType(seriesId, { excludeId = null } = {}, client = prisma) {
+  const c = await client.contest.findFirst({
+    where: { deletedAt: null, OR: [{ seriesId }, { editionOf: { seriesId } }], ...(excludeId && { NOT: { id: excludeId } }) },
+    orderBy: { id: 'asc' },
+    select: { type: true },
+  });
+  return c ? c.type : null;
+}
+
 // The live event an edition already has (other than excludeId), if any.
 function eventOf(editionId, { excludeId = null } = {}, client = prisma) {
   return client.contest.findFirst({ where: { editionId, deletedAt: null, ...(excludeId && { NOT: { id: excludeId } }) }, select: { id: true, title: true, path: true } });
 }
 
-module.exports = { pathFor, slugFree, sync, findOrCreate, eventOf, EVENTS_RESERVED, EVENT_TABS };
+module.exports = { pathFor, slugFree, sync, findOrCreate, eventOf, seriesType, EVENTS_RESERVED, EVENT_TABS };

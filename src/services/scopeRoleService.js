@@ -10,7 +10,7 @@ const audit = require('./auditService');
 const notifications = require('./notificationService');
 const LEVEL_MESSAGES = {
   organizer: 'You were made an organizer of {name}.',
-  jury: 'You were added to the jury of {name}.',
+  jury: 'You were added to the reviewers of {name}.',
   viewer: 'You can now follow {name}.',
 };
 

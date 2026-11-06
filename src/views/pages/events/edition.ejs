@@ -71,7 +71,7 @@
                 <div class="col-6 col-md-4"><label class="form-label" for="ce-title"><%= t('Title') %></label><input class="form-control" id="ce-title" name="title" maxlength="200" placeholder="<%= nextName ? edition.title.split(edition.slug).join(nextName) : edition.title %>"></div>
                 <div class="col-6 col-md-3"><label class="form-label" for="ce-years"><%= t('Move dates by (years)') %></label><input class="form-control" type="number" id="ce-years" name="years" min="0" max="10" value="<%= nextName ? 1 : 0 %>"></div>
                 <div class="col-6 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Copy') %></button></div>
-              </div><div class="form-hint mt-2"><%= t('A new edition with a draft of each event (settings, wikis, organizers, jury), its people and its settings for the events below. Entries are not copied.') %></div></div>
+              </div><div class="form-hint mt-2"><%= t('A new edition with a draft of each event (settings, wikis, organizers, reviewers), its people and its settings for the events below. Entries are not copied.') %></div></div>
             </form>
           </div>
         <% } %>

@@ -439,8 +439,8 @@ async function autoAssign({ contest, settings, ids }) {
 async function assign({ actor, contest, settings = null, submissionId, jurorId }) {
   const entry = await prisma.submission.findFirst({ where: { id: submissionId, contestId: contest.id } });
   if (!entry) throw new ReviewError('That entry no longer exists.');
-  if (entry.participantId === jurorId) throw new ReviewError("Jury members can't review their own entries.");
-  if (!(await jurorsFor(contest.id, entry.wiki, settings)).includes(jurorId)) throw new ReviewError('This person is not on the jury for this wiki.');
+  if (entry.participantId === jurorId) throw new ReviewError("Reviewers can't review their own entries.");
+  if (!(await jurorsFor(contest.id, entry.wiki, settings)).includes(jurorId)) throw new ReviewError('This person is not on the reviewers for this wiki.');
   await prisma.reviewAssignment.upsert({
     where: { submissionId_jurorId: { submissionId, jurorId } },
     update: {},

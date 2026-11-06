@@ -23,7 +23,7 @@
     ['basics', t('Basic info'), wikiMode ? t('Description, contact and dates') : t('Type, project, name, address and dates')],
     ['rules', t('Submission rules'), t('Who can take part and what counts')],
     ['judging', t('Interaction and judging'), t('Review, appeals, results and features')],
-    ...(wikiMode ? [] : [['access', t('User access levels'), t('Visibility, organizers and jury')]]),
+    ...(wikiMode ? [] : [['access', t('User access levels'), t('Visibility, organizers and reviewers')]]),
     ...(creating ? [['review', t('Review'), t('Check everything, then create')]] : []),
   ];
   const dateInput = (key) => `
@@ -354,7 +354,7 @@
                 <div class="col-12 col-md-6 form-hint align-self-end"><%= t('Leave both empty for any number.') %></div>
               </div>
               <div class="mt-3" data-show-when="reviewMethod:marks">
-                <p class="text-secondary small mb-2"><%= t("What the jury give each entry, and the points each value is worth. Points add up to the leaderboard.") %></p>
+                <p class="text-secondary small mb-2"><%= t("What the reviewers give each entry, and the points each value is worth. Points add up to the leaderboard.") %></p>
                 <div data-marks-editor>
                   <input type="hidden" name="marks" value="<%= v('marks') || '[]' %>" data-marks-input>
                   <div data-marks-rows></div>
@@ -372,7 +372,7 @@
               <h4 class="mb-1"><%= t('Who reviews') %><%- mark('settings.reviewers') %></h4>
               <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2 mt-2">
                 <% const who = Array.isArray(v('reviewers')) ? v('reviewers') : ['jury']; %>
-                <% [['jury', 'gavel', 'The jury', 'People you add as jury (People tab).'], ['localAdmins', 'shield', 'Local admins', 'Administrators of the entry’s wiki.'], ['participants', 'users', 'Any participant', 'Peer review among the participants.']].forEach(([key, icon, label, hint]) => { %>
+                <% [['jury', 'gavel', 'The reviewers', 'People you add as reviewers (People tab).'], ['localAdmins', 'shield', 'Local admins', 'Administrators of the entry’s wiki.'], ['participants', 'users', 'Any participant', 'Peer review among the participants.']].forEach(([key, icon, label, hint]) => { %>
                   <label class="form-selectgroup-item flex-fill">
                     <input type="checkbox" name="reviewers" value="<%= key %>" class="form-selectgroup-input"<%= who.includes(key) ? ' checked' : '' %>>
                     <span class="form-selectgroup-label d-flex align-items-start gap-2 p-2 text-start"><i class="ti ti-<%= icon %> mt-1"></i><span><strong class="d-block"><%= t(label) %></strong><span class="text-secondary small"><%= t(hint) %></span></span></span>
@@ -479,13 +479,13 @@
                     <div class="form-hint"><%= t("You are an organizer already.") %></div>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label" for="jury"><%= t("Jury") %></label>
+                    <label class="form-label" for="jury"><%= t("Reviewers") %></label>
                     <select class="form-select" id="jury" name="jury" multiple data-picker="user" placeholder="<%= t("Search Wikimedia users…") %>">
                       <% [].concat(form.jury || []).filter(Boolean).forEach((u) => { %><option value="<%= u %>" selected><%= u %></option><% }) %>
                     </select>
                   </div>
                 <% } else { %>
-                  <div class="col-12"><a class="btn btn-outline-primary" href="<%= base %>/participants"><i class="ti ti-users me-1"></i><%= t("Manage organizers, jury and participants") %></a></div>
+                  <div class="col-12"><a class="btn btn-outline-primary" href="<%= base %>/participants"><i class="ti ti-users me-1"></i><%= t("Manage organizers, reviewers and participants") %></a></div>
                 <% } %>
               </div>
             </section>

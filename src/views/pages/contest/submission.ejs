@@ -101,7 +101,7 @@
 
       <% if (reviews.length) { %>
         <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= t('Jury') %></h3><% if (submission.score != null) { %><div class="card-actions"><span class="badge bg-blue-lt"><%= t('{n} points', { n: submission.score }) %></span></div><% } %></div>
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= t('Reviewers') %></h3><% if (submission.score != null) { %><div class="card-actions"><span class="badge bg-blue-lt"><%= t('{n} points', { n: submission.score }) %></span></div><% } %></div>
           <div class="list-group list-group-flush">
             <% reviews.forEach((r) => { const marks = JSON.parse(r.marks || '{}'); %>
               <div class="list-group-item">

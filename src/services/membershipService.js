@@ -2,7 +2,7 @@ const prisma = require('../config/prisma');
 const notifications = require('./notificationService');
 const ROLE_MESSAGES = {
   organizer: 'You were added to {event} as an organizer.',
-  jury: 'You were added to the jury of {event}.',
+  jury: 'You were added to the reviewers of {event}.',
   participant: 'You were added to {event} as a participant.',
   viewer: 'You can now follow {event}.',
 };
@@ -24,7 +24,7 @@ class MembershipError extends Error {
 function roleConflict(newRole, existingRoles, settings) {
   const has = (r) => existingRoles.includes(r);
   if (newRole === 'participant') {
-    if (has('jury') && !settings.allowJuryParticipation) return 'Jury members may not participate in this event.';
+    if (has('jury') && !settings.allowJuryParticipation) return 'Reviewers may not participate in this event.';
     if (has('organizer') && !settings.allowOrganizerParticipation) return 'Organizers may not participate in this event.';
   }
   if (newRole === 'jury' && has('participant') && !settings.allowJuryParticipation) {

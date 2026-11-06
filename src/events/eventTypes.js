@@ -157,16 +157,16 @@ Object.assign(EVENT_TYPES, {
 
 // A line for each wizard step, saying what that step means for this type of event.
 const GUIDES = {
-  photo: { rules: 'Set what a photo needs: resolution, the contest category and when it was uploaded.', judging: 'Jury rate photos, often in rounds; results list the winners per award.' },
-  writing: { rules: 'Set what an article needs: size, words, and whether it must be new or may be expanded.', judging: 'Jury mark each article; points from marks make the leaderboard.' },
-  data: { rules: 'Set which entities count and which properties or statements they need.', judging: 'Jury can approve or reject items; counts make the results.' },
-  editathon: { rules: "Participants register; their edits during the event are counted automatically.", judging: 'Usually no jury: results come from tracked edits and bytes.' },
-  proofread: { rules: 'Choose the books and the lowest proofreading level that counts. Pages are checked on Wikisource.', judging: 'No jury needed: proofread and validated pages earn points.' },
+  photo: { rules: 'Set what a photo needs: resolution, the contest category and when it was uploaded.', judging: 'Reviewers rate photos, often in rounds; results list the winners per award.' },
+  writing: { rules: 'Set what an article needs: size, words, and whether it must be new or may be expanded.', judging: 'Reviewers mark each article; points from marks make the leaderboard.' },
+  data: { rules: 'Set which entities count and which properties or statements they need.', judging: 'Reviewers can approve or reject items; counts make the results.' },
+  editathon: { rules: "Participants register; their edits during the event are counted automatically.", judging: 'Usually no reviewers: results come from tracked edits and bytes.' },
+  proofread: { rules: 'Choose the books and the lowest proofreading level that counts. Pages are checked on Wikisource.', judging: 'No reviewers needed: proofread and validated pages earn points.' },
   glam: { rules: 'Name the partner and collection, the batch category and the licences you accept.', judging: 'Optionally curate uploads; reports show where the files are used.' },
   digitization: { rules: 'Set the formats and category for scans; plan scanning days in Sessions.', judging: 'Organizers check scan quality; progress counts pages against the target.' },
   workshop: { rules: 'Participants register for sessions; their edits can be tracked.', judging: 'Attendance earns a certificate.' },
   training: { rules: 'Participants register for the course sessions; their edits can be tracked.', judging: 'Attendance earns a certificate.' },
-  photowalk: { rules: 'Set the meeting point and the category for uploads from the walk.', judging: 'Uploads are checked like a photo contest; no jury needed.' },
+  photowalk: { rules: 'Set the meeting point and the category for uploads from the walk.', judging: 'Uploads are checked like a photo contest; no reviewers needed.' },
 };
 for (const [type, guide] of Object.entries(GUIDES)) EVENT_TYPES[type].guide = guide;
 
@@ -248,17 +248,5 @@ function readTypeConfig(type, json) {
   return { ...typeDefaults(type), ...Object.fromEntries(EVENT_TYPES[type].fields.filter((f) => f.key in stored).map((f) => [f.key, stored[f.key]])) };
 }
 
-// Types that work on a project; a wiki of an event whose type doesn't fit takes the first.
-const PROJECT_TYPES = [
-  [(w) => w === 'commonswiki', ['photo', 'photowalk', 'glam', 'digitization']],
-  [(w) => w === 'wikidatawiki', ['data']],
-  [(w) => /wikisource$/.test(w), ['proofread', 'digitization']],
-];
-function typeForWiki(eventType, wiki) {
-  const rule = PROJECT_TYPES.find(([test]) => test(wiki));
-  return rule && !rule[1].includes(eventType) ? rule[1][0] : null;
-}
-
 module.exports = {
-  typeForWiki,
   takesEntries, EVENT_TYPES, typeDefaults, parseTypeConfig, readTypeConfig };

@@ -4,7 +4,7 @@
     <form method="post" action="/events/import" class="card">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="card-body">
-        <p class="text-secondary"><%= t('Bring an editathon from Fountain into Zury. Its articles become entries, the Fountain jury decides them, and Zury keeps them up to date every hour.') %></p>
+        <p class="text-secondary"><%= t('Bring an editathon from Fountain into Zury. Its articles become entries, the Fountain reviewers decides them, and Zury keeps them up to date every hour.') %></p>
         <label class="form-label" for="code"><%= t('Fountain editathon code or address') %></label>
         <input class="form-control<%= error ? ' is-invalid' : '' %>" id="code" name="code" value="<%= value %>" placeholder="https://fountain.toolforge.org/editathons/…" required autofocus>
         <% if (error) { %><div class="invalid-feedback"><%= error %></div><% } %>

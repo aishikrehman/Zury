@@ -27,9 +27,14 @@ async function uniqueSlug(tx, slug, { auto, excludeId, parent = {} }) {
 
 // The event's parent from the form's "Part of" (a series) and edition: the edition when one
 // is given (made if missing; it may hold other events), else the series directly, else none.
-async function seriesFields(tx, series, title, actorId = null, selfId = null) {
+async function seriesFields(tx, series, title, actorId = null, selfId = null, type = null) {
   if (!series) return { seriesId: null, editionId: null };
   let row = await tx.eventSeries.findUnique({ where: { slug: series.slug } });
+  // A series holds one type of event.
+  if (row && type) {
+    const theirs = await editions.seriesType(row.id, { excludeId: selfId }, tx);
+    if (theirs && theirs !== type) throw new EventError('The events of this series are of another type. Choose that type, or another series.', 'seriesSlug');
+  }
   if (!row) {
     row = await tx.eventSeries.create({ data: { slug: series.slug, title: series.title || title.replace(/\s*(19|20)\d\d\s*/g, ' ').trim() || title } });
     // A new series is run by whoever made it (that level only).
@@ -48,7 +53,7 @@ async function seriesFields(tx, series, title, actorId = null, selfId = null) {
 
 async function create({ actorId, type, parsed, autoSlug }) {
   return prisma.$transaction(async (tx) => {
-    const series = await seriesFields(tx, parsed.series, parsed.contest.title, actorId);
+    const series = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, null, type);
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, parent: series });
     const contest = await tx.contest.create({
       data: {
@@ -83,7 +88,7 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
   // Locked settings keep their value; a followed setting changed here becomes the event's own.
   parsed.lockedRefused = await inherit.guardUpdate(contest, settings, parsed.settings);
   return prisma.$transaction(async (tx) => {
-    const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, contest.id);
+    const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, contest.id, contest.type);
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
     const data = { ...parsed.contest, ...parent, slug };
     const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).filter((k) => k !== 'followed').map((k) => `settings.${k}`)];

@@ -6,7 +6,7 @@ const audit = require('./auditService');
 const oauthService = require('./wikimediaOAuthService');
 
 const METHODS = { talk: 'Talk page message', email: 'Email (through Wikimedia)' };
-const AUDIENCES = { participant: 'Participants', jury: 'Jury', organizer: 'Organizers' };
+const AUDIENCES = { participant: 'Participants', jury: 'Reviewers', organizer: 'Organizers' };
 const MAX_RECIPIENTS = 200;
 
 class MessageError extends Error {

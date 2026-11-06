@@ -84,7 +84,7 @@ const rolePermissions = require('../services/rolePermissionService');
 const PERMISSION_GROUPS = [
   ['Events', /Event$|^createEvent$|Series|Wiki/],
   ['Entries', /Submission|Entry|Entries|Submit|Appeal|Contribution|exportData/],
-  ['Jury and results', /Review|review|Jury|Assignment|Results|Score|massReview/],
+  ['Reviewers and results', /Review|review|Jury|Assignment|Results|Score|massReview/],
   ['People', /Participant|Member|Role|Block|Notification|Message|Organizer/],
   ['Site', /.*/],
 ];

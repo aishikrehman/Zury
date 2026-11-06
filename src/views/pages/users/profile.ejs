@@ -2,7 +2,7 @@
   const wikiUserUrl = 'https://meta.wikimedia.org/wiki/Special:CentralAuth/' + encodeURIComponent(profileUser.username.replace(/ /g, '_'));
   const groups = [
     { heading: t('Organized'), icon: 'briefcase', color: 'green', items: organized, empty: 'No public events organized.' },
-    { heading: t('Jury member'), icon: 'gavel', color: 'orange', items: judged, empty: 'No public jury roles.' },
+    { heading: t('Reviewer'), icon: 'gavel', color: 'orange', items: judged, empty: 'No public reviewers roles.' },
     { heading: t('Participated'), icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
   ];
 %>

@@ -36,7 +36,7 @@ async function create({ actorId, slug, title, description = '' }) {
 async function summary(seriesId, { drafts = false } = {}) {
   const shown = drafts ? {} : { status: { not: 'draft' }, visibility: 'public' };
   const editions = await prisma.edition.findMany({
-    where: { seriesId, deletedAt: null, ...(drafts ? {} : { status: { not: 'draft' } }) },
+    where: { seriesId, deletedAt: null },
     orderBy: [{ year: 'desc' }, { slug: 'desc' }],
     select: {
       id: true, slug: true, title: true, status: true, startDate: true, endDate: true,
@@ -45,7 +45,11 @@ async function summary(seriesId, { drafts = false } = {}) {
   });
   // Each edition's totals, counted without doubles (statsService).
   const { rollup } = require('./statsService');
-  return Promise.all(editions.map(async (e) => ({ ...e, edition: e.slug, ...(await rollup(e.events.map((ev) => ev.id))) })));
+  // An edition with its one event shows that event's status (an archived edition stays archived).
+  const statusOf = (e) => (e.status !== 'archived' && e.events.length === 1 ? e.events[0].status : e.status);
+  // Visitors don't see editions still in draft (by the status shown).
+  const listed = editions.filter((e) => drafts || statusOf(e) !== 'draft');
+  return Promise.all(listed.map(async (e) => ({ ...e, status: statusOf(e), edition: e.slug, ...(await rollup(e.events.map((ev) => ev.id))) })));
 }
 
 // The next edition: a year after the latest, with a copy of each of its events (settings,

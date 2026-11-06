@@ -473,7 +473,9 @@ async function editionTabs(req, res, next) {
       rows = await Promise.all(events.map(async (c) => ({ label: c.title, href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) })));
     }
     const canRunSeriesHere = canRun && (await canRunSeries(req, sr.id));
-    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
+    // An edition with its one event shows that event's status (an archived edition stays archived).
+    const shown = { ...edition, status: edition.status !== 'archived' && events.length === 1 ? events[0].status : edition.status };
+    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition: shown, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
   } catch (err) {
     next(err);
   }

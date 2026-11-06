@@ -34,7 +34,7 @@ async function table(contest, settings, dataset, { wiki } = {}) {
   }
   if (dataset === 'reviews') {
     const items = await prisma.review.findMany({ where: { contestId: contest.id, ...(wiki && { submission: { wiki } }) }, include: { submission: { select: { title: true, wiki: true } }, juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } });
-    return { columns: ['Entry', 'Wiki', 'Jury member', 'Decision', 'Points', 'Comment', 'Date'], rows: items.map((r) => [r.submission.title, r.submission.wiki, r.juror.username, r.decision, r.points, r.comment, day(r.createdAt)]) };
+    return { columns: ['Entry', 'Wiki', 'Reviewer', 'Decision', 'Points', 'Comment', 'Date'], rows: items.map((r) => [r.submission.title, r.submission.wiki, r.juror.username, r.decision, r.points, r.comment, day(r.createdAt)]) };
   }
   throw new Error('Unknown dataset.');
 }
@@ -76,7 +76,7 @@ const CLEARABLE = {
   contributions: { label: 'Tracked edits', count: (id) => prisma.contribution.count({ where: { contestId: id } }), clear: (id) => prisma.contribution.deleteMany({ where: { contestId: id } }) },
   messages: { label: 'Entry history', count: (id) => prisma.submissionHistory.count({ where: { submission: { contestId: id } } }), clear: (id) => prisma.submissionHistory.deleteMany({ where: { submission: { contestId: id } } }) },
   withdrawn: { label: 'Withdrawn and invalid entries', count: (id) => prisma.submission.count({ where: { contestId: id, status: { in: ['withdrawn', 'invalid'] } } }), clear: (id) => prisma.submission.deleteMany({ where: { contestId: id, status: { in: ['withdrawn', 'invalid'] } } }) },
-  assignments: { label: 'Jury assignments', count: (id) => prisma.reviewAssignment.count({ where: { contestId: id } }), clear: (id) => prisma.reviewAssignment.deleteMany({ where: { contestId: id } }) },
+  assignments: { label: 'Reviewers assignments', count: (id) => prisma.reviewAssignment.count({ where: { contestId: id } }), clear: (id) => prisma.reviewAssignment.deleteMany({ where: { contestId: id } }) },
 };
 
 async function counts(contestId) {

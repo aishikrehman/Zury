@@ -11,7 +11,7 @@
       <div class="h3 m-0"><%= t('Results and statistics') %></div>
       <div class="text-secondary small">
         <% if (published) { %><i class="ti ti-world me-1"></i><%= t('Published {date}', { date: formatDateTime(published, contest.timezone) }) %>
-        <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and jury see this page.') %><% } %>
+        <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and reviewers see this page.') %><% } %>
       </div>
     </div>
     <% if (showRanking && (can('manageEvent') || can('exportData'))) { %><div class="ms-auto"><%- include('../../partials/exportMenu', { dataset: 'results', btn: '' }) %></div><% } %>
@@ -26,7 +26,7 @@
 
   <% if (progress) { %>
     <div class="row row-cards mb-3">
-      <% [[t('Waiting for review'), progress.waiting, 'hourglass', 'yellow'], [t('Approved'), progress.approved, 'circle-check', 'green'], [t('Rejected'), progress.rejected, 'circle-x', 'red'], [t('Jury members'), progress.jurors.length, 'gavel', 'purple']].forEach(([label, value, icon, color]) => { %>
+      <% [[t('Waiting for review'), progress.waiting, 'hourglass', 'yellow'], [t('Approved'), progress.approved, 'circle-check', 'green'], [t('Rejected'), progress.rejected, 'circle-x', 'red'], [t('Reviewers'), progress.jurors.length, 'gavel', 'purple']].forEach(([label, value, icon, color]) => { %>
         <div class="col-6 col-lg-3">
           <div class="card card-sm"><div class="card-body d-flex align-items-center">
             <span class="avatar bg-<%= color %>-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
@@ -38,7 +38,7 @@
   <% } %>
 
   <% if (!showRanking) { %>
-    <div class="alert alert-info"><i class="ti ti-lock"></i><div><%= t('The ranking is published when the jury has finished.') %></div></div>
+    <div class="alert alert-info"><i class="ti ti-lock"></i><div><%= t('The ranking is published when the reviewers has finished.') %></div></div>
   <% } else if (!rows.length) { %>
     <div class="card"><%- include('../../partials/emptyArt', { title: t('No results yet'), text: t('The ranking fills in as entries are decided.') }) %></div>
   <% } else { %>

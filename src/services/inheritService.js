@@ -22,7 +22,7 @@ const KEYS = {
   minAccountAgeDays: { label: 'Minimum account age (days)', type: 'int', min: 0, max: 36500 },
   minEditCount: { label: 'Minimum edit count', type: 'int', min: 0, max: 10000000 },
   participantLimit: { label: 'Participant limit', type: 'int', min: 1, max: 1000000, optional: true },
-  allowJuryParticipation: { label: 'Jury may take part', type: 'bool' },
+  allowJuryParticipation: { label: 'Reviewers may take part', type: 'bool' },
   allowOrganizerParticipation: { label: 'Organizers may take part', type: 'bool' },
   anonymousParticipants: { label: 'Anonymous participants', type: 'bool' },
   requiredReviews: { label: 'Reviews per entry', type: 'int', min: 1, max: 20 },

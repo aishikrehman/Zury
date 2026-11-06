@@ -34,14 +34,14 @@ const DATE_ORDER = [
 ];
 
 const FEATURE_FIELDS = [
-  ['juryReviewEnabled', 'Jury review', 'Jurors score or approve entries.'],
+  ['juryReviewEnabled', 'Reviewers review', 'Jurors score or approve entries.'],
   ['appealsEnabled', 'Appeals', 'Participants can appeal decisions.'],
   ['registrationEnabled', 'Self-registration', 'Logged-in users can join the event themselves.'],
   ['massSubmissionEnabled', 'Mass submission', 'Participants can submit many entries at once.'],
   ['autoValidationEnabled', 'Automatic validation', 'Entries are checked against the rules when submitted.'],
   ['contributionDiscoveryEnabled', "Track participants' edits", "Participants' edits during the event are found automatically."],
   ['badgesEnabled', 'Badges', 'Award badges to participants and winners.'],
-  ['wordCountEnabled', 'Count by words', 'Rank participants by the words in their accepted articles, and show word counts in tables, results and statistics.'],
+  ['wordCountEnabled', 'Show word counts', 'Show the words of each article in tables, results and statistics. (What the results count is set under Review.)'],
   ['publicStatisticsEnabled', 'Public statistics', 'Anyone can see the statistics page.'],
   ['participantNotificationsEnabled', 'Participant notifications', 'Participants are notified about their entries.'],
 ];
@@ -251,6 +251,8 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   settings.trackHashtags = JSON.stringify([...new Set(hashtags)]);
   settings.trackCategories = JSON.stringify([...new Set(categories)]);
   for (const [key] of FEATURE_FIELDS) settings[key] = bool(body[key]);
+  // Results by words need the word counts shown.
+  if (settings.rankBy === 'words') settings.wordCountEnabled = true;
 
   const typeInput = Object.fromEntries(
     typeDef.fields.map((f) => [f.key, body[`type_${f.key}`]]),

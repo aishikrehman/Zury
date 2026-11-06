@@ -25,7 +25,13 @@ function parentOf(target) {
   return { seriesId: null, editionId: null };
 }
 
-async function freeName(tx, wanted, parent, excludeId) {
+async function freeName(tx, wanted, parent, excludeId, type = null) {
+  // A series holds one type of event.
+  const seriesId = parent.seriesId || (parent.editionId && (await tx.edition.findUnique({ where: { id: parent.editionId }, select: { seriesId: true } })).seriesId);
+  if (seriesId && type) {
+    const theirs = await editions.seriesType(seriesId, { excludeId }, tx);
+    if (theirs && theirs !== type) throw new StructureError('The events of this series are of another type.');
+  }
   if (parent.editionId) {
     const has = await editions.eventOf(parent.editionId, { excludeId }, tx);
     if (has) throw new StructureError('This edition already has its event. Add the wikis to that event instead.');
@@ -44,7 +50,7 @@ async function moveEvent({ actorId, contest, target, slug }) {
   const parent = parentOf(target);
   if (parent.seriesId === (contest.seriesId ?? null) && parent.editionId === (contest.editionId ?? null)) throw new StructureError('The event is already there.');
   return prisma.$transaction(async (tx) => {
-    const name = await freeName(tx, slug || contest.slug, parent, contest.id);
+    const name = await freeName(tx, slug || contest.slug, parent, contest.id, contest.type);
     await tx.contest.update({ where: { id: contest.id }, data: { ...parent, slug: name } });
     await editions.sync(contest.id, tx);
     // Under a new parent it takes that parent's locks, and defaults where it had no value of its own.
@@ -59,7 +65,7 @@ async function moveEvent({ actorId, contest, target, slug }) {
 async function copyEventTx(tx, ev, { actorId, parent, slug, years = 0, rename = null }) {
   const { id, path, createdAt, updatedAt, status, statusMode, resultsPublishedAt, mergedIntoId, mergedWikiCode, settings, wikis, memberships, editionId, seriesId, deletedAt, deletedById, slug: oldSlug, ...rest } = ev;
   const { id: _sid, contestId: _cid, trackedAt: _t, ...copySettings } = settings || {};
-  const name = await freeName(tx, slug || oldSlug, parent, null);
+  const name = await freeName(tx, slug || oldSlug, parent, null, ev.type);
   const people = new Map([[`${actorId}:organizer:`, { userId: actorId, role: 'organizer', wiki: '' }]]);
   for (const m of memberships || []) if (['organizer', 'jury'].includes(m.role) && m.status === 'active') people.set(`${m.userId}:${m.role}:${m.wiki}`, { userId: m.userId, role: m.role, wiki: m.wiki });
   const contest = await tx.contest.create({

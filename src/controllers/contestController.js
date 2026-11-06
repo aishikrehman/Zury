@@ -146,8 +146,8 @@ async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
     wikiMode: !!req.wikiScope,
     canManageWikis: !req.wikiScope && req.scope.isGlobalController,
     title: `Configuration — ${req.contest.title}`,
-    type: req.wikiScope ? req.effective.contest.type : req.contest.type,
-    typeDef: EVENT_TYPES[req.wikiScope ? req.effective.contest.type : req.contest.type],
+    type: req.contest.type,
+    typeDef: EVENT_TYPES[req.contest.type],
     form,
     errors,
   });
@@ -166,9 +166,7 @@ const same = (a, b) => (a instanceof Date || b instanceof Date ? (a && a.getTime
 
 // A wiki's settings form: every value that differs from the event's becomes an override.
 async function updateWikiConfig(req, res, next) {
-  // The wiki's own type, if it has one (its type settings are then all its own).
-  const type = req.effective.contest.type;
-  const ownType = type !== req.contest.type;
+  const type = req.contest.type;
   const eventForm = contestForm.toForm({ ...req.contest, series: req.edition ? null : req.series, editionOf: req.edition ? { ...req.edition, series: req.series } : null }, req.eventSettings);
   if (req.body.reset) {
     await eventWikiService.saveOverrides({ actorId: req.user.id, contest: req.contest, eventWiki: req.wikiScope, overrides: { contest: {}, settings: {}, typeConfig: {} } });
@@ -187,7 +185,7 @@ async function updateWikiConfig(req, res, next) {
   const chosen = [
     ...Object.keys(parsed.contest).filter((k) => !same(parsed.contest[k], baseline.contest[k])).map((k) => `contest.${k}`),
     ...Object.keys(parsed.settings).filter((k) => k !== 'typeConfig' && !same(parsed.settings[k], baseline.settings[k])).map((k) => `settings.${k}`),
-    ...Object.keys(typeValues).filter((k) => ownType || !same(typeValues[k], baseType[k])).map((k) => `type.${k}`),
+    ...Object.keys(typeValues).filter((k) => !same(typeValues[k], baseType[k])).map((k) => `type.${k}`),
   ].filter((k) => !locked.includes(k));
   try {
     await eventWikiService.saveOverrides({ actorId: req.user.id, contest: req.contest, eventWiki: req.wikiScope, overrides: buildOverrides(parsed, typeValues, chosen) });
@@ -539,16 +537,3 @@ async function inlineUpdate(req, res, next) {
   }
 }
 module.exports.inlineUpdate = inlineUpdate;
-
-// A wiki's own type, from the Wikis card.
-async function setWikiType(req, res, next) {
-  try {
-    await eventWikiService.setType({ actorId: req.user.id, contest: req.contest, wikiId: Number(req.params.wikiId), type: String(req.body.type || '') });
-    req.flash('success', req.t('Saved.'));
-  } catch (err) {
-    if (!(err instanceof eventWikiService.EventWikiError)) return next(err);
-    req.flash('danger', req.t(err.message));
-  }
-  res.redirect(`${req.eventBase}/config#wikis`);
-}
-module.exports.setWikiType = setWikiType;
