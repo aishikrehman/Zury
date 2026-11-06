@@ -28,7 +28,7 @@
     ['rules', t('Submission rules'), t('Who can take part and what counts')],
     ...(judged ? [['judging', t('Review'), t('How entries are reviewed and results counted')]] : []),
     ['features', t('Features'), t('Turn parts of the event on or off')],
-    ['access', wikiMode ? t('More details') : t('More details and access'), wikiMode ? t('Contact, images and more') : t('Contact, images, visibility, organizers and reviewers')],
+    ['access', t('Other'), wikiMode ? t('Contact, images and more') : t('Contact, images, visibility, organizers and reviewers')],
   ];
   const dateInput = (key) => `
     <label class="form-label" for="${key}">${esc(dateLabel[key])}${mark('contest.' + key)}</label>
