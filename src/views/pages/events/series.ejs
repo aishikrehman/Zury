@@ -1,17 +1,65 @@
-<%# A series (/wam), in tabs: an overview (totals, its editions and events directly under it), and for
-    those who run it its settings (details, settings for the events below, archive) and people. %>
+<%# A series (/wam), in tabs: overview (its introduction, the featured edition, totals), its editions, its
+    direct events and statistics; for those who run it also its people, settings and history. %>
 <%
   const base = `/${series.slug}`;
-  const tabs = [['overview', 'layout-dashboard', t('Overview')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
+  const tabs = [
+    ['overview', 'layout-dashboard', t('Overview')],
+    ['editions', 'calendar', t('Editions')],
+    ['events', 'calendar-event', t('Direct events')],
+    ['statistics', 'chart-bar', t('Statistics')],
+    ...(canRun ? [['people', 'users', t('Organizers')], ['settings', 'settings', t('Settings')]] : []),
+  ];
+  const json = (s, d) => { try { return JSON.parse(s || '') || d; } catch (e) { return d; } };
+  const links = json(series.externalLinks, []);
+  const langs = json(series.supportedLanguages, []);
+  const communities = (series.communities || '').split('\n').filter(Boolean);
+  const edName = (e) => e.identifier || e.slug;
+  const edHref = (e) => (e.events.length === 1 && e.events[0].path ? e.events[0].path : `/${series.slug}/${e.slug}`);
+  const featured = summary.find((e) => e.featured) || summary.find((e) => ['active', 'upcoming', 'published'].includes(e.status)) || summary[0];
+  const SERIES_STATUS = { draft: ['Draft', 'secondary'], active: ['Active', 'success'], paused: ['Paused', 'warning'], archived: ['Archived', 'secondary'] };
+  const meta = `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span><span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', directEvents.length)}</span>${series.visibility !== 'public' ? `<span><i class="ti ti-eye-off"></i>${t(series.visibility === 'private' ? 'Members only' : 'Link only')}</span>` : ''}`;
+  const orderForm = (kind, id, action, icon, label, i, n) => `<form method="post" action="/series/${series.slug}/order" class="d-inline"><input type="hidden" name="_csrf" value="${csrfToken}"><input type="hidden" name="kind" value="${kind}"><input type="hidden" name="id" value="${id}"><input type="hidden" name="action" value="${action}"><button class="btn btn-sm btn-ghost-secondary btn-icon" type="submit" title="${label}" aria-label="${label}"${(action === 'up' && i === 0) || (action === 'down' && i === n - 1) ? ' disabled' : ''}><i class="ti ti-${icon}"></i></button></form>`;
 %>
-<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events']], heading: series.title, inline: canRun ? { action: `/series/${series.slug}/update`, name: 'title', label: t('Name'), maxlength: 120, hidden: { description: series.description, back: 'overview' } } : null, status: series.status === 'archived' ? 'archived' : '', meta: `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span>`, base, tab, tabs }) %>
+<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events']], heading: series.title, inline: canRun ? { action: `/series/${series.slug}/update`, name: 'title', label: t('Name'), maxlength: 120, hidden: { description: series.description, back: 'overview' } } : null, status: series.status === 'archived' ? 'archived' : series.status === 'draft' ? 'draft' : series.status === 'paused' ? 'paused' : '', meta, base, tab, tabs }) %>
 <div class="page-body">
   <div class="container-xl">
 
     <% if (tab === 'overview') { %>
-      <% if (canRun) { %><div class="mb-3"><%- include('../../partials/inlineEdit', { action: `/series/${series.slug}/update`, name: 'description', value: series.description, label: t('Description'), multiline: true, maxlength: 2000, hidden: { title: series.title, back: 'overview' }, viewTag: 'p', viewClass: 'text-secondary m-0', emptyText: t('Add a description') }) %></div>
-      <% } else if (series.description) { %><p class="text-secondary" style="white-space: pre-line"><%= series.description %></p><% } %>
+      <% if (series.bannerUrl) { %><div class="card mb-3 overflow-hidden"><img src="<%= series.bannerUrl %>" alt="" class="w-100" style="max-height:220px;object-fit:cover"></div><% } %>
+      <div class="d-flex gap-3 align-items-start mb-3">
+        <% if (series.logoUrl) { %><img src="<%= series.logoUrl %>" alt="" width="72" height="72" class="rounded" style="object-fit:contain"><% } %>
+        <div class="min-w-0 flex-fill">
+          <% if (series.shortDescription) { %><p class="lead mb-1"><%= series.shortDescription %></p><% } %>
+          <% if (canRun) { %><%- include('../../partials/inlineEdit', { action: `/series/${series.slug}/update`, name: 'description', value: series.description, label: t('Description'), multiline: true, maxlength: 2000, hidden: { title: series.title, back: 'overview' }, viewTag: 'p', viewClass: 'text-secondary m-0', emptyText: t('Add a description') }) %>
+          <% } else if (series.description) { %><p class="text-secondary m-0" style="white-space: pre-line"><%= series.description %></p><% } %>
+        </div>
+      </div>
+      <div class="row row-cards mb-3">
+        <% if (featured) { %>
+          <div class="col-lg-6">
+            <a class="card card-link h-100" href="<%= edHref(featured) %>">
+              <div class="card-body">
+                <div class="subheader mb-1"><i class="ti ti-star me-1"></i><%= featured.featured ? t('Featured edition') : t('Current edition') %></div>
+                <div class="h2 mb-1"><%= edName(featured) %></div>
+                <div class="text-secondary"><%= featured.title %></div>
+                <div class="small text-secondary mt-2"><%= tn('{n} participant', '{n} participants', featured.participants) %> · <%= tn('{n} entry', '{n} entries', featured.entries) %></div>
+              </div>
+            </a>
+          </div>
+        <% } %>
+        <% if (communities.length || langs.length || links.length || series.defaultLanguage) { %>
+          <div class="col-lg-6">
+            <div class="card h-100"><div class="card-body small">
+              <% if (series.defaultLanguage || langs.length) { %><div class="mb-2"><i class="ti ti-language me-1"></i><%= [series.defaultLanguage, ...langs.filter((l) => l !== series.defaultLanguage)].filter(Boolean).join(', ') %></div><% } %>
+              <% if (communities.length) { %><div class="mb-2"><i class="ti ti-users-group me-1"></i><%= communities.join(' · ') %></div><% } %>
+              <% links.forEach((l) => { %><div><a href="<%= l.url %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= l.label %></a></div><% }) %>
+            </div></div>
+          </div>
+        <% } %>
+      </div>
       <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition'), table: false }) %>
+
+    <% } else if (tab === 'editions') { %>
       <div class="card mb-3">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3>
           <% if (canRun) { %><div class="card-actions">
@@ -23,7 +71,7 @@
           <form method="post" action="/series/<%= series.slug %>/first-edition" class="collapse border-bottom" id="new-edition">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="card-body"><div class="row g-3 align-items-end">
-              <div class="col-6 col-md-2"><label class="form-label" for="ne-edition"><%= t('Edition') %></label><input class="form-control" id="ne-edition" name="edition" value="<%= new Date().getFullYear() %>" maxlength="20" required></div>
+              <div class="col-6 col-md-2"><label class="form-label" for="ne-edition"><%= t('Address') %></label><input class="form-control" id="ne-edition" name="edition" value="<%= new Date().getFullYear() %>" maxlength="20" required></div>
               <div class="col-6 col-md-4"><label class="form-label" for="ne-title"><%= t('Title') %></label><input class="form-control" id="ne-title" name="title" maxlength="200" placeholder="<%= series.title %> <%= new Date().getFullYear() %>"></div>
               <div class="col-6 col-md-2"><label class="form-label" for="ne-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ne-start" name="startDate"></div>
               <div class="col-6 col-md-2"><label class="form-label" for="ne-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ne-end" name="endDate"></div>
@@ -33,30 +81,41 @@
         <% } %>
         <% if (!summary.length) { %><div class="card-body text-secondary"><%= t('No editions yet') %></div><% } else { %>
           <div class="list-group list-group-flush">
-            <% summary.forEach((e) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
-              <a class="list-group-item list-group-item-action" href="<%= e.events.length === 1 && e.events[0].path ? e.events[0].path : `/${series.slug}/${e.slug}` %>">
+            <% summary.forEach((e, i) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
+              <div class="list-group-item">
                 <div class="row align-items-center">
-                  <div class="col-auto"><div class="h2 m-0"><%= e.slug %></div></div>
+                  <div class="col-auto"><a class="h2 m-0 text-reset" href="<%= edHref(e) %>"><%= edName(e) %></a><% if (e.featured) { %> <i class="ti ti-star-filled text-yellow" title="<%= t('Featured') %>"></i><% } %></div>
                   <div class="col min-w-0">
-                    <div class="text-truncate"><%= e.title %></div>
-                    <div class="text-secondary small"><%= tn('{n} event', '{n} events', e.events.length) %> · <%= tn('{n} participant', '{n} participants', e.participants) %> · <%= tn('{n} entry', '{n} entries', e.entries) %> · <%= tn('{n} approved', '{n} approved', e.approved) %><% if (e.approvedWords) { %> · <%= tn('{n} word', '{n} words', e.approvedWords) %><% } %></div>
+                    <a class="text-truncate d-block text-reset" href="<%= edHref(e) %>"><%= e.title %></a>
+                    <div class="text-secondary small"><%= tn('{n} participant', '{n} participants', e.participants) %> · <%= tn('{n} entry', '{n} entries', e.entries) %> · <%= tn('{n} approved', '{n} approved', e.approved) %><% if (e.visibility && e.visibility !== 'public') { %> · <i class="ti ti-eye-off"></i> <%= t(e.visibility === 'private' ? 'Members only' : 'Link only') %><% } %></div>
                   </div>
                   <div class="col-auto d-none d-md-flex flex-wrap gap-1"><% e.wikis.slice(0, 8).forEach((w) => { %><span class="badge bg-blue-lt" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></span><% }) %></div>
                   <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></div>
-                  <div class="col-auto text-secondary"><i class="ti ti-chevron-right"></i></div>
+                  <% if (canRun) { %><div class="col-auto text-nowrap"><%- orderForm('edition', e.id, 'feature', e.featured ? 'star-off' : 'star', e.featured ? t('Stop featuring') : t('Feature'), i, summary.length) %><%- orderForm('edition', e.id, 'up', 'arrow-up', t('Move up'), i, summary.length) %><%- orderForm('edition', e.id, 'down', 'arrow-down', t('Move down'), i, summary.length) %></div><% } %>
                 </div>
-              </a>
+              </div>
             <% }) %>
           </div>
         <% } %>
       </div>
-      <% if (directEvents.length) { %>
-        <h3 class="mt-4 mb-3"><%= t('Events of the series') %></h3>
-        <div class="row row-cards">
-          <% directEvents.forEach((c) => { %><div class="col-md-6 col-xl-4"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
-        </div>
+
+    <% } else if (tab === 'events') { %>
+      <%# Events directly under the series (not in an edition). %>
+      <% if (canRun) { %><div class="d-flex justify-content-end mb-3"><a class="btn btn-primary" href="/events/create?series=<%= series.slug %>"><i class="ti ti-plus me-1"></i><%= t('New event') %></a></div><% } %>
+      <% if (!directEvents.length) { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events directly under this series') }) %></div><% } else { %>
+        <div class="card"><div class="list-group list-group-flush">
+          <% directEvents.forEach((c, i) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
+            <div class="list-group-item"><div class="row align-items-center">
+              <div class="col min-w-0"><a class="fw-medium" href="<%= c.path %>"><%= c.title %></a><% if (c.featured) { %> <i class="ti ti-star-filled text-yellow"></i><% } %><div class="small text-secondary"><%= CONTEST_TYPES[c.type] || c.type %><% if (c.startDate) { %> · <%= formatDate(c.startDate, c.timezone) %><% } %></div></div>
+              <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></div>
+              <% if (canRun) { %><div class="col-auto text-nowrap"><%- orderForm('event', c.id, 'feature', c.featured ? 'star-off' : 'star', c.featured ? t('Stop featuring') : t('Feature'), i, directEvents.length) %><%- orderForm('event', c.id, 'up', 'arrow-up', t('Move up'), i, directEvents.length) %><%- orderForm('event', c.id, 'down', 'arrow-down', t('Move down'), i, directEvents.length) %></div><% } %>
+            </div></div>
+          <% }) %>
+        </div></div>
       <% } %>
 
+    <% } else if (tab === 'statistics') { %>
+      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
 
     <% } else if (tab === 'settings') { %>
       <form method="post" action="/series/<%= series.slug %>/update" class="card mb-3">
@@ -64,8 +123,20 @@
         <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t('Details') %></h3></div>
         <div class="card-body"><div class="row g-3">
           <div class="col-12 col-md-6"><label class="form-label" for="sr-title"><%= t('Name') %></label><input class="form-control" id="sr-title" name="title" value="<%= series.title %>" maxlength="120" required></div>
-          <div class="col-12 col-md-6"><label class="form-label"><%= t('Address') %></label><div class="form-control-plaintext">/<%= series.slug %></div></div>
-          <div class="col-12"><label class="form-label" for="sr-desc"><%= t('Description') %></label><textarea class="form-control" id="sr-desc" name="description" rows="2" maxlength="2000"><%= series.description %></textarea></div>
+          <div class="col-6 col-md-3"><label class="form-label"><%= t('Address') %></label><div class="form-control-plaintext">/<%= series.slug %></div></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="sr-status"><%= t('Status') %></label>
+            <% if (series.status === 'archived') { %><div class="form-control-plaintext"><%= t('Archived') %></div><% } else { %>
+            <select class="form-select" id="sr-status" name="status"><% ['draft', 'active', 'paused'].forEach((k) => { %><option value="<%= k %>"<%= series.status === k ? ' selected' : '' %>><%= t(SERIES_STATUS[k][0]) %></option><% }) %></select><% } %></div>
+          <div class="col-12"><label class="form-label" for="sr-short"><%= t('Short description') %></label><input class="form-control" id="sr-short" name="shortDescription" value="<%= series.shortDescription %>" maxlength="300"></div>
+          <div class="col-12"><label class="form-label" for="sr-desc"><%= t('Description') %></label><textarea class="form-control" id="sr-desc" name="description" rows="3" maxlength="2000"><%= series.description %></textarea></div>
+          <div class="col-md-6"><label class="form-label" for="sr-logo"><%= t('Logo') %></label><input class="form-control" id="sr-logo" name="logoUrl" value="<%= series.logoUrl || '' %>" placeholder="https://upload.wikimedia.org/…"></div>
+          <div class="col-md-6"><label class="form-label" for="sr-banner"><%= t('Banner') %></label><input class="form-control" id="sr-banner" name="bannerUrl" value="<%= series.bannerUrl || '' %>" placeholder="https://upload.wikimedia.org/…"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="sr-lang"><%= t('Main language') %></label><input class="form-control" id="sr-lang" name="defaultLanguage" value="<%= series.defaultLanguage %>" maxlength="20" placeholder="bn"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="sr-langs"><%= t('Other languages') %></label><input class="form-control" id="sr-langs" name="supportedLanguages" value="<%= langs.join(', ') %>" placeholder="en, as"></div>
+          <div class="col-md-6"><span class="form-label d-block"><%= t('Who can see it') %></span>
+            <% [['public', 'Public'], ['unlisted', 'Link only'], ['private', 'Members only']].forEach(([k, l]) => { %><label class="form-check form-check-inline"><input class="form-check-input" type="radio" name="visibility" value="<%= k %>"<%= (series.visibility || 'public') === k ? ' checked' : '' %>><span class="form-check-label"><%= t(l) %></span></label><% }) %></div>
+          <div class="col-md-6"><label class="form-label" for="sr-comm"><%= t('Communities taking part') %></label><textarea class="form-control" id="sr-comm" name="communities" rows="3" placeholder="<%= t('One per line') %>"><%= series.communities %></textarea></div>
+          <div class="col-md-6"><label class="form-label" for="sr-links"><%= t('Links') %></label><textarea class="form-control" id="sr-links" name="externalLinks" rows="3" placeholder="Meta | https://meta.wikimedia.org/wiki/…"><%= links.map((l) => (l.label === l.url ? l.url : `${l.label} | ${l.url}`)).join('\n') %></textarea><div class="form-hint"><%= t('One per line: label | address') %></div></div>
           <div class="col-12"><button class="btn btn-primary" type="submit"><%= t('Save') %></button></div>
         </div></div>
       </form>
@@ -77,12 +148,13 @@
         <div class="card-body d-flex flex-wrap gap-2 align-items-center">
           <span class="text-secondary small me-auto"><%= series.status === 'archived' ? t('This series is archived.') : t('Archives the series, its editions and their finished events. Not possible while an event is still running.') %></span>
           <form method="post" action="/series/<%= series.slug %>/<%= series.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= series.status === 'archived' ? t('Take this series out of the archive?') : t('Archive this series, its editions and their finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= series.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
-          <% if (can('deleteAnything') || (!summary.length && !directEvents.length && can('deleteAnyEvent'))) { %><form method="post" action="/series/<%= series.slug %>/delete" data-confirm="<%= summary.length || directEvents.length ? t('Delete this series with all its editions and events?') : t('Delete this series?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete series') %></button></form><% } %>
         </div>
       </div>
+      <%- include('../../partials/levelDelete', { inside, seriesSlug: series.slug, editionSlug: null, canDelete: can('deleteAnyEvent') || can('deleteAnything') }) %>
 
     <% } else if (tab === 'people') { %>
       <%- include('../../partials/levelPeople', { seriesSlug: series.slug, editionId: null, people, ROLES }) %>
+
     <% } %>
   </div>
 </div>

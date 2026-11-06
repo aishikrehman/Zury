@@ -78,7 +78,7 @@ async function findOrCreate(seriesId, slug, { title, startDate = null, endDate =
   const clash = await client.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId, slug } } });
   if (clash) return null; // a direct event of the series already has this name
   const edition = await client.edition.create({
-    data: { seriesId, slug, title: title || slug, year: /^\d{4}$/.test(slug) ? Number(slug) : null, startDate, endDate },
+    data: { seriesId, slug, identifier: slug, title: title || slug, year: /^\d{4}$/.test(slug) ? Number(slug) : null, startDate, endDate },
   });
   await client.seriesSlug.create({ data: { seriesId, slug, editionId: edition.id } });
   return edition;

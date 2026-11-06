@@ -23,7 +23,7 @@ async function create({ actorId, slug, title, description = '' }) {
   if ((await prisma.eventSeries.findUnique({ where: { slug } })) || (await prisma.contest.findFirst({ where: { path: `/${slug}` }, select: { id: true } }))) {
     throw new SeriesError(`/${slug} is already taken.`, 'slug');
   }
-  const series = await prisma.eventSeries.create({ data: { slug, title, description: String(description).trim().slice(0, 2000) } });
+  const series = await prisma.eventSeries.create({ data: { slug, title, description: String(description).trim().slice(0, 2000), createdById: actorId || null } });
   // Whoever makes the series runs it (this level only).
   if (actorId) await prisma.scopeRole.create({ data: { userId: actorId, role: 'organizer', seriesId: series.id, assignedById: actorId } });
   await audit.record({ actorId, action: 'series.created', entityType: 'EventSeries', entityId: series.id, details: { slug, title } });
@@ -36,10 +36,11 @@ async function create({ actorId, slug, title, description = '' }) {
 async function summary(seriesId, { drafts = false } = {}) {
   const shown = drafts ? {} : { status: { not: 'draft' }, visibility: 'public' };
   const editions = await prisma.edition.findMany({
-    where: { seriesId, deletedAt: null },
-    orderBy: [{ year: 'desc' }, { slug: 'desc' }],
+    where: { seriesId, deletedAt: null, ...(drafts ? {} : { visibility: 'public' }) },
+    // The organizers' order when they set one; else the newest first.
+    orderBy: [{ sortOrder: 'asc' }, { year: 'desc' }, { slug: 'desc' }],
     select: {
-      id: true, slug: true, title: true, status: true, startDate: true, endDate: true,
+      id: true, slug: true, title: true, status: true, startDate: true, endDate: true, identifier: true, cycleType: true, year: true, featured: true, visibility: true, sortOrder: true,
       events: { where: { deletedAt: null, ...shown }, select: { id: true, slug: true, title: true, status: true, path: true, wikis: { where: { status: { not: 'pending' } }, select: { code: true, wiki: true } } } },
     },
   });
@@ -78,6 +79,7 @@ async function createEdition({ actorId, series, slug, title = '', startDate = nu
   if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: series.id, slug } } })) throw new SeriesError(`/${series.slug}/${slug} already exists.`, 'edition');
   if (startDate && endDate && endDate < startDate) throw new SeriesError('The end date must be after the start date.', 'endDate');
   const edition = await editionService.findOrCreate(series.id, slug, { title: String(title || '').trim() || `${series.title} ${slug}`, startDate, endDate });
+  await prisma.edition.update({ where: { id: edition.id }, data: { identifier: edition.identifier || slug, createdById: actorId || null } });
   if (actorId) await prisma.scopeRole.create({ data: { userId: actorId, role: 'organizer', editionId: edition.id, assignedById: actorId } });
   await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: edition.id, details: { series: series.slug, edition: slug } });
   return edition;
@@ -96,10 +98,43 @@ async function listAll() {
   return series.map(({ editionRecords, editions, ...sr }) => ({ ...sr, editions: editionRecords.map((e) => ({ ...e, edition: e.slug, events: e._count.events })), directEvents: editions }));
 }
 
-async function update({ actorId, series, title, description }) {
+const SERIES_STATUSES = ['draft', 'active', 'paused', 'archived'];
+const VISIBILITIES = ['public', 'unlisted', 'private'];
+const imageUrl = (v) => {
+  const s = String(v || '').trim();
+  if (!s) return null;
+  if (!/^https:\/\/(upload|commons)\.wikimedia\.org\//.test(s)) throw new SeriesError('Images must come from Wikimedia Commons (https://upload.wikimedia.org/…).', 'logoUrl');
+  return s.slice(0, 1000);
+};
+// Links, one per line: "Label | https://…" or just the address.
+function parseLinks(text) {
+  const out = [];
+  for (const line of String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)) {
+    const [a, b] = line.includes('|') ? line.split('|').map((x) => x.trim()) : [line, line];
+    const url = b || a;
+    if (!/^https?:\/\/\S+$/.test(url)) throw new SeriesError(`Not a web address: ${url}`, 'externalLinks');
+    out.push({ label: (a || url).slice(0, 100), url: url.slice(0, 500) });
+  }
+  if (out.length > 20) throw new SeriesError('At most 20 links.', 'externalLinks');
+  return out;
+}
+
+// The series' details. Fields not in the form (an inline edit sends only some) stay as they were.
+async function update({ actorId, series, title, description, ...more }) {
   title = String(title || '').trim();
   if (!title) throw new SeriesError('Give the series a name.', 'title');
-  const updated = await prisma.eventSeries.update({ where: { id: series.id }, data: { title: title.slice(0, 120), description: String(description || '').trim().slice(0, 2000) } });
+  const data = { title: title.slice(0, 120), description: String(description || '').trim().slice(0, 2000) };
+  if (more.shortDescription !== undefined) data.shortDescription = String(more.shortDescription).trim().slice(0, 300);
+  if (more.logoUrl !== undefined) data.logoUrl = imageUrl(more.logoUrl);
+  if (more.bannerUrl !== undefined) data.bannerUrl = imageUrl(more.bannerUrl);
+  if (more.defaultLanguage !== undefined) data.defaultLanguage = String(more.defaultLanguage).trim().toLowerCase().slice(0, 20);
+  if (more.supportedLanguages !== undefined) data.supportedLanguages = JSON.stringify([...new Set(String(more.supportedLanguages).split(/[\s,]+/).map((l) => l.trim().toLowerCase()).filter((l) => /^[a-z]{2,3}(-[a-z0-9]+)*$/.test(l)))].slice(0, 50));
+  if (more.communities !== undefined) data.communities = String(more.communities).split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 100).join('\n');
+  if (more.externalLinks !== undefined) data.externalLinks = JSON.stringify(parseLinks(more.externalLinks));
+  if (more.visibility !== undefined) data.visibility = VISIBILITIES.includes(more.visibility) ? more.visibility : 'public';
+  // Archiving has its own button (it archives the editions too); here: draft, active, paused.
+  if (more.status !== undefined && ['draft', 'active', 'paused'].includes(more.status) && series.status !== 'archived') data.status = more.status;
+  const updated = await prisma.eventSeries.update({ where: { id: series.id }, data });
   await audit.record({ actorId, action: 'series.updated', entityType: 'EventSeries', entityId: series.id, details: { slug: series.slug, title } });
   return updated;
 }
@@ -124,4 +159,6 @@ async function remove({ actorId, series }) {
   await audit.record({ actorId, action: 'series.deleted', entityType: 'EventSeries', entityId: series.id, details: { slug: series.slug } });
 }
 
-module.exports = { SeriesError, create, summary, nextEdition, createEdition, listAll, update, remove };
+module.exports = {
+  SERIES_STATUSES,
+  VISIBILITIES, SeriesError, create, summary, nextEdition, createEdition, listAll, update, remove };

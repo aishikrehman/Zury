@@ -108,6 +108,9 @@ model Contest {
   // "auto": status follows the dates once published. "manual": pinned by an organizer.
   statusMode          String  @default("auto")
   visibility          String  @default("public")
+  // Order and featuring among the series' direct events.
+  sortOrder           Int     @default(0)
+  featured            Boolean @default(false)
   organizingCommunity String  @default("")
   primaryWiki         String
   // JSON array of wiki database names.
@@ -186,8 +189,24 @@ model EventSeries {
   slug        String    @unique
   title       String
   description String    @default("") @db.Text
-  // active | archived
+  shortDescription String @default("") @db.VarChar(300)
+  logoUrl     String?   @db.Text
+  bannerUrl   String?   @db.Text
+  // The language the series is run in, and the others it supports (JSON list of codes).
+  defaultLanguage    String @default("")
+  supportedLanguages String @default("[]") @db.Text
+  // Communities taking part, one per line.
+  communities String    @default("") @db.Text
+  // JSON [{ label, url }].
+  externalLinks String  @default("[]") @db.Text
+  // public | unlisted (open from its link, not listed) | private (only those with a role)
+  visibility  String    @default("public")
+  // draft | active | paused | archived
   status      String    @default("active")
+  createdById Int?
+  archivedAt  DateTime?
+  // While deleted the address is freed (slug renamed); the one it gets back on restore.
+  originalSlug String?
   deletedAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now()) @updatedAt
@@ -207,9 +226,21 @@ model Edition {
   slug        String
   title       String    @db.VarChar(1000)
   year        Int?
+  // How the edition is named, free text: 2026, Season 2, 2026–2027, Special edition. Not the address.
+  identifier  String    @default("") @db.VarChar(100)
+  // annual | season | phase | special | other (optional)
+  cycleType   String?
   description String    @default("") @db.Text
-  // draft | active | completed | archived
+  // draft | planned | upcoming | active | completed | archived | cancelled
   status      String    @default("draft")
+  visibility  String    @default("public")
+  // Order on the series page (smaller first; 0: by date), and the one shown first.
+  sortOrder   Int       @default(0)
+  featured    Boolean   @default(false)
+  createdById Int?
+  archivedAt  DateTime?
+  // While deleted the address is freed (slug renamed); the one it gets back on restore.
+  originalSlug String?
   startDate   DateTime?
   endDate     DateTime?
   deletedAt   DateTime?

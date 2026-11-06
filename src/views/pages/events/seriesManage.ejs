@@ -1,5 +1,5 @@
 <%# Level 1: every series you run. Each leads to its own page. %>
-<%- include('../../partials/pageHeader', { pretitle: t('Event series'), heading: t('Series and editions'), actions: can('createEvent') ? `<a class="btn btn-primary" href="/series/new"><i class="ti ti-plus me-1"></i>${h(t('New series'))}</a>` : '' }) %>
+<%- include('../../partials/pageHeader', { pretitle: t('Event series'), heading: t('Series and editions'), actions: `${can('deleteAnyEvent') ? `<a class="btn" href="/series/deleted"><i class="ti ti-trash me-1"></i>${h(t('Deleted'))}</a> ` : ''}${can('createEvent') ? `<a class="btn btn-primary" href="/series/new"><i class="ti ti-plus me-1"></i>${h(t('New series'))}</a>` : ''}` }) %>
 <div class="page-body"><div class="container-xl">
   <% if (!seriesList.length) { %>
     <div class="card"><div class="card-body text-secondary"><%= t('You are not organizing any series yet. Make one, then create its first edition with “Part of” set to it.') %></div></div>

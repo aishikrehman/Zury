@@ -2,11 +2,12 @@
     its settings (details, settings for its events, copy, archive) and people. %>
 <%
   const base = `/series/${sr.slug}/${edition.slug}`;
-  const tabs = [['overview', 'layout-dashboard', t('Overview')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
+  const tabs = [['overview', 'layout-dashboard', t('Overview')], ['statistics', 'chart-bar', t('Statistics')], ...(canRun ? [['people', 'users', t('Organizers')], ['settings', 'settings', t('Settings')]] : [])];
+  const CYCLES = { annual: 'Annual', season: 'Season', phase: 'Phase', special: 'Special', other: 'Other' };
   const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
   const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
 %>
-<%- include('../../partials/levelHeader', { crumbs: [[sr.title, `/${sr.slug}`]], heading: edition.title, inline: canRun ? { action: `/series/${sr.slug}/${edition.slug}/update`, name: 'title', label: t('Title'), maxlength: 200, hidden: { description: edition.description, startDate: day(edition.startDate), endDate: day(edition.endDate), back: 'overview' } } : null, status: edition.status, meta: `${dates}<span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', events.length)}</span>`, base, tab, tabs }) %>
+<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events'], [sr.title, `/${sr.slug}`]], heading: edition.title, inline: canRun ? { action: `/series/${sr.slug}/${edition.slug}/update`, name: 'title', label: t('Title'), maxlength: 200, hidden: { description: edition.description, startDate: day(edition.startDate), endDate: day(edition.endDate), back: 'overview' } } : null, status: edition.status, meta: `<span class="badge bg-primary-lt fs-4">${h(edition.identifier || edition.slug)}</span>${edition.cycleType ? `<span>${t(CYCLES[edition.cycleType] || edition.cycleType)}</span>` : ''}${dates}<span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', events.length)}</span>`, base, tab, tabs }) %>
 <div class="page-body">
   <div class="container-xl">
 
@@ -52,6 +53,11 @@
           <div class="col-12 col-md-6"><label class="form-label" for="ed-title"><%= t('Title') %></label><input class="form-control" id="ed-title" name="title" value="<%= edition.title %>" maxlength="200" required></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ed-start" name="startDate" value="<%= day(edition.startDate) %>"></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ed-end" name="endDate" value="<%= day(edition.endDate) %>"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="ed-id"><%= t('Edition name') %></label><input class="form-control" id="ed-id" name="identifier" value="<%= edition.identifier || edition.slug %>" maxlength="100" placeholder="2026, Season 2…"><div class="form-hint"><%= t('Shown everywhere; the address stays /{a}.', { a: `${sr.slug}/${edition.slug}` }) %></div></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="ed-cycle"><%= t('Kind') %></label><select class="form-select" id="ed-cycle" name="cycleType"><option value="">—</option><% Object.entries(CYCLES).forEach(([k, l]) => { %><option value="<%= k %>"<%= edition.cycleType === k ? ' selected' : '' %>><%= t(l) %></option><% }) %></select></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="ed-year"><%= t('Year') %></label><input class="form-control" type="number" id="ed-year" name="year" min="1900" max="2200" value="<%= edition.year || '' %>"></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="ed-status"><%= t('Status') %></label><% if (edition.status === 'archived') { %><div class="form-control-plaintext"><%= t('Archived') %></div><% } else { %><select class="form-select" id="ed-status" name="status"><% [['draft', 'Draft'], ['planned', 'Planned'], ['upcoming', 'Upcoming'], ['active', 'Active'], ['completed', 'Completed'], ['cancelled', 'Cancelled']].forEach(([k, l]) => { %><option value="<%= k %>"<%= ownStatus === k ? ' selected' : '' %>><%= t(l) %></option><% }) %></select><% } %></div>
+          <div class="col-md-2"><label class="form-label" for="ed-vis"><%= t('Who can see it') %></label><select class="form-select" id="ed-vis" name="visibility"><% [['public', 'Public'], ['unlisted', 'Link only'], ['private', 'Members only']].forEach(([k, l]) => { %><option value="<%= k %>"<%= (edition.visibility || 'public') === k ? ' selected' : '' %>><%= t(l) %></option><% }) %></select></div>
           <div class="col-12"><label class="form-label" for="ed-desc"><%= t('Description') %></label><textarea class="form-control" id="ed-desc" name="description" rows="2" maxlength="2000"><%= edition.description %></textarea></div>
           <div class="col-12"><button class="btn btn-primary" type="submit"><%= t('Save') %></button></div>
         </div></div>
@@ -81,16 +87,18 @@
             <div class="card-body">
               <p class="text-secondary small"><%= edition.status === 'archived' ? t('This edition is archived.') : t('Archives the edition and its finished events. Not possible while an event is still running.') %></p>
               <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/<%= edition.status === 'archived' ? 'unarchive' : 'archive' %>" data-confirm="<%= edition.status === 'archived' ? t('Take this edition out of the archive?') : t('Archive this edition and its finished events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn" type="submit"><i class="ti ti-archive me-1"></i><%= edition.status === 'archived' ? t('Take out of the archive') : t('Archive') %></button></form>
-              <% if (can('deleteAnything')) { %>
-                <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/delete" class="mt-2" data-confirm="<%= t('Delete this edition with its event(s), their entries and settings?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete edition') %></button></form>
-              <% } %>
+
             </div>
           </div>
         </div>
       </div>
 
+      <%- include('../../partials/levelDelete', { inside, seriesSlug: sr.slug, editionSlug: edition.slug, canDelete: can('deleteAnyEvent') || can('deleteAnything') }) %>
+
     <% } else if (tab === 'people') { %>
       <%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, ROLES }) %>
+    <% } else if (tab === 'statistics') { %>
+      <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %><% } else { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div><% } %>
     <% } %>
   </div>
 </div>

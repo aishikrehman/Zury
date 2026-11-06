@@ -194,17 +194,18 @@ async function seriesAction(req, res, next) {
       return next(err);
     }
     if (req.params.action === 'delete') {
-      // Superusers delete a series with everything in it; others only an empty one.
-      if (req.permissions.has('deleteAnything')) await require('../services/structureService').deleteLevel({ actorId: req.user.id, level: { seriesId: found.id } });
-      else await seriesService.remove({ actorId: req.user.id, series: found });
-      req.flash('success', 'Series deleted.');
+      // Only an empty series can be deleted (a soft delete; it can be restored).
+      await require('../services/structureService').deleteLevel({ actorId: req.user.id, level: { seriesId: found.id } });
+      req.flash('success', 'Series deleted. It can be restored from the deleted list.');
     } else {
-      await seriesService.update({ actorId: req.user.id, series: found, title: req.body.title, description: req.body.description });
+      const { _csrf, back, ...fields } = req.body;
+      await seriesService.update({ actorId: req.user.id, series: found, ...fields });
       req.flash('success', 'Saved.');
     }
   } catch (err) {
-    if (!(err instanceof seriesService.SeriesError)) return next(err);
-    req.flash('danger', err.message);
+    if (!(err instanceof seriesService.SeriesError) && !(err instanceof require('../services/structureService').StructureError)) return next(err);
+    req.flash('danger', req.t(err.message));
+    if (req.params.action === 'delete') return res.redirect(`/${req.params.series}?tab=settings`);
   }
   res.redirect(req.params.action === 'delete' ? '/series' : `/${req.params.series}${req.body.back === 'overview' ? '' : '?tab=settings'}`);
 }
@@ -357,9 +358,9 @@ async function levelAction(req, res, next) {
     if (!allowed || (req.params.action === 'copy' && !(await canRunSeries(req, sr.id)))) return forbiddenPage(next);
     const level = edition ? { editionId: edition.id } : { seriesId: sr.id };
     if (req.params.action === 'delete') {
-      if (!req.permissions.has('deleteAnything')) return forbiddenPage(next);
-      const { events } = await structureService.deleteLevel({ actorId: req.user.id, level });
-      req.flash('success', req.t('Edition deleted, with {n} events.', { n: events }));
+      if (!req.permissions.has('deleteAnything') && !req.permissions.has('deleteAnyEvent')) return forbiddenPage(next);
+      await structureService.deleteLevel({ actorId: req.user.id, level });
+      req.flash('success', req.t('Edition deleted. It can be restored from the deleted list.'));
       return res.redirect(`/${sr.slug}?tab=overview`);
     }
     if (req.params.action === 'update') {
@@ -369,7 +370,18 @@ async function levelAction(req, res, next) {
       const startDate = day(req.body.startDate);
       const endDate = day(req.body.endDate, true);
       if (startDate && endDate && endDate < startDate) throw new structureService.StructureError('The end date must be after the start date.');
-      await prisma.edition.update({ where: { id: edition.id }, data: { title, description: String(req.body.description || '').trim().slice(0, 2000), startDate, endDate } });
+      const data = { title, description: String(req.body.description || '').trim().slice(0, 2000), startDate, endDate };
+      // The rest only when the settings form sends it (an inline edit sends a few fields).
+      if (req.body.identifier !== undefined) data.identifier = String(req.body.identifier).trim().slice(0, 100) || edition.slug;
+      if (req.body.cycleType !== undefined) data.cycleType = ['annual', 'season', 'phase', 'special', 'other'].includes(req.body.cycleType) ? req.body.cycleType : null;
+      if (req.body.year !== undefined) {
+        const y = Number.parseInt(req.body.year, 10);
+        data.year = Number.isInteger(y) && y >= 1900 && y <= 2200 ? y : null;
+      }
+      if (req.body.visibility !== undefined) data.visibility = ['public', 'unlisted', 'private'].includes(req.body.visibility) ? req.body.visibility : 'public';
+      // Archived has its own button.
+      if (req.body.status !== undefined && ['draft', 'planned', 'upcoming', 'active', 'completed', 'cancelled'].includes(req.body.status) && edition.status !== 'archived') data.status = req.body.status;
+      await prisma.edition.update({ where: { id: edition.id }, data });
       await require('../services/auditService').record({ actorId: req.user.id, action: 'edition.updated', entityType: 'Edition', entityId: edition.id, details: { title } });
       req.flash('success', req.t('Saved.'));
       return res.redirect(back);
@@ -398,18 +410,21 @@ module.exports.levelAction = levelAction;
 
 // The series page (/wam) and the edition page (/wam/2026), in tabs. Settings and People are for
 // those who run that level, and hold that level's own settings and roles only.
-const SERIES_TABS = ['overview', 'settings', 'people'];
-const EDITION_TABS = ['overview', 'settings', 'people'];
+const SERIES_TABS = ['overview', 'editions', 'events', 'statistics', 'people', 'settings'];
+const EDITION_TABS = ['overview', 'statistics', 'people', 'settings'];
+const RUNNERS_ONLY = ['settings', 'people'];
+
 
 async function levelExtras(level, tab) {
   const inherit = require('../services/inheritService');
   if (tab === 'settings') {
+    const inside = await require('../services/structureService').impact(level);
     const ids = level.editionId ? { seriesId: -1, editionIds: [level.editionId] } : { seriesId: level.seriesId };
     const [rules, history] = await Promise.all([
       prisma.levelSetting.findMany({ where: level, orderBy: { key: 'asc' } }),
       inherit.history(ids),
     ]);
-    return { rules, history, KEYS: inherit.KEYS };
+    return { rules, history, KEYS: inherit.KEYS, inside };
   }
   if (tab === 'people') {
     const people = await prisma.scopeRole.findMany({ where: level, include: { user: { select: { id: true, username: true } } }, orderBy: [{ role: 'asc' }, { assignedAt: 'asc' }] });
@@ -425,11 +440,13 @@ async function seriesPage(req, res, next) {
     const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
     if (!found || found.deletedAt) return next();
     const canRun = await canRunSeries(req, found.id);
+    // A draft or private series is only for those who run it.
+    if (!canRun && (found.status === 'draft' || found.visibility === 'private')) return next();
     let tab = SERIES_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
-    if (!canRun && ['settings', 'people'].includes(tab)) tab = 'overview';
+    if (!canRun && RUNNERS_ONLY.includes(tab)) tab = 'overview';
     const directEvents = await prisma.contest.findMany({
       where: { seriesId: found.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
-      orderBy: { startDate: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { startDate: 'desc' }],
       select: contestService.CARD_SELECT,
     });
     const summary = await require('../services/seriesService').summary(found.id, { drafts: canRun });
@@ -460,7 +477,8 @@ async function editionTabs(req, res, next) {
     const canRun = await scopeRoles.canRunEdition(req, edition);
     const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));
     let tab = EDITION_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
-    if (!canRun && ['settings', 'people'].includes(tab)) tab = 'overview';
+    if (!canSee && (edition.visibility === 'private' || edition.status === 'draft')) return next();
+    if (!canRun && RUNNERS_ONLY.includes(tab)) tab = 'overview';
     const events = await prisma.contest.findMany({
       where: { editionId: edition.id, deletedAt: null, ...(canSee ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: { startDate: 'asc' },
@@ -469,14 +487,14 @@ async function editionTabs(req, res, next) {
     const stats = require('../services/statsService');
     let totals = null;
     let rows = [];
-    if (tab === 'overview') {
+    if (tab === 'overview' || tab === 'statistics') {
       totals = await stats.rollup(events.map((ev) => ev.id));
       rows = await Promise.all(events.map(async (c) => ({ label: c.title, href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) })));
     }
     const canRunSeriesHere = canRun && (await canRunSeries(req, sr.id));
     // An edition with its one event shows that event's status (an archived edition stays archived).
     const shown = { ...edition, status: edition.status !== 'archived' && events.length === 1 ? events[0].status : edition.status };
-    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition: shown, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
+    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition: shown, ownStatus: edition.status, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
   } catch (err) {
     next(err);
   }
@@ -493,3 +511,89 @@ module.exports.series = seriesPage;
 module.exports.editionPage = editionTabs;
 module.exports.manageOneSeries = manageOneSeriesTabs;
 module.exports.manageEdition = manageEditionTabs;
+
+// Moves an edition or a direct event of a series up or down, or makes it the featured one.
+async function seriesOrder(req, res, next) {
+  try {
+    const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!sr) return next();
+    if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
+    const kind = req.body.kind === 'event' ? 'event' : 'edition';
+    const id = Number(req.body.id);
+    const model = kind === 'event' ? prisma.contest : prisma.edition;
+    const where = kind === 'event' ? { seriesId: sr.id, deletedAt: null } : { seriesId: sr.id, deletedAt: null };
+    const list = await model.findMany({ where, orderBy: kind === 'event' ? [{ sortOrder: 'asc' }, { startDate: 'desc' }] : [{ sortOrder: 'asc' }, { year: 'desc' }, { slug: 'desc' }], select: { id: true, featured: true } });
+    const i = list.findIndex((x) => x.id === id);
+    if (i < 0) return next();
+    await prisma.$transaction(async (tx) => {
+      const m = kind === 'event' ? tx.contest : tx.edition;
+      if (req.body.action === 'feature') {
+        const on = !list[i].featured;
+        await m.updateMany({ where, data: { featured: false } });
+        if (on) await m.update({ where: { id }, data: { featured: true } });
+      } else {
+        const j = req.body.action === 'up' ? i - 1 : i + 1;
+        if (j >= 0 && j < list.length) [list[i], list[j]] = [list[j], list[i]];
+        for (let k = 0; k < list.length; k += 1) await m.update({ where: { id: list[k].id }, data: { sortOrder: k + 1 } });
+      }
+    });
+    await require('../services/auditService').record({ actorId: req.user.id, action: `series.${req.body.action === 'feature' ? 'featured' : 'reordered'}`, entityType: 'EventSeries', entityId: sr.id, details: { kind, id } });
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(`/${req.params.series}?tab=${req.body.kind === 'event' ? 'events' : 'editions'}`);
+}
+module.exports.seriesOrder = seriesOrder;
+
+// An event out of a series or edition, keeping everything it has: under the series directly, or standalone.
+async function detachEvent(req, res, next) {
+  const structureService = require('../services/structureService');
+  const back = req.body.back === 'edition' && req.body.edition ? `/series/${req.params.series}/${req.body.edition}?tab=settings` : `/${req.params.series}?tab=settings`;
+  try {
+    const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!sr) return next();
+    if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
+    const contest = await prisma.contest.findFirst({ where: { id: Number(req.body.eventId), deletedAt: null, OR: [{ seriesId: sr.id }, { editionOf: { seriesId: sr.id } }] } });
+    if (!contest) return next();
+    const target = req.body.to === 'series' ? { seriesId: sr.id } : {};
+    const moved = await structureService.moveEvent({ actorId: req.user.id, contest, target });
+    req.flash('success', req.t('The event is now at {path}.', { path: moved.path }));
+  } catch (err) {
+    if (!(err instanceof structureService.StructureError)) return next(err);
+    req.flash('danger', req.t(err.message));
+  }
+  res.redirect(back);
+}
+
+// Deleted series and editions: restore them, or (superusers) remove them for good.
+async function deletedPage(req, res, next) {
+  try {
+    const list = await require('../services/structureService').deletedLevels();
+    res.render('pages/events/seriesDeleted', { title: 'Deleted series and editions — Zury', list });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function deletedAction(req, res, next) {
+  const structureService = require('../services/structureService');
+  const kind = req.params.kind === 'edition' ? 'edition' : 'series';
+  const id = Number(req.params.id);
+  try {
+    if (req.params.action === 'purge') {
+      if (!req.permissions.has('deleteAnything')) return forbiddenPage(next);
+      await structureService.purgeLevel({ actorId: req.user.id, kind, id });
+      req.flash('success', req.t('Removed for good.'));
+    } else {
+      const path = await structureService.restoreLevel({ actorId: req.user.id, kind, id });
+      req.flash('success', req.t('Restored at {path}.', { path }));
+    }
+  } catch (err) {
+    if (!(err instanceof structureService.StructureError)) return next(err);
+    req.flash('danger', req.t(err.message));
+  }
+  res.redirect('/series/deleted');
+}
+module.exports.detachEvent = detachEvent;
+module.exports.deletedPage = deletedPage;
+module.exports.deletedAction = deletedAction;

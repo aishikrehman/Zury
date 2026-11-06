@@ -131,11 +131,16 @@ const SLUG = '[a-z0-9][a-z0-9-]{0,79}';
 // organizers (a role on the series; the controller checks it); deleting one: superusers and Zury administrators.
 router.get('/series', requirePermission('importEvents'), eventsController.manageSeries);
 router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
+// Deleted series and editions: restore (Zury administrators), remove for good (superusers, checked inside).
+router.get('/series/deleted', requirePermission('deleteAnyEvent'), eventsController.deletedPage);
+router.post('/series/deleted/:kind(series|edition)/:id(\\d+)/:action(restore|purge)', requirePermission('deleteAnyEvent'), eventsController.deletedAction);
 router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
 router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnyEvent'), eventsController.seriesAction);
 router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSeries);
 router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, eventsController.manageEdition);
 router.post('/series', requirePermission('importEvents'), eventsController.createSeries);
+router.post(`/series/:series(${SLUG})/detach`, requireAuth, eventsController.detachEvent);
+router.post(`/series/:series(${SLUG})/order`, requireAuth, eventsController.seriesOrder);
 router.post(`/series/:series(${SLUG})/first-edition`, requireAuth, eventsController.firstEdition);
 router.post(`/series/:series(${SLUG})/people`, requireAuth, eventsController.grantRole);
 router.post(`/series/:series(${SLUG})/people/:id(\\d+)/remove`, requireAuth, eventsController.revokeRole);
