@@ -8,6 +8,49 @@ const { requireAuth } = require('../middleware/auth');
 const router = express.Router();
 const q = (req) => (typeof req.query.q === 'string' ? req.query.q.slice(0, 100) : '');
 
+// Is this address free? ?slug=…&series=…&edition=…&exclude=<event id>, or ?kind=series&slug=….
+// Answers { free, path, reason, suggestion } for the live check in the event and series forms.
+router.get('/api/address', requireAuth, async (req, res, next) => {
+  try {
+    const editions = require('../services/editionService');
+    const { RESERVED } = require('../middleware/permissions');
+    const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    const slug = String(req.query.slug || '').trim().toLowerCase();
+    const bad = !SLUG.test(slug) || slug.length > (req.query.kind === 'series' ? 40 : 80);
+    if (req.query.kind === 'series') {
+      const taken = !bad && (RESERVED.has(slug) || (await prisma.eventSeries.findUnique({ where: { slug }, select: { id: true } })) || (await prisma.contest.findFirst({ where: { path: `/${slug}` }, select: { id: true } })));
+      return res.json({ free: !bad && !taken, path: `/${slug}`, reason: bad ? 'form' : taken ? 'taken' : '' });
+    }
+    const excludeId = Number(req.query.exclude) || null;
+    const parent = { seriesId: null, editionId: null };
+    const seriesSlug = String(req.query.series || '').trim().toLowerCase();
+    if (seriesSlug) {
+      const sr = await prisma.eventSeries.findUnique({ where: { slug: seriesSlug }, select: { id: true } });
+      if (sr) {
+        const ed = req.query.edition ? await prisma.edition.findUnique({ where: { seriesId_slug: { seriesId: sr.id, slug: String(req.query.edition) } }, select: { id: true } }) : null;
+        if (ed) parent.editionId = ed.id;
+        else parent.seriesId = sr.id;
+      } else {
+        // A new series: its name must be free at the top, and anything under it is.
+        const taken = RESERVED.has(seriesSlug) || (await prisma.contest.findFirst({ where: { path: `/${seriesSlug}` }, select: { id: true } }));
+        return res.json({ free: !taken, path: `/${seriesSlug}/${slug}`, reason: taken ? 'series' : '' });
+      }
+    }
+    if (parent.editionId) {
+      // An edition's event is the edition's address.
+      const has = await editions.eventOf(parent.editionId, { excludeId });
+      return res.json({ free: !has, path: await editions.pathFor(slug, parent, prisma, excludeId), reason: has ? 'edition' : '' });
+    }
+    if (bad) return res.json({ free: false, reason: 'form' });
+    const free = await editions.slugFree(slug, parent, { excludeId });
+    let suggestion = '';
+    if (!free) for (let i = 2; i < 50 && !suggestion; i++) if (await editions.slugFree(`${slug.slice(0, 76)}-${i}`, parent, { excludeId })) suggestion = `${slug.slice(0, 76)}-${i}`;
+    res.json({ free, path: await editions.pathFor(slug, parent, prisma, excludeId), reason: free ? '' : 'taken', suggestion });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // "Part of": existing series, with their latest edition so the form can
 // suggest the next one and link the previous one.
 router.get('/api/series', async (req, res, next) => {

@@ -20,7 +20,7 @@ async function create({ actorId, slug, title, description = '' }) {
   if (!SLUG.test(slug) || slug.length > 40) throw new SeriesError('Use lowercase letters, numbers and single hyphens (max 40).', 'slug');
   const { RESERVED } = require('../middleware/permissions');
   if (RESERVED.has(slug)) throw new SeriesError('That address is reserved.', 'slug');
-  if (await prisma.eventSeries.findUnique({ where: { slug } })) {
+  if ((await prisma.eventSeries.findUnique({ where: { slug } })) || (await prisma.contest.findFirst({ where: { path: `/${slug}` }, select: { id: true } }))) {
     throw new SeriesError(`/${slug} is already taken.`, 'slug');
   }
   const series = await prisma.eventSeries.create({ data: { slug, title, description: String(description).trim().slice(0, 2000) } });

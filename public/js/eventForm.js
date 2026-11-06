@@ -108,13 +108,44 @@
     const s = slugify(series.value.trim()).slice(0, 40);
     const e = edition.value.trim().toLowerCase();
     // In an edition the event is the edition's address: no name of its own.
-    prefix.textContent = s && e ? `${prefix.dataset.origin}/${s}/${e}` : `${prefix.dataset.origin}/${s ? `${s}/` : 'events/'}`;
+    prefix.textContent = s && e ? `${prefix.dataset.origin}/${s}/${e}` : `${prefix.dataset.origin}/${s ? `${s}/` : ''}`;
     slug.hidden = !!(s && e);
     if (s && e) slug.value = e;
     else if (!slugEdited || slug.value === edition.dataset.current) slug.value = slugify(title.value);
     hint.textContent = zt(s && e ? 'The edition’s event: its address is the edition’s.' : s ? 'An event directly under the series.' : 'Made from the title; you can change it.');
   }
   if (typeSelect) typeSelect.addEventListener('change', showAddress);
+  // Live check: is the address free? Asked a moment after typing stops.
+  const status = form.querySelector('[data-address-status]');
+  let timer = null;
+  let asked = 0;
+  function check() {
+    if (!status) return;
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const q = new URLSearchParams({ slug: slug.value.trim(), series: series.value.trim(), edition: edition.value.trim(), exclude: form.dataset.eventId || '' });
+      const mine = ++asked;
+      try {
+        const r = await (await fetch(`/api/address?${q}`, { headers: { Accept: 'application/json' } })).json();
+        if (mine !== asked) return;
+        status.className = 'small mt-1 ' + (r.free ? 'text-success' : 'text-danger');
+        status.replaceChildren();
+        const icon = Object.assign(document.createElement('i'), { className: 'ti me-1 ' + (r.free ? 'ti-circle-check' : 'ti-alert-circle') });
+        const msg = r.free ? zt('Free: {path}', { path: r.path }) : r.reason === 'edition' ? zt('This edition already has its event.') : r.reason === 'series' ? zt('That series name is taken.') : r.reason === 'form' ? zt('Use lowercase letters, numbers and hyphens.') : zt('Taken.');
+        status.append(icon, msg);
+        if (!r.free && r.suggestion) {
+          const b = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-link btn-sm p-0 ms-2', textContent: zt('Use {name}', { name: r.suggestion }) });
+          b.addEventListener('click', () => { slug.value = r.suggestion; slugEdited = true; check(); });
+          status.append(b);
+        }
+      } catch {
+        status.textContent = '';
+      }
+    }, 350);
+  }
+  [slug, title, series, edition].forEach((el) => el && el.addEventListener('input', check));
+  [series, edition].forEach((el) => el && el.addEventListener('change', check));
+  check();
   // Edition: the chosen series' editions (newest first); a new series has none yet. The latest
   // one links as the previous edition when that field is empty.
   const prev = $('previousEditionUrl');

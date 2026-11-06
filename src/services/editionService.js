@@ -1,6 +1,7 @@
 // Where an event sits, and so its address. An event has at most one parent: a series directly
-// (/<type>/<series>/<slug>), an edition (/<type>/<series>/<edition>: an edition has one event), or
-// none (/events/<slug>). The type begins the address of every series event (/photo/wlm/2026).
+// (/<series>/<slug>), an edition (/<series>/<edition>: an edition has one event, at its own
+// address; the edition's own pages are at /series/<series>/<edition>), or none: a standalone event
+// at the top (/<slug>), sharing those names with the series.
 // The address is worked out from that parent and stored, so every page resolves an event by
 // one lookup and nothing is guessed from the shape of an address.
 const prisma = require('../config/prisma');
@@ -15,38 +16,32 @@ const EVENT_TABS = new Set([
   'members', 'overrides', 'blocks', 'statistics', 'certificate',
 ]);
 
-// The address for an event with this slug under this parent ({ seriesId } or { editionId } or neither,
-// with the event's type). selfId: the event itself. An edition's event takes /<type>/<series>/<edition>;
-// an older edition that already holds several keeps the others under it (…/<edition>/<slug>).
-async function pathFor(slug, { seriesId = null, editionId = null, type = null } = {}, client = prisma, selfId = null) {
-  if ((seriesId || editionId) && !type) type = await typeFor({ seriesId, editionId, selfId }, client);
+// The address for an event with this slug under this parent ({ seriesId } or { editionId } or neither).
+// selfId: the event itself. An edition's event takes the edition's address; an older edition that
+// already holds several keeps the others under it (/<series>/<edition>/<slug>).
+async function pathFor(slug, { seriesId = null, editionId = null } = {}, client = prisma, selfId = null) {
   if (editionId) {
     const e = await client.edition.findUnique({ where: { id: editionId }, select: { slug: true, series: { select: { slug: true } } } });
     if (!e) return null;
-    const base = `/${type}/${e.series.slug}/${e.slug}`;
+    const base = `/${e.series.slug}/${e.slug}`;
     const holder = await client.contest.findFirst({ where: { path: base, deletedAt: null, ...(selfId && { NOT: { id: selfId } }) }, select: { id: true } });
     return holder ? `${base}/${slug}` : base;
   }
   if (seriesId) {
     const s = await client.eventSeries.findUnique({ where: { id: seriesId }, select: { slug: true } });
-    return s ? `/${type}/${s.slug}/${slug}` : null;
+    return s ? `/${s.slug}/${slug}` : null;
   }
-  return `/events/${slug}`;
-}
-
-// The type for an address when the caller didn't give it: the event's own, else its series'.
-async function typeFor({ seriesId, editionId, selfId }, client = prisma) {
-  if (selfId) {
-    const c = await client.contest.findUnique({ where: { id: selfId }, select: { type: true } });
-    if (c) return c.type;
-  }
-  const sid = seriesId || (await client.edition.findUnique({ where: { id: editionId }, select: { seriesId: true } }))?.seriesId;
-  return (sid && (await seriesType(sid, {}, client))) || 'events';
+  return `/${slug}`;
 }
 
 // Whether this slug is free under this parent; excludeId is the event itself when it's renamed.
 async function slugFree(slug, parent, { excludeId = null } = {}, client = prisma) {
-  if (!parent.seriesId && !parent.editionId && EVENTS_RESERVED.has(slug)) return false;
+  // A standalone event's name is a top-level address: not one of Zury's pages, not a series.
+  if (!parent.seriesId && !parent.editionId) {
+    const { RESERVED } = require('../middleware/permissions');
+    if (RESERVED.has(slug) || EVENTS_RESERVED.has(slug)) return false;
+    if (await client.eventSeries.findUnique({ where: { slug }, select: { id: true } })) return false;
+  }
   const path = await pathFor(slug, parent, client);
   const taken = await client.contest.findFirst({ where: { path, ...(excludeId && { NOT: { id: excludeId } }) }, select: { id: true } });
   if (taken) return false;

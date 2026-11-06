@@ -135,7 +135,7 @@ function parse(body, { type, wikiAllowed, catalog = PERMISSIVE }) {
   if (!SLUG.test(slug) || slug.length > 80) errors.slug = 'Use lowercase Latin letters, numbers and single hyphens, e.g. dhaka-photowalk-2026.';
   // An event's name never begins an address (/events/<name>, /<type>/<series>/<name>); names that
   // are pages of /events are refused where the address is worked out.
-  else if (!inSeries && require('./editionService').EVENTS_RESERVED.has(slug)) errors.slug = 'This address is used by Zury itself; choose another.';
+  else if (!inSeries && (RESERVED.has(slug) || require('./editionService').EVENTS_RESERVED.has(slug))) errors.slug = 'This address is used by Zury itself; choose another.';
 
   const category = PROJECT_CATEGORIES[body.category] ? body.category : '';
   const previousEditionUrl = str(body.previousEditionUrl);

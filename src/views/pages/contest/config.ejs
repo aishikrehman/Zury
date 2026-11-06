@@ -74,7 +74,7 @@
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-5"><label class="form-label" for="st-target"><%= t('To') %></label>
             <select class="form-select" id="st-target" name="target">
-              <option value="none"><%= t('No series (/events/…)') %></option>
+              <option value="none"><%= t('No series (/…)') %></option>
               <% places.forEach((p) => { %><option value="<%= p.value %>"<%= (p.editionId && p.editionId === contest.editionId) || (p.seriesId && p.seriesId === contest.seriesId) ? ' selected' : '' %>><%= p.label %></option><% }) %>
             </select></div>
           <div class="col-12 col-md-3"><label class="form-label" for="st-slug"><%= t('Name there') %></label><input class="form-control" id="st-slug" name="slug" maxlength="80" placeholder="<%= contest.slug %>"></div>

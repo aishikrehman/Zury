@@ -452,6 +452,8 @@ async function editionTabs(req, res, next) {
     if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
     const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
     if (!edition) return next();
+    // Its event, when it has one, is at this address; the edition's own tabs are under /series.
+    if (!req.path.startsWith('/series/') && (await prisma.contest.findFirst({ where: { path: `/${sr.slug}/${edition.slug}`, deletedAt: null }, select: { id: true } }))) return next();
     // The edition's own people (or the series' with a role for its children) see its drafts.
     const canRun = await scopeRoles.canRunEdition(req, edition);
     const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));

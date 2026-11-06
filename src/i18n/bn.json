@@ -1532,5 +1532,12 @@
   "The reviewers": "পর্যালোচকমণ্ডলী",
   "People you add as reviewers (People tab).": "যাঁদের আপনি পর্যালোচক হিসেবে যোগ করেন (ব্যক্তিবর্গ ট্যাব)।",
   "Show word counts": "শব্দসংখ্যা দেখান",
-  "Show the words of each article in tables, results and statistics. (What the results count is set under Review.)": "প্রতিটি নিবন্ধের শব্দসংখ্যা সারণি, ফলাফল ও পরিসংখ্যানে দেখান। (ফলাফলে কী গোনা হবে তা পর্যালোচনা অংশে ঠিক করা হয়।)"
+  "Show the words of each article in tables, results and statistics. (What the results count is set under Review.)": "প্রতিটি নিবন্ধের শব্দসংখ্যা সারণি, ফলাফল ও পরিসংখ্যানে দেখান। (ফলাফলে কী গোনা হবে তা পর্যালোচনা অংশে ঠিক করা হয়।)",
+  "No series (/…)": "কোনো সিরিজ নয় (/…)",
+  "Free: {path}": "খালি আছে: {path}",
+  "Taken.": "নেওয়া হয়ে গেছে।",
+  "This edition already has its event.": "এই সংস্করণের ইভেন্ট আগে থেকেই আছে।",
+  "That series name is taken.": "এই সিরিজের নাম নেওয়া হয়ে গেছে।",
+  "Use lowercase letters, numbers and hyphens.": "ছোট হাতের অক্ষর, সংখ্যা ও হাইফেন ব্যবহার করুন।",
+  "Use {name}": "{name} নিন"
 }

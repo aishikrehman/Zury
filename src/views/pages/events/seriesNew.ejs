@@ -13,6 +13,7 @@
         <div class="mb-3">
           <label class="form-label required" for="slug"><%= t('Address') %></label>
           <div class="input-group"><span class="input-group-text">zury.toolforge.org/</span><input class="form-control<%= errors.slug ? ' is-invalid' : '' %>" id="slug" name="slug" value="<%= form.slug %>" required maxlength="40" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="wlm"></div>
+          <div data-series-address-status aria-live="polite"></div>
           <% if (errors.slug) { %><div class="invalid-feedback d-block"><%= t(errors.slug) %></div><% } %>
         </div>
         <div>

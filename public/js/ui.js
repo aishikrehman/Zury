@@ -153,3 +153,22 @@ document.addEventListener('keydown', (e) => {
   const form = e.target.closest && e.target.closest('[data-inline].is-editing');
   if (form) { form.reset(); form.classList.remove('is-editing'); }
 });
+
+// New series: is the name free? Checked a moment after typing stops.
+(function () {
+  const status = document.querySelector('[data-series-address-status]');
+  const input = status && document.getElementById('slug');
+  if (!input) return;
+  let timer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      if (!input.value.trim()) { status.textContent = ''; return; }
+      try {
+        const r = await (await fetch('/api/address?kind=series&slug=' + encodeURIComponent(input.value.trim()))).json();
+        status.className = 'small mt-1 ' + (r.free ? 'text-success' : 'text-danger');
+        status.textContent = r.free ? zt('Free: {path}', { path: r.path }) : r.reason === 'form' ? zt('Use lowercase letters, numbers and hyphens.') : zt('Taken.');
+      } catch { status.textContent = ''; }
+    }, 350);
+  });
+})();

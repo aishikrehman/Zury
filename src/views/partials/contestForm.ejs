@@ -40,7 +40,7 @@
   <div class="alert alert-danger" role="alert"><%= tn('Please fix the {n} highlighted field.', 'Please fix the {n} highlighted fields.', errorCount) %></div>
 <% } %>
 
-<form method="post" action="<%= action %>" novalidate data-wizard="<%= creating ? 'steps' : 'tabs' %>" data-event-form>
+<form method="post" action="<%= action %>" novalidate<% if (!creating && typeof contest !== 'undefined' && contest) { %> data-event-id="<%= contest.id %>"<% } %> data-wizard="<%= creating ? 'steps' : 'tabs' %>" data-event-form>
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <% if (wikiMode) { %><input type="hidden" id="primaryWiki" value="<%= v('primaryWiki') %>"><% } %>
   <% if (!creating && !wikiMode) { %><input type="hidden" name="type" value="<%= type %>"><% } %>
@@ -86,10 +86,11 @@
                   <div class="col-12">
                     <label class="form-label" for="slug"><%= t("Address") %></label>
                     <div class="input-group">
-                      <span class="input-group-text" data-address-prefix data-origin="<%= origin %>"><%= origin %>/events/</span>
+                      <span class="input-group-text" data-address-prefix data-origin="<%= origin %>"><%= origin %>/</span>
                       <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="<%= t("made-from-the-title") %>" data-slug>
                     </div>
                     <div class="form-hint" data-address-hint><%= t("Made from the title; you can change it.") %></div>
+                    <div data-address-status aria-live="polite"></div>
                     <%- err('slug') %>
                   </div>
                 </div>
