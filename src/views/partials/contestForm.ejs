@@ -383,14 +383,8 @@
                 </div>
                 </div>
               </div>
-              <div class="z-set-row">
-                <span class="z-set-label"><%= t('Who reviews') %><%- mark('settings.reviewers') %></span>
-                <div class="z-set-control d-flex flex-wrap gap-3">
-                  <% [['jury', 'The reviewers you add'], ['localAdmins', 'Local admins of the wiki'], ['participants', 'Any participant']].forEach(([key, label]) => { %>
-                    <label class="form-check m-0"><input class="form-check-input" type="checkbox" name="reviewers" value="<%= key %>"<%= who.includes(key) ? ' checked' : '' %>><span class="form-check-label"><%= t(label) %></span></label>
-                  <% }) %>
-                </div>
-              </div>
+              <%# Who reviews: one choice, any mix of the three. %>
+              <%- row('reviewers', 'Who reviews', select('reviewers', [['jury', 'The reviewers you add'], ['localAdmins', 'Local admins of the wiki'], ['participants', 'Any participant'], ['jury,localAdmins', 'Your reviewers and local admins'], ['jury,participants', 'Your reviewers and any participant'], ['localAdmins,participants', 'Local admins and any participant'], ['jury,localAdmins,participants', 'All of them']], who.join(','))) %>
               <%- row('reviewAssignment', 'Who reviews which entry', select('reviewAssignment', [['open', 'Anyone who reviews (common queue)'], ['assigned', 'Assigned by hand'], ['equal', 'Shared out equally, automatically'], ['fixed', 'A set number each, automatically']], v('reviewAssignment') || 'open', ' data-show-source'), 'Nobody is given their own entry.') %>
               <div class="z-set-row" data-show-when="reviewAssignment:fixed">
                 <label class="z-set-label" for="assignPerJuror"><%= t('Entries per reviewer') %></label>
@@ -429,7 +423,7 @@
             </div>
 
             <h4 class="mb-3"><%= t("Features") %></h4>
-            <div class="z-set-list">
+            <div class="z-set-grid">
               <% FEATURE_FIELDS.forEach(([key, label, help]) => { %>
                 <div class="z-set-row">
                   <label class="z-set-label" for="<%= key %>"><%= label %><%- mark('settings.' + key) %><span class="z-set-hint"><%= help %></span></label>

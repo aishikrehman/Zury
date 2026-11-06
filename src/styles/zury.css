@@ -990,3 +990,9 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-set-control { justify-self: end; width: 100%; display: flex; justify-content: flex-end; }
 .z-set-control > .form-select, .z-set-control > .form-control { width: 100%; }
 @media (max-width: 575.98px) { .z-set-row { grid-template-columns: 1fr; } .z-set-control { justify-self: stretch; justify-content: flex-start; } }
+
+/* Features: switches in columns, each a small box with its name and hint. */
+.z-set-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: .75rem; }
+.z-set-grid > .z-set-row { grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--z-border); border-radius: 10px; }
+.z-set-grid > .z-set-row + .z-set-row { border-top: 1px solid var(--z-border); }
+.z-set-grid .z-set-control { width: auto; }

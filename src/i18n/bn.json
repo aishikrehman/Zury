@@ -1569,5 +1569,9 @@
   "Local admins of the wiki": "উইকির স্থানীয় প্রশাসক",
   "Anyone who reviews (common queue)": "যেকোনো পর্যালোচক (সাধারণ তালিকা)",
   "Shared out equally, automatically": "স্বয়ংক্রিয়ভাবে সমান বণ্টন",
-  "A set number each, automatically": "স্বয়ংক্রিয়ভাবে প্রত্যেককে নির্দিষ্ট সংখ্যা"
+  "A set number each, automatically": "স্বয়ংক্রিয়ভাবে প্রত্যেককে নির্দিষ্ট সংখ্যা",
+  "Your reviewers and local admins": "আপনার পর্যালোচক ও স্থানীয় প্রশাসক",
+  "Your reviewers and any participant": "আপনার পর্যালোচক ও যেকোনো অংশগ্রহণকারী",
+  "Local admins and any participant": "স্থানীয় প্রশাসক ও যেকোনো অংশগ্রহণকারী",
+  "All of them": "সবাই"
 }
