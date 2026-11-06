@@ -54,7 +54,6 @@
         <% } %>
         <div class="z-evhead-meta">
           <span class="z-evhead-status is-<%= color %>"><i></i><%= t(st.label) %></span>
-          <span><i class="ti ti-<%= typeDef.icon || 'calendar-event' %>"></i><%= t(typeDef.label) %></span>
           <% if (contest.visibility === 'private') { %><span><i class="ti ti-lock"></i><%= t('Private') %></span><% } %>
           <% if (contest.startDate) { %>
             <%
@@ -70,9 +69,7 @@
               <% if (hDone !== null && hDone > 0 && hDone < 100) { %><span class="z-evhead-bar" aria-hidden="true"><i style="width: <%= hDone %>%"></i></span><% } %>
               <% if (hNow < hStart) { %><b><%= tn('in {n} day', 'in {n} days', hDays(hStart)) %></b><% } else if (hEnd && hNow <= hEnd) { %><b><%= tn('{n} day left', '{n} days left', hDays(hEnd)) %></b><% } %>
             </span>
-            <% if (hNext) { %><span><i class="ti ti-flag"></i><%= hNext.label %>: <%= formatDate(new Date(hNext.at), contest.timezone) %></span><% } %>
           <% } %>
-          <% facts.forEach((f) => { %><span><%= f %></span><% }) %>
         </div>
       </div>
       <div class="z-evhead-actions">
