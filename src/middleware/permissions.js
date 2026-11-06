@@ -127,12 +127,30 @@ async function resolveEvent(req) {
   return { contest, code, rest: '/' + rest.join('/') + query };
 }
 
+// Where an old address of an event leads now (the longest matching old address wins).
+async function movedTo(req) {
+  if (!['GET', 'HEAD'].includes(req.method)) return null;
+  const segs = req.path.split('/').filter(Boolean);
+  if (!segs.length || RESERVED.has(segs[0])) return null;
+  const prefixes = [];
+  for (let n = Math.min(4, segs.length); n >= 1; n -= 1) prefixes.push('/' + segs.slice(0, n).map((x) => { try { return decodeURIComponent(x); } catch { return x; } }).join('/'));
+  const rows = await prisma.oldPath.findMany({ where: { path: { in: prefixes } }, include: { contest: { select: { path: true, deletedAt: true } } } });
+  const hit = rows.filter((r) => r.contest.path && !r.contest.deletedAt).sort((a, b) => b.path.length - a.path.length)[0];
+  if (!hit) return null;
+  const rest = segs.slice(hit.path.split('/').filter(Boolean).length).join('/');
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  return hit.contest.path.split('/').map(encodeURIComponent).join('/') + (rest ? `/${rest}` : '') + query;
+}
+
 // Runs the event pages (the given router) for any address that belongs to an event.
 function eventAddresses(eventRouter) {
   return async (req, res, next) => {
     try {
       const found = await resolveEvent(req);
-      if (!found) return next();
+      if (!found) {
+        const moved = await movedTo(req);
+        return moved ? res.redirect(301, moved) : next();
+      }
       const url = req.url;
       req.url = found.rest;
       await setupEvent(req, res, (err) => {

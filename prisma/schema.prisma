@@ -166,6 +166,7 @@ model Contest {
   submissions         Submission[]
   memberships         ContestMembership[]
   teams               Team[]
+  oldPaths            OldPath[]
   permissionOverrides ContestPermission[]
   auditLogs           AuditLog[]
   blocks              EventBlock[]
@@ -820,4 +821,16 @@ model Team {
   members ContestMembership[]
 
   @@unique([contestId, name])
+}
+
+// An address an event had before it was renamed or moved; it leads to where the event is now.
+// A new event taking the address frees it.
+model OldPath {
+  path      String   @id @db.VarChar(255)
+  contestId Int
+  createdAt DateTime @default(now())
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@index([contestId])
 }

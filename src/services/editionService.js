@@ -57,8 +57,11 @@ async function sync(contestId, client = prisma) {
   const c = await client.contest.findUnique({ where: { id: contestId }, select: { id: true, slug: true, type: true, seriesId: true, editionId: true, deletedAt: true } });
   if (!c) return null;
   await client.seriesSlug.deleteMany({ where: { contestId: c.id, ...(c.seriesId && !c.deletedAt && { NOT: { seriesId: c.seriesId, slug: c.slug } }) } });
+  const before = (await client.contest.findUnique({ where: { id: c.id }, select: { path: true } })).path;
   const path = c.deletedAt ? null : await pathFor(c.slug, c, client, c.id);
   await client.contest.update({ where: { id: c.id }, data: { path } });
+  if (path) await client.oldPath.deleteMany({ where: { path } });
+  if (before && path && before !== path) await client.oldPath.upsert({ where: { path: before }, update: { contestId: c.id }, create: { path: before, contestId: c.id } });
   if (c.seriesId && !c.deletedAt) {
     await client.seriesSlug.upsert({
       where: { seriesId_slug: { seriesId: c.seriesId, slug: c.slug } },
@@ -72,7 +75,9 @@ async function sync(contestId, client = prisma) {
 // An edition of a series by its name, made when missing (an empty edition is fine).
 async function findOrCreate(seriesId, slug, { title, startDate = null, endDate = null } = {}, client = prisma) {
   const found = await client.edition.findUnique({ where: { seriesId_slug: { seriesId, slug } } });
-  if (found) return found;
+  if (found && !found.deletedAt) return found;
+  // A deleted edition still holding the name gives it up (it keeps it for a restore).
+  if (found) await client.edition.update({ where: { id: found.id }, data: { originalSlug: found.originalSlug || found.slug, slug: `~${found.id}-${found.slug}`.slice(0, 190) } });
   const clash = await client.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId, slug } } });
   if (clash) return null; // a direct event of the series already has this name
   const edition = await client.edition.create({
