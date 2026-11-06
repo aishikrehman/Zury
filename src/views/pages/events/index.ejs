@@ -36,7 +36,7 @@
         <div class="input-icon z-filter-search"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input name="q" type="search" class="form-control" value="<%= filters.q %>" placeholder="<%= t('Title or community') %>" aria-label="<%= t('Search events') %>"></div>
         <select name="project" class="form-select" aria-label="<%= t('Project') %>" data-autosubmit>
           <option value=""><%= t('All projects') %></option>
-          <% Object.entries(PROJECTS).forEach(([key, pr]) => { %><option value="<%= key %>"<%= filters.project === key ? ' selected' : '' %>><%= pr.label %></option><% }) %>
+          <% Object.entries(PROJECTS).forEach(([key, pr]) => { %><option value="<%= key %>"<%= filters.project === key ? ' selected' : '' %>><%= t(pr.label) %></option><% }) %>
         </select>
         <select name="type" class="form-select" aria-label="<%= t('Type') %>" data-autosubmit>
           <option value=""><%= t('All types') %></option>

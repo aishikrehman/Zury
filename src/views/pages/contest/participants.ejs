@@ -42,7 +42,7 @@
       <ul class="nav nav-pills card-header-pills">
         <li class="nav-item"><a class="nav-link<%= !show ? ' active' : '' %>" href="?"><%= t('All') %> <span class="badge bg-secondary-lt ms-1"><%= rows.length %></span></a></li>
         <% roleOrder.filter((r) => count(r)).forEach((r) => { %>
-          <li class="nav-item"><a class="nav-link<%= show === r ? ' active' : '' %>" href="?show=<%= r %>"><%= EVENT_ROLES[r].label %> <span class="badge bg-<%= roleColor[r] %>-lt ms-1"><%= count(r) %></span></a></li>
+          <li class="nav-item"><a class="nav-link<%= show === r ? ' active' : '' %>" href="?show=<%= r %>"><%= t(EVENT_ROLES[r].label) %> <span class="badge bg-<%= roleColor[r] %>-lt ms-1"><%= count(r) %></span></a></li>
         <% }) %>
         <% if (count('blocked')) { %>
           <li class="nav-item"><a class="nav-link<%= show === 'blocked' ? ' active' : '' %>" href="?show=blocked"><%= t('Blocked') %> <span class="badge bg-red-lt ms-1"><%= count('blocked') %></span></a></li>
@@ -73,7 +73,7 @@
             <div class="<%= memberWikis.length ? 'col-sm-3' : 'col-sm-4' %>">
               <label class="form-label" for="memberRole"><%= t('Role') %></label>
               <select class="form-select" id="memberRole" name="role">
-                <% roleOptions.forEach(([key, role]) => { %><option value="<%= key %>"><%= role.label %></option><% }) %>
+                <% roleOptions.forEach(([key, role]) => { %><option value="<%= key %>"><%= t(role.label) %></option><% }) %>
               </select>
             </div>
             <% if (memberWikis.length) { %>
@@ -180,7 +180,7 @@
                         <form method="post" action="<%= base %>/members" class="d-flex gap-2"><%- csrf %>
                           <input type="hidden" name="username" value="<%= u.username %>">
                           <select class="form-select form-select-sm" name="role" aria-label="<%= t('Role') %>">
-                            <% roleOptions.filter(([key]) => !p.roles.some((m) => m.role === key && !m.wiki)).forEach(([key, role]) => { %><option value="<%= key %>"><%= role.label %></option><% }) %>
+                            <% roleOptions.filter(([key]) => !p.roles.some((m) => m.role === key && !m.wiki)).forEach(([key, role]) => { %><option value="<%= key %>"><%= t(role.label) %></option><% }) %>
                           </select>
                           <% if (memberWikis.length) { %>
                             <select class="form-select form-select-sm" name="wiki" aria-label="<%= t('For') %>">

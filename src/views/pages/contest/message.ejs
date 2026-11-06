@@ -6,9 +6,9 @@
       <% if (error) { %><div class="alert alert-danger" role="alert"><%= error %></div><% } %>
       <% if (result) { %>
         <div class="alert alert-<%= result.failed.length ? 'warning' : 'success' %>" role="status">
-          Sent to <%= result.sent %> <%= result.sent === 1 ? 'person' : 'people' %>.
+          <%= tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %>
           <% if (result.failed.length) { %>
-            Not sent to:
+            <%= t('Not sent to:') %>
             <ul class="mb-0"><% result.failed.forEach((f) => { %><li><%= f.username %> — <%= f.error %></li><% }) %></ul>
           <% } %>
         </div>
@@ -24,7 +24,7 @@
             <div class="col-md-6">
               <label class="form-label" for="audience"><%= t("To") %></label>
               <select class="form-select" id="audience" name="audience">
-                <% Object.entries(audiences).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.audience === k ? ' selected' : '' %>><%= label %></option><% }) %>
+                <% Object.entries(audiences).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.audience === k ? ' selected' : '' %>><%= t(label) %></option><% }) %>
               </select>
             </div>
             <div class="col-md-6">

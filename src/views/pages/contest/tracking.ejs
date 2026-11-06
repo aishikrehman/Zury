@@ -14,7 +14,7 @@
         <% } else { %>
           <span class="text-secondary"><%= t("Tracking is off. Turn it on in the configuration: participants' edits, hashtags or categories.") %></span>
         <% } %>
-        <div class="text-secondary small mt-1">Last checked: <%= trackedAt ? formatDateTime(trackedAt, contest.timezone) : 'never' %> · checked again every hour while the event runs</div>
+        <div class="text-secondary small mt-1"><%= t('Last checked') %>: <%= trackedAt ? formatDateTime(trackedAt, contest.timezone) : t('never') %> · <%= t('checked again every hour while the event runs') %></div>
       </div>
       <% if (can('manageEvent') && on.length) { %>
         <form method="post" action="<%= base %>/tracking/refresh">

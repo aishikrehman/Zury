@@ -76,13 +76,13 @@
             <div class="mb-2"><label class="form-label" for="sUrl"><%= t("Meeting link") %></label><input class="form-control<%= inv('meetingUrl') %>" id="sUrl" name="meetingUrl" value="<%= v('meetingUrl') %>" placeholder="<%= t("https://meet.jit.si/…") %>"><%- err('meetingUrl') %></div>
             <div class="mb-2"><label class="form-label" for="sCap"><%= t("Places") %></label><input type="number" min="1" class="form-control<%= inv('capacity') %>" id="sCap" name="capacity" value="<%= v('capacity') %>" placeholder="<%= t("No limit") %>"><%- err('capacity') %></div>
             <div class="mb-0"><label class="form-label" for="sAgenda"><%= t("Agenda") %></label><textarea class="form-control" id="sAgenda" name="agenda" rows="3"><%= v('agenda') %></textarea></div>
-            <div class="form-hint mt-1">Times are in <%= tz %>.</div>
+            <div class="form-hint mt-1"><%= t('Times are in {tz}.', { tz }) %></div>
           </div>
           <div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t("Add session") %></button></div>
         </form>
 
         <div class="card">
-          <div class="card-header"><h3 class="card-title"><%= t("Attendance") %></h3><% if (certificateAfter) { %><div class="card-actions text-secondary small">certificate after <%= certificateAfter %></div><% } %></div>
+          <div class="card-header"><h3 class="card-title"><%= t("Attendance") %></h3><% if (certificateAfter) { %><div class="card-actions text-secondary small"><%= t('certificate after {n}', { n: certificateAfter }) %></div><% } %></div>
           <div class="list-group list-group-flush">
             <% if (!summary.length) { %><div class="list-group-item text-secondary"><%= t("No attendance recorded yet.") %></div><% } %>
             <% summary.forEach((s) => { %>

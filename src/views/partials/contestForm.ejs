@@ -290,12 +290,12 @@
             <h4 class="mb-3"><%= t("Tracking") %></h4>
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label" for="trackHashtags">Hashtags<%- mark('settings.trackHashtags') %></label>
+                <label class="form-label" for="trackHashtags"><%= t("Hashtags") %><%- mark('settings.trackHashtags') %></label>
                 <input class="form-control<%= inv('trackHashtags') %>" id="trackHashtags" name="trackHashtags" value="<%= v('trackHashtags') %>" placeholder="<%= t("wam2026, asianmonth") %>">
                 <%- err('trackHashtags') %>
               </div>
               <div class="col-md-6">
-                <label class="form-label" for="trackCategories">Categories<%- mark('settings.trackCategories') %></label>
+                <label class="form-label" for="trackCategories"><%= t("Categories") %><%- mark('settings.trackCategories') %></label>
                 <textarea class="form-control<%= inv('trackCategories') %>" id="trackCategories" name="trackCategories" rows="2" placeholder="<%= t("One per line") %>"><%= v('trackCategories') %></textarea>
                 <%- err('trackCategories') %>
               </div>

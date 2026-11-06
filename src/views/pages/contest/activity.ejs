@@ -1,4 +1,13 @@
 <%
+  const SETTING_NAMES = Object.assign(Object.fromEntries(DATE_FIELDS), Object.fromEntries(FEATURE_FIELDS.map(([k, l]) => [k, l])), {
+    title: 'Title', slug: 'Address', description: 'Description', primaryWiki: 'Wiki', language: 'Language', timezone: 'Time zone', visibility: 'Who can see it',
+    participation: 'How people take part', registrationEnabled: 'How people take part', registrationRequired: 'How people take part', participationMode: 'Participants',
+    minAccountAgeDays: 'Minimum account age', minEditCount: 'Minimum edit count', participantLimit: 'Participant limit', typeConfig: 'Submission rules', eligibleNamespaces: 'Namespaces',
+    trackHashtags: 'Hashtags', trackCategories: 'Categories', reviewers: 'Who reviews', reviewMethod: 'How reviewers judge', rankBy: 'Results count', requiredReviews: 'Reviews per entry',
+    decisionRule: 'How the reviews decide', reviewAssignment: 'Who reviews which entry', marks: 'Marks', organizingCommunity: 'Organizing community', contactInfo: 'Contact',
+  });
+%>
+<%
   const describe = (e) => {
     let d = {};
     try { d = JSON.parse(e.details || '{}'); } catch { d = {}; }
@@ -7,7 +16,7 @@
     const n = (d.changed || []).length;
     switch (e.action) {
       case 'contest.created': return t('created the event');
-      case 'contest.updated': return tn('changed {n} setting: {list}', 'changed {n} settings: {list}', n).replace('{list}', (d.changed || []).join(', '));
+      case 'contest.updated': return tn('changed {n} setting: {list}', 'changed {n} settings: {list}', n).replace('{list}', (d.changed || []).map((k) => t(SETTING_NAMES[k.replace(/^settings\./, '')] || k.replace(/^settings\./, ''))).join(', '));
       case 'contest.statusChanged': return t('status {from} → {to}', { from: t(label(d.from)), to: t(label(d.to)) });
       case 'contest.deleted': return t('deleted the event');
       case 'membership.added': return t('added {user} as {role}', { user: d.username, role: t(EVENT_ROLES[d.role] ? EVENT_ROLES[d.role].label : d.role) });

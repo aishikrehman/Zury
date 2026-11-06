@@ -18,10 +18,10 @@
     <div class="col-lg-8">
       <form method="post" action="<%= base %>/submit/preview" class="card">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-upload me-2"></i>Submit <%= mass ? 'entries' : 'an entry' %></h3></div>
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-upload me-2"></i><%= mass ? t('Submit entries') : t('Submit an entry') %></h3></div>
         <div class="card-body">
           <% if (error) { %><div class="alert alert-danger" role="alert"><i class="ti ti-alert-circle me-1"></i><%= error %></div><% } %>
-          <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= window.reason %><%= canOthers ? ' As an organizer you can still submit for participants.' : '' %></div><% } %>
+          <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= t(window.reason) %><%= canOthers ? ' ' + t('As an organizer you can still submit for participants.') : '' %></div><% } %>
           <div class="mb-3">
             <label class="form-label" for="entries"><%= t(mass ? 'URLs or titles, one per line' : 'URL or title') %></label>
             <% if (mass) { %>
