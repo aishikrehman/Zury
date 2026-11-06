@@ -32,6 +32,8 @@ const KEYS = {
   secretBallot: { label: 'Secret ballot', type: 'bool' },
   reviewAssignment: { label: 'Who reviews which entry', type: 'enum', options: ['open', 'assigned'] },
   wordCountMethod: { label: 'How words are counted', type: 'enum', options: ['auto', 'ztools', 'plain'] },
+  // The event's on/off features, with the labels the event form uses.
+  ...Object.fromEntries(require('./contestFormService').FEATURE_FIELDS.map(([key, label]) => [key, { label, type: 'bool' }])),
 };
 
 class InheritError extends Error {}

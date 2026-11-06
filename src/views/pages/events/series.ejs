@@ -1,15 +1,16 @@
-<%# A series (/wam), in tabs: its editions (and events directly under it), statistics, and for
+<%# A series (/wam), in tabs: an overview (totals, its editions and events directly under it), and for
     those who run it its settings (details, settings for the events below, archive) and people. %>
 <%
   const base = `/${series.slug}`;
-  const tabs = [['editions', 'calendar', t('Editions')], ['stats', 'chart-bar', t('Statistics')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
+  const tabs = [['overview', 'layout-dashboard', t('Overview')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
 %>
 <%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events']], heading: series.title, status: series.status === 'archived' ? 'archived' : '', meta: `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span>`, base, tab, tabs }) %>
 <div class="page-body">
   <div class="container-xl">
 
-    <% if (tab === 'editions') { %>
+    <% if (tab === 'overview') { %>
       <% if (series.description) { %><p class="text-secondary" style="white-space: pre-line"><%= series.description %></p><% } %>
+      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition'), table: false }) %>
       <div class="card mb-3">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3>
           <% if (canRun) { %><div class="card-actions">
@@ -37,7 +38,7 @@
                   <div class="col-auto"><div class="h2 m-0"><%= e.slug %></div></div>
                   <div class="col min-w-0">
                     <div class="text-truncate"><%= e.title %></div>
-                    <div class="text-secondary small"><%= tn('{n} event', '{n} events', e.events.length) %> · <%= tn('{n} entry', '{n} entries', e.entries) %> · <%= tn('{n} participant', '{n} participants', e.participants) %></div>
+                    <div class="text-secondary small"><%= tn('{n} event', '{n} events', e.events.length) %> · <%= tn('{n} participant', '{n} participants', e.participants) %> · <%= tn('{n} entry', '{n} entries', e.entries) %> · <%= tn('{n} approved', '{n} approved', e.approved) %><% if (e.approvedWords) { %> · <%= tn('{n} word', '{n} words', e.approvedWords) %><% } %></div>
                   </div>
                   <div class="col-auto d-none d-md-flex flex-wrap gap-1"><% e.wikis.slice(0, 8).forEach((w) => { %><span class="badge bg-blue-lt" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></span><% }) %></div>
                   <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></div>
@@ -55,8 +56,6 @@
         </div>
       <% } %>
 
-    <% } else if (tab === 'stats') { %>
-      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
 
     <% } else if (tab === 'settings') { %>
       <form method="post" action="/series/<%= series.slug %>/update" class="card mb-3">

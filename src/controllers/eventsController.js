@@ -388,8 +388,8 @@ module.exports.levelAction = levelAction;
 
 // The series page (/wam) and the edition page (/wam/2026), in tabs. Settings and People are for
 // those who run that level, and hold that level's own settings and roles only.
-const SERIES_TABS = ['editions', 'stats', 'settings', 'people'];
-const EDITION_TABS = ['events', 'stats', 'settings', 'people'];
+const SERIES_TABS = ['overview', 'settings', 'people'];
+const EDITION_TABS = ['overview', 'settings', 'people'];
 
 async function levelExtras(level, tab) {
   const inherit = require('../services/inheritService');
@@ -415,8 +415,8 @@ async function seriesPage(req, res, next) {
     const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
     if (!found || found.deletedAt) return next();
     const canRun = await canRunSeries(req, found.id);
-    let tab = SERIES_TABS.includes(req.query.tab) ? req.query.tab : 'editions';
-    if (!canRun && ['settings', 'people'].includes(tab)) tab = 'editions';
+    let tab = SERIES_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
+    if (!canRun && ['settings', 'people'].includes(tab)) tab = 'overview';
     const directEvents = await prisma.contest.findMany({
       where: { seriesId: found.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: { startDate: 'desc' },
@@ -447,8 +447,8 @@ async function editionTabs(req, res, next) {
     // The edition's own people (or the series' with a role for its children) see its drafts.
     const canRun = await scopeRoles.canRunEdition(req, edition);
     const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));
-    let tab = EDITION_TABS.includes(req.query.tab) ? req.query.tab : 'events';
-    if (!canRun && ['settings', 'people'].includes(tab)) tab = 'events';
+    let tab = EDITION_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
+    if (!canRun && ['settings', 'people'].includes(tab)) tab = 'overview';
     const events = await prisma.contest.findMany({
       where: { editionId: edition.id, deletedAt: null, ...(canSee ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: { startDate: 'asc' },
@@ -457,7 +457,7 @@ async function editionTabs(req, res, next) {
     const stats = require('../services/statsService');
     let totals = null;
     let rows = [];
-    if (tab === 'stats') {
+    if (tab === 'overview') {
       totals = await stats.rollup(events.map((ev) => ev.id));
       rows = await Promise.all(events.map(async (c) => ({ label: c.title, href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) })));
     }

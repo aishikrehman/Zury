@@ -1,8 +1,8 @@
-<%# An edition of a series (/wlm/2026), in tabs: its events, statistics, and for those who run it
+<%# An edition of a series (/wlm/2026), in tabs: an overview (totals and its events), and for those who run it
     its settings (details, settings for its events, copy, archive) and people. %>
 <%
   const base = `/${sr.slug}/${edition.slug}`;
-  const tabs = [['events', 'calendar-event', t('Events')], ['stats', 'chart-bar', t('Statistics')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
+  const tabs = [['overview', 'layout-dashboard', t('Overview')], ...(canRun ? [['settings', 'settings', t('Settings')], ['people', 'users', t('People')]] : [])];
   const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
   const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
 %>
@@ -10,7 +10,7 @@
 <div class="page-body">
   <div class="container-xl">
 
-    <% if (tab === 'events') { %>
+    <% if (tab === 'overview') { %>
       <% if (canRun) { %>
         <div class="d-flex justify-content-end mb-3"><div class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-plus me-1"></i><%= t('Add event') %></button>
@@ -32,6 +32,7 @@
         <% } %>
       <% } %>
       <% if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
+      <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event'), table: false }) %><% } %>
       <% if (!events.length) { %>
         <div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div>
       <% } else { %>
@@ -40,8 +41,6 @@
         </div>
       <% } %>
 
-    <% } else if (tab === 'stats') { %>
-      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %>
 
     <% } else if (tab === 'settings') { %>
       <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/update" class="card mb-3">

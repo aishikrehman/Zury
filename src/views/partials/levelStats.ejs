@@ -1,6 +1,6 @@
 <%# Statistics of a series or an edition: totals (each person and entry once), a chart, and a row
     per part. Expects: totals (statsService.rollup), rows [{ label, sub, href, status, stats }],
-    rowTitle, chartTitle. %>
+    rowTitle, chartTitle; table: false to leave out the table (the page lists the rows itself). %>
 <div class="row row-cards mb-3">
   <% [[t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Words accepted'), totals.approvedWords, 'letter-case'], [t('Wikis'), totals.wikis.length, 'world']].forEach(([label, value, icon]) => { %>
     <div class="col-6 col-lg"><div class="card card-sm"><div class="card-body d-flex align-items-center">
@@ -17,7 +17,7 @@
     <div class="card-body"><%- include('./chart', { spec: { type: 'bar', height: 220, series: [{ name: t('Entries'), data: chartRows.map((r) => r.stats.entries) }, { name: t('Approved'), data: chartRows.map((r) => r.stats.approved) }], labels: chartRows.map((r) => r.label), colors: ['primary', 'green'] }, label: chartTitle }) %></div>
   </div>
 <% } %>
-<% if (rows.length) { %>
+<% if (rows.length && (typeof table === 'undefined' || table)) { %>
   <div class="card">
     <div class="table-responsive">
       <table class="table table-vcenter card-table">

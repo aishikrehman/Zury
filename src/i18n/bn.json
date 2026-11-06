@@ -1366,5 +1366,6 @@
   "Archives the series, its editions and their finished events. Not possible while an event is still running.": "সিরিজ, এর সংস্করণ ও শেষ হওয়া ইভেন্টগুলো আর্কাইভ করে। কোনো ইভেন্ট চলমান থাকলে সম্ভব নয়।",
   "Give the edition a title.": "সংস্করণের একটি শিরোনাম দিন।",
   "{n} edition": "{n}টি সংস্করণ",
-  "{n} editions": "{n}টি সংস্করণ"
+  "{n} editions": "{n}টি সংস্করণ",
+  "{n} word": "{n} শব্দ"
 }
