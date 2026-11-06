@@ -91,7 +91,7 @@ async function wordCounts(wiki, pageids, method) {
       : await wikiApi.get(wiki, { action: 'query', prop: 'extracts', explaintext: '1', exlimit: 'max', pageids: batch });
     for (const p of data.query?.pages || []) {
       const text = ztools ? p.revisions?.[0]?.slots?.main?.content : p.extract;
-      if (text != null) out.set(String(p.pageid), ztools ? words.countZtools(text) : words.countPlain(text));
+      if (text != null) out.set(String(p.pageid), ztools ? words.countZtools(text, wiki) : words.countPlain(text));
     }
   }
   return out;
@@ -106,7 +106,7 @@ async function finalCounts(wiki, pageids, at, method) {
     try {
       const data = await wikiApi.get(wiki, { action: 'query', prop: 'revisions', rvprop: 'content', rvslots: 'main', pageids: String(id), rvstart: at.toISOString(), rvdir: 'older', rvlimit: '1' });
       const text = data.query?.pages?.[0]?.revisions?.[0]?.slots?.main?.content;
-      out.set(String(id), text == null ? 0 : ztools ? words.countZtools(text) : words.countPlain(text.replace(/<[^>]+>|\{\{[^}]*\}\}|\[\[|\]\]|'''?/g, ' ')));
+      out.set(String(id), text == null ? 0 : ztools ? words.countZtools(text, wiki) : words.countPlain(text.replace(/<[^>]+>|\{\{[^}]*\}\}|\[\[|\]\]|'''?/g, ' ')));
     } catch {
       // Left for the next sync.
     }

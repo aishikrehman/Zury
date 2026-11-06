@@ -99,7 +99,7 @@ async function fetchEntryMetadata(ref, { language = 'en', wordCountMethod = 'aut
   };
   if (page.ns === 0 && words.methodFor(wiki, wordCountMethod) === 'ztools') {
     const text = await currentWikitext(wiki, page.pageid);
-    if (text != null) meta.wordCount = words.countZtools(text);
+    if (text != null) meta.wordCount = words.countZtools(text, wiki);
   }
   if (info) {
     meta.file = {
