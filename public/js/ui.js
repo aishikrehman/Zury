@@ -180,3 +180,27 @@ document.querySelectorAll('[data-needed-by]').forEach((main) => {
   const sync = () => document.querySelectorAll('[data-needs-event]').forEach((b) => { b.disabled = !main.checked; if (!main.checked) b.checked = false; });
   main.addEventListener('change', sync);
 });
+
+// Fountain imports: while the import runs, how many of its articles are in.
+document.querySelectorAll('form').forEach((form) => {
+  const code = form.querySelector('input[name="code"]');
+  if (!code || !/fountain/.test(form.action)) return;
+  form.addEventListener('submit', () => {
+    const btn = form.querySelector('button[type="submit"]');
+    const out = document.createElement('div');
+    out.className = 'small text-secondary mt-2';
+    out.setAttribute('aria-live', 'polite');
+    form.appendChild(out);
+    if (btn) btn.disabled = true;
+    const raw = code.value.trim();
+    const key = (raw.match(/editathons\/([^/?#]+)/) || [null, raw])[1];
+    const tick = async () => {
+      try {
+        const p = await (await fetch('/api/fountain-progress?code=' + encodeURIComponent(key))).json();
+        out.textContent = p && p.total ? `${p.done} / ${p.total}` : '…';
+      } catch { /* next time */ }
+    };
+    tick();
+    setInterval(tick, 1000);
+  });
+});

@@ -1,6 +1,6 @@
 <% const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
 <% const typeIcon = TYPE_ICONS[c.type] || 'calendar'; const proj = eventProject(c); %>
-<div class="card card-link card-link-pop h-100 z-event-card z-proj" style="--z-proj: <%= proj.color %>" data-type-color="<%= TYPE_COLORS[c.type] || 'blue' %>">
+<div class="card card-link card-link-pop h-100 z-event-card z-proj" style="--z-proj: <%= proj.color %>; --z-proj-logo: url('<%= proj.logo %>')" data-type-color="<%= TYPE_COLORS[c.type] || 'blue' %>">
   <div class="z-proj-strip"></div>
   <div class="card-body d-flex flex-column">
     <div class="d-flex align-items-center mb-2">

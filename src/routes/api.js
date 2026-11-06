@@ -201,4 +201,7 @@ router.get('/api/users', requireAuth, async (req, res, next) => {
   }
 });
 
+// How far a Fountain import is: { done, total }, or null when none is running.
+router.get('/api/fountain-progress', (req, res) => res.json(require('../services/fountainService').progressOf(String(req.query.code || '').trim()) || null));
+
 module.exports = router;

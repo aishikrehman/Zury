@@ -31,7 +31,7 @@
       ].filter(Boolean);
       if (shownWikis.length <= 1 && contest.language) facts.push(langLocal(contest.language));
     %>
-<header class="z-evhead d-print-none<%= contest.bannerUrl ? ' has-cover' : '' %>" style="--z-proj: <%= headProj.color %>">
+<header class="z-evhead d-print-none<%= contest.bannerUrl ? ' has-cover' : ' has-proj' %>" style="--z-proj: <%= headProj.color %>; --z-proj-logo: url('<%= headProj.logo %>')">
   <% if (contest.bannerUrl) { %><div class="z-evhead-cover" style="background-image: url('<%= contest.bannerUrl %>')"></div><% } %>
   <div class="container-xl">
     <nav class="z-evhead-path" aria-label="<%= t('Breadcrumb') %>">

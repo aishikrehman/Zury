@@ -1041,3 +1041,9 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 
 /* An edition event's address: fixed, shown whole. */
 .input-group.z-addr-fixed > .input-group-text { flex: 1 1 auto; border-radius: var(--tblr-border-radius); background: transparent; justify-content: flex-start; white-space: normal; word-break: break-all; }
+
+/* The project's logo, faint, behind an event; with a light gradient of its colour. */
+.z-evhead.has-proj { background: linear-gradient(110deg, color-mix(in srgb, var(--z-proj) 9%, var(--z-surface)) 0%, var(--z-surface) 65%); overflow: hidden; }
+.z-evhead.has-proj::before { content: ""; position: absolute; right: -2rem; top: 50%; width: 15rem; height: 15rem; transform: translateY(-50%); background: var(--z-proj-logo) center / contain no-repeat; opacity: .1; pointer-events: none; }
+.z-event-card { overflow: hidden; background-image: linear-gradient(135deg, color-mix(in srgb, var(--z-proj) 7%, transparent) 0%, transparent 55%); }
+.z-event-card::after { content: ""; position: absolute; right: -1.25rem; bottom: -1.25rem; width: 7rem; height: 7rem; background: var(--z-proj-logo) center / contain no-repeat; opacity: .08; pointer-events: none; }

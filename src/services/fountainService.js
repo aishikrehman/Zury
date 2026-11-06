@@ -147,7 +147,34 @@ async function ensureMember(contestId, userId, role, wiki, actorId) {
 
 // Brings one event wiki up to date with its Fountain editathon. Entries are matched by
 // page, so running it again only adds new articles and updates decisions.
-async function sync(eventWiki, { actorId = null } = {}) {
+const running = new Map(); // eventWiki.id -> { done, total }
+function progressOf(code) {
+  for (const [, p] of running) if (p.code === code) return { done: p.done, total: p.total };
+  return null;
+}
+
+async function sync(eventWiki, opts = {}) {
+  if (running.has(eventWiki.id)) throw new FountainError('This Fountain editathon is being brought in already. Wait for it to finish.');
+  running.set(eventWiki.id, { code: eventWiki.fountainCode, done: 0, total: 0 });
+  try {
+    return await syncOnce(eventWiki, opts);
+  } finally {
+    running.delete(eventWiki.id);
+  }
+}
+
+// The same page twice (two imports at once): the oldest entry stays, the others are withdrawn.
+async function mergeRepeats(contestId, wiki) {
+  const rows = await prisma.submission.groupBy({ by: ['pageKey'], where: { contestId, wiki, status: { not: 'withdrawn' } }, _count: { _all: true }, having: { pageKey: { _count: { gt: 1 } } } });
+  for (const r of rows) {
+    const same = await prisma.submission.findMany({ where: { contestId, wiki, pageKey: r.pageKey, status: { not: 'withdrawn' } }, orderBy: { id: 'asc' }, select: { id: true, status: true } });
+    for (const extra of same.slice(1)) {
+      await prisma.submission.update({ where: { id: extra.id }, data: { status: 'withdrawn', history: { create: { actorId: null, action: 'merged', previousValue: extra.status, newValue: 'withdrawn', note: 'The same page twice; the first entry stays.' } } } });
+    }
+  }
+}
+
+async function syncOnce(eventWiki, { actorId = null } = {}) {
   const editathon = await fetchEditathon(eventWiki.fountainCode);
   const { contestId, wiki } = eventWiki;
   const people = new Map();
@@ -162,6 +189,9 @@ async function sync(eventWiki, { actorId = null } = {}) {
   }
 
   const articles = editathon.articles || [];
+  await mergeRepeats(contestId, wiki);
+  const prog = running.get(eventWiki.id);
+  if (prog) prog.total = articles.length;
   const ids = await pageIds(wiki, [...new Set(articles.map((a) => a.name))]);
   const existing = await prisma.submission.findMany({ where: { contestId, wiki }, select: { id: true, pageKey: true, status: true, score: true, wordCount: true, metadata: true } });
   const settings = await prisma.contestSettings.findUnique({ where: { contestId }, select: { wordCountMethod: true } });
@@ -180,6 +210,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
   const ensureJury = async (id) => { if (!juryDone.has(id)) { juryDone.add(id); await ensureMember(contestId, id, 'jury', wiki, actorId); } };
 
   for (const a of articles) {
+    if (prog) prog.done += 1;
     const pageid = ids.get(a.name);
     const u = await person(a.user);
     if (!pageid || !u) continue;
@@ -227,6 +258,18 @@ async function sync(eventWiki, { actorId = null } = {}) {
 async function importEvent({ actorId, input, type = 'writing', series = null }) {
   const code = parseCode(input);
   if (!code) throw new FountainError('Enter a Fountain editathon code or address.');
+  // Two tabs importing the same editathon: the second waits for the first.
+  if (importing.has(code)) throw new FountainError('This Fountain editathon is being brought in already. Wait for it to finish.');
+  importing.add(code);
+  try {
+    return await importOnce(code, { actorId, type, series });
+  } finally {
+    importing.delete(code);
+  }
+}
+
+const importing = new Set();
+async function importOnce(code, { actorId, type, series }) {
   const linked = await prisma.contestWiki.findFirst({ where: { fountainCode: code, contest: { deletedAt: null } }, include: { contest: true } });
   if (linked) return { contest: linked.contest, existed: true };
 
@@ -303,4 +346,5 @@ async function syncAll() {
   return rows.length;
 }
 
-module.exports = { FountainError, parseCode, fetchEditathon, decision, importEvent, link, unlink, sync, syncAll };
+module.exports = {
+  progressOf, FountainError, parseCode, fetchEditathon, decision, importEvent, link, unlink, sync, syncAll };

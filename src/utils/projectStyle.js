@@ -14,6 +14,9 @@ const PROJECTS = {
   wikimedia: { label: 'Wikimedia', icon: 'world', color: '#5b6b7f' },
 };
 
+// The project's own logo (from Commons), drawn faintly behind its events.
+const LOGOS = {"wikipedia":"Wikipedia-logo-v2.svg","commons":"Commons-logo.svg","wikidata":"Wikidata-logo.svg","wikisource":"Wikisource-logo.svg","wiktionary":"Wiktionary-logo-v2.svg","wikibooks":"Wikibooks-logo.svg","wikiquote":"Wikiquote-logo.svg","wikivoyage":"Wikivoyage-Logo-v3-icon.svg","wikinews":"Wikinews-logo.svg","wikiversity":"Wikiversity logo 2017.svg","wikimedia":"Wikimedia-logo.svg"};
+
 function projectKey(dbname = '') {
   if (dbname === 'commonswiki') return 'commons';
   if (dbname === 'wikidatawiki') return 'wikidata';
@@ -27,7 +30,7 @@ function eventProject(c) {
   const dbs = c.wikis && c.wikis.length ? c.wikis.map((w) => w.wiki) : [c.primaryWiki];
   const keys = [...new Set(dbs.filter(Boolean).map(projectKey))];
   const key = keys.length === 1 ? keys[0] : 'wikimedia';
-  return { key, ...PROJECTS[key] };
+  return { key, ...PROJECTS[key], logo: `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(LOGOS[key])}?width=400` };
 }
 
 module.exports = { PROJECTS, projectKey, eventProject };
