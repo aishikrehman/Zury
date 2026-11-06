@@ -959,3 +959,7 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
   .z-filter-side .z-filterbar-fields { grid-template-columns: 1fr; }
 }
 .z-results-bar { margin-bottom: 1rem; }
+
+/* New event on one page: the sections one after the other, each with a line above. */
+form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--z-border); }
+.z-type-card .avatar { font-size: 1.35rem; }

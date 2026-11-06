@@ -1539,5 +1539,9 @@
   "This edition already has its event.": "এই সংস্করণের ইভেন্ট আগে থেকেই আছে।",
   "That series name is taken.": "এই সিরিজের নাম নেওয়া হয়ে গেছে।",
   "Use lowercase letters, numbers and hyphens.": "ছোট হাতের অক্ষর, সংখ্যা ও হাইফেন ব্যবহার করুন।",
-  "Use {name}": "{name} নিন"
+  "Use {name}": "{name} নিন",
+  "Create: {type}": "তৈরি করুন: {type}",
+  "What kind of event? Its settings come next, on one page.": "কোন ধরনের ইভেন্ট? এরপর এর সেটিংস আসবে, এক পাতায়।",
+  "Change": "বদলান",
+  "It is made as a draft: nothing is public until you publish it.": "এটি খসড়া হিসেবে তৈরি হয়: প্রকাশ না করা পর্যন্ত কিছুই সবার জন্য দেখা যায় না।"
 }

@@ -1,6 +1,29 @@
-<%- include('../../partials/pageHeader', { pretitle: t('Events'), heading: t('Create an event') }) %>
+<%# Creating an event: first its type (cards), then that type's settings on one page. %>
+<%
+  const ICONS = { writing: 'file-text', editathon: 'edit', photo: 'camera', photowalk: 'walk', data: 'database', proofread: 'book', digitization: 'scan', glam: 'building-bank', workshop: 'presentation', training: 'school' };
+  const ORDER = ['writing', 'editathon', 'photo', 'photowalk', 'data', 'proofread', 'digitization', 'glam', 'workshop', 'training'];
+  const keep = new URLSearchParams({ ...(form.seriesSlug && { series: form.seriesSlug }), ...(form.edition && { edition: form.edition }) });
+%>
+<%- include('../../partials/pageHeader', { pretitle: t('Events'), heading: typeDef ? t('Create: {type}', { type: t(typeDef.label) }) : t('Create an event') }) %>
 <div class="page-body">
   <div class="container-xl">
-    <%- include('../../partials/contestForm', { action: '/events/create', submitLabel: 'Create draft' }) %>
+    <% if (!typeDef) { %>
+      <p class="text-secondary mb-3"><%= t('What kind of event? Its settings come next, on one page.') %></p>
+      <div class="row row-cards">
+        <% ORDER.filter((k) => EVENT_TYPES[k]).forEach((k) => { const d = EVENT_TYPES[k]; keep.set('type', k); %>
+          <div class="col-sm-6 col-lg-4 col-xl-3">
+            <a class="card card-link card-link-pop h-100 text-reset z-type-card" href="/events/create?<%= keep.toString() %>">
+              <div class="card-body">
+                <span class="avatar avatar-md bg-primary-lt mb-3"><i class="ti ti-<%= ICONS[k] || 'calendar-event' %>"></i></span>
+                <h3 class="card-title mb-1"><%= t(d.label) %></h3>
+                <p class="text-secondary small mb-0"><%= t(d.description) %></p>
+              </div>
+            </a>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <%- include('../../partials/contestForm', { action: '/events/create', submitLabel: 'Create draft' }) %>
+    <% } %>
   </div>
 </div>

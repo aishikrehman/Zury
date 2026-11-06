@@ -2,6 +2,8 @@
 // Back / Next and ends on a review; "tabs" lets any step be opened directly.
 (function () {
   document.querySelectorAll('form[data-wizard]').forEach((form) => {
+    // One page (new events): every section is shown; nothing to step through.
+    if (form.dataset.wizard === 'page') return;
     const sequential = form.dataset.wizard === 'steps';
     const panes = [...form.querySelectorAll('.wizard-pane')];
     const links = [...form.querySelectorAll('[data-step-link]')];

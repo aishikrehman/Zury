@@ -17,14 +17,16 @@
   const marks = locals.wikiMode ? locals.overridden : new Set();
   const mark = (key) => (marks.has(key) ? `<span class="badge bg-orange-lt ms-1">${esc(t('this wiki'))}</span>` : '');
   const creating = action === '/events/create';
+  // New events: one page with every section of the chosen type (no steps). Configuration: tabs.
+  const pageMode = creating;
+  const judged = !typeDef || typeDef.entries !== false;
   const dateLabel = Object.fromEntries(DATE_FIELDS);
   const origin = 'zury.toolforge.org';
   const steps = [
     ['basics', t('Basic info'), wikiMode ? t('Description, contact and dates') : t('Type, project, name, address and dates')],
     ['rules', t('Submission rules'), t('Who can take part and what counts')],
-    ['judging', t('Interaction and judging'), t('Review, appeals, results and features')],
+    ...(judged ? [['judging', t('Interaction and judging'), t('Review, appeals, results and features')]] : []),
     ...(wikiMode ? [] : [['access', t('User access levels'), t('Visibility, organizers and reviewers')]]),
-    ...(creating ? [['review', t('Review'), t('Check everything, then create')]] : []),
   ];
   const dateInput = (key) => `
     <label class="form-label" for="${key}">${esc(dateLabel[key])}${mark('contest.' + key)}</label>
@@ -40,7 +42,7 @@
   <div class="alert alert-danger" role="alert"><%= tn('Please fix the {n} highlighted field.', 'Please fix the {n} highlighted fields.', errorCount) %></div>
 <% } %>
 
-<form method="post" action="<%= action %>" novalidate<% if (!creating && typeof contest !== 'undefined' && contest) { %> data-event-id="<%= contest.id %>"<% } %> data-wizard="<%= creating ? 'steps' : 'tabs' %>" data-event-form>
+<form method="post" action="<%= action %>" novalidate<% if (!creating && typeof contest !== 'undefined' && contest) { %> data-event-id="<%= contest.id %>"<% } %> data-wizard="<%= pageMode ? 'page' : 'tabs' %>" data-event-form>
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <% if (wikiMode) { %><input type="hidden" id="primaryWiki" value="<%= v('primaryWiki') %>"><% } %>
   <% if (!creating && !wikiMode) { %><input type="hidden" name="type" value="<%= type %>"><% } %>
@@ -49,6 +51,7 @@
     <%# New events and Configuration share one layout: the sections as tabs across the top. %>
     <div class="col-12">
       <div class="card z-config">
+        <% if (!pageMode) { %>
         <div class="card-header">
           <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
             <% steps.forEach(([key, label, hint], i) => { %>
@@ -58,6 +61,7 @@
             <% }) %>
           </ul>
         </div>
+        <% } %>
         <div class="card-body">
 
           <%# ── 1. Basic info: what, where, when; series and extras folded away. ── %>
@@ -67,6 +71,14 @@
               <div class="z-form-group">
                 <h3 class="z-form-group-title"><%= t('What') %></h3>
                 <div class="row g-3">
+                <% if (pageMode && typeDef) { %>
+                  <div class="col-md-4">
+                    <span class="form-label"><%= t("Type of event") %></span>
+                    <input type="hidden" name="type" value="<%= type %>">
+                    <div class="d-flex align-items-center gap-2"><strong><%= t(typeDef.label) %></strong><a class="small" href="/events/create<%= form.seriesSlug ? `?series=${encodeURIComponent(form.seriesSlug)}${form.edition ? `&edition=${encodeURIComponent(form.edition)}` : ''}` : '' %>"><%= t('Change') %></a></div>
+                    <div class="form-hint"><%= t(typeDef.description) %></div>
+                  </div>
+                <% } else { %>
                 <div class="col-md-4">
                   <label class="form-label required" for="type"><%= t("Type of event") %></label>
                   <select class="form-select<%= inv('type') %>" id="type" <%- creating || (typeof contest !== 'undefined' && contest && contest.status === 'draft' && !wikiMode) ? 'name="type" required' : 'disabled' %> data-type-select>
@@ -78,6 +90,7 @@
                   <div class="form-hint" data-type-description><%= typeDef ? typeDef.description : '' %></div>
                   <%- err('type') %>
                 </div>
+                <% } %>
                   <div class="col-md-8">
                     <label class="form-label required" for="title"><%= t("Title") %></label>
                     <input class="form-control<%= inv('title') %>" id="title" name="title" maxlength="200" minlength="3" required value="<%= v('title') %>" placeholder="<%= t("e.g. Wiki Loves Monuments 2026 in Bangladesh") %>">
@@ -218,7 +231,7 @@
           </section>
 
           <%# ── 2. Submission rules ───────────────────────────────────── %>
-          <section class="wizard-pane d-none" id="step-rules" data-step="1">
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-rules" data-step="1">
             <h3 class="mb-2"><%= t("Submission rules") %></h3>
             <p class="text-secondary mb-4" data-guide="rules"><%= typeDef && typeDef.guide ? typeDef.guide.rules : '' %></p>
             <div class="row g-3 mb-4">
@@ -323,7 +336,8 @@
           </section>
 
           <%# ── 3. Interaction and judging ────────────────────────────── %>
-          <section class="wizard-pane d-none" id="step-judging" data-step="2">
+          <% if (judged) { %>
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-judging" data-step="2">
             <h3 class="mb-2"><%= t("Interaction and judging") %></h3>
             <p class="text-secondary mb-4" data-guide="judging"><%= typeDef && typeDef.guide ? typeDef.guide.judging : '' %></p>
             <div class="row g-3 mb-4">
@@ -446,9 +460,11 @@
             </div>
           </section>
 
+          <% } %>
+
           <%# ── 4. User access levels ─────────────────────────────────── %>
           <% if (!wikiMode) { %>
-            <section class="wizard-pane d-none" id="step-access" data-step="3">
+            <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-access" data-step="<%= judged ? 3 : 2 %>">
               <h3 class="mb-4"><%= t("User access levels") %></h3>
               <div class="row g-3">
                 <div class="col-12">
@@ -492,21 +508,12 @@
             </section>
           <% } %>
 
-          <%# ── Review (new events only) ──────────────────────────────── %>
-          <% if (creating) { %>
-            <section class="wizard-pane d-none" id="step-review" data-step="<%= steps.length - 1 %>">
-              <h3 class="mb-4"><%= t("Review") %></h3>
-              <div data-review></div>
-            </section>
-          <% } %>
         </div>
 
         <div class="card-footer d-flex align-items-center">
-          <% if (creating) { %>
-            <button type="button" class="btn" data-wizard-back disabled><i class="ti ti-arrow-left me-1"></i><%= t("Back") %></button>
-            <span class="text-secondary small mx-auto" data-wizard-count></span>
-            <button type="button" class="btn btn-primary" data-wizard-next><%= t("Next") %><i class="ti ti-arrow-right ms-1"></i></button>
-            <button type="submit" class="btn btn-primary d-none" data-wizard-submit><i class="ti ti-check me-1"></i><%= t(submitLabel) %></button>
+          <% if (pageMode) { %>
+            <span class="text-secondary small me-auto"><%= t('It is made as a draft: nothing is public until you publish it.') %></span>
+            <button type="submit" class="btn btn-primary btn-lg"><i class="ti ti-check me-1"></i><%= t(submitLabel) %></button>
           <% } else { %>
             <button type="submit" class="btn btn-primary ms-auto"><i class="ti ti-device-floppy me-1"></i><%= t(submitLabel) %></button>
           <% } %>
