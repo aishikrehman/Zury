@@ -117,6 +117,13 @@ async function nextEdition({ actorId, series }) {
     // The latest edition's people keep their roles in the new one; whoever makes it runs it.
     const roles = await tx.scopeRole.findMany({ where: { editionId: latest.id } });
     const keep = new Map([[`${actorId}:organizer`, { userId: actorId, role: 'organizer', appliesToChildren: false }], ...roles.map((r) => [`${r.userId}:${r.role}`, r])]);
+    // Its settings for the events below carry over too, and the copied events follow them.
+    for (const r of await tx.levelSetting.findMany({ where: { editionId: latest.id } })) {
+      await tx.levelSetting.create({ data: { editionId: edition.id, key: r.key, value: r.value, mode: r.mode, updatedById: actorId } });
+    }
+    for (const c of await tx.contest.findMany({ where: { editionId: edition.id }, select: { id: true } })) {
+      await require('./inheritService').applyToEvent(c.id, { actorId }, tx);
+    }
     for (const r of keep.values()) await tx.scopeRole.create({ data: { userId: r.userId, role: r.role, editionId: edition.id, appliesToChildren: r.appliesToChildren, assignedById: actorId } });
     await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: edition.id, details: { series: series.slug, edition: slug, from: latest.slug, events: latest.events.length } }, tx);
     return edition;
@@ -166,6 +173,7 @@ async function remove({ actorId, series }) {
   if (editions || events) throw new SeriesError('A series with editions or events cannot be deleted; delete or move them first.');
   await prisma.$transaction([
     prisma.seriesSlug.deleteMany({ where: { seriesId: series.id } }),
+    prisma.levelSetting.deleteMany({ where: { OR: [{ seriesId: series.id }, { edition: { seriesId: series.id } }] } }),
     prisma.scopeRole.deleteMany({ where: { OR: [{ seriesId: series.id }, { edition: { seriesId: series.id } }] } }),
     prisma.contest.updateMany({ where: { seriesId: series.id }, data: { seriesId: null } }),
     // Deleted events may still point at its (deleted) editions.

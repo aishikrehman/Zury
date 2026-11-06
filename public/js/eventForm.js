@@ -148,3 +148,18 @@
   rule.addEventListener('change', show);
   show();
 })();
+
+// Settings locked by the series or edition: shown, but not editable here.
+(function () {
+  const box = document.querySelector('[data-locked-settings]');
+  const form = document.querySelector('form[data-event-form]');
+  if (!box || !form) return;
+  for (const name of JSON.parse(box.dataset.lockedSettings || '[]')) {
+    form.querySelectorAll(`[name="${name}"]`).forEach((el) => {
+      el.disabled = true;
+      el.title = zt('Locked by the series or edition');
+      const label = el.closest('.form-check, .mb-3, .col, [class*="col-"]')?.querySelector('label, .form-check-label');
+      if (label && !label.querySelector('.ti-lock')) label.insertAdjacentHTML('afterbegin', '<i class="ti ti-lock me-1"></i>');
+    });
+  }
+})();

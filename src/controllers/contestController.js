@@ -135,7 +135,9 @@ async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
   } catch (err) {
     return req.next(err);
   }
+  const inherited = await require('../services/inheritService').viewFor(req.contest, req.eventSettings).catch(() => []);
   res.status(status).render('pages/contest/config', {
+    inherited,
     moveTargets: targets,
     wikiMode: !!req.wikiScope,
     canManageWikis: !req.wikiScope && req.scope.isGlobalController,
@@ -174,11 +176,13 @@ async function updateWikiConfig(req, res, next) {
   const baseline = contestForm.parse({ ...eventForm, type }, { type, wikiAllowed: () => true });
   const typeValues = JSON.parse(parsed.settings.typeConfig);
   const baseType = JSON.parse(baseline.settings.typeConfig);
+  // A setting locked by the series or edition is the same on every wiki.
+  const locked = Object.entries(await require('../services/inheritService').rulesFor(req.contest)).filter(([, r]) => r.mode === 'locked').map(([k]) => `settings.${k}`);
   const chosen = [
     ...Object.keys(parsed.contest).filter((k) => !same(parsed.contest[k], baseline.contest[k])).map((k) => `contest.${k}`),
     ...Object.keys(parsed.settings).filter((k) => k !== 'typeConfig' && !same(parsed.settings[k], baseline.settings[k])).map((k) => `settings.${k}`),
     ...Object.keys(typeValues).filter((k) => !same(typeValues[k], baseType[k])).map((k) => `type.${k}`),
-  ];
+  ].filter((k) => !locked.includes(k));
   try {
     await eventWikiService.saveOverrides({ actorId: req.user.id, contest: req.contest, eventWiki: req.wikiScope, overrides: buildOverrides(parsed, typeValues, chosen) });
     req.flash('success', chosen.length ? `Saved. ${chosen.length} setting${chosen.length === 1 ? '' : 's'} differ from the event.` : 'Saved. This wiki follows the event settings.');
@@ -207,6 +211,7 @@ async function updateConfig(req, res, next) {
   try {
     await eventService.update({ actorId: req.user.id, contest: { ...req.contest, series: req.series }, settings: req.eventSettings, parsed, autoSlug: parsed.autoSlug });
     req.flash('success', 'Event settings saved.');
+    if (parsed.lockedRefused && parsed.lockedRefused.length) req.flash('warning', req.t('Some settings are locked by the series or edition and were kept: {list}.', { list: parsed.lockedRefused.map((k) => req.t(require('../services/inheritService').KEYS[k].label)).join(', ') }));
     res.redirect(back(req, '/config'));
   } catch (err) {
     if (err instanceof eventService.EventError) {
@@ -456,3 +461,17 @@ module.exports = { exportData, clearData,
   activity,
   statistics,
 };
+
+// Take the series' or edition's value again for one setting.
+async function followSetting(req, res, next) {
+  const inherit = require('../services/inheritService');
+  try {
+    await inherit.follow({ actorId: req.user.id, contest: req.contest, key: String(req.body.key || '') });
+    req.flash('success', req.t('Saved.'));
+  } catch (err) {
+    if (!(err instanceof inherit.InheritError)) return next(err);
+    req.flash('danger', req.t(err.message));
+  }
+  res.redirect(`${req.eventBase}/config#inherited`);
+}
+module.exports.followSetting = followSetting;

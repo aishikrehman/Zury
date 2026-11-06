@@ -44,6 +44,7 @@ model User {
   membershipsAssigned ContestMembership[] @relation("MembershipAssigner")
   scopeRoles          ScopeRole[]         @relation("ScopeRoleHolder")
   scopeRolesAssigned  ScopeRole[]         @relation("ScopeRoleAssigner")
+  levelSettings       LevelSetting[]
   permissionOverrides ContestPermission[]
   contestsCreated     Contest[]           @relation("ContestCreator")
   contestsDeleted     Contest[]           @relation("ContestDeleter")
@@ -192,6 +193,7 @@ model EventSeries {
   editionRecords Edition[]
   slugs          SeriesSlug[]
   roles          ScopeRole[]
+  settings       LevelSetting[]
 }
 
 // One occurrence of a series (WLM 2026). Belongs to exactly one series; holds zero or more events.
@@ -210,10 +212,11 @@ model Edition {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  series     EventSeries @relation(fields: [seriesId], references: [id], onDelete: Restrict)
-  events     Contest[]   @relation("EditionEvents")
+  series     EventSeries    @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  events     Contest[]      @relation("EditionEvents")
   seriesSlug SeriesSlug?
   roles      ScopeRole[]
+  settings   LevelSetting[]
 
   @@unique([seriesId, slug])
 }
@@ -329,6 +332,9 @@ model ContestSettings {
   // open: any jury member of the entry's wiki may review it.
   // assigned: jury members review only the entries assigned to them.
   reviewAssignment            String    @default("open")
+  // Settings taken from the series or edition, JSON { key: "series" | "edition" }. A key listed
+  // here follows its parent; one the event changes itself drops out and stays its own.
+  followed                    String    @default("{}") @db.Text
   trackedAt                   DateTime?
 
   updatedAt DateTime @updatedAt
@@ -693,6 +699,30 @@ model ScopeRole {
   edition    Edition?     @relation(fields: [editionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([userId])
+  @@index([seriesId])
+  @@index([editionId])
+}
+
+// A setting given on a series or an edition (exactly one; checked by the database) for the events below.
+// locked: every event below uses it and cannot change it. default: events use it until they
+// set their own. optional: only suggested, never applied. Kept apart from roles (ScopeRole).
+model LevelSetting {
+  id          Int      @id @default(autoincrement())
+  seriesId    Int?
+  editionId   Int?
+  // A ContestSettings field, e.g. secretBallot.
+  key         String   @db.VarChar(64)
+  // JSON value.
+  value       String   @db.Text
+  // locked | default | optional
+  mode        String   @default("default")
+  updatedAt   DateTime @updatedAt
+  updatedById Int?
+
+  series    EventSeries? @relation(fields: [seriesId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  edition   Edition?     @relation(fields: [editionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  updatedBy User?        @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
   @@index([seriesId])
   @@index([editionId])
 }

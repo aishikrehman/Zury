@@ -60,6 +60,29 @@
     </div>
   <% } %>
 
+  <%# Settings from the series or edition: where each comes from, and whether this event follows it. %>
+  <% if (inherited.length) { %>
+    <div class="card mb-3" id="inherited" data-locked-settings="<%= JSON.stringify(inherited.filter((i) => i.mode === 'locked').map((i) => i.key)) %>">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-hierarchy-2 me-2"></i><%= t('From the series') %></h3></div>
+      <div class="list-group list-group-flush">
+        <% inherited.forEach((i) => { const show = (v) => typeof v === 'boolean' ? t(v ? 'Yes' : 'No') : (v === null ? '—' : v); %>
+          <div class="list-group-item"><div class="row align-items-center g-2">
+            <div class="col"><span class="fw-medium"><%= t(i.label) %></span>: <%= show(i.following ? i.value : i.own) %>
+              <div class="text-secondary small">
+                <% if (i.mode === 'locked') { %><i class="ti ti-lock me-1"></i><%= t('Locked by {name}; it cannot be changed here.', { name: i.name }) %>
+                <% } else if (i.mode === 'optional') { %><%= t('{name} suggests {value}.', { name: i.name, value: show(i.value) }) %>
+                <% } else if (i.following) { %><%= t('Default from {name}.', { name: i.name }) %>
+                <% } else { %><%= t('This event’s own value; the default from {name} is {value}.', { name: i.name, value: show(i.value) }) %><% } %>
+              </div></div>
+            <% if (i.mode !== 'locked' && !i.following && can('editEvent') && JSON.stringify(i.own) !== JSON.stringify(i.value)) { %>
+              <div class="col-auto"><form method="post" action="<%= eventBase %>/config/follow"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="key" value="<%= i.key %>"><button class="btn btn-sm" type="submit"><%= t(i.mode === 'optional' ? 'Use it' : 'Use the default') %></button></form></div>
+            <% } %>
+          </div></div>
+        <% }) %>
+      </div>
+    </div>
+  <% } %>
+
   <% if (can('editEvent')) { %>
     <%- include('../../partials/contestForm', { action: `${base}/config`, submitLabel: 'Save settings', wikiMode }) %>
   <% } %>

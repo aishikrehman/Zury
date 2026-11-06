@@ -2,6 +2,7 @@ const prisma = require('../config/prisma');
 const audit = require('./auditService');
 const editions = require('./editionService');
 const lifecycle = require('./lifecycleService');
+const inherit = require('./inheritService');
 const { defaultSettings } = require('./contestFormService');
 const { defaultCode } = require('./eventWikiService');
 
@@ -61,6 +62,8 @@ async function create({ actorId, type, parsed, autoSlug }) {
     });
     await audit.record({ actorId, contestId: contest.id, action: 'contest.created', entityType: 'Contest', entityId: contest.id, details: { title: contest.title, type } }, tx);
     await editions.sync(contest.id, tx);
+    // A new event takes its series' and edition's settings (locked ones and defaults).
+    await inherit.applyToEvent(contest.id, { actorId, fresh: true }, tx);
     return contest;
   });
 }
@@ -74,11 +77,13 @@ function changedKeys(before, after) {
 }
 
 async function update({ actorId, contest, settings, parsed, autoSlug }) {
+  // Locked settings keep their value; a followed setting changed here becomes the event's own.
+  parsed.lockedRefused = await inherit.guardUpdate(contest, settings, parsed.settings);
   return prisma.$transaction(async (tx) => {
     const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId);
     const slug = await uniqueSlug(tx, parsed.contest.slug, { auto: autoSlug, excludeId: contest.id, parent });
     const data = { ...parsed.contest, ...parent, slug };
-    const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).map((k) => `settings.${k}`)];
+    const changed = [...changedKeys(contest, data), ...changedKeys(settings, parsed.settings).filter((k) => k !== 'followed').map((k) => `settings.${k}`)];
     if (!changed.length) return contest;
 
     const next = { ...contest, ...data };
@@ -104,6 +109,9 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
       );
     }
     await editions.sync(updated.id, tx);
+    // Moved under another series or edition: it takes that parent's settings.
+    const moved = data.seriesId !== (contest.seriesId ?? null) || data.editionId !== (contest.editionId ?? null);
+    if (moved) await inherit.applyToEvent(updated.id, { actorId, adopt: true }, tx);
     return updated;
   });
 }

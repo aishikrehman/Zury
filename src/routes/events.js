@@ -48,6 +48,7 @@ contest.post('/leave', requireAuth, contestController.leave);
 
 contest.get('/config', requirePermission('editEvent', 'manageEvent'), contestController.config);
 contest.post('/config', requirePermission('editEvent'), contestController.updateConfig);
+contest.post('/config/follow', requirePermission('editEvent'), contestController.followSetting);
 contest.post('/status', requireEventWide('manageEvent'), contestController.changeStatus);
 contest.post('/delete', requireEventWide('deleteEvent'), contestController.destroy);
 contest.get('/export/:dataset([a-z]+).:format([a-z]+)', requirePermission('manageEvent', 'exportData'), contestController.exportData);
@@ -131,6 +132,8 @@ router.post('/series', requirePermission('importEvents'), eventsController.creat
 router.post(`/series/:series(${SLUG})/first-edition`, requireAuth, eventsController.firstEdition);
 router.post(`/series/:series(${SLUG})/people`, requireAuth, eventsController.grantRole);
 router.post(`/series/:series(${SLUG})/people/:id(\\d+)/remove`, requireAuth, eventsController.revokeRole);
+router.post(`/series/:series(${SLUG})/settings`, requireAuth, eventsController.setLevelSetting);
+router.post(`/series/:series(${SLUG})/settings/:id(\\d+)/remove`, requireAuth, eventsController.removeLevelSetting);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
 router.get(`/:series(${SLUG})`, eventsController.series);
 // An edition's own page, when the name under the series is an edition.

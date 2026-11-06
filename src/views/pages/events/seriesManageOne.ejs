@@ -65,6 +65,45 @@
       </div>
     </div>
 
+    <%# Settings for the events below: locked (cannot be changed below), default (used until an event sets its own) or optional (only suggested). %>
+    <div class="col-12" id="settings">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-adjustments me-2"></i><%= t('Settings for the events below') %></h3></div>
+        <form method="post" action="/series/<%= sr.slug %>/settings" class="card-body border-bottom" data-level-setting>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-3"><label class="form-label" for="ls-key"><%= t('Setting') %></label><select class="form-select" id="ls-key" name="key"><% Object.entries(KEYS).forEach(([k, d]) => { %><option value="<%= k %>" data-def="<%= JSON.stringify(d) %>"><%= t(d.label) %></option><% }) %></select></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="ls-value"><%= t('Value') %></label><div data-value-slot><input class="form-control" id="ls-value" name="value"></div></div>
+            <div class="col-6 col-md-2"><label class="form-label" for="ls-mode"><%= t('How') %></label><select class="form-select" id="ls-mode" name="mode"><option value="default"><%= t('Default') %></option><option value="locked"><%= t('Locked') %></option><option value="optional"><%= t('Suggested') %></option></select></div>
+            <div class="col-6 col-md-3"><label class="form-label" for="ls-level"><%= t('On') %></label><select class="form-select" id="ls-level" name="editionId"><option value=""><%= t('The series') %></option><% sr.editions.forEach((e) => { %><option value="<%= e.id %>"><%= t('Edition {name}', { name: e.edition }) %></option><% }) %></select></div>
+            <div class="col-6 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Save') %></button></div>
+          </div>
+          <div class="form-hint mt-2"><%= t('Locked: every event below uses it and cannot change it. Default: events use it until they set their own; their own values are never overwritten. Suggested: shown to organizers, not applied.') %></div>
+        </form>
+        <% if (!rules.length) { %><div class="card-body text-secondary"><%= t('Nothing set here yet; each event has its own settings.') %></div><% } else { %>
+          <div class="list-group list-group-flush">
+            <% rules.forEach((r) => { const d = KEYS[r.key]; const val = JSON.parse(r.value); %>
+              <div class="list-group-item"><div class="row align-items-center">
+                <div class="col"><span class="fw-medium"><%= d ? t(d.label) : r.key %></span>: <%= typeof val === 'boolean' ? t(val ? 'Yes' : 'No') : (val === null ? '—' : val) %>
+                  <span class="badge <%= r.mode === 'locked' ? 'bg-red-lt' : r.mode === 'default' ? 'bg-blue-lt' : 'bg-secondary-lt' %> ms-1"><% if (r.mode === 'locked') { %><i class="ti ti-lock me-1"></i><% } %><%= t(r.mode === 'locked' ? 'Locked' : r.mode === 'default' ? 'Default' : 'Suggested') %></span>
+                  <span class="text-secondary small ms-1"><%= r.editionId ? t('Edition {name}', { name: r.edition.slug }) : t('The series') %></span></div>
+                <div class="col-auto"><form method="post" action="/series/<%= sr.slug %>/settings/<%= r.id %>/remove" data-confirm="<%= t('Remove this setting? Events below keep their current values as their own.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Remove') %>" aria-label="<%= t('Remove') %>"><i class="ti ti-x"></i></button></form></div>
+              </div></div>
+            <% }) %>
+          </div>
+        <% } %>
+        <% if (history.length) { %>
+          <details class="card-footer"><summary class="text-secondary"><%= t('History') %></summary>
+            <ul class="list-unstyled small m-0 mt-2">
+              <% history.forEach((h) => { const d = JSON.parse(h.details || '{}'); const show = (x) => x ? `${typeof x.value === 'boolean' ? t(x.value ? 'Yes' : 'No') : x.value} (${t(x.mode === 'locked' ? 'Locked' : x.mode === 'default' ? 'Default' : 'Suggested')})` : '—'; %>
+                <li class="mb-1"><span class="text-secondary"><%= formatDate(h.createdAt) %> · <%= h.actor ? h.actor.username : '' %>:</span> <%= KEYS[d.key] ? t(KEYS[d.key].label) : d.key %> <%= show(d.from) %> → <%= h.action === 'levelSetting.removed' ? t('removed') : show(d.to) %><% if (d.eventsChanged) { %> · <%= tn('{n} event changed', '{n} events changed', d.eventsChanged) %><% } %></li>
+              <% }) %>
+            </ul>
+          </details>
+        <% } %>
+      </div>
+    </div>
+
     <%# Roles on this series or one edition. A role counts on its own level; "also below" makes it count on every edition and event underneath. %>
     <div class="col-12" id="people">
       <div class="card">

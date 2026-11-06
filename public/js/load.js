@@ -22,4 +22,5 @@
   if (has('form[data-wizard]')) add('/js/wizard.js');
   if (has('form[data-event-form]')) add('/js/eventForm.js');
   if (has('[data-review-form]')) add('/js/review.js');
+  if (has('[data-level-setting]')) add('/js/levelSettings.js');
 })();

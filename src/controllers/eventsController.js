@@ -180,7 +180,10 @@ async function manageOneSeries(req, res, next) {
     if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
     const summary = await require('../services/seriesService').summary(sr.id, { drafts: true });
     const people = await scopeRoles.list({ seriesId: sr.id, editionIds: sr.editions.map((e) => e.id) });
-    res.render('pages/events/seriesManageOne', { title: `${sr.title} — Zury`, sr, summary, people, ROLES: scopeRoles.ROLES });
+    const inherit = require('../services/inheritService');
+    const levelIds = { seriesId: sr.id, editionIds: sr.editions.map((e) => e.id) };
+    const [rules, history] = await Promise.all([inherit.list(levelIds), inherit.history(levelIds)]);
+    res.render('pages/events/seriesManageOne', { title: `${sr.title} — Zury`, sr, summary, people, ROLES: scopeRoles.ROLES, rules, history, KEYS: inherit.KEYS });
   } catch (err) {
     next(err);
   }
@@ -327,7 +330,7 @@ async function peopleAction(req, res, next, fn) {
     if (!(err instanceof scopeRoles.ScopeRoleError)) return next(err);
     req.flash('danger', req.t(err.message));
   }
-  res.redirect(String(req.body.back || '').startsWith(`/${req.params.series}`) ? req.body.back : `/series/${req.params.series}#people`);
+  res.redirect(`/series/${req.params.series}${req.path.includes('/settings') ? '#settings' : '#people'}`);
 }
 
 function grantRole(req, res, next) {
@@ -347,3 +350,34 @@ function revokeRole(req, res, next) {
 }
 module.exports.grantRole = grantRole;
 module.exports.revokeRole = revokeRole;
+
+// Settings a series or edition gives the events below (locked, default or optional).
+function setLevelSetting(req, res, next) {
+  const inherit = require('../services/inheritService');
+  return peopleAction(req, res, next, async ({ sr, runsSeries, editionIds }) => {
+    const editionId = Number(req.body.editionId) || null;
+    if (editionId ? !editionIds.includes(editionId) : !runsSeries) throw new scopeRoles.ScopeRoleError("You can't change settings there.");
+    try {
+      const { changed, events } = await inherit.setRule({ actorId: req.user.id, level: editionId ? { editionId } : { seriesId: sr.id }, key: req.body.key, value: req.body.value, mode: req.body.mode });
+      req.flash('success', req.t('Saved. {changed} of {events} events below changed.', { changed, events }));
+    } catch (err) {
+      if (err instanceof inherit.InheritError) throw new scopeRoles.ScopeRoleError(err.message);
+      throw err;
+    }
+  });
+}
+
+function removeLevelSetting(req, res, next) {
+  const inherit = require('../services/inheritService');
+  return peopleAction(req, res, next, async ({ sr, runsSeries, editionIds }) => {
+    try {
+      await inherit.removeRule({ actorId: req.user.id, id: Number(req.params.id), seriesId: runsSeries ? sr.id : -1, editionIds });
+    } catch (err) {
+      if (err instanceof inherit.InheritError) throw new scopeRoles.ScopeRoleError(err.message);
+      throw err;
+    }
+    req.flash('success', req.t('Removed. Events below keep their current values as their own.'));
+  });
+}
+module.exports.setLevelSetting = setLevelSetting;
+module.exports.removeLevelSetting = removeLevelSetting;
