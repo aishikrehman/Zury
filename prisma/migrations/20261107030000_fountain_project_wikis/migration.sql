@@ -1,4 +1,12 @@
 -- Fountain imports of other projects were saved with a code like "voy:bnwiki"; they become the real wiki (bnwikivoyage).
+-- An event that already had the real wiki as well: that plain duplicate goes (the Fountain row takes its place).
+DELETE d FROM `ContestWiki` d JOIN `ContestWiki` o ON o.`contestId` = d.`contestId` AND o.`wiki` LIKE 'voy:%' AND d.`wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(o.`wiki`, 5), 'wiki', 1), 'wikivoyage');
+DELETE d FROM `ContestWiki` d JOIN `ContestWiki` o ON o.`contestId` = d.`contestId` AND o.`wiki` LIKE 's:%' AND d.`wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(o.`wiki`, 3), 'wiki', 1), 'wikisource');
+DELETE d FROM `ContestWiki` d JOIN `ContestWiki` o ON o.`contestId` = d.`contestId` AND o.`wiki` LIKE 'q:%' AND d.`wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(o.`wiki`, 3), 'wiki', 1), 'wikiquote');
+DELETE d FROM `ContestWiki` d JOIN `ContestWiki` o ON o.`contestId` = d.`contestId` AND o.`wiki` LIKE 'b:%' AND d.`wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(o.`wiki`, 3), 'wiki', 1), 'wikibooks');
+DELETE d FROM `ContestWiki` d JOIN `ContestWiki` o ON o.`contestId` = d.`contestId` AND o.`wiki` LIKE 'n:%' AND d.`wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(o.`wiki`, 3), 'wiki', 1), 'wikinews');
+DELETE d FROM `ContestWiki` d JOIN `ContestWiki` o ON o.`contestId` = d.`contestId` AND o.`wiki` LIKE 'v:%' AND d.`wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(o.`wiki`, 3), 'wiki', 1), 'wikiversity');
+DELETE d FROM `ContestWiki` d JOIN `ContestWiki` o ON o.`contestId` = d.`contestId` AND o.`wiki` LIKE 'wikt:%' AND d.`wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(o.`wiki`, 6), 'wiki', 1), 'wiktionary');
 UPDATE `ContestWiki` SET `code` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 5), 'wiki', 1), '-wikivoyage'), `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 5), 'wiki', 1), 'wikivoyage') WHERE `wiki` LIKE 'voy:%';
 UPDATE `Contest` SET `primaryWiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`primaryWiki`, 5), 'wiki', 1), 'wikivoyage') WHERE `primaryWiki` LIKE 'voy:%';
 UPDATE `Submission` SET `wiki` = CONCAT(SUBSTRING_INDEX(SUBSTRING(`wiki`, 5), 'wiki', 1), 'wikivoyage') WHERE `wiki` LIKE 'voy:%';
