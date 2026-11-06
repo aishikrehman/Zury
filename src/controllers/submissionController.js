@@ -156,6 +156,8 @@ async function index(req, res, next) {
     if (!showNames) filters.participant = null;
     const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki, page, ...filters });
     const tc = readTypeConfig(req.contest.type, req.settings.typeConfig);
+    const staffView = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
+    res.locals.showReviewers = staffView || require('../services/participationService').read(req.settings).rules.reviewerNames === 'yes';
     const templateLink = (s) => (tc.entryTemplate ? require('../wiki/wikiUrls').templateEditUrl({ wiki: s.wiki, title: s.title, namespace: s.entryType === 'article' ? 0 : -1 }, tc.entryTemplate, tc.entryTemplateOnTalk !== false) : null);
     res.render('pages/contest/submissions', {
       templateLink,

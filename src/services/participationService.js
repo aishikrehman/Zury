@@ -24,7 +24,7 @@ const MODES = {
 const ASK = { email: 'Email', phone: 'Phone', legalName: 'Legal name', nameEn: 'Name in English' };
 // The event's rules set on the Review tab (kept with participation).
 const RULES = {
-  maxReviews: null, onBehalf: 'staff', mass: 'anyone', bulk: 'reviewers', stats: 'reviewers', appeals: 'off', withdraw: 'participant', editors: 'organizers', results: 'always',
+  maxReviews: null, onBehalf: 'staff', mass: 'anyone', bulk: 'reviewers', stats: 'reviewers', appeals: 'off', withdraw: 'participant', editors: 'organizers', results: 'always', reviewerNames: 'yes',
 };
 const SOURCES = {
   none: 'Any article',
@@ -81,6 +81,7 @@ function parse(body, errors) {
     withdraw: ruleIn('withdraw', ['off', 'reviewers', 'participant', 'both']),
     editors: ruleIn('editors', ['organizers', 'staff']),
     results: ruleIn('results', ['always', 'afterReview', 'manual']),
+    reviewerNames: ruleIn('reviewerNames', ['yes', 'no']),
   };
   const ask = [].concat(body.participation_ask || []).filter((k) => ASK[k]);
   const page = str(body.participation_page).replace(/_/g, ' ').slice(0, 255);

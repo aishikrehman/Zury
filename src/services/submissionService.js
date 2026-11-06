@@ -182,8 +182,8 @@ async function saveEntries({ actor, contest, settings, participant, items, ensur
 function visibilityWhere({ contestId, user, can }) {
   if (can('viewAllSubmissions')) return { contestId };
   if (can('viewSubmissions')) return { contestId, OR: [{ status: { not: 'withdrawn' } }, ...(user ? [{ participantId: user.id }] : [])] };
-  if (user) return { contestId, participantId: user.id };
-  return null;
+  // Like Fountain: every entry is public, reviewed or not.
+  return { contestId, OR: [{ status: { not: 'withdrawn' } }, ...(user ? [{ participantId: user.id }] : [])] };
 }
 
 // wiki: limit to one wiki of a multi-wiki event.
@@ -211,7 +211,7 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
       orderBy: [...(SORTS[sort] || SORTS.submitted)(dir === 'asc' ? 'asc' : 'desc'), { id: 'desc' }],
       skip: (page - 1) * perPage,
       take: perPage,
-      include: { participant: { select: { username: true } } },
+      include: { participant: { select: { username: true } }, reviews: { select: { decision: true, juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } } },
     }),
     prisma.submission.count({ where }),
     prisma.submission.groupBy({ by: ['status'], where: base, _count: true }),

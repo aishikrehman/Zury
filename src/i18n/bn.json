@@ -1671,5 +1671,8 @@
   "Enter the wiki page that lists the articles.": "নিবন্ধের তালিকার উইকি পাতাটি লিখুন।",
   "Contact page": "যোগাযোগের পাতা",
   "On-wiki event page": "উইকিতে ইভেন্টের পাতা",
-  "Website": "ওয়েবসাইট"
+  "Website": "ওয়েবসাইট",
+  "Show reviewers' names": "পর্যালোচকের নাম প্রকাশ",
+  "To everyone": "সবার কাছে",
+  "Only to organizers and reviewers": "শুধু আয়োজক ও পর্যালোচকদের কাছে"
 }

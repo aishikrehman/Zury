@@ -65,6 +65,29 @@ function decision(article, marksConfig = {}) {
   return { status: rejected ? 'rejected' : 'approved', score: points.reduce((a, b) => a + b, 0) / points.length };
 }
 
+// One juror's marks on an article as a review: rejected when the first criterion is option 1 or 2.
+function reviewOf(mark, marksConfig = {}) {
+  const valueOf = (criterion, pos) => Number(marksConfig[criterion]?.values?.[Number(pos)]?.value) || 0;
+  const reject = [1, 2].includes(Number(mark.marks['0']));
+  return { decision: reject ? 'reject' : 'accept', points: Object.entries(mark.marks).reduce((a, [c, pos]) => a + valueOf(c, pos), 0), comment: String(mark.comment || '').slice(0, 2000) };
+}
+
+async function syncReviews(contestId, submissionId, article, marksConfig, person, ensureJury) {
+  for (const m of article.marks || []) {
+    const name = m && (m.user || m.username || m.juror);
+    if (!name || !m.marks || !Object.keys(m.marks).length) continue;
+    const juror = await person(name);
+    if (!juror) continue;
+    await ensureJury(juror.id);
+    const r = reviewOf(m, marksConfig);
+    await prisma.review.upsert({
+      where: { submissionId_jurorId: { submissionId, jurorId: juror.id } },
+      update: { decision: r.decision, points: r.points, comment: r.comment },
+      create: { contestId, submissionId, jurorId: juror.id, decision: r.decision, points: r.points, comment: r.comment },
+    });
+  }
+}
+
 async function pageIds(wiki, titles) {
   const ids = new Map();
   for (let i = 0; i < titles.length; i += 50) {
@@ -153,6 +176,8 @@ async function sync(eventWiki, { actorId = null } = {}) {
     : await wordCounts(wiki, [...new Set(ids.values())], settings?.wordCountMethod).catch(() => new Map());
   let added = 0;
   let updated = 0;
+  const juryDone = new Set();
+  const ensureJury = async (id) => { if (!juryDone.has(id)) { juryDone.add(id); await ensureMember(contestId, id, 'jury', wiki, actorId); } };
 
   for (const a of articles) {
     const pageid = ids.get(a.name);
@@ -172,6 +197,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
         await prisma.submission.update({ where: { id: have.id }, data: { status, score, wordCount: newWords, ...(meta && { metadata: meta }) } });
         updated++;
       }
+      await syncReviews(contestId, have.id, a, editathon.marks, person, ensureJury);
       continue;
     }
     await ensureMember(contestId, u.id, 'participant', '', actorId);
@@ -188,6 +214,7 @@ async function sync(eventWiki, { actorId = null } = {}) {
       },
     });
     byKey.set(pageKey, row);
+    await syncReviews(contestId, row.id, a, editathon.marks, person, ensureJury);
     added++;
   }
 

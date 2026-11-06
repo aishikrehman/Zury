@@ -97,6 +97,7 @@
               <%- row('Many entries at once', sel('rule_mass', [['off', 'Off'], ['anyone', 'Anyone'], ['reviewers', 'Reviewers']], ruleOf('mass', 'anyone'))) %>
               <%- row('Many reviews at once', sel('rule_bulk', [['off', 'Off'], ['reviewers', 'Reviewers']], ruleOf('bulk', 'reviewers'))) %>
               <%- row('Reviewer statistics', sel('rule_stats', [['anyone', 'Anyone'], ['reviewers', 'Reviewers'], ['organizers', 'Organizers only'], ['off', 'Off']], ruleOf('stats', 'reviewers'))) %>
+              <%- row("Show reviewers' names", sel('rule_reviewerNames', [['yes', 'To everyone'], ['no', 'Only to organizers and reviewers']], ruleOf('reviewerNames', 'yes'))) %>
               <%- row("Reviewers see each other's reviews", sel('rule_seeOthers', [['yes', 'Yes'], ['no', 'No']], v('secretBallot') ? 'no' : 'yes')) %>
               <%- row('Asking for another review', sel('rule_appeals', [['off', 'Off'], ['rejected', 'Only entries not accepted'], ['any', 'Any entry']], ruleOf('appeals', 'off'))) %>
               <%- row('Removing an entry', sel('rule_withdraw', [['off', 'Off'], ['reviewers', 'Reviewers'], ['participant', 'Participant'], ['both', 'Both']], ruleOf('withdraw', 'participant'))) %>
