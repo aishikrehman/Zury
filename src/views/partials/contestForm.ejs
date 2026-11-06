@@ -143,15 +143,15 @@
             <% if (!wikiMode) { %>
               <div class="z-form-group">
                 <div class="row g-3">
-                  <div class="col-md-8">
+                  <div class="col-12">
                     <label class="form-label required" for="title"><%= t("Title") %></label>
                     <input class="form-control<%= inv('title') %>" id="title" name="title" maxlength="200" minlength="3" required value="<%= v('title') %>" placeholder="<%= t("e.g. Wiki Loves Monuments 2026 in Bangladesh") %>">
                     <%- err('title') %>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-12">
                     <label class="form-label" for="slug"><%= t("Address") %></label>
                     <div class="input-group">
-                      <span class="input-group-text" data-address-prefix data-origin="">/</span>
+                      <span class="input-group-text" data-address-prefix data-origin="<%= origin %>"><%= origin %>/</span>
                       <input class="form-control<%= inv('slug') %>" id="slug" name="slug" maxlength="80" value="<%= v('slug') %>" placeholder="<%= t("made-from-the-title") %>" data-slug>
                     </div>
                     <div class="form-hint" data-address-hint></div>
