@@ -1025,3 +1025,6 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-evhead-dates b { font-weight: 600; color: var(--z-brand); }
 .z-evhead-bar { display: inline-block; width: 4.5rem; height: .35rem; border-radius: 1rem; background: var(--z-border); overflow: hidden; }
 .z-evhead-bar i { display: block; height: 100%; background: var(--z-brand); border-radius: inherit; }
+
+/* A reviewer's comment under a participant's own entry. */
+.z-review-note { padding: .35rem .6rem; border-radius: 8px; background: var(--z-hover, rgba(0,0,0,.04)); }

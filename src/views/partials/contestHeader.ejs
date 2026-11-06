@@ -67,9 +67,13 @@
             <span class="z-evhead-dates" title="<%= formatDateTime(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDateTime(contest.endDate, contest.timezone) : '' %>">
               <i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDate(contest.endDate, contest.timezone) : '' %>
               <% if (hDone !== null && hDone > 0 && hDone < 100) { %><span class="z-evhead-bar" aria-hidden="true"><i style="width: <%= hDone %>%"></i></span><% } %>
-              <% if (hNow < hStart) { %><b><%= tn('in {n} day', 'in {n} days', hDays(hStart)) %></b><% } else if (hEnd && hNow <= hEnd) { %><b><%= tn('{n} day left', '{n} days left', hDays(hEnd)) %></b><% } %>
+              <% if (hNow < hStart) { %><b><%= tn('Starts in {n} day', 'Starts in {n} days', hDays(hStart)) %></b><% } else if (hEnd && hNow <= hEnd) { %><b><%= tn('{n} day left', '{n} days left', hDays(hEnd)) %></b><% } %>
             </span>
           <% } %>
+        </div>
+        <div class="z-evhead-meta">
+          <span><i class="ti ti-<%= typeDef.icon || 'calendar-event' %>"></i><%= t(typeDef.label) %></span>
+          <% if (shownWikis.length === 1) { %><span><i class="ti ti-world"></i><%= wikiLocal(shownWikis[0].wiki) %></span><% } else if (shownWikis.length > 1) { %><span><i class="ti ti-world"></i><%= tn('{n} wiki', '{n} wikis', shownWikis.length) %></span><% } %>
         </div>
       </div>
       <div class="z-evhead-actions">

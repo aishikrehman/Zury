@@ -333,7 +333,40 @@ async function listMine(userId, { status = '', contestId = null, q = '', sort = 
   };
 }
 
-module.exports = { SORTS, MINE_SORTS,
+// Status groups a participant sees.
+const GROUP = { approved: 'accepted', rejected: 'rejected', disqualified: 'rejected', invalid: 'rejected' };
+const groupOf = (status) => GROUP[status] || 'pending';
+
+// One participant's entries in one event, newest first, with the reviewers' comments once decided
+// (without the reviewers' names).
+async function myEntries(userId, contestId) {
+  const rows = await prisma.submission.findMany({
+    where: { participantId: userId, contestId, status: { not: 'withdrawn' } },
+    orderBy: { submittedAt: 'desc' },
+    take: 200,
+    select: { id: true, title: true, status: true, wordCount: true, submittedAt: true, reviews: { where: { comment: { not: '' } }, select: { comment: true, decision: true }, orderBy: { createdAt: 'asc' } } },
+  });
+  const entries = rows.map((r) => ({ ...r, group: groupOf(r.status), comments: ['accepted', 'rejected'].includes(groupOf(r.status)) ? r.reviews.map((v) => v.comment) : [] }));
+  const counts = { accepted: 0, pending: 0, rejected: 0 };
+  for (const e of entries) counts[e.group] += 1;
+  return { entries, counts };
+}
+
+// Per event: how many of this participant's entries are accepted, pending and not accepted.
+async function myCountsByEvent(userId) {
+  const rows = await prisma.submission.groupBy({ by: ['contestId', 'status'], where: { participantId: userId, status: { not: 'withdrawn' }, contest: { deletedAt: null } }, _count: { _all: true } });
+  const out = new Map();
+  for (const r of rows) {
+    const c = out.get(r.contestId) || { accepted: 0, pending: 0, rejected: 0 };
+    c[groupOf(r.status)] += r._count._all;
+    out.set(r.contestId, c);
+  }
+  return out;
+}
+
+module.exports = {
+  myEntries,
+  myCountsByEvent, SORTS, MINE_SORTS,
   MAX_BATCH,
   STATUSES,
   WITHDRAWABLE,

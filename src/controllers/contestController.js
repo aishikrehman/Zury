@@ -72,6 +72,7 @@ async function show(req, res, next) {
       jury: byRole('jury'),
       participants: byRole('participant'),
       participantCount: participants,
+      myEntries: req.user && EVENT_TYPES[req.contest.type]?.entries !== false ? await require('../services/submissionService').myEntries(req.user.id, req.contest.id) : null,
       isParticipant: roles.includes('participant'),
       ...(() => {
         const ps = require('../services/participationService');
