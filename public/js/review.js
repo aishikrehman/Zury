@@ -107,3 +107,26 @@
       });
   });
 })();
+
+// Full screen: the review frame fills the window; the button again, or Esc, brings the page back.
+// Remembered on this device for the next entries.
+(function () {
+  const btn = document.querySelector('[data-review-full]');
+  if (!btn) return;
+  const root = document.documentElement;
+  const KEY = 'zury.reviewFull';
+  const set = (on) => {
+    root.classList.toggle('z-review-full', on);
+    btn.setAttribute('aria-pressed', String(on));
+    btn.title = btn.ariaLabel = zt(on ? 'Leave full screen' : 'Full screen');
+    btn.querySelector('i').className = 'ti ' + (on ? 'ti-minimize' : 'ti-maximize');
+    try { localStorage.setItem(KEY, on ? '1' : ''); } catch { /* not remembered */ }
+  };
+  let start = false;
+  try { start = localStorage.getItem(KEY) === '1'; } catch { /* default: in the page */ }
+  if (start) set(true);
+  btn.addEventListener('click', () => set(!root.classList.contains('z-review-full')));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && root.classList.contains('z-review-full') && !e.target.closest('input, textarea, select, .ts-wrapper')) set(false);
+  });
+})();

@@ -1,5 +1,5 @@
 <%#
-  The review window: the entry's page fills the left, in its own scrolling frame;
+  The review window, inside the event (its header and the site menu stay): the entry's page on the left, in its own scrolling frame;
   everything a jury member needs sits in the panel on the right. After each verdict
   the next entry matching the same filters comes up.
   Keys: A accept, R reject, S skip, 1–9 values of the first mark, Ctrl+Enter save.
@@ -13,6 +13,9 @@
   const day = (d) => (d ? d.toISOString().slice(0, 10) : '');
   const modes = [['', t('Waiting for me')], ['open', t('All not yet decided')], ['mine', t('Reviewed by me')]];
 %>
+<%- include('../../partials/contestHeader', { active: 'review' }) %>
+<div class="page-body"><div class="container-xl">
+<div class="card z-review-card"><div class="card-body">
 <div class="z-review-wrap">
 
   <div class="z-review-bar">
@@ -29,6 +32,8 @@
       </select>
     </div>
     <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters"><i class="ti ti-filter me-1"></i><%= t('Filter') %></button>
+    <%# Full screen on request (the button again, or Esc, brings the page back). %>
+    <button class="btn btn-icon" type="button" data-review-full title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>" aria-pressed="false"><i class="ti ti-maximize"></i></button>
     <% if (entry) { %>
       <a class="btn" href="<%= base %>/review?<%= fq({ after: entry.id }) %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-1 d-none d-md-inline">S</kbd></a>
     <% } %>
@@ -241,3 +246,5 @@
     </div>
   <% } %>
 </div>
+</div></div>
+</div></div>

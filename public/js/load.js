@@ -8,7 +8,8 @@
     document.body.appendChild(s);
   };
   const has = (sel) => document.querySelector(sel);
-  if (has('[data-picker]')) {
+  // Pickers, and the review page's entry picker, use Tom Select.
+  if (has('[data-picker], [data-review-picker]')) {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = '/vendor/tom-select/css/tom-select.bootstrap5.min.css';

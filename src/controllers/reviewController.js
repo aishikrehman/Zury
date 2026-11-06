@@ -123,7 +123,6 @@ async function window(req, res, next) {
       progress: await reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }),
       activity: await reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki }),
       position: id ? q.ids.indexOf(id) + 1 : 0,
-      layout: 'focus',
       filters,
       filterQuery,
       // People with entries here, for the participant filter (the busiest 200).
