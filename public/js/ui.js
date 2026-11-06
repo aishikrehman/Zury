@@ -172,3 +172,11 @@ document.addEventListener('keydown', (e) => {
     }, 350);
   });
 })();
+
+// A select that opens another page when changed (data-nav: the address, the value appended).
+document.querySelectorAll('select[data-nav]').forEach((sel) => sel.addEventListener('change', () => { location.search = sel.dataset.nav + encodeURIComponent(sel.value); }));
+// Boxes that only make sense with another one ticked (data-needs-event needs [data-needed-by]).
+document.querySelectorAll('[data-needed-by]').forEach((main) => {
+  const sync = () => document.querySelectorAll('[data-needs-event]').forEach((b) => { b.disabled = !main.checked; if (!main.checked) b.checked = false; });
+  main.addEventListener('change', sync);
+});

@@ -62,12 +62,37 @@ async function moveEvent({ actorId, contest, target, slug }) {
 }
 
 // One event copied as a draft: settings, wikis, organizers and jury; dates shifted by `years`.
-async function copyEventTx(tx, ev, { actorId, parent, slug, years = 0, rename = null }) {
+const COPY_PARTS = {
+  settings: 'The edition’s settings for its events',
+  events: 'Its event, as a draft (title, description, rules)',
+  wikis: 'The wikis taking part',
+  participation: 'How people take part (registration, eligibility, eligible articles)',
+  tracking: 'Tracking (hashtags, categories, participants’ edits)',
+  review: 'Review (reviewers, method, rules, marks)',
+  notifications: 'Notifications to participants',
+  people: 'Organizers and reviewers (the edition’s and the event’s)',
+};
+// Event settings that belong to each part; a part not copied starts from the type's defaults.
+const SETTING_PARTS = {
+  participation: ['registrationRequired', 'registrationEnabled', 'participationMode', 'minAccountAgeDays', 'minEditCount', 'participantLimit', 'allowJuryParticipation', 'allowOrganizerParticipation', 'anonymousParticipants', 'participation', 'eligibleNamespaces'],
+  tracking: ['trackHashtags', 'trackCategories', 'contributionDiscoveryEnabled'],
+  review: ['juryReviewEnabled', 'appealsEnabled', 'marks', 'requiredReviews', 'decisionRule', 'passScore', 'tieBreak', 'secretBallot', 'reviewAssignment', 'assignPerJuror', 'rankBy', 'reviewMethod', 'scoreMin', 'scoreMax', 'reviewers', 'selfReview', 'bulkReviewEnabled', 'juryStatsEnabled'],
+  notifications: ['participantNotificationsEnabled'],
+};
+const ALL_PARTS = Object.keys(COPY_PARTS);
+
+async function copyEventTx(tx, ev, { actorId, parent, slug, years = 0, rename = null, parts = ALL_PARTS }) {
   const { id, path, createdAt, updatedAt, status, statusMode, resultsPublishedAt, mergedIntoId, mergedWikiCode, settings, wikis, memberships, editionId, seriesId, deletedAt, deletedById, slug: oldSlug, ...rest } = ev;
-  const { id: _sid, contestId: _cid, trackedAt: _t, ...copySettings } = settings || {};
+  const { id: _sid, contestId: _cid, trackedAt: _t, updatedAt: _u, eligibleTitles: _e, ...copySettings } = settings || {};
+  // Parts left out start again from the event type's defaults.
+  const defaults = require('./contestFormService').defaultSettings(ev.type);
+  for (const [part, keys] of Object.entries(SETTING_PARTS)) {
+    if (parts.includes(part)) continue;
+    for (const k of keys) if (k in defaults) copySettings[k] = defaults[k]; else delete copySettings[k];
+  }
   const name = await freeName(tx, slug || oldSlug, parent, null, ev.type);
   const people = new Map([[`${actorId}:organizer:`, { userId: actorId, role: 'organizer', wiki: '' }]]);
-  for (const m of memberships || []) if (['organizer', 'jury'].includes(m.role) && m.status === 'active') people.set(`${m.userId}:${m.role}:${m.wiki}`, { userId: m.userId, role: m.role, wiki: m.wiki });
+  for (const m of parts.includes('people') ? memberships || [] : []) if (['organizer', 'jury'].includes(m.role) && m.status === 'active') people.set(`${m.userId}:${m.role}:${m.wiki}`, { userId: m.userId, role: m.role, wiki: m.wiki });
   const contest = await tx.contest.create({
     data: {
       ...rest,
@@ -81,7 +106,7 @@ async function copyEventTx(tx, ev, { actorId, parent, slug, years = 0, rename = 
       statusMode: 'auto',
       createdById: actorId,
       settings: { create: copySettings },
-      wikis: { create: (wikis || []).map((w) => ({ wiki: w.wiki, code: w.code, status: w.status === 'pending' ? 'pending' : 'active', overrides: w.overrides })) },
+      wikis: { create: (parts.includes('wikis') ? wikis || [] : []).map((w) => ({ wiki: w.wiki, code: w.code, status: w.status === 'pending' ? 'pending' : 'active', overrides: w.overrides })) },
       memberships: { create: [...people.values()].map((m) => ({ ...m, assignedById: actorId })) },
     },
   });
@@ -103,9 +128,10 @@ async function copyEvent({ actorId, contest, target, slug }) {
 
 // An edition copied with each of its events (drafts), its people and its settings for the
 // events below. years: how far to move the dates (1 for next year's edition).
-async function copyEdition({ actorId, edition, slug, title, years = 0 }) {
+async function copyEdition({ actorId, edition, slug, title, years = 0, parts = ALL_PARTS }) {
   slug = String(slug || '').trim().toLowerCase();
   if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(slug)) throw new StructureError('Give the edition a short name, such as 2026.');
+  if (['new-edition', 'detach', 'order', 'deleted', 'settings', 'people', 'fountain'].includes(slug)) throw new StructureError('That address is reserved.');
   const series = await prisma.eventSeries.findUnique({ where: { id: edition.seriesId } });
   if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: series.id, slug } } })) throw new StructureError(`/${series.slug}/${slug} already exists.`);
   const source = await prisma.edition.findUnique({ where: { id: edition.id }, include: { events: { where: { deletedAt: null }, include: COPY_INCLUDE } } });
@@ -115,14 +141,14 @@ async function copyEdition({ actorId, edition, slug, title, years = 0 }) {
     if (!created) throw new StructureError(`/${series.slug}/${slug} is already the address of an event of this series.`);
     await tx.edition.update({ where: { id: created.id }, data: { description: source.description || '', cycleType: source.cycleType, visibility: source.visibility, createdById: actorId || null, identifier: (source.identifier || '').includes(source.slug) ? rename(source.identifier) : slug } });
     // People and settings first, so the copied events follow the settings.
-    const roles = await tx.scopeRole.findMany({ where: { editionId: source.id } });
+    const roles = parts.includes('people') ? await tx.scopeRole.findMany({ where: { editionId: source.id } }) : [];
     const keep = new Map([[`${actorId}:organizer`, { userId: actorId, role: 'organizer', appliesToChildren: false }], ...roles.map((r) => [`${r.userId}:${r.role}`, r])]);
     for (const r of keep.values()) await tx.scopeRole.create({ data: { userId: r.userId, role: r.role, editionId: created.id, appliesToChildren: r.appliesToChildren, assignedById: actorId } });
-    for (const r of await tx.levelSetting.findMany({ where: { editionId: source.id } })) {
+    for (const r of parts.includes('settings') ? await tx.levelSetting.findMany({ where: { editionId: source.id } }) : []) {
       await tx.levelSetting.create({ data: { editionId: created.id, key: r.key, value: r.value, mode: r.mode, updatedById: actorId } });
     }
-    for (const ev of source.events) await copyEventTx(tx, ev, { actorId, parent: { seriesId: null, editionId: created.id }, years, rename });
-    await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: created.id, details: { series: series.slug, edition: slug, from: source.slug, events: source.events.length } }, tx);
+    for (const ev of parts.includes('events') ? source.events : []) await copyEventTx(tx, ev, { actorId, parent: { seriesId: null, editionId: created.id }, years, rename, parts });
+    await audit.record({ actorId, action: 'edition.created', entityType: 'Edition', entityId: created.id, details: { series: series.slug, edition: slug, from: source.slug, parts } }, tx);
     return created;
   });
 }
@@ -265,6 +291,8 @@ async function unarchive({ actorId, level }) {
 }
 
 module.exports = {
+  COPY_PARTS,
+  ALL_PARTS,
   impact,
   deletedLevels,
   restoreLevel,

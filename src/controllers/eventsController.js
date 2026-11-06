@@ -428,7 +428,13 @@ async function levelExtras(level, tab) {
   }
   if (tab === 'people') {
     const people = await prisma.scopeRole.findMany({ where: level, include: { user: { select: { id: true, username: true } } }, orderBy: [{ role: 'asc' }, { assignedAt: 'asc' }] });
-    return { people, ROLES: scopeRoles.ROLES };
+    // An edition also has the series' people whose role reaches its editions (shown apart, managed on the series).
+    let inherited = [];
+    if (level.editionId) {
+      const ed1 = await prisma.edition.findUnique({ where: { id: level.editionId }, select: { seriesId: true } });
+      inherited = await prisma.scopeRole.findMany({ where: { seriesId: ed1.seriesId, appliesToChildren: true }, include: { user: { select: { id: true, username: true } } }, orderBy: [{ role: 'asc' }] });
+    }
+    return { people, inherited, ROLES: scopeRoles.ROLES };
   }
   return {};
 }
@@ -455,7 +461,8 @@ async function seriesPage(req, res, next) {
     const totals = await stats.rollup([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]);
     const rows = summary.map((e) => ({ label: e.slug, sub: e.title, href: e.events.length === 1 && e.events[0].path ? e.events[0].path : `/${found.slug}/${e.slug}`, status: e.status, stats: e }));
     for (const c of directEvents) rows.push({ label: c.title, sub: req.t('Event of the series'), href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) });
-    res.render('pages/events/series', { title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, rows, canRun, tab, ...(await levelExtras({ seriesId: found.id }, tab)) });
+    const wikiRows = tab === 'statistics' ? await stats.byWiki([...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)]) : [];
+    res.render('pages/events/series', { wikiRows, title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, rows, canRun, tab, ...(await levelExtras({ seriesId: found.id }, tab)) });
   } catch (err) {
     next(err);
   }
@@ -494,7 +501,8 @@ async function editionTabs(req, res, next) {
     const canRunSeriesHere = canRun && (await canRunSeries(req, sr.id));
     // An edition with its one event shows that event's status (an archived edition stays archived).
     const shown = { ...edition, status: edition.status !== 'archived' && events.length === 1 ? events[0].status : edition.status };
-    res.render('pages/events/edition', { title: `${edition.title} — Zury`, sr, edition: shown, ownStatus: edition.status, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
+    const wikiRows = tab === 'statistics' ? await stats.byWiki(events.map((ev) => ev.id)) : [];
+    res.render('pages/events/edition', { wikiRows, title: `${edition.title} — Zury`, sr, edition: shown, ownStatus: edition.status, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
   } catch (err) {
     next(err);
   }
@@ -597,3 +605,51 @@ async function deletedAction(req, res, next) {
 module.exports.detachEvent = detachEvent;
 module.exports.deletedPage = deletedPage;
 module.exports.deletedAction = deletedAction;
+
+// A new edition: blank (nothing copied) or copied from an earlier one, choosing what to copy.
+async function newEditionForm(req, res, next) {
+  try {
+    const sr = await prisma.eventSeries.findFirst({ where: { slug: req.params.series, deletedAt: null } });
+    if (!sr) return next();
+    if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
+    const list = await prisma.edition.findMany({ where: { seriesId: sr.id, deletedAt: null }, orderBy: [{ sortOrder: 'asc' }, { year: 'desc' }, { slug: 'desc' }], select: { id: true, slug: true, identifier: true, title: true, _count: { select: { events: { where: { deletedAt: null } } } } } });
+    const { COPY_PARTS } = require('../services/structureService');
+    const from = list.find((e) => e.slug === req.query.from) || list[0] || null;
+    const next1 = from && /^\d{4}$/.test(from.slug) ? String(Number(from.slug) + 1) : '';
+    res.render('pages/events/editionNew', { title: `${req.t('New edition')} — ${sr.title}`, sr, list, from, COPY_PARTS, method: req.query.method === 'copy' && from ? 'copy' : 'blank', suggested: next1 || String(new Date().getFullYear()) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function newEdition(req, res, next) {
+  const seriesService = require('../services/seriesService');
+  const structureService = require('../services/structureService');
+  const sr = await prisma.eventSeries.findFirst({ where: { slug: req.params.series, deletedAt: null } }).catch(() => null);
+  if (!sr) return next();
+  try {
+    if (!(await canRunSeries(req, sr.id))) return forbiddenPage(next);
+    const day = (v, end) => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? new Date(`${v}T${end ? '23:59:59' : '00:00:00'}Z`) : null);
+    let edition;
+    if (req.body.method === 'copy') {
+      const source = await prisma.edition.findFirst({ where: { seriesId: sr.id, slug: String(req.body.from || ''), deletedAt: null } });
+      if (!source) throw new structureService.StructureError('Choose the edition to copy.');
+      const parts = [].concat(req.body.parts || []).filter((k) => structureService.ALL_PARTS.includes(k));
+      // An event's details go with it: its wikis and settings need the event.
+      const years = Math.max(0, Math.min(10, Number.parseInt(req.body.years, 10) || 0));
+      edition = await structureService.copyEdition({ actorId: req.user.id, edition: source, slug: req.body.edition, title: req.body.title, years, parts });
+      req.flash('success', req.t('Edition created from {from}. Check its dates and settings before publishing.', { from: source.identifier || source.slug }));
+    } else {
+      // Blank: a completely new edition, nothing copied.
+      edition = await seriesService.createEdition({ actorId: req.user.id, series: sr, slug: req.body.edition, title: req.body.title, startDate: day(req.body.startDate), endDate: day(req.body.endDate, true) });
+      req.flash('success', req.t('Edition created. Add its event next.'));
+    }
+    res.redirect(`/series/${sr.slug}/${edition.slug}`);
+  } catch (err) {
+    if (!(err instanceof seriesService.SeriesError) && !(err instanceof structureService.StructureError)) return next(err);
+    req.flash('danger', req.t(err.message));
+    res.redirect(`/series/${sr.slug}/new-edition${req.body.method === 'copy' ? `?method=copy&from=${encodeURIComponent(req.body.from || '')}` : ''}`);
+  }
+}
+module.exports.newEditionForm = newEditionForm;
+module.exports.newEdition = newEdition;

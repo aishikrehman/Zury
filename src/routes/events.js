@@ -136,6 +136,8 @@ router.get('/series/deleted', requirePermission('deleteAnyEvent'), eventsControl
 router.post('/series/deleted/:kind(series|edition)/:id(\\d+)/:action(restore|purge)', requirePermission('deleteAnyEvent'), eventsController.deletedAction);
 router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
 router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnyEvent'), eventsController.seriesAction);
+router.get(`/series/:series(${SLUG})/new-edition`, requireAuth, eventsController.newEditionForm);
+router.post(`/series/:series(${SLUG})/new-edition`, requireAuth, eventsController.newEdition);
 router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSeries);
 router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, eventsController.manageEdition);
 router.post('/series', requirePermission('importEvents'), eventsController.createSeries);

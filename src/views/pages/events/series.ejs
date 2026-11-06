@@ -63,22 +63,10 @@
       <div class="card mb-3">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3>
           <% if (canRun) { %><div class="card-actions">
-            <% if (summary.length) { %><form method="post" action="/<%= series.slug %>/next-edition" class="d-inline" data-confirm="<%= t('Make next year’s edition from the latest one, with a copy of each of its events?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-copy me-1"></i><%= t('Next edition from the latest') %></button></form><% } %>
-            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#new-edition" aria-expanded="false"><i class="ti ti-calendar-plus me-1"></i><%= t('New edition') %></button>
+            <% if (summary.length) { %><a class="btn btn-sm" href="/series/<%= series.slug %>/new-edition?method=copy"><i class="ti ti-copy me-1"></i><%= t('Copy an earlier edition') %></a><% } %>
+            <a class="btn btn-sm btn-primary" href="/series/<%= series.slug %>/new-edition"><i class="ti ti-calendar-plus me-1"></i><%= t('New edition') %></a>
           </div><% } %>
         </div>
-        <% if (canRun) { %>
-          <form method="post" action="/series/<%= series.slug %>/first-edition" class="collapse border-bottom" id="new-edition">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="card-body"><div class="row g-3 align-items-end">
-              <div class="col-6 col-md-2"><label class="form-label" for="ne-edition"><%= t('Address') %></label><input class="form-control" id="ne-edition" name="edition" value="<%= new Date().getFullYear() %>" maxlength="20" required></div>
-              <div class="col-6 col-md-4"><label class="form-label" for="ne-title"><%= t('Title') %></label><input class="form-control" id="ne-title" name="title" maxlength="200" placeholder="<%= series.title %> <%= new Date().getFullYear() %>"></div>
-              <div class="col-6 col-md-2"><label class="form-label" for="ne-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ne-start" name="startDate"></div>
-              <div class="col-6 col-md-2"><label class="form-label" for="ne-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ne-end" name="endDate"></div>
-              <div class="col-12 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Create') %></button></div>
-            </div></div>
-          </form>
-        <% } %>
         <% if (!summary.length) { %><div class="card-body text-secondary"><%= t('No editions yet') %></div><% } else { %>
           <div class="list-group list-group-flush">
             <% summary.forEach((e, i) => { const st = CONTEST_STATUSES[e.status] || { label: e.status, badge: 'secondary' }; %>
@@ -115,7 +103,7 @@
       <% } %>
 
     <% } else if (tab === 'statistics') { %>
-      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
+      <%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
 
     <% } else if (tab === 'settings') { %>
       <form method="post" action="/series/<%= series.slug %>/update" class="card mb-3">

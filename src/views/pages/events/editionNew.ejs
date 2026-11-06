@@ -1,0 +1,48 @@
+<%# A new edition of a series: blank (completely new, nothing copied) or a copy of an earlier one, choosing what comes along. %>
+<% const csrf = `<input type="hidden" name="_csrf" value="${csrfToken}">`; %>
+<div class="page-header d-print-none"><div class="container-xl">
+  <ol class="breadcrumb mb-1"><li class="breadcrumb-item"><a href="/events"><%= t('Events') %></a></li><li class="breadcrumb-item"><a href="/<%= sr.slug %>"><%= sr.title %></a></li><li class="breadcrumb-item active"><%= t('New edition') %></li></ol>
+  <h2 class="page-title"><%= t('New edition') %></h2>
+</div></div>
+<div class="page-body"><div class="container-xl">
+  <div class="row row-cards mb-3">
+    <div class="col-md-6"><a class="card card-link h-100<%= method === 'blank' ? ' border-primary' : '' %>" href="?method=blank">
+      <div class="card-body"><div class="h3 mb-1"><i class="ti ti-file me-1"></i><%= t('Blank') %></div>
+      <p class="text-secondary mb-0"><%= t('A completely new edition. Nothing is copied: you add its event and set everything yourself.') %></p></div>
+    </a></div>
+    <div class="col-md-6"><a class="card card-link h-100<%= method === 'copy' ? ' border-primary' : '' %><%= list.length ? '' : ' disabled opacity-50' %>" href="<%= list.length ? `?method=copy${from ? `&from=${from.slug}` : ''}` : '#' %>">
+      <div class="card-body"><div class="h3 mb-1"><i class="ti ti-copy me-1"></i><%= t('Copy an earlier edition') %></div>
+      <p class="text-secondary mb-0"><%= list.length ? t('Start from an earlier edition and choose what comes along. Participants, entries, reviews and results never do.') : t('This series has no edition to copy yet.') %></p></div>
+    </a></div>
+  </div>
+
+  <form method="post" action="/series/<%= sr.slug %>/new-edition" class="card">
+    <%- csrf %><input type="hidden" name="method" value="<%= method %>">
+    <div class="card-body">
+      <% if (method === 'copy') { %>
+        <div class="mb-3"><label class="form-label" for="ne-from"><%= t('Copy from') %></label>
+          <select class="form-select" id="ne-from" name="from" data-nav="?method=copy&from="><% list.forEach((e) => { %><option value="<%= e.slug %>"<%= from && from.id === e.id ? ' selected' : '' %>><%= e.identifier || e.slug %> — <%= e.title %> (<%= tn('{n} event', '{n} events', e._count.events) %>)</option><% }) %></select></div>
+      <% } %>
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3"><label class="form-label required" for="ne-edition"><%= t('Address') %></label><div class="input-group"><span class="input-group-text">/<%= sr.slug %>/</span><input class="form-control" id="ne-edition" name="edition" value="<%= suggested %>" maxlength="20" required pattern="[a-z0-9][a-z0-9\-]{0,19}"></div></div>
+        <div class="col-6 col-md-5"><label class="form-label" for="ne-title"><%= t('Title') %></label><input class="form-control" id="ne-title" name="title" maxlength="200" placeholder="<%= sr.title %> <%= suggested %>"></div>
+        <% if (method === 'copy') { %>
+          <div class="col-6 col-md-4"><label class="form-label" for="ne-years"><%= t('Move dates by (years)') %></label><input class="form-control" type="number" id="ne-years" name="years" min="0" max="10" value="1"><div class="form-hint"><%= t('Check every date before publishing.') %></div></div>
+        <% } else { %>
+          <div class="col-6 col-md-2"><label class="form-label" for="ne-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ne-start" name="startDate"></div>
+          <div class="col-6 col-md-2"><label class="form-label" for="ne-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ne-end" name="endDate"></div>
+        <% } %>
+      </div>
+      <% if (method === 'copy') { %>
+        <div class="form-label"><%= t('What to copy') %></div>
+        <div class="row g-2 mb-3">
+          <% Object.entries(COPY_PARTS).forEach(([k, label]) => { %>
+            <div class="col-md-6"><label class="form-check"><input class="form-check-input" type="checkbox" name="parts" value="<%= k %>"<%= k === 'events' ? ' data-needed-by' : '' %><%= k === 'people' ? '' : ' checked' %><%= k !== 'events' && k !== 'settings' && k !== 'people' ? ' data-needs-event' : '' %>><span class="form-check-label"><%= t(label) %></span></label></div>
+          <% }) %>
+        </div>
+        <div class="alert alert-info small mb-0"><i class="ti ti-info-circle me-1"></i><%= t('Never copied: participants and registrations, entries and files, reviews and decisions, appeals, results, certificates and personal details. The copy is a draft with new addresses; organizers are copied only when ticked.') %></div>
+      <% } %>
+    </div>
+    <div class="card-footer text-end"><a class="btn btn-link" href="/<%= sr.slug %>?tab=editions"><%= t('Cancel') %></a><button class="btn btn-primary" type="submit"><%= t('Create edition') %></button></div>
+  </form>
+</div></div>

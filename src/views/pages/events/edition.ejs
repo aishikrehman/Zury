@@ -68,17 +68,11 @@
       <div class="row row-cards">
         <% if (canRunSeries) { %>
           <div class="col-md-8">
-            <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/copy" class="card h-100">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="card h-100">
               <div class="card-header"><h3 class="card-title"><i class="ti ti-copy me-2"></i><%= t('Copy edition') %></h3></div>
-              <div class="card-body"><div class="row g-2 align-items-end">
-                <% const nextName = /^\d{4}$/.test(edition.slug) ? String(Number(edition.slug) + 1) : ''; %>
-                <div class="col-6 col-md-3"><label class="form-label" for="ce-slug"><%= t('Edition') %></label><input class="form-control" id="ce-slug" name="slug" value="<%= nextName %>" maxlength="20" required></div>
-                <div class="col-6 col-md-4"><label class="form-label" for="ce-title"><%= t('Title') %></label><input class="form-control" id="ce-title" name="title" maxlength="200" placeholder="<%= nextName ? edition.title.split(edition.slug).join(nextName) : edition.title %>"></div>
-                <div class="col-6 col-md-3"><label class="form-label" for="ce-years"><%= t('Move dates by (years)') %></label><input class="form-control" type="number" id="ce-years" name="years" min="0" max="10" value="<%= nextName ? 1 : 0 %>"></div>
-                <div class="col-6 col-md-2"><button class="btn btn-primary w-100" type="submit"><%= t('Copy') %></button></div>
-              </div><div class="form-hint mt-2"><%= t('A new edition with a draft of each event (settings, wikis, organizers, reviewers), its people and its settings for the events below. Entries are not copied.') %></div></div>
-            </form>
+              <div class="card-body"><p class="text-secondary small"><%= t('A new edition from this one: you choose what comes along. Participants, entries, reviews and results never do.') %></p>
+                <a class="btn btn-primary" href="/series/<%= sr.slug %>/new-edition?method=copy&from=<%= edition.slug %>"><i class="ti ti-copy me-1"></i><%= t('Copy edition') %></a></div>
+            </div>
           </div>
         <% } %>
         <div class="col-md-4">
@@ -96,9 +90,9 @@
       <%- include('../../partials/levelDelete', { inside, seriesSlug: sr.slug, editionSlug: edition.slug, canDelete: can('deleteAnyEvent') || can('deleteAnything') }) %>
 
     <% } else if (tab === 'people') { %>
-      <%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, ROLES }) %>
+      <%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, inherited, ROLES }) %>
     <% } else if (tab === 'statistics') { %>
-      <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %><% } else { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div><% } %>
+      <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %><% } else { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div><% } %>
     <% } %>
   </div>
 </div>

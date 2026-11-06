@@ -76,6 +76,7 @@ async function createEdition({ actorId, series, slug, title = '', startDate = nu
   const editionService = require('./editionService');
   slug = String(slug || '').trim().toLowerCase();
   if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(slug)) throw new SeriesError('Give the edition a short name, such as 2026.', 'edition');
+  if (['new-edition', 'detach', 'order', 'deleted', 'settings', 'people', 'fountain'].includes(slug)) throw new SeriesError('That address is reserved.', 'edition');
   if (await prisma.seriesSlug.findUnique({ where: { seriesId_slug: { seriesId: series.id, slug } } })) throw new SeriesError(`/${series.slug}/${slug} already exists.`, 'edition');
   if (startDate && endDate && endDate < startDate) throw new SeriesError('The end date must be after the start date.', 'endDate');
   const edition = await editionService.findOrCreate(series.id, slug, { title: String(title || '').trim() || `${series.title} ${slug}`, startDate, endDate });

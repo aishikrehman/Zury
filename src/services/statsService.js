@@ -168,6 +168,17 @@ async function platformStats(now = new Date(), days = 30) {
 // - words are those of the distinct approved entries.
 const empty = () => ({ eventCount: 0, entries: 0, approved: 0, words: 0, approvedWords: 0, participants: 0, wikis: [] });
 
+async function byWiki(contestIds) {
+  const ids = [...new Set(contestIds)].map(Number).filter(Number.isInteger);
+  if (!ids.length) return [];
+  const { Prisma } = require('@prisma/client');
+  const rows = await prisma.$queryRaw`
+    SELECT wiki, COUNT(DISTINCT pageKey) AS entries, COUNT(DISTINCT CASE WHEN status = 'approved' THEN pageKey END) AS approved,
+           COUNT(DISTINCT participantId) AS participants
+    FROM Submission WHERE contestId IN (${Prisma.join(ids)}) AND status <> 'withdrawn' GROUP BY wiki ORDER BY entries DESC`;
+  return rows.map((r) => ({ wiki: r.wiki, entries: Number(r.entries), approved: Number(r.approved), participants: Number(r.participants) }));
+}
+
 async function rollup(contestIds) {
   const ids = [...new Set(contestIds)].map(Number).filter(Number.isInteger);
   if (!ids.length) return empty();
@@ -199,4 +210,5 @@ async function rollup(contestIds) {
   };
 }
 
-module.exports = { eventStats, userStats, platformStats, dailySeries, rollup };
+module.exports = {
+  byWiki, eventStats, userStats, platformStats, dailySeries, rollup };

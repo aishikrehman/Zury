@@ -9,12 +9,21 @@
     </div></div></div>
   <% }) %>
 </div>
-<div class="form-hint mb-3"><%= t('A person or an entry (a page on a wiki) in several events is counted once in these totals.') %></div>
+<div class="form-hint mb-3"><%= t('A person or an entry (a page on a wiki) in several events is counted once in these totals.') %><% if (rows.length > 1) { const records = rows.reduce((n, r) => n + (r.stats.participants || 0), 0); %> <%= t('Taking part, counted per edition or event: {n}.', { n: formatNumber(records) }) %><% } %></div>
 <% const chartRows = [...rows].reverse(); %>
 <% if (chartRows.length > 1) { %>
   <div class="card mb-3">
     <div class="card-header"><h3 class="card-title"><%= chartTitle %></h3></div>
     <div class="card-body"><%- include('./chart', { spec: { type: 'bar', height: 220, series: [{ name: t('Entries'), data: chartRows.map((r) => r.stats.entries) }, { name: t('Approved'), data: chartRows.map((r) => r.stats.approved) }], labels: chartRows.map((r) => r.label), colors: ['primary', 'green'] }, label: chartTitle }) %></div>
+  </div>
+<% } %>
+<% if (typeof wikiRows !== 'undefined' && wikiRows.length) { %>
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-world me-2"></i><%= t('By wiki') %></h3></div>
+    <div class="table-responsive"><table class="table table-vcenter card-table">
+      <thead><tr><th><%= t('Wiki') %></th><th class="text-end"><%= t('Participants') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Approved') %></th></tr></thead>
+      <tbody><% wikiRows.forEach((w) => { %><tr><td><%= wikiLocal(w.wiki) %></td><td class="text-end"><%= formatNumber(w.participants) %></td><td class="text-end"><%= formatNumber(w.entries) %></td><td class="text-end"><%= formatNumber(w.approved) %></td></tr><% }) %></tbody>
+    </table></div>
   </div>
 <% } %>
 <% if (rows.length && (typeof table === 'undefined' || table)) { %>

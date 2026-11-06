@@ -13,6 +13,14 @@
     </div>
     <div class="form-hint mt-2"><%= t('A role counts only where it is given. Roles on one event, or on one wiki of an event, are given on that event.') %></div>
   </form>
+  <% if (typeof inherited !== 'undefined' && inherited.length) { %>
+    <div class="card-body border-bottom py-2">
+      <div class="subheader mb-1"><%= t('From the series') %></div>
+      <div class="d-flex flex-wrap gap-2"><% inherited.forEach((r) => { %><span class="badge bg-azure-lt"><%= r.user.username %> · <%= t(EVENT_ROLES[r.role] ? EVENT_ROLES[r.role].label : r.role) %></span><% }) %></div>
+      <div class="form-hint"><%= t('They have this role on every edition; they are managed on the series.') %></div>
+    </div>
+    <div class="card-body pb-0"><div class="subheader"><%= t('Only this edition') %></div></div>
+  <% } %>
   <% if (!people.length) { %><div class="card-body text-secondary"><%= t('No one has a role here yet') %></div><% } else { %>
     <div class="list-group list-group-flush">
       <% people.forEach((r) => { %>
