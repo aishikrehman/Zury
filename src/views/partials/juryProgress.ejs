@@ -1,0 +1,34 @@
+<% const p = jury.progress; const total = p.waiting + p.decided; const pct = total ? Math.round((p.decided / total) * 100) : 0; %>
+<div class="card mb-3" id="jury-progress">
+  <div class="card-header">
+    <h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= t("Reviewers' progress") %></h3>
+    <div class="card-actions d-flex gap-2 small">
+      <span class="badge bg-yellow-lt"><%= t('Waiting') %> <%= formatNumber(p.waiting) %></span>
+      <span class="badge bg-green-lt"><%= t('Accepted') %> <%= formatNumber(p.approved) %></span>
+      <span class="badge bg-red-lt"><%= t('Not accepted') %> <%= formatNumber(p.rejected) %></span>
+    </div>
+  </div>
+  <div class="card-body pb-2">
+    <div class="d-flex justify-content-between small text-secondary mb-1"><span><%= t('{a} of {b}', { a: formatNumber(p.decided), b: formatNumber(total) }) %></span><span><%= pct %>%</span></div>
+    <div class="progress progress-sm"><div class="progress-bar bg-green" style="width: <%= pct %>%"></div></div>
+  </div>
+  <% if (jury.activity.length) { %>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table table-sm">
+        <thead><tr><th><%= t('Reviewer') %></th><th class="text-end"><%= t('Reviews') %></th><th class="text-end"><%= t('Accepted') %></th><th class="text-end"><%= t('Not accepted') %></th><th class="text-end"><%= t('Agreement') %></th><th><%= t('Last active') %></th></tr></thead>
+        <tbody>
+          <% jury.activity.forEach((j) => { %>
+            <tr>
+              <td class="fw-medium<%= currentUser && j.id === currentUser.id ? ' text-primary' : '' %>"><%= j.username %></td>
+              <td class="text-end"><%= formatNumber(j.reviews) %></td>
+              <td class="text-end text-green"><%= formatNumber(j.accepted) %></td>
+              <td class="text-end text-red"><%= formatNumber(j.rejected) %></td>
+              <td class="text-end"><%= j.agreement === null ? '—' : j.agreement + '%' %></td>
+              <td class="text-secondary small text-nowrap"><%= j.lastAt ? formatDate(j.lastAt, contest.timezone) : '—' %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>

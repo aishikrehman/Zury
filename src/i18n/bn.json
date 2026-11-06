@@ -1587,5 +1587,8 @@
   "Your edit count couldn't be verified.": "আপনার সম্পাদনা সংখ্যা যাচাই করা যায়নি।",
   "A series with editions or events cannot be deleted; delete or move them first.": "সংস্করণ বা ইভেন্ট থাকা সিরিজ মোছা যায় না; আগে সেগুলো মুছুন বা সরান।",
   "Your Wikimedia account is globally locked.": "আপনার উইকিমিডিয়া অ্যাকাউন্ট বৈশ্বিকভাবে লক করা।",
-  "Your Wikimedia account is globally blocked.": "আপনার উইকিমিডিয়া অ্যাকাউন্ট বৈশ্বিকভাবে বাধাপ্রাপ্ত।"
+  "Your Wikimedia account is globally blocked.": "আপনার উইকিমিডিয়া অ্যাকাউন্ট বৈশ্বিকভাবে বাধাপ্রাপ্ত।",
+  "Agreement": "মিল",
+  "Last active": "শেষ সক্রিয়",
+  "Reviewers' progress": "পর্যালোচকদের অগ্রগতি"
 }

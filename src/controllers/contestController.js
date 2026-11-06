@@ -74,6 +74,15 @@ async function show(req, res, next) {
       participantCount: participants,
       myEntries: req.user && EVENT_TYPES[req.contest.type]?.entries !== false ? await require('../services/submissionService').myEntries(req.user.id, req.contest.id) : null,
       isParticipant: roles.includes('participant'),
+      // Reviewers' progress: for those who run or review the event (platform roles have these permissions too).
+      jury: EVENT_TYPES[req.contest.type]?.entries !== false && req.settings.juryReviewEnabled && (roles.includes('jury') || ['manageEvent', 'manageJury', 'reviewEvent', 'assignJury'].some((p) => req.scope.permissions.has(p)))
+        ? await (async () => {
+          const reviews = require('../services/reviewService');
+          const wiki = req.wikiScope?.wiki;
+          const [progress, activity] = await Promise.all([reviews.progress(req.contest.id, { wiki }), reviews.juryActivity(req.contest.id, { wiki })]);
+          return { progress, activity };
+        })()
+        : null,
       ...(() => {
         const ps = require('../services/participationService');
         const pp = ps.read(req.settings);
