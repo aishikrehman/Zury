@@ -248,7 +248,7 @@ async function appeal(req, res, next) {
     if (!(err instanceof ReviewError)) return next(err);
     req.flash('danger', err.message);
   }
-  res.redirect(`${req.base}/submissions/${id}`);
+  res.redirect(`${req.base}/submissions`);
 }
 
 async function appealsList(req, res, next) {

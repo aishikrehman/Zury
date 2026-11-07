@@ -153,6 +153,7 @@ app.use(async (req, res, next) => {
       eventProject: require('./utils/projectStyle').eventProject,
       langName: (code) => (code ? names.language(code).name : ''),
       // The name in its own language when there is one ("বাংলা উইকিপিডিয়া").
+      entryUrl: (x) => { if (x.url) return x.url; const h = x.wiki && require('./wiki/wikiUrls').dbnameToHost(x.wiki); return h ? `https://${h}/wiki/${encodeURIComponent(String(x.title).replace(/ /g, '_')).replace(/%3A/g, ':').replace(/%2F/g, '/')}` : '#'; },
       wikiHost: (db) => require('./wiki/wikiUrls').dbnameToHost(db) || '',
       wikiLocal: (db) => (db ? names.wiki(db).localName || names.wiki(db).name : ''),
       langLocal: (code) => (code ? names.language(code).localName || names.language(code).name : ''),

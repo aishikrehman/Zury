@@ -11,7 +11,7 @@
         <div class="card">
           <div class="card-header">
             <div class="flex-fill">
-              <h3 class="card-title"><a href="<%= base %>/submissions/<%= a.submission.id %>"><%= a.submission.title %></a></h3>
+              <h3 class="card-title"><a href="<%= entryUrl(a.submission) %>" target="_blank" rel="noopener"><%= a.submission.title %></a></h3>
               <div class="text-secondary small"><%= a.user.username %> · <%= formatDateTime(a.createdAt, contest.timezone) %></div>
             </div>
             <span class="badge bg-<%= statusColor[a.status] %>-lt"><%= statusLabel[a.status] %></span>

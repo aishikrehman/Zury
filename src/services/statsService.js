@@ -92,7 +92,7 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     const [byStatusW, byPerson, biggest] = await Promise.all([
       prisma.submission.groupBy({ by: ['status'], where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true }, _count: { _all: true } }),
       prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true }, _count: { _all: true }, orderBy: { _sum: { wordCount: 'desc' } }, take: 10 }),
-      prisma.submission.findMany({ where: { ...where, status: { notIn: INACTIVE }, wordCount: { gt: 0 } }, select: { id: true, title: true, wordCount: true, status: true, participant: { select: { username: true } } }, orderBy: { wordCount: 'desc' }, take: 10 }),
+      prisma.submission.findMany({ where: { ...where, status: { notIn: INACTIVE }, wordCount: { gt: 0 } }, select: { id: true, title: true, wiki: true, wordCount: true, status: true, participant: { select: { username: true } } }, orderBy: { wordCount: 'desc' }, take: 10 }),
     ]);
     const ws = Object.fromEntries(byStatusW.map((r) => [r.status, { words: r._sum.wordCount || 0, count: r._count._all }]));
     const pick = (keys) => keys.reduce((a, k) => ({ words: a.words + (ws[k]?.words || 0), count: a.count + (ws[k]?.count || 0) }), { words: 0, count: 0 });
@@ -109,7 +109,7 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
       average: all.count ? Math.round(all.words / all.count) : 0,
       averageAccepted: accepted.count ? Math.round(accepted.words / accepted.count) : 0,
       people: byPerson.map((p) => ({ username: pn[p.participantId], words: p._sum.wordCount || 0, accepted: accMap[p.participantId] || 0, count: p._count._all })),
-      biggest: biggest.map((b) => ({ id: b.id, title: b.title, words: b.wordCount, status: b.status, username: b.participant?.username })),
+      biggest: biggest.map((b) => ({ id: b.id, title: b.title, wiki: b.wiki, words: b.wordCount, status: b.status, username: b.participant?.username })),
     };
   }
 

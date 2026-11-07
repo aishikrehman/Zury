@@ -10,7 +10,7 @@
     <% my.entries.slice(0, 50).forEach((e) => { const st = SUBMISSION_STATUSES[e.status] || { label: e.status, color: 'secondary' }; %>
       <div class="list-group-item">
         <div class="d-flex align-items-center gap-2">
-          <a class="fw-medium text-truncate" href="<%= base %>/submissions/<%= e.id %>"><%= e.title %></a>
+          <a class="fw-medium text-truncate" href="<%= entryUrl(e) %>" target="_blank" rel="noopener"><%= e.title %></a>
           <% if (e.wordCount && settings.wordCountEnabled) { %><span class="text-secondary small text-nowrap"><%= t('{n} words', { n: formatNumber(e.wordCount) }) %></span><% } %>
           <span class="badge bg-<%= st.color %>-lt ms-auto"><%= t(st.label) %></span>
         </div>

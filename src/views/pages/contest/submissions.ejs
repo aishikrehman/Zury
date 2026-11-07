@@ -98,7 +98,7 @@
                       <span class="avatar avatar-sm me-2 bg-primary-lt"><i class="ti ti-<%= { article: 'file-text', file: 'photo', item: 'database', lexeme: 'language', property: 'tag' }[s.entryType] || 'file' %>"></i></span>
                     <% } %>
                     <div>
-                      <a href="<%= base %>/submissions/<%= s.id %>"><%= s.title %></a>
+                      <a href="<%= entryUrl(s) %>" target="_blank" rel="noopener"><%= s.title %></a>
                       <% if (showWiki) { %><div class="text-secondary small z-entry-wiki"><%= wikiLocal(s.wiki) %></div><% } %>
                     </div>
                   </div>
@@ -113,12 +113,13 @@
                 <td class="text-secondary text-nowrap"><%= formatDateTime(s.submittedAt, contest.timezone) %></td>
                 <td>
                   <div class="z-row-actions">
-                    <a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= currentUser && canReview(s) ? `${base}/review?entry=${s.id}` : `${base}/submissions/${s.id}` %>" data-popup title="<%= t('Quick look') %>" aria-label="<%= t('Quick look') %>"><i class="ti ti-eye"></i></a>
+                    <% if (currentUser && canReview(s)) { %><a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" data-popup title="<%= t('Quick look') %>" aria-label="<%= t('Quick look') %>"><i class="ti ti-eye"></i></a><% } %>
+                    <% if (canWithdraw(s)) { %><form method="post" action="<%= base %>/submissions/<%= s.id %>/withdraw" class="d-inline" data-confirm="<%= t('Withdraw this entry?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Withdraw my entry') %>" aria-label="<%= t('Withdraw my entry') %>"><i class="ti ti-arrow-back-up"></i></button></form><% } %>
+                    <% if (canAppealRow(s)) { %><form method="post" action="<%= base %>/submissions/<%= s.id %>/appeal" class="d-inline" data-ask="reason" data-ask-text="<%= t('Why should the organizers look at this again?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="reason"><button class="btn btn-sm btn-ghost-warning btn-icon" type="submit" title="<%= t('Appeal a decision') %>" aria-label="<%= t('Appeal a decision') %>"><i class="ti ti-scale"></i></button></form><% } %>
                     <% if (currentUser && canReview(s) && ['pending', 'validated', 'under_review'].includes(s.status)) { %>
                       <a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a>
                     <% } %>
                     <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= s.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
-                    <% const tl = templateLink(s); if (tl && currentUser && (currentUser.id === s.participantId || canManage)) { %><a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= tl %>" target="_blank" rel="noopener" title="<%= t("Add the template") %>" aria-label="<%= t("Add the template") %>"><i class="ti ti-tag"></i></a><% } %>
                     <% if (canManage) { %>
 
                       <% if (s.status !== 'disqualified') { %>

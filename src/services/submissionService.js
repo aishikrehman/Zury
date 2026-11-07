@@ -349,7 +349,7 @@ async function myEntries(userId, contestId) {
     where: { participantId: userId, contestId, status: { not: 'withdrawn' } },
     orderBy: { submittedAt: 'desc' },
     take: 200,
-    select: { id: true, title: true, status: true, wordCount: true, submittedAt: true, reviews: { where: { comment: { not: '' } }, select: { comment: true, decision: true }, orderBy: { createdAt: 'asc' } } },
+    select: { id: true, title: true, wiki: true, status: true, wordCount: true, submittedAt: true, reviews: { where: { comment: { not: '' } }, select: { comment: true, decision: true }, orderBy: { createdAt: 'asc' } } },
   });
   const entries = rows.map((r) => ({ ...r, group: groupOf(r.status), comments: ['accepted', 'rejected'].includes(groupOf(r.status)) ? r.reviews.map((v) => v.comment) : [] }));
   const counts = { accepted: 0, pending: 0, rejected: 0 };

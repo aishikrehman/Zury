@@ -13,7 +13,7 @@
   <% const tilesOnly = statsPart === 'tiles' && !locals.wide; %>
   <% if (['', 'summary', 'tiles'].includes(statsPart)) { %>
   <div class="row row-deck row-cards mb-3">
-    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
+    <div class="col-sm-6 col-xl">
       <div class="card">
         <div class="card-body">
           <div class="d-flex align-items-center"><div class="subheader"><%= t("Submissions") %></div><div class="ms-auto text-secondary small"><%= t("all time") %></div></div>
@@ -28,7 +28,7 @@
         <%- include('./chart', { spec: { type: 'area', sparkline: true, height: 40, series: [{ name: 'Submissions', data: s.series.values }], labels: s.series.labels, colors: ['primary'] }, label: t('Daily submissions') }) %>
       </div>
     </div>
-    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
+    <div class="col-sm-6 col-xl">
       <div class="card">
         <div class="card-body">
           <div class="subheader"><%= t("Participants") %></div>
@@ -39,7 +39,7 @@
       </div>
     </div>
     <% if (contest.type !== 'writing') { %>
-    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
+    <div class="col-sm-6 col-xl">
       <div class="card">
         <div class="card-body">
           <div class="subheader"><%= t("Valid entries") %></div>
@@ -50,7 +50,7 @@
     <% } %>
       </div>
     </div>
-    <div class="col-sm-6<%= tilesOnly ? '' : ' col-lg-3' %>">
+    <div class="col-sm-6 col-xl">
       <div class="card">
         <div class="card-body">
           <div class="subheader"><%= t("Review progress") %></div>
@@ -150,7 +150,7 @@
           <div class="col-lg-6">
             <h4 class="mb-2"><%= t('Longest articles') %></h4>
             <table class="table table-sm table-vcenter mb-0"><thead><tr><th><%= t('Article') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead><tbody>
-              <% w.biggest.forEach((x) => { %><tr><td><a href="<%= base %>/submissions/<%= x.id %>"><%= x.title %></a><div class="small text-secondary"><%= x.username %></div></td><td class="text-end"><%= formatNumber(x.words) %></td><td><span class="badge bg-<%= (SUBMISSION_STATUSES[x.status] || {}).color || 'secondary' %>-lt"><%= (SUBMISSION_STATUSES[x.status] || {}).label || x.status %></span></td></tr><% }) %>
+              <% w.biggest.forEach((x) => { %><tr><td><a href="<%= entryUrl(x) %>" target="_blank" rel="noopener"><%= x.title %></a><div class="small text-secondary"><%= x.username %></div></td><td class="text-end"><%= formatNumber(x.words) %></td><td><span class="badge bg-<%= (SUBMISSION_STATUSES[x.status] || {}).color || 'secondary' %>-lt"><%= (SUBMISSION_STATUSES[x.status] || {}).label || x.status %></span></td></tr><% }) %>
               <% if (!w.biggest.length) { %><tr><td colspan="3" class="text-secondary"><%= t('No entries yet.') %></td></tr><% } %>
             </tbody></table>
           </div>

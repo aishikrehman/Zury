@@ -169,8 +169,11 @@ async function index(req, res, next) {
     const staffView = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
     res.locals.showReviewers = staffView || require('../services/participationService').read(req.settings).rules.reviewerNames === 'yes';
     const templateLink = (s) => (tc.entryTemplate ? require('../wiki/wikiUrls').templateEditUrl({ wiki: s.wiki, title: s.title, namespace: s.entryType === 'article' ? 0 : -1 }, tc.entryTemplate, tc.entryTemplateOnTalk !== false) : null);
+    const reviewService = require('../services/reviewService');
     res.render('pages/contest/submissions', {
       templateLink,
+      canWithdraw: (s) => req.user?.id === s.participantId && submissionService.WITHDRAWABLE.includes(s.status),
+      canAppealRow: (s) => reviewService.canAppeal({ submission: s, contest: req.effective.contest, settings: req.settings, user: req.user }),
       title: `Submissions — ${req.contest.title}`,
       result,
       filters,
@@ -251,7 +254,7 @@ function action(fn, successMessage) {
       if (err.status === 403) return next(err);
       req.flash('danger', err.message);
     }
-    res.redirect(backTo(req, `${req.base}/submissions/${req.params.submissionId}`));
+    res.redirect(backTo(req, `${req.base}/submissions`));
   };
 }
 
@@ -322,7 +325,7 @@ async function destroyReview(req, res, next) {
       await require('../services/auditService').record({ actorId: req.user.id, contestId: req.contest.id, action: 'review.deleted', entityType: 'Submission', entityId: s.id, details: { title: s.title, juror: r.juror.username, decision: r.decision } });
       req.flash('success', req.t('Review deleted; the entry was decided again.'));
     }
-    res.redirect(`${req.base}/submissions/${req.params.submissionId}`);
+    res.redirect(`${req.base}/submissions`);
   } catch (err) {
     next(err);
   }

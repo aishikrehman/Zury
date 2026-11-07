@@ -306,3 +306,15 @@ document.addEventListener('click', (e) => {
   });
   input.addEventListener('blur', () => setTimeout(hide, 100));
 })();
+
+// Forms that ask one thing first (an appeal's reason).
+document.addEventListener('submit', (e) => {
+  const f = e.target;
+  if (!f.matches || !f.matches('form[data-ask]')) return;
+  const field = f.querySelector(`[name="${f.dataset.ask}"]`);
+  if (field && !field.value) {
+    const v = prompt(f.dataset.askText || '');
+    if (!v || v.trim().length < 10) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    field.value = v.trim();
+  }
+}, true);

@@ -78,7 +78,7 @@
           <% overview.entries.forEach((e) => { const assignedIds = e.assignees.map((a) => a.jurorId); const free = overview.jurors.filter((j) => !assignedIds.includes(j.id) && (j.wikis.includes('') || j.wikis.includes(e.wiki))); %>
             <tr>
               <td>
-                <a href="<%= base %>/submissions/<%= e.id %>"><%= e.title %></a>
+                <a href="<%= entryUrl(e) %>" target="_blank" rel="noopener"><%= e.title %></a>
                 <% if (eventWikis.length > 1 && !wikiScope) { %><div class="text-secondary small"><%= wikiLocal(e.wiki) %></div><% } %>
               </td>
               <td class="text-secondary"><%= e.participant.username %></td>

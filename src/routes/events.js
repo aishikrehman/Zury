@@ -114,7 +114,6 @@ contest.get('/submit', entriesOnly, requireAuth, submissionController.submitForm
 contest.post('/submit/preview', entriesOnly, requireAuth, submissionController.preview);
 contest.post('/submit', entriesOnly, requireAuth, submissionController.submit);
 contest.get('/submissions', entriesOnly, submissionController.index);
-contest.get('/submissions/:submissionId(\\d+)', submissionController.show);
 contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissionController.withdraw);
 // Superusers delete a single entry, or a single review (the entry is then decided again).
 contest.post('/submissions/:submissionId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroy);
