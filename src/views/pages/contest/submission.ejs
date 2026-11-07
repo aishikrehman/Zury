@@ -56,11 +56,16 @@
     </div>
 
     <div class="col-lg-4">
-      <% if (templateLink && currentUser && (currentUser.id === submission.participantId || can("manageEvent"))) { %>
+      <% if (typeof follow !== 'undefined' && follow.length && currentUser && (currentUser.id === submission.participantId || can("manageEvent"))) { %>
         <div class="card mb-3"><div class="card-body">
-          <div class="fw-medium mb-1"><i class="ti ti-tag me-1"></i><%= t("The event's template") %></div>
-          <p class="text-secondary small mb-2"><%= templateOnTalk ? t("Add it to the article's talk page: the wiki opens with it filled in; just save.") : t("Add it to the article: the wiki opens with it filled in; just save.") %></p>
-          <a class="btn btn-primary w-100" href="<%= templateLink %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= t("Add the template") %></a>
+          <div class="fw-medium mb-2"><i class="ti ti-tag me-1"></i><%= t("Add the event's text") %></div>
+          <% follow.forEach((f) => { %>
+            <div class="mb-3">
+              <div class="small text-secondary mb-1"><%= f.where === 'talk' ? t('At the top of the talk page') : t('At the bottom of the article (above the first category)') %></div>
+              <pre class="z-follow-text mb-2"><%= f.text %></pre>
+              <div class="d-flex gap-2"><button type="button" class="btn btn-sm" data-copy="<%= f.text %>"><i class="ti ti-copy me-1"></i><%= t('Copy') %></button><a class="btn btn-sm btn-primary" href="<%= f.url %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-1"></i><%= t('Open the editor') %></a></div>
+            </div>
+          <% }) %>
         </div></div>
       <% } %>
       <% if (canWithdraw || can('manageEvent')) { %>

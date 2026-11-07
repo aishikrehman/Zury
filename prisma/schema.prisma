@@ -360,6 +360,7 @@ model ContestSettings {
   // Contribution tracking. Participant tracking uses contributionDiscoveryEnabled.
   // JSON arrays: hashtags without "#", categories without "Category:".
   trackHashtags               String    @default("[]") @db.Text
+  editSummary                 String?   @db.Text
   trackCategories             String    @default("[]") @db.Text
   // Jury marks (Fountain-style), JSON: [{ name, values: [{ label, points }] }].
   marks                       String    @default("[]") @db.Text

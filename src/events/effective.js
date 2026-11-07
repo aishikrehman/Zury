@@ -40,6 +40,7 @@ const OVERRIDABLE = {
     'anonymousParticipants',
     'eligibleNamespaces',
     'trackHashtags',
+    'editSummary',
     'trackCategories',
     'requiredReviews',
     'reviewAssignment',

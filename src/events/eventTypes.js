@@ -29,6 +29,8 @@ const EVENT_TYPES = {
       { key: 'allowExpansions', label: 'Also accept substantial expansions of existing articles', type: 'bool', default: false },
       { key: 'entryTemplate', label: 'Template for entries', type: 'string', maxLength: 255, default: '', help: 'E.g. {{উইকিপিডিয়া এশীয় মাস ২০২৬}}. Participants get a link to add it to each entry.' },
       { key: 'entryTemplateOnTalk', label: 'Put the template on the talk page (else on the article)', type: 'bool', default: true },
+      { key: 'talkText', label: 'At the top of the talk page', type: 'string', maxLength: 5000, default: '' },
+      { key: 'articleText', label: 'At the bottom of the article (above the first category)', type: 'string', maxLength: 5000, default: '' },
     ],
   },
   data: {
@@ -55,6 +57,8 @@ const EVENT_TYPES = {
       { key: 'minBytesChanged', label: 'Minimum bytes changed per edit', type: 'int', min: 0, max: 1000000, default: 0 },
       { key: 'entryTemplate', label: 'Template for entries', type: 'string', maxLength: 255, default: '', help: 'E.g. {{উইকিপিডিয়া এশীয় মাস ২০২৬}}. Participants get a link to add it to each entry.' },
       { key: 'entryTemplateOnTalk', label: 'Put the template on the talk page (else on the article)', type: 'bool', default: true },
+      { key: 'talkText', label: 'At the top of the talk page', type: 'string', maxLength: 5000, default: '' },
+      { key: 'articleText', label: 'At the bottom of the article (above the first category)', type: 'string', maxLength: 5000, default: '' },
     ],
   },
 };

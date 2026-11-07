@@ -27,7 +27,7 @@
             <% if (mass) { %>
               <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="https://commons.wikimedia.org/wiki/File:Example.jpg&#10;File:Another example.jpg"><%= text %></textarea>
             <% } else { %>
-              <input class="form-control" id="entries" name="entries" value="<%= text %>" placeholder="<%= t("https://… or a page title") %>">
+              <div class="z-suggest"><input class="form-control" id="entries" name="entries" value="<%= text %>" autocomplete="off" spellcheck="false" placeholder="<%= t("https://… or a page title") %>" data-suggest="<%= (eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki }]).map((w) => wikiHost(w.wiki)).filter(Boolean).join(',') %>" data-suggest-ns="<%= contest.type === 'writing' ? 0 : contest.type === 'photo' ? 6 : 0 %>"><div class="z-suggest-list list-group" hidden></div></div>
             <% } %>
           </div>
           <% if (canOthers) { %>
@@ -48,36 +48,29 @@
             <h3 class="card-title"><%= t("Preview") %></h3>
             <div class="card-actions"><span class="badge bg-green-lt"><%= t('{n} ready', { n: okCount }) %></span> <span class="badge bg-red-lt"><%= t('{n} with problems', { n: items.length - okCount }) %></span></div>
           </div>
-          <div class="table-responsive">
-            <table class="table table-vcenter card-table">
-              <thead><tr><th class="w-1"></th><th><%= t("Entry") %></th><th><%= t("Details") %></th><th><%= t("Result") %></th></tr></thead>
-              <tbody>
-                <% items.forEach((i) => { %>
-                  <tr>
-                    <td><i class="ti ti-<%= i.ok ? 'circle-check text-green' : 'circle-x text-red' %> icon"></i></td>
-                    <td>
-                      <% if (i.meta && i.meta.exists) { %>
-                        <a href="<%= i.meta.url %>" rel="noopener" target="_blank"><%= i.meta.title %></a>
-                        <div class="text-secondary small"><%= eventWikis.length > 1 ? wikiLocal(i.meta.wiki) + ' · ' : '' %><%= i.meta.entryType %></div>
-                      <% } else { %>
-                        <span class="font-monospace small"><%= i.input %></span>
-                      <% } %>
-                    </td>
-                    <td class="small text-secondary">
-                      <% if (i.meta && i.meta.file && i.meta.file.thumbUrl) { %><span class="avatar avatar-md me-2" style="background-image: url('<%= i.meta.file.thumbUrl %>')"></span><% } %>
-                      <% if (i.meta && i.meta.file) { %><%= i.meta.file.megapixels %> MP<% } %>
-                      <% if (i.meta && i.meta.wordCount != null) { %><%= t('{n} words', { n: i.meta.wordCount }) %><% } %>
-                      <% if (i.meta && i.meta.entity) { %><%= i.meta.entity.label || i.meta.entity.id %> · <%= t('{n} statements', { n: i.meta.entity.statementCount }) %><% } %>
-                    </td>
-                    <td class="small">
-                      <% if (i.ok) { %><span class="text-green"><%= t("Ready") %></span><% } %>
-                      <% i.reasons.forEach((r) => { %><div class="text-red"><%= t(r) %></div><% }) %>
-                      <% i.warnings.forEach((w) => { %><div class="text-yellow"><i class="ti ti-alert-triangle"></i> <%= w %></div><% }) %>
-                    </td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
+          <div class="card-body z-check-list">
+            <% items.forEach((i) => { %>
+              <div class="z-check-item <%= i.ok ? (i.warnings.length ? 'is-warn' : 'is-ok') : 'is-bad' %>">
+                <% if (i.meta && i.meta.file && i.meta.file.thumbUrl) { %><span class="avatar avatar-lg" style="background-image: url('<%= i.meta.file.thumbUrl %>')"></span>
+                <% } else { %><span class="z-check-icon"><i class="ti ti-<%= i.ok ? (i.warnings.length ? 'alert-triangle' : 'circle-check') : 'circle-x' %>"></i></span><% } %>
+                <div class="flex-fill min-w-0">
+                  <div class="fw-bold text-truncate">
+                    <% if (i.meta && i.meta.exists) { %><a href="<%= i.meta.url %>" rel="noopener" target="_blank"><%= i.meta.title %> <i class="ti ti-external-link small"></i></a>
+                    <% } else { %><span class="font-monospace"><%= i.input %></span><% } %>
+                  </div>
+                  <div class="d-flex flex-wrap gap-1 mt-1">
+                    <% if (i.meta && i.meta.exists && eventWikis.length > 1) { %><span class="badge bg-secondary-lt"><%= wikiLocal(i.meta.wiki) %></span><% } %>
+                    <% if (i.meta && i.meta.entryType) { %><span class="badge bg-secondary-lt"><%= i.meta.entryType %></span><% } %>
+                    <% if (i.meta && i.meta.wordCount != null) { %><span class="badge bg-blue-lt"><i class="ti ti-letter-case me-1"></i><%= t('{n} words', { n: formatNumber(i.meta.wordCount) }) %></span><% } %>
+                    <% if (i.meta && i.meta.file) { %><span class="badge bg-blue-lt"><%= i.meta.file.megapixels %> MP</span><% } %>
+                    <% if (i.meta && i.meta.entity) { %><span class="badge bg-blue-lt"><%= i.meta.entity.label || i.meta.entity.id %> · <%= t('{n} statements', { n: i.meta.entity.statementCount }) %></span><% } %>
+                  </div>
+                  <% i.reasons.forEach((r) => { %><div class="small text-red mt-1"><i class="ti ti-x me-1"></i><%= t(r) %></div><% }) %>
+                  <% i.warnings.forEach((w) => { %><div class="small text-yellow mt-1"><i class="ti ti-alert-triangle me-1"></i><%= t(w) %></div><% }) %>
+                </div>
+                <span class="badge <%= i.ok ? 'bg-green' : 'bg-red' %> text-white align-self-start"><%= i.ok ? t('Ready') : t('Not accepted') %></span>
+              </div>
+            <% }) %>
           </div>
           <% if (okCount) { %>
             <form method="post" action="<%= base %>/submit" class="card-footer d-flex align-items-center">

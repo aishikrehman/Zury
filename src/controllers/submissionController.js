@@ -123,6 +123,16 @@ async function handleSubmit(req, res, next, { confirm }) {
       items,
       ensureParticipant: who.ensureParticipant,
     });
+    // The event's texts on the talk page and the article, with the submitter's login (in the background).
+    const tcx = readTypeConfig(req.contest.type, req.settings.typeConfig);
+    const talkText = tcx.talkText || (tcx.entryTemplateOnTalk !== false ? tcx.entryTemplate : '');
+    const articleText = tcx.articleText || (tcx.entryTemplateOnTalk === false ? tcx.entryTemplate : '');
+    if ((talkText || articleText) && req.session.wikimediaToken && who.participant.id === req.user.id) {
+      const ets = require('../services/eventTextService');
+      const summary = ets.summaryFor({ settings: req.settings, contest: req.contest, url: `${req.protocol}://${req.get('host')}${req.base}` });
+      const token = req.session.wikimediaToken;
+      setImmediate(async () => { for (const sub of created) await ets.addTexts({ token, submission: sub, talkText, articleText, summary }).catch((e) => console.warn('event texts:', e.message)); });
+    }
     const skipped = items.length - created.length;
     req.flash(
       'success',
@@ -208,6 +218,7 @@ async function show(req, res, next) {
     res.render('pages/contest/submission', {
       templateLink: tc2.entryTemplate ? require('../wiki/wikiUrls').templateEditUrl({ wiki: submission.wiki, title: submission.title, namespace: submission.entryType === 'article' ? 0 : -1 }, tc2.entryTemplate, tc2.entryTemplateOnTalk !== false) : null,
       templateOnTalk: tc2.entryTemplateOnTalk !== false,
+      follow: submission.entryType === 'article' ? [['talk', tc2.talkText || (tc2.entryTemplateOnTalk !== false ? tc2.entryTemplate : '')], ['article', tc2.articleText || (tc2.entryTemplateOnTalk === false ? tc2.entryTemplate : '')]].filter((x) => x[1]).map(([where, text]) => ({ where, text, url: require('../wiki/wikiUrls').followEditUrl(submission, where) })) : [],
       title: `${submission.title} — ${req.contest.title}`,
       submission,
       meta: JSON.parse(submission.metadata),

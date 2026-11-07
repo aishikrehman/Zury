@@ -226,7 +226,9 @@ function parse(rawBody, { type, wikiAllowed, catalog = PERMISSIVE }) {
   settings.eligibleNamespaces = JSON.stringify(namespaces.filter(Number.isInteger));
 
   // Tracking: hashtags in edit summaries and categories pages are added to.
-  const hashtags = listOf(body.trackHashtags).map((h) => h.replace(/^#/, ''));
+  const summaryText = String(body.trackHashtags || '').slice(0, 1000);
+  settings.editSummary = summaryText.trim();
+  const hashtags = [...summaryText.matchAll(/#([p{L}p{N}_-]{2,50})/gu)].map((m) => m[1]).slice(0, 10);
   if (hashtags.some((h) => !/^[\p{L}\p{N}_-]{2,50}$/u.test(h))) errors.trackHashtags = 'Use hashtags of letters, numbers, - and _ such as wam2026.';
   else if (hashtags.length > 10) errors.trackHashtags = 'At most 10 hashtags.';
   const categories = lines(body.trackCategories).map((c) => c.replace(/^Category:/i, '').trim());
@@ -367,7 +369,7 @@ function toForm(contest, settings) {
     bulkReviewEnabled: s.bulkReviewEnabled !== false,
     juryStatsEnabled: s.juryStatsEnabled !== false,
     wordCountMethod: s.wordCountMethod || 'auto',
-    trackHashtags: JSON.parse(s.trackHashtags || '[]').join(', '),
+    trackHashtags: s.editSummary != null && s.editSummary !== '' ? s.editSummary : JSON.parse(s.trackHashtags || '[]').map((h) => `#${h}`).join(' '),
     trackCategories: JSON.parse(s.trackCategories || '[]').join('\n'),
   });
   for (const [key] of FEATURE_FIELDS) form[key] = s[key];

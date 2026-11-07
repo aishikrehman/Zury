@@ -113,5 +113,13 @@ function templateEditUrl({ wiki, title, namespace = 0 }, template, onTalk = true
   return `https://${host}/w/index.php?${p}`;
 }
 
+// Edit links for the event's texts: the talk page's top section, or the whole article.
+function followEditUrl({ wiki, title }, where) {
+  const host = dbnameToHost(wiki);
+  if (!host) return null;
+  const p = new URLSearchParams(where === 'talk' ? { title: `Talk:${title}`.replace(/ /g, '_'), action: 'edit', section: '0' } : { title: title.replace(/ /g, '_'), action: 'edit' });
+  return `https://${host}/w/index.php?${p}`;
+}
+
 module.exports = {
-  templateEditUrl, hostToDbname, dbnameToHost, parseEntry, pageUrl, normalizeTitle };
+  followEditUrl, templateEditUrl, hostToDbname, dbnameToHost, parseEntry, pageUrl, normalizeTitle };

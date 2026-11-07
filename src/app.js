@@ -153,6 +153,7 @@ app.use(async (req, res, next) => {
       eventProject: require('./utils/projectStyle').eventProject,
       langName: (code) => (code ? names.language(code).name : ''),
       // The name in its own language when there is one ("বাংলা উইকিপিডিয়া").
+      wikiHost: (db) => require('./wiki/wikiUrls').dbnameToHost(db) || '',
       wikiLocal: (db) => (db ? names.wiki(db).localName || names.wiki(db).name : ''),
       langLocal: (code) => (code ? names.language(code).localName || names.language(code).name : ''),
       // Plain text: "Bangla Wikipedia · বাংলা উইকিপিডিয়া".

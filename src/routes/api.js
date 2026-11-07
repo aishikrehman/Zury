@@ -171,7 +171,7 @@ router.get('/api/wikis', async (req, res, next) => {
 router.get('/api/wikis/:dbname/namespaces', async (req, res, next) => {
   try {
     const rows = await catalog.namespacesFor(req.params.dbname);
-    res.json(rows.map((n) => ({ value: n.id, text: `${n.id} · ${n.name}`, content: n.content })));
+    res.json(rows.filter((n) => n.id >= 0 && n.id % 2 === 0).map((n) => ({ value: n.id, text: `${n.id} · ${n.name}`, content: n.content })));
   } catch (err) {
     if (err instanceof wikiApi.WikiApiError) return res.status(502).json({ error: err.message });
     next(err);

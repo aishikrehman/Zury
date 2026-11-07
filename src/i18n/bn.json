@@ -1709,5 +1709,14 @@
   "Check all again": "সব আবার যাচাই",
   "Remove selected": "বাছাইগুলো সরান",
   "Quick look": "দ্রুত দেখুন",
-  "Remove the selected entries from the event?": "বাছাই করা জমাগুলো ইভেন্ট থেকে সরাবেন?"
+  "Remove the selected entries from the event?": "বাছাই করা জমাগুলো ইভেন্ট থেকে সরাবেন?",
+  "Word count couldn't be measured on this wiki; check it manually.": "এই উইকিতে শব্দসংখ্যা মাপা যায়নি; নিজে দেখে নিন।",
+  "Article was created before the event; check that it was substantially expanded.": "নিবন্ধটি ইভেন্টের আগে তৈরি; যথেষ্ট সম্প্রসারিত হয়েছে কি না দেখে নিন।",
+  "The licence couldn't be read; check it manually.": "লাইসেন্স পড়া যায়নি; নিজে দেখে নিন।",
+  "At the top of the talk page": "আলাপ পাতায় (একদম উপরে)",
+  "At the bottom of the article (above the first category)": "নিবন্ধের নিচে (প্রথম বিষয়শ্রেণীর উপরে)",
+  "Goes on the wiki exactly as written: line breaks, subst and all.": "যেভাবে লিখবেন, উইকিতে ঠিক সেভাবেই বসবে: লাইন ব্রেক, subst সব।",
+  "Add the event's text": "ইভেন্টের লেখা যোগ করুন",
+  "Open the editor": "সম্পাদনা খুলুন",
+  "Left empty: the event name and its link": "খালি রাখলে: ইভেন্টের নাম ও লিংক"
 }

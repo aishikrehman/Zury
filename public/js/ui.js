@@ -261,3 +261,48 @@ document.querySelectorAll('form').forEach((form) => {
 
 // Inside the quick-look popup: only the page itself, without the site's header and footer.
 if (window.self !== window.top) document.documentElement.classList.add('z-embed');
+
+// Copy buttons.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-copy]');
+  if (!b) return;
+  navigator.clipboard.writeText(b.dataset.copy).then(() => { const i = b.querySelector('i'); if (i) { i.className = 'ti ti-check me-1'; setTimeout(() => { i.className = 'ti ti-copy me-1'; }, 1500); } });
+});
+
+// Title suggestions while typing (from the event's wikis), in our own list.
+(() => {
+  const input = document.querySelector('input[data-suggest]');
+  if (!input || !input.dataset.suggest) return;
+  const hosts = input.dataset.suggest.split(','); const ns = input.dataset.suggestNs || '0';
+  const list = input.parentElement.querySelector('.z-suggest-list');
+  let timer; let n = 0; let active = -1;
+  const hide = () => { list.hidden = true; active = -1; };
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (!q || /^https?:/i.test(q)) return hide();
+    timer = setTimeout(async () => {
+      const my = ++n;
+      const all = await Promise.all(hosts.map((h) => fetch(`https://${h}/w/api.php?action=query&list=prefixsearch&pssearch=${encodeURIComponent(q)}&psnamespace=${ns}&pslimit=8&format=json&origin=*`).then((r) => r.json()).then((j) => (j.query?.prefixsearch || []).map((p) => ({ title: p.title, host: h }))).catch(() => [])));
+      if (my !== n) return;
+      const items = all.flat().slice(0, 8);
+      list.innerHTML = '';
+      items.forEach((it) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'list-group-item list-group-item-action';
+        b.textContent = it.title;
+        if (hosts.length > 1) { const s = document.createElement('small'); s.className = 'text-secondary ms-2'; s.textContent = it.host; b.append(s); }
+        b.addEventListener('mousedown', (e) => { e.preventDefault(); input.value = hosts.length > 1 ? `https://${it.host}/wiki/${encodeURIComponent(it.title.replace(/ /g, '_'))}` : it.title; hide(); });
+        list.append(b);
+      });
+      list.hidden = !items.length; active = -1;
+    }, 200);
+  });
+  input.addEventListener('keydown', (e) => {
+    const els = [...list.children]; if (list.hidden || !els.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); active = (active + (e.key === 'ArrowDown' ? 1 : -1) + els.length) % els.length; els.forEach((x, i) => x.classList.toggle('active', i === active)); }
+    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); els[active].dispatchEvent(new MouseEvent('mousedown')); }
+    else if (e.key === 'Escape') hide();
+  });
+  input.addEventListener('blur', () => setTimeout(hide, 100));
+})();

@@ -55,7 +55,7 @@ function checkEligibility({ user, contest, settings, roles, participants, blocke
   if (blocked) return { eligible: false, reasons: ["You've been blocked from this event."], blocked: true };
   reasons.push(...bans);
   if (roles.includes('participant')) return { eligible: false, reasons: ["You're already taking part."], alreadyJoined: true };
-  if (!settings.registrationEnabled) reasons.push('Organizers add participants to this event themselves.');
+  if (!settings.registrationEnabled && settings.registrationRequired !== false) reasons.push('Organizers add participants to this event themselves.');
   if (!JOINABLE_STATUSES.includes(contest.status)) reasons.push('This event is not open for registration.');
   if (contest.registrationOpensAt && now < contest.registrationOpensAt) reasons.push('Registration has not opened yet.');
   if (contest.registrationClosesAt && now > contest.registrationClosesAt) reasons.push('Registration has closed.');

@@ -1073,3 +1073,29 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 
 /* A page shown in the quick-look popup. */
 .z-embed .z-topbar, .z-embed .z-navbar, .z-embed .gh-footer, .z-embed .z-evhead-tabs { display: none !important; }
+
+/* Submit wizard: each checked entry as a card, coloured by its result. */
+.z-check-list { display: grid; gap: .6rem; }
+.z-check-item { display: flex; gap: .85rem; align-items: center; padding: .8rem 1rem; border: 1px solid var(--z-border-color); border-left: 4px solid var(--z-green); border-radius: 10px; background: var(--tblr-bg-surface); animation: z-pop .25s ease both; }
+.z-check-item.is-warn { border-left-color: var(--tblr-yellow); }
+.z-check-item.is-bad { border-left-color: var(--z-red); background: color-mix(in srgb, var(--z-red) 5%, var(--tblr-bg-surface)); }
+.z-check-icon { font-size: 1.8rem; line-height: 1; color: var(--z-green); }
+.is-warn .z-check-icon { color: var(--tblr-yellow); } .is-bad .z-check-icon { color: var(--z-red); }
+@keyframes z-pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.z-follow-text { white-space: pre-wrap; font-size: .8rem; padding: .5rem .65rem; border-radius: 8px; background: var(--tblr-bg-surface-secondary); max-height: 10rem; overflow: auto; }
+
+.z-suggest { position: relative; }
+.z-suggest-list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); max-height: 18rem; overflow: auto; box-shadow: 0 10px 30px rgba(0,0,0,.12); border-radius: 8px; }
+.z-suggest-list .list-group-item { padding: .45rem .75rem; text-align: start; }
+
+/* Review page in three columns on large screens: filters on the left, the entry in the middle, the review
+   tools on the right. The bar (with full screen) stays on top across the page. */
+@media (min-width: 1200px) {
+  .z-review-wrap { display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: 0 1rem; align-items: start; max-width: none; }
+  .z-review-wrap > .z-review-bar { grid-column: 1 / -1; margin-bottom: .75rem; }
+  .z-review-wrap > .z-review-filters { grid-column: 1; grid-row: 2 / span 20; display: block !important; position: sticky; top: 1rem; }
+  .z-review-wrap > .z-review-filters .row > [class*="col-"] { flex: 0 0 100%; max-width: 100%; }
+  .z-review-wrap > :not(.z-review-bar):not(.z-review-filters) { grid-column: 2; }
+  .z-review-wrap [data-bs-target="#review-filters"] { display: none; }
+}

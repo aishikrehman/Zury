@@ -72,9 +72,12 @@
             <% } %>
             <div class="z-form-group-title"><%= t('Tracking') %></div>
             <div class="row g-3">
-              <div class="col-md-4"><label class="form-label" for="trackHashtags"><%= t('Edit summary') %></label><input class="form-control<%= inv('trackHashtags') %>" id="trackHashtags" name="trackHashtags" value="<%= v('trackHashtags') %>" placeholder="#wam2026"><%- err('trackHashtags') %></div>
-              <div class="col-md-4"><label class="form-label" for="trackCategories"><%= t('Category') %></label><input class="form-control<%= inv('trackCategories') %>" id="trackCategories" name="trackCategories" value="<%= v('trackCategories') %>"><%- err('trackCategories') %></div>
-              <% if (type === 'writing') { %>
+              <div class="col-12"><label class="form-label" for="trackHashtags"><%= t('Edit summary') %></label><textarea class="form-control<%= inv('trackHashtags') %>" rows="3" id="trackHashtags" name="trackHashtags" placeholder="<%= t('Left empty: the event name and its link') %>"><%= v('trackHashtags') %></textarea><%- err('trackHashtags') %></div>              <% if (type === 'writing') { const oldT = tvRaw('entryTemplate') || ''; const oldTalk = tOn('entryTemplateOnTalk'); %>
+                <div class="col-12"><label class="form-label" for="type_talkText"><%= t('At the top of the talk page') %></label><textarea class="form-control font-monospace" rows="3" id="type_talkText" name="type_talkText" placeholder="{{subst:…}}"><%= tvRaw('talkText') || (oldTalk ? oldT : '') %></textarea><div class="form-hint"><%= t('Goes on the wiki exactly as written: line breaks, subst and all.') %></div></div>
+                <div class="col-12"><label class="form-label" for="type_articleText"><%= t('At the bottom of the article (above the first category)') %></label><textarea class="form-control font-monospace" rows="3" id="type_articleText" name="type_articleText" placeholder="{{…}}"><%= tvRaw('articleText') || (oldTalk ? '' : oldT) %></textarea></div>
+                <input type="hidden" name="type_entryTemplate" value=""><input type="hidden" name="type_entryTemplateOnTalk" value="on">
+              <% } %>
+              <% if (false) { %>
                 <div class="col-md-4"><label class="form-label" for="type_entryTemplate"><%= t('Template') %></label><div class="d-flex gap-2"><input class="form-control" id="type_entryTemplate" name="type_entryTemplate" value="<%= tvRaw('entryTemplate') || '' %>" placeholder="{{…}}"><select class="form-select" name="type_entryTemplateOnTalk" style="max-width:9rem" aria-label="<%= t('Where') %>"><option value="on"<%= tOn('entryTemplateOnTalk') ? ' selected' : '' %>><%= t('Talk page') %></option><option value=""<%= tOn('entryTemplateOnTalk') ? '' : ' selected' %>><%= t('Article') %></option></select></div></div>
               <% } %>
             </div>

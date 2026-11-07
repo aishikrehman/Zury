@@ -83,7 +83,7 @@ const COPY_PARTS = {
 // Event settings that belong to each part; a part not copied starts from the type's defaults.
 const SETTING_PARTS = {
   participation: ['registrationRequired', 'registrationEnabled', 'participationMode', 'minAccountAgeDays', 'minEditCount', 'participantLimit', 'allowJuryParticipation', 'allowOrganizerParticipation', 'anonymousParticipants', 'participation', 'eligibleNamespaces'],
-  tracking: ['trackHashtags', 'trackCategories', 'contributionDiscoveryEnabled'],
+  tracking: ['trackHashtags', 'editSummary', 'trackCategories', 'contributionDiscoveryEnabled'],
   review: ['juryReviewEnabled', 'appealsEnabled', 'marks', 'requiredReviews', 'decisionRule', 'passScore', 'tieBreak', 'secretBallot', 'reviewAssignment', 'assignPerJuror', 'rankBy', 'reviewMethod', 'scoreMin', 'scoreMax', 'reviewers', 'selfReview', 'bulkReviewEnabled', 'juryStatsEnabled'],
   notifications: ['participantNotificationsEnabled'],
 };
