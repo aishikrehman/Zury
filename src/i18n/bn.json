@@ -1718,5 +1718,6 @@
   "Goes on the wiki exactly as written: line breaks, subst and all.": "যেভাবে লিখবেন, উইকিতে ঠিক সেভাবেই বসবে: লাইন ব্রেক, subst সব।",
   "Add the event's text": "ইভেন্টের লেখা যোগ করুন",
   "Open the editor": "সম্পাদনা খুলুন",
-  "Left empty: the event name and its link": "খালি রাখলে: ইভেন্টের নাম ও লিংক"
+  "Left empty: the event name and its link": "খালি রাখলে: ইভেন্টের নাম ও লিংক",
+  "No review": "পর্যালোচনা নেই"
 }

@@ -35,7 +35,7 @@
     <div class="card-header flex-wrap gap-2">
       <ul class="nav nav-pills card-header-pills">
         <li class="nav-item"><a class="nav-link<%= !filters.status ? ' active' : '' %>" href="<%= qs({ status: null, page: null }) %>"><%= t("All") %> <span class="badge bg-secondary-lt ms-1"><%= totalAll %></span></a></li>
-        <% statuses.filter((s) => result.counts[s]).forEach((s) => { %>
+        <% ['pending', 'approved', 'rejected', 'withdrawn'].filter((s) => result.counts[s]).forEach((s) => { %>
           <li class="nav-item"><a class="nav-link<%= filters.status === s ? ' active' : '' %>" href="<%= qs({ status: s, page: null }) %>"><%= SUBMISSION_STATUSES[s].label %> <span class="badge bg-<%= SUBMISSION_STATUSES[s].color %>-lt ms-1"><%= result.counts[s] %></span></a></li>
         <% }) %>
       </ul>

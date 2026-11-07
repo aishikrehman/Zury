@@ -117,7 +117,10 @@
           <% if (settings.minAccountAgeDays) { %><div class="list-group-item py-2"><%= t('Wikimedia account at least {n} days old', { n: settings.minAccountAgeDays }) %></div><% } %>
           <% if (settings.minEditCount) { %><div class="list-group-item py-2"><%= t('At least {n} edits across Wikimedia projects', { n: settings.minEditCount }) %></div><% } %>
           <% if (settings.registrationRequired) { %><div class="list-group-item py-2"><%= t("Register before submitting") %></div><% } %>
-          <% typeDef.fields.forEach((f) => { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= f.label %></span><span class="text-secondary"><%= display(f, typeConfig[f.key]) %></span></div><% }) %>
+          <% if (settings.participantLimit) { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= t('Participant limit') %></span><span class="text-secondary"><%= formatNumber(settings.participantLimit) %></span></div><% } %>
+          <% if (typeDef.entries !== false) { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= t('Review') %></span><span class="text-secondary"><%= settings.juryReviewEnabled ? t({ yesno: 'Yes / No', stars: 'Stars', number: 'A number in a range' }[settings.reviewMethod] || 'Yes / No') : t('No review') %></span></div><% } %>
+          <% if (settings.wordCountEnabled) { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= t('Results count') %></span><span class="text-secondary"><%= t('Words') %></span></div><% } %>
+          <% typeDef.fields.filter((f) => !['talkText', 'articleText', 'entryTemplate', 'entryTemplateOnTalk'].includes(f.key)).forEach((f) => { %><div class="list-group-item py-2 d-flex justify-content-between"><span><%= f.label %></span><span class="text-secondary"><%= display(f, typeConfig[f.key]) %></span></div><% }) %>
         </div>
         <% if (contest.contactInfo) { let ci; try { ci = JSON.parse(contest.contactInfo); } catch (e) { ci = { page: contest.contactInfo }; } if (!ci || typeof ci !== 'object') ci = { page: contest.contactInfo }; %>
           <div class="list-group-item py-2 d-flex flex-wrap gap-3 small">

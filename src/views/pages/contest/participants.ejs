@@ -57,7 +57,6 @@
         <% if (can('manageParticipants') && importable) { %><form method="post" action="<%= base %>/participants/import"><%- csrf %><button class="btn btn-outline-primary" type="submit"><i class="ti ti-download me-1"></i><%= t('Import from the wiki page') %></button></form><% } %>
         <% if (can('sendNotifications')) { %><a href="<%= base %>/message" class="btn btn-outline-primary"><i class="ti ti-mail me-1"></i><%= t('Message') %></a><% } %>
         <% if (roleOptions.length) { %><button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#add-person" aria-expanded="false" aria-controls="add-person"><i class="ti ti-user-plus me-1"></i><%= t('Add person') %></button><% } %>
-        <% if (canBlock) { %><button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#block-person" aria-expanded="false" aria-controls="block-person"><i class="ti ti-ban me-1"></i><%= t('Block someone') %></button><% } %>
       </div>
     </div>
 

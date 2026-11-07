@@ -10,10 +10,10 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https://upload.wikimedia.org https://commons.wikimedia.org",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.wikipedia.org https://*.wiktionary.org https://*.wikibooks.org https://*.wikinews.org https://*.wikiquote.org https://*.wikisource.org https://*.wikiversity.org https://*.wikivoyage.org https://*.wikimedia.org https://www.wikidata.org",
   // The review window shows the entry's page from its wiki.
-  "frame-src https://*.wikipedia.org https://*.wiktionary.org https://*.wikibooks.org https://*.wikinews.org https://*.wikiquote.org https://*.wikisource.org https://wikisource.org https://*.wikiversity.org https://*.wikivoyage.org https://*.wikimedia.org https://www.wikidata.org https://www.mediawiki.org",
-  "frame-ancestors 'none'",
+  "frame-src 'self' https://*.wikipedia.org https://*.wiktionary.org https://*.wikibooks.org https://*.wikinews.org https://*.wikiquote.org https://*.wikisource.org https://wikisource.org https://*.wikiversity.org https://*.wikivoyage.org https://*.wikimedia.org https://www.wikidata.org https://www.mediawiki.org",
+  "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self' https://meta.wikimedia.org",
   "object-src 'none'",
@@ -22,7 +22,7 @@ const CSP = [
 function securityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy', CSP);
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');

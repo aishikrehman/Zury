@@ -52,16 +52,17 @@ const STATUS_GROUPS = {
   completed: ['completed', 'archived'],
 };
 
+// Shown as three: accepted, not accepted, pending (withdrawn only to its owner).
 const SUBMISSION_STATUSES = {
-  pending: { label: 'Pending', color: 'secondary' },
-  validated: { label: 'Validated', color: 'azure' },
-  invalid: { label: 'Invalid', color: 'red' },
-  under_review: { label: 'Under review', color: 'yellow' },
-  approved: { label: 'Approved', color: 'green' },
-  rejected: { label: 'Rejected', color: 'red' },
-  disqualified: { label: 'Disqualified', color: 'red' },
+  pending: { label: 'Pending', color: 'yellow' },
+  validated: { label: 'Pending', color: 'yellow' },
+  invalid: { label: 'Pending', color: 'yellow' },
+  under_review: { label: 'Pending', color: 'yellow' },
+  appealed: { label: 'Pending', color: 'yellow' },
+  approved: { label: 'Accepted', color: 'green' },
+  rejected: { label: 'Not accepted', color: 'red' },
+  disqualified: { label: 'Not accepted', color: 'red' },
   withdrawn: { label: 'Withdrawn', color: 'secondary' },
-  appealed: { label: 'Appealed', color: 'yellow' },
 };
 
 module.exports = { PROJECT_CATEGORIES, CONTEST_TYPES, TYPE_ICONS, TYPE_COLORS, ACTIVITY_TYPES, CONTEST_STATUSES, STATUS_GROUPS, SUBMISSION_STATUSES };

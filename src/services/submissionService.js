@@ -201,7 +201,8 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
   if (!base) return { items: [], total: 0, page, perPage, counts: {}, words: 0, participants: [] };
   if (wiki) base = { AND: [base, { wiki }] };
   const where = { AND: [base] };
-  if (STATUSES.includes(status)) where.AND.push({ status });
+  const GROUPS = { pending: ['pending', 'validated', 'invalid', 'under_review', 'appealed'], approved: ['approved'], rejected: ['rejected', 'disqualified'], withdrawn: ['withdrawn'] };
+  if (GROUPS[status]) where.AND.push({ status: { in: GROUPS[status] } });
   if (q) where.AND.push({ title: { contains: q } });
   if (mine && user) where.AND.push({ participantId: user.id });
   if (participant) where.AND.push({ participantId: participant });
@@ -228,7 +229,10 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
   const participants = shown
     .map((g) => ({ id: g.participantId, username: nameOf[g.participantId] || '?', entries: g._count._all, words: g._sum.wordCount || 0 }))
     .sort((a, b) => a.username.localeCompare(b.username));
-  return { items, total, page, perPage, counts: Object.fromEntries(grouped.map((g) => [g.status, g._count])), words: sums._sum.wordCount || 0, participants };
+  const raw = Object.fromEntries(grouped.map((g) => [g.status, g._count]));
+  const counts = { pending: 0, approved: 0, rejected: 0, withdrawn: 0 };
+  for (const [k, n] of Object.entries(raw)) counts[k === 'approved' || k === 'withdrawn' ? k : k === 'rejected' || k === 'disqualified' ? 'rejected' : 'pending'] += n;
+  return { items, total, page, perPage, counts, words: sums._sum.wordCount || 0, participants };
 }
 
 async function findVisible({ contestId, id, user, can, wiki }) {

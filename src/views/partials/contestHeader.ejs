@@ -4,7 +4,7 @@
   const typeDef = EVENT_TYPES[contest.type];
   const tabs = [['overview', t('Overview'), '', 'info-circle']];
   if (typeDef.activity) tabs.push(['sessions', t('Sessions'), '/sessions', 'calendar-event']);
-  if (typeDef.entries !== false && typeDef.activity) tabs.push(['submissions', t('Uploads'), '/submissions', 'files']);
+  if (typeDef.entries !== false) tabs.push(['submissions', typeDef.activity ? t('Uploads') : t('Submissions'), '/submissions', 'files']);
   const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
   if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', t('Contributions'), '/tracking', 'activity']);
   // The jury's way in is a button in the header, not a tab.
