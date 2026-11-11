@@ -231,16 +231,10 @@ document.querySelectorAll('form').forEach((form) => {
     const a = e.target.closest('a[href]');
     if (a && !a.target && sameList(a.href) && !e.ctrlKey && !e.metaKey) { e.preventDefault(); load(a.href, true); }
   });
-  live.addEventListener('submit', async (e) => {
+  live.addEventListener('submit', (e) => {
     const form = e.target;
     if (form.method.toLowerCase() === 'get') { e.preventDefault(); load(`${location.pathname}?${new URLSearchParams(new FormData(form))}`, true); return; }
-    if (form.dataset.confirm && !confirm(form.dataset.confirm)) { e.preventDefault(); return; }
-    e.preventDefault();
-    const action = e.submitter && e.submitter.getAttribute('formaction') ? e.submitter.formAction : form.action;
-    const body = new FormData(form);
-    if (e.submitter && e.submitter.name) body.append(e.submitter.name, e.submitter.value);
-    await fetch(action, { method: 'POST', body: new URLSearchParams(body), headers: { 'X-Requested-With': 'fetch' } }).catch(() => null);
-    load(location.href, false);
+    // Other forms (withdraw, remove, review) go the normal way: their confirmation and message show.
   }, true);
   window.addEventListener('popstate', () => load(location.href, false));
   setInterval(() => {

@@ -22,7 +22,8 @@
     }
     list.replaceChildren(...items.map((n) => {
       const a = Object.assign(document.createElement('a'), { className: 'dropdown-item z-bell-item' + (n.unread ? ' z-unread' : ''), href: n.href });
-      const dot = Object.assign(document.createElement('span'), { className: 'z-dot' + (n.unread ? '' : ' invisible') });
+      a.classList.add('z-note-' + (n.level || 'normal'));
+      const dot = Object.assign(document.createElement('span'), { className: 'z-note-icon ti ti-' + ({ good: 'circle-check', urgent: 'alert-triangle' }[n.level] || 'bell') });
       const body = document.createElement('div');
       body.className = 'min-w-0';
       body.append(Object.assign(document.createElement('div'), { className: 'z-bell-text', textContent: n.text }), Object.assign(document.createElement('div'), { className: 'text-secondary small', textContent: n.when }));

@@ -10,7 +10,7 @@
     const form = btn.closest('form');
     if (btn.dataset.decide === 'reject') {
       const box = form && form.querySelector('#comment');
-      if (box && !box.value.trim()) { e.preventDefault(); box.classList.add('is-invalid'); box.focus(); return; }
+      if (box && !box.value.trim()) { e.preventDefault(); const d = box.closest('details'); if (d) d.open = true; box.classList.add('is-invalid'); box.focus(); return; }
     }
     const field = form && form.querySelector('[data-decision]');
     if (field) field.value = btn.dataset.decide;

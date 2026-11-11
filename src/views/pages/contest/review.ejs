@@ -27,9 +27,6 @@
     </div>
     <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters"><i class="ti ti-filter me-1"></i><%= t('Filter') %></button>
     <button class="btn btn-icon" type="button" data-review-full title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>" aria-pressed="false"><i class="ti ti-maximize"></i></button>
-    <% if (entry) { %>
-      <a class="btn" href="<%= base %>/review?<%= fq({ after: entry.id }) %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-1 d-none d-md-inline">S</kbd></a>
-    <% } %>
   </div>
 
   <form method="get" class="z-review-filters" id="review-filters">
@@ -182,13 +179,26 @@
                 <input type="number" step="any" class="form-control form-control-lg" id="score" name="score" required<% if (settings.scoreMin != null) { %> min="<%= settings.scoreMin %>"<% } %><% if (settings.scoreMax != null) { %> max="<%= settings.scoreMax %>"<% } %> value="<%= mine ? mine.points : '' %>">
               </div>
             <% } %>
-            <div class="mb-3">
+            <details class="z-review-more mb-3"<%= mine && mine.comment ? ' open' : '' %>>
+              <summary><i class="ti ti-message me-1"></i><%= t('Comment and notice') %> <span class="text-secondary small"><%= t('(needed to reject)') %></span></summary>
+              <div class="pt-2">
               <label class="form-label" for="comment"><%= t('Comment') %> <span class="text-secondary fw-normal small"><%= t('(needed to reject)') %></span></label>
               <div class="d-flex flex-wrap gap-1 mb-1" data-reasons>
                 <% ['Too short', 'Not enough words', 'Created before the event', 'Machine translation', 'Not encyclopedic', 'No references', 'Copied text', 'Wrong namespace'].forEach((rsn) => { %><button type="button" class="btn btn-sm btn-ghost-secondary" data-reason="<%= t(rsn) %>"><%= t(rsn) %></button><% }) %>
               </div>
               <textarea class="form-control" id="comment" name="comment" rows="2" maxlength="2000" placeholder="<%= t('What the organizers and other reviewers should know') %>"><%= mine ? mine.comment : '' %></textarea>
-            </div>
+                <div class="row g-2 mt-1">
+                  <div class="col-12"><label class="form-label small mb-1" for="notify"><%= t('Tell the participant') %></label>
+                    <select class="form-select form-select-sm" id="notify" name="notify">
+                      <option value="auto"><%= t('Automatic (bell when not accepted)') %></option>
+                      <option value="bell"><%= t('Bell notification') %></option>
+                      <option value="onwiki"><%= t('Message on their talk page') %></option>
+                      <option value="none"><%= t('Do not tell') %></option>
+                    </select></div>
+                  <div class="col-12"><textarea class="form-control form-control-sm" name="note" rows="2" maxlength="2000" placeholder="<%= t('Your own message (optional)') %>"></textarea></div>
+                </div>
+              </div>
+            </details>
             <% if (method === 'stars' || method === 'number') { %>
               <button type="submit" class="btn btn-primary w-100"><i class="ti ti-device-floppy me-1"></i><%= t('Save the score') %><kbd class="ms-2 d-none d-md-inline">Ctrl+Enter</kbd></button>
             <% } else { %>
@@ -196,6 +206,7 @@
               <button type="submit" class="btn btn-success" data-decide="accept"><i class="ti ti-check me-1"></i><%= t('Accept') %><kbd class="ms-2 d-none d-md-inline">A</kbd></button>
               <button type="submit" class="btn btn-danger" data-decide="reject"><i class="ti ti-x me-1"></i><%= t('Reject') %><kbd class="ms-2 d-none d-md-inline">R</kbd></button>
             </div>
+            <a class="btn btn-ghost-secondary w-100 mt-2" href="<%= base %>/review?<%= fq({ after: entry.id }) %>" data-review-skip><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %> <kbd class="ms-1 d-none d-md-inline">S</kbd></a>
             <% } %>
           </div>
         </form>

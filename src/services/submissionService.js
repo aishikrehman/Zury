@@ -203,6 +203,7 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
   const where = { AND: [base] };
   const GROUPS = { pending: ['pending', 'validated', 'invalid', 'under_review', 'appealed'], approved: ['approved'], rejected: ['rejected', 'disqualified'], withdrawn: ['withdrawn'] };
   if (GROUPS[status]) where.AND.push({ status: { in: GROUPS[status] } });
+  else where.AND.push({ status: { not: 'withdrawn' } }); // removed or withdrawn: only under their own filter
   if (q) where.AND.push({ title: { contains: q } });
   if (mine && user) where.AND.push({ participantId: user.id });
   if (participant) where.AND.push({ participantId: participant });

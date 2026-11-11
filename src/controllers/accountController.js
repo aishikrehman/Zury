@@ -18,8 +18,18 @@ async function dashboard(req, res, next) {
       require('../services/submissionService').myCountsByEvent(req.user.id),
     ]);
     const approvals = await require('../services/approvalService').pendingFor(req);
+    // Suggested: running or upcoming events in the person's language that they are not in yet.
+    const lang = req.user.preferredLanguage || req.locale || 'bn';
+    const mine = new Set(myEvents.map((e) => e.contest.id));
+    const suggested = (await prisma.contest.findMany({
+      where: { deletedAt: null, language: lang, status: { in: ['active', 'upcoming', 'published'] } },
+      include: { series: true },
+      orderBy: { startDate: 'desc' },
+      take: 20,
+    }).catch(() => [])).filter((c) => !mine.has(c.id) && (!c.approval || c.approval === 'approved')).slice(0, 6);
     res.render('pages/account/dashboard', {
       approvals,
+      suggested,
       title: 'Dashboard — Zury',
       myEvents,
       myCounts,

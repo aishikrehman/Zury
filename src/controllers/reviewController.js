@@ -155,7 +155,17 @@ async function save(req, res, next) {
       marks,
       score: req.body.score,
       comment: req.body.comment,
+      notify: ['auto', 'bell', 'onwiki', 'none'].includes(req.body.notify) ? req.body.notify : 'auto',
+      note: String(req.body.note || '').trim().slice(0, 2000),
     });
+    // An on-wiki message to the participant, with the reviewer's own login.
+    if (req.body.notify === 'onwiki' && req.session.wikimediaToken && result.decided) {
+      const prismaDb = require('../config/prisma');
+      const who = await prismaDb.user.findUnique({ where: { id: entry.participantId }, select: { id: true, username: true } }).catch(() => null);
+      const text = String(req.body.note || '').trim() || req.t(result.status === 'approved' ? 'Your entry “{title}” in {event} was accepted.' : 'Your entry “{title}” in {event} was not accepted.', { title: entry.title, event: req.contest.title });
+      const body = req.body.comment ? text + '\n\n' + req.body.comment : text;
+      if (who) await require('../services/messageService').send({ actor: req.user, accessToken: req.session.wikimediaToken, contest: req.contest, method: 'talk', subject: entry.title, body, people: [{ ...who, wiki: entry.wiki }], fallbackWiki: entry.wiki }).catch(() => null);
+    }
     req.flash('success', result.decided ? 'Review saved; the entry is decided.' : 'Review saved.');
     res.redirect(`${req.base}/review?${filterQuery(reviewFilters(req), { after: id })}`);
   } catch (err) {
@@ -253,7 +263,14 @@ async function appeal(req, res, next) {
 
 async function appealsList(req, res, next) {
   try {
-    res.render('pages/contest/appeals', { title: `Appeals — ${req.contest.title}`, appeals: await reviewService.appeals(req.contest.id) });
+    const staff = req.permissions.has('reviewAppeal') || req.permissions.has('manageAppeals') || req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
+    const open = require('../services/participationService').read(req.settings).rules.appealsPublic !== 'no';
+    let list = await reviewService.appeals(req.contest.id);
+    if (!staff && !open) {
+      if (!req.user) return res.redirect('/login');
+      list = list.filter((a) => a.userId === req.user.id);
+    }
+    res.render('pages/contest/appeals', { title: `Appeals — ${req.contest.title}`, appeals: list });
   } catch (err) {
     next(err);
   }
@@ -367,3 +384,15 @@ const releaseJuror = assignmentAction(async (req) => {
 });
 
 module.exports = { juryEventsFor, entries, bulkSave, assignments, distribute, reassignInactive, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+
+// Higher levels clear an appeal from the log.
+async function deleteAppeal(req, res, next) {
+  try {
+    await require('../config/prisma').appeal.deleteMany({ where: { id: Number(req.params.appealId), contestId: req.contest.id } });
+    req.flash('success', req.t('Appeal deleted.'));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(`${req.base}/appeals`);
+}
+module.exports.deleteAppeal = deleteAppeal;

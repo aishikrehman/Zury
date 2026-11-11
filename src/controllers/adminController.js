@@ -34,12 +34,14 @@ async function users(req, res, next) {
       'global-sysop': { wikiRoles: { some: { wiki: '*', rightName: 'global-sysop' } } },
       'local-admin': { wikiRoles: { some: { rightName: 'sysop', NOT: { wiki: '*' } } } },
     }[roleFilter] || (roleFilter ? { globalRoles: { some: { role: roleFilter } } } : {});
-    const where = { ...(q && { username: { contains: q } }), ...byRole };
+    const login = ['yes', 'no'].includes(req.query.login) ? req.query.login : '';
+    const sort = ['name', 'newest', 'lastLogin'].includes(req.query.sort) ? req.query.sort : 'name';
+    const where = { ...(q && { username: { contains: q } }), ...byRole, ...(login === 'yes' && { lastLoginAt: { not: null } }), ...(login === 'no' && { lastLoginAt: null }) };
     const [list, total] = await Promise.all([
       prisma.user.findMany({
         where,
         include: { globalRoles: true, wikiRoles: true },
-        orderBy: { username: 'asc' },
+        orderBy: sort === 'newest' ? { createdAt: 'desc' } : sort === 'lastLogin' ? { lastLoginAt: { sort: 'desc', nulls: 'last' } } : { username: 'asc' },
         skip: (page - 1) * perPage,
         take: perPage,
       }),
@@ -49,6 +51,8 @@ async function users(req, res, next) {
       title: 'Users — Administration',
       q,
       roleFilter,
+      login,
+      sort,
       total,
       page,
       pages: Math.max(1, Math.ceil(total / perPage)),

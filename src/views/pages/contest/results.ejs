@@ -58,7 +58,7 @@
       <div class="card-header"><h3 class="card-title"><i class="ti ti-list-numbers me-2"></i><%= t('Leaderboard') %></h3></div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Submitted') %></th><th class="text-end"><%= t('Accepted') %></th><th class="text-end"><%= t('Points') %></th><% if (byWords) { %><th class="text-end"><%= t('Words') %></th><% } %></tr></thead>
+          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Submitted') %></th><th class="text-end"><%= t('Accepted') %></th><% if (byWords) { %><th class="text-end"><%= t('Words') %></th><% } else { %><th class="text-end"><%= t('Points') %></th><% } %></tr></thead>
           <tbody>
             <% rows.forEach((r) => { %>
               <tr>
@@ -66,7 +66,7 @@
                 <td><% if (showNames) { %><a href="<%= userPath(r.username) %>"><%= r.username %></a><% } else { %><span class="text-secondary"><%= t('Participant') %></span><% } %></td>
                 <td class="text-end text-secondary"><%= formatNumber(r.submitted ?? r.entries) %></td>
                 <td class="text-end"><%= formatNumber(r.entries) %></td>
-                <td class="text-end<%= byWords ? '' : ' fw-bold' %>"><%= formatNumber(r.points) %></td>
+                <% if (!byWords) { %><td class="text-end fw-bold"><%= formatNumber(r.points) %></td><% } %>
                 <% if (byWords) { %><td class="text-end fw-bold"><%= formatNumber(r.words) %></td><% } %>
               </tr>
             <% }) %>

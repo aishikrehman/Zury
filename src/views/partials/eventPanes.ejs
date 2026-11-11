@@ -104,6 +104,8 @@
               <%- row("Show reviewers' names", sel('rule_reviewerNames', [['yes', 'To everyone'], ['no', 'Only to organizers and reviewers']], ruleOf('reviewerNames', 'yes'))) %>
               <%- row("Reviewers see each other's reviews", sel('rule_seeOthers', [['yes', 'Yes'], ['no', 'No']], v('secretBallot') ? 'no' : 'yes')) %>
               <%- row('Asking for another review', sel('rule_appeals', [['off', 'Off'], ['rejected', 'Only entries not accepted'], ['any', 'Any entry']], ruleOf('appeals', 'off'))) %>
+              <div class="z-set-row"><span class="z-set-label"><%= t('Appeals per entry') %></span><div class="z-set-control"><input type="number" class="form-control" name="rule_maxAppeals" min="1" max="10" value="<%= ruleOf('maxAppeals', 1) %>" style="max-width:7rem"></div></div>
+              <%- row('Who sees appeals', sel('rule_appealsPublic', [['yes', 'Everyone'], ['no', 'Organizers, reviewers and the participant']], ruleOf('appealsPublic', 'yes'))) %>
               <%- row('Removing an entry', sel('rule_withdraw', [['off', 'Off'], ['reviewers', 'Reviewers'], ['participant', 'Participant'], ['both', 'Both']], ruleOf('withdraw', 'participant'))) %>
               <%- row('Who can change the settings', sel('rule_editors', [['organizers', 'Organizers'], ['staff', 'Organizers and reviewers']], ruleOf('editors', 'organizers'))) %>
               <%- row('Results and statistics', sel('rule_results', [['always', 'Always visible'], ['afterReview', 'When all reviews are done'], ['manual', 'When published']], ruleOf('results', 'always'))) %>

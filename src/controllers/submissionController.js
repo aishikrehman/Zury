@@ -172,7 +172,7 @@ async function index(req, res, next) {
     const reviewService = require('../services/reviewService');
     res.render('pages/contest/submissions', {
       templateLink,
-      canWithdraw: (s) => req.user?.id === s.participantId && submissionService.WITHDRAWABLE.includes(s.status),
+      canWithdraw: (s) => req.user?.id === s.participantId && submissionService.WITHDRAWABLE.includes(s.status) && ['participant', 'both'].includes(require('../services/participationService').read(req.settings).rules.withdraw),
       canAppealRow: (s) => reviewService.canAppeal({ submission: s, contest: req.effective.contest, settings: req.settings, user: req.user }),
       title: `Submissions — ${req.contest.title}`,
       result,
@@ -370,8 +370,8 @@ async function revalidateAll(req, res, next) {
 async function removeMany(req, res, next) {
   try {
     const ids = [].concat(req.body.ids || []).map(Number).filter(Number.isInteger).slice(0, 500);
-    const rows = await prisma.submission.findMany({ where: { contestId: req.contest.id, id: { in: ids }, status: { not: 'disqualified' } } });
-    for (const s of rows) await submissionService.changeStatus({ actor: req.user, submission: s, contestId: req.contest.id, status: 'disqualified', note: 'Removed with others' });
+    const rows = await prisma.submission.findMany({ where: { contestId: req.contest.id, id: { in: ids }, status: { not: 'withdrawn' } } });
+    for (const s of rows) await submissionService.changeStatus({ actor: req.user, submission: s, contestId: req.contest.id, status: 'withdrawn', note: 'Removed by an organizer' });
     if (req.get('X-Requested-With') === 'fetch') return res.json({ ok: true, n: rows.length });
     req.flash('success', req.t('{n} entries removed.', { n: rows.length }));
   } catch (err) {
@@ -382,3 +382,25 @@ async function removeMany(req, res, next) {
 module.exports.useLatest = useLatest;
 module.exports.revalidateAll = revalidateAll;
 module.exports.removeMany = removeMany;
+
+async function bulkDeleteReviews(req, res, next) {
+  try {
+    const review = require('../services/reviewService');
+    const ids = [].concat(req.body.ids || []).map(Number).filter(Number.isInteger).slice(0, 500);
+    const higher = req.permissions.has('manageEvent') || req.permissions.has('deleteAnything');
+    const where = { contestId: req.contest.id, submissionId: { in: ids }, ...(higher ? {} : { jurorId: req.user.id }) };
+    const gone = await prisma.review.findMany({ where, select: { submissionId: true } });
+    await prisma.review.deleteMany({ where });
+    for (const id of new Set(gone.map((g) => g.submissionId))) {
+      const s = await prisma.submission.findUnique({ where: { id } });
+      const left = await prisma.review.findMany({ where: { submissionId: id }, orderBy: { createdAt: 'asc' } });
+      const next = left.length ? review.decide(left, req.eventSettings) : { status: 'pending', score: null };
+      if (['pending', 'validated', 'under_review', 'approved', 'rejected'].includes(s.status)) await prisma.submission.update({ where: { id }, data: { status: next.status, score: next.score } });
+    }
+    req.flash('success', req.t('{n} reviews deleted.', { n: gone.length }));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(backTo(req, `${req.base}/submissions`));
+}
+module.exports.bulkDeleteReviews = bulkDeleteReviews;

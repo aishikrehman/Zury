@@ -12,7 +12,7 @@
       <% } else { %>
         <div class="list-group list-group-flush">
           <% items.forEach((n) => { %>
-            <a class="list-group-item list-group-item-action<%= n.unread ? ' z-unread' : '' %>" href="<%= n.href %>">
+            <a class="list-group-item list-group-item-action z-note-<%= n.level %><%= n.unread ? ' z-unread' : '' %>" href="<%= n.href %>"><i class="z-note-icon ti ti-<%= { good: 'circle-check', urgent: 'alert-triangle' }[n.level] || 'bell' %> me-2"></i>
               <div class="d-flex gap-2 align-items-start">
                 <span class="z-dot<%= n.unread ? '' : ' invisible' %>" aria-hidden="true"></span>
                 <div class="min-w-0"><div<%- n.unread ? ' class="fw-medium"' : '' %>><%= n.text %></div><div class="text-secondary small"><%= n.when %></div></div>

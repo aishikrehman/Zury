@@ -98,7 +98,8 @@ contest.post('/assignments/release/:jurorId(\\d+)', entriesOnly, requirePermissi
 contest.get('/results', reviewController.results);
 contest.post('/results/publish', requireEventWide('publishResults'), reviewController.publish);
 contest.post('/submissions/:submissionId(\\d+)/appeal', entriesOnly, requireAuth, reviewController.appeal);
-contest.get('/appeals', requirePermission('reviewAppeal', 'manageAppeals'), reviewController.appealsList);
+contest.get('/appeals', reviewController.appealsList);
+contest.post('/appeals/:appealId(\\d+)/delete', requirePermission('deleteAnything'), reviewController.deleteAppeal);
 contest.post('/appeals/:appealId(\\d+)/:action(uphold|dismiss)', requirePermission('manageAppeals'), reviewController.resolve);
 
 contest.get('/sessions', activityOnly, sessionController.index);
@@ -121,6 +122,7 @@ contest.post('/submissions/:submissionId(\\d+)/reviews/:reviewId(\\d+)/delete', 
 contest.post('/submissions/:submissionId(\\d+)/status', requirePermission('manageEvent'), submissionController.setStatus);
 contest.post('/submissions/:submissionId(\\d+)/latest', requireAuth, submissionController.useLatest);
 contest.post('/submissions/revalidate-all', requirePermission('manageEvent'), submissionController.revalidateAll);
+contest.post('/review/bulk-delete', requireAuth, submissionController.bulkDeleteReviews);
 contest.post('/submissions/remove', requirePermission('manageEvent'), submissionController.removeMany);
 contest.post('/submissions/:submissionId(\\d+)/revalidate', requirePermission('manageEvent'), submissionController.revalidate);
 

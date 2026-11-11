@@ -140,14 +140,7 @@
         </div>
         <div class="small text-secondary mb-3"><%= t('Average per article: {n} words', { n: formatNumber(w.average) }) %> · <%= t('Average per accepted article: {n} words', { n: formatNumber(w.averageAccepted) }) %></div>
         <div class="row g-3">
-          <div class="col-lg-6">
-            <h4 class="mb-2"><%= t('Participants by words') %></h4>
-            <table class="table table-sm table-vcenter mb-0"><thead><tr><th><%= t('Participant') %></th><th class="text-end"><%= t('Articles') %></th><th class="text-end"><%= t('Words') %></th><th class="text-end"><%= t('Accepted') %></th></tr></thead><tbody>
-              <% w.people.forEach((x) => { %><tr><td><%= x.username %></td><td class="text-end"><%= formatNumber(x.count) %></td><td class="text-end"><%= formatNumber(x.words) %></td><td class="text-end text-green"><%= formatNumber(x.accepted) %></td></tr><% }) %>
-              <% if (!w.people.length) { %><tr><td colspan="4" class="text-secondary"><%= t('No entries yet.') %></td></tr><% } %>
-            </tbody></table>
-          </div>
-          <div class="col-lg-6">
+          <div class="col-12">
             <h4 class="mb-2"><%= t('Longest articles') %></h4>
             <table class="table table-sm table-vcenter mb-0"><thead><tr><th><%= t('Article') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead><tbody>
               <% w.biggest.forEach((x) => { %><tr><td><a href="<%= entryUrl(x) %>" target="_blank" rel="noopener"><%= x.title %></a><div class="small text-secondary"><%= x.username %></div></td><td class="text-end"><%= formatNumber(x.words) %></td><td><span class="badge bg-<%= (SUBMISSION_STATUSES[x.status] || {}).color || 'secondary' %>-lt"><%= (SUBMISSION_STATUSES[x.status] || {}).label || x.status %></span></td></tr><% }) %>

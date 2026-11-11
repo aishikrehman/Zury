@@ -22,6 +22,7 @@ const view = (req, res, n) => ({
   when: res.locals.formatDateTime ? res.locals.formatDateTime(n.createdAt) : n.createdAt.toISOString(),
   unread: !n.readAt,
   kind: n.kind,
+  level: /not accepted|was appealed|blocked|removed/i.test(n.message || '') ? 'urgent' : /accepted|upheld|now /i.test(n.message || '') ? 'good' : 'normal',
 });
 
 router.get('/notifications.json', requireAuth, async (req, res, next) => {

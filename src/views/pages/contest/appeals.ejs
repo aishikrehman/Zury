@@ -1,7 +1,7 @@
 <% const statusColor = { open: 'yellow', upheld: 'green', dismissed: 'secondary' }; const statusLabel = { open: t('Open'), upheld: t('Upheld'), dismissed: t('Dismissed') }; %>
 <%- include('../../partials/contestHeader', { active: 'appeals' }) %>
 <div class="page-body"><div class="container-xl">
-  <div class="h3 mb-3"><%= t('Appeals') %></div>
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-3"><div class="h3 m-0 me-auto"><%= t('Appeals') %></div><% ['open', 'upheld', 'dismissed'].forEach((k) => { const n = appeals.filter((a) => a.status === k).length; %><span class="badge bg-<%= statusColor[k] %>-lt"><%= statusLabel[k] %> <%= formatNumber(n) %></span><% }) %></div>
   <% if (!appeals.length) { %>
     <div class="card"><%- include('../../partials/emptyArt', { title: t('No appeals'), text: t('Participants can appeal a rejected entry until the appeal deadline.') }) %></div>
   <% } %>
@@ -15,9 +15,11 @@
               <div class="text-secondary small"><%= a.user.username %> · <%= formatDateTime(a.createdAt, contest.timezone) %></div>
             </div>
             <span class="badge bg-<%= statusColor[a.status] %>-lt"><%= statusLabel[a.status] %></span>
+            <% if (can('deleteAnything')) { %><form method="post" action="<%= base %>/appeals/<%= a.id %>/delete" class="ms-2" data-confirm="<%= t('Delete this appeal from the log?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" aria-label="<%= t('Delete') %>" title="<%= t('Delete') %>"><i class="ti ti-trash"></i></button></form><% } %>
           </div>
           <div class="card-body">
-            <p class="mb-0" style="white-space: pre-line"><%= a.reason %></p>
+            <p class="mb-2" style="white-space: pre-line"><%= a.reason %></p>
+            <% if (a.submission.reviews && a.submission.reviews.length) { %><div class="small"><span class="text-secondary"><%= t('Reviews') %>:</span> <% a.submission.reviews.forEach((rv, i) => { %><%= i ? ' · ' : '' %><span class="text-<%= rv.decision === 'accept' ? 'green' : rv.decision === 'reject' ? 'red' : 'secondary' %>"><%= rv.juror ? rv.juror.username : '' %></span><%= rv.comment ? ': ' + rv.comment : '' %><% }) %></div><% } %>
             <% if (a.status !== 'open') { %>
               <div class="mt-3 text-secondary small"><i class="ti ti-message-reply me-1"></i><%= a.resolvedBy ? a.resolvedBy.username : '' %><%= a.response ? ': ' + a.response : '' %></div>
             <% } %>

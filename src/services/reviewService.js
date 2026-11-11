@@ -228,7 +228,7 @@ async function entryForReview(contestId, submissionId) {
  * Saves (or updates) one jury member's review, then decides the entry once it
  * has enough reviews. Returns { status, decided }.
  */
-async function saveReview({ actor, contest, settings, submission, decision, marks, score, comment }) {
+async function saveReview({ actor, contest, settings, submission, decision, marks, score, comment, notify = 'auto', note = '' }) {
   const given = verdict(settings, { decision, marks, score });
   decision = given.decision;
   if (decision === 'reject' && !String(comment || '').trim()) throw new ReviewError('Give a reason to reject.');
@@ -269,12 +269,14 @@ async function saveReview({ actor, contest, settings, submission, decision, mark
       });
     }
     // The participant hears when their entry is decided (if the event notifies participants).
-    if (status !== submission.status && ['approved', 'rejected'].includes(status) && settings.participantNotificationsEnabled !== false && submission.participantId !== actor.id) {
+    // Not accepted: the bell rings by itself. Otherwise the reviewer chooses (bell, on-wiki message or nothing).
+    const ring = notify === 'bell' || notify === 'onwiki' || (notify === 'auto' && status === 'rejected');
+    if (ring && status !== submission.status && ['approved', 'rejected'].includes(status) && settings.participantNotificationsEnabled !== false && submission.participantId !== actor.id) {
       await notifications.notify(submission.participantId, {
         kind: 'entry.decided',
-        message: status === 'approved' ? 'Your entry “{title}” in {event} was accepted.' : 'Your entry “{title}” in {event} was not accepted.',
+        message: note || (status === 'approved' ? 'Your entry “{title}” in {event} was accepted.' : 'Your entry “{title}” in {event} was not accepted.'),
         params: { title: submission.title, event: contest.title },
-        link: `${pathOf(contest)}/submissions/${submission.id}`,
+        link: `${pathOf(contest)}/submissions?mine=1`,
         contestId: contest.id,
       }, tx);
     }
@@ -580,7 +582,8 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
   if (!canAppeal({ submission, contest, settings, user })) throw new ReviewError('This entry cannot be appealed.');
   reason = String(reason || '').trim();
   if (reason.length < 10 || reason.length > 2000) throw new ReviewError('Explain the appeal in 10 to 2000 characters.');
-  if ((await prisma.appeal.count({ where: { submissionId: submission.id } })) >= 5) throw new ReviewError('This entry has been sent for another review 5 times already.');
+  const maxAppeals = require('./participationService').read(settings).rules.maxAppeals || 1;
+  if ((await prisma.appeal.count({ where: { submissionId: submission.id } })) >= maxAppeals) throw new ReviewError('This entry cannot be appealed again.');
   // The page as it is now replaces the submitted revision.
   await require('./submissionService').repin(submission).catch(() => null);
   return prisma.$transaction(async (tx) => {
@@ -590,6 +593,10 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
       data: { status: 'appealed', history: { create: { actorId: user.id, action: 'appealed', previousValue: submission.status, newValue: 'appealed', note: reason.slice(0, 500) } } },
     });
     await audit.record({ actorId: user.id, contestId: contest.id, action: 'appeal.created', entityType: 'Submission', entityId: submission.id, details: { title: submission.title } }, tx);
+    const judges = await tx.review.findMany({ where: { submissionId: submission.id }, select: { jurorId: true } });
+    for (const id of new Set(judges.map((j) => j.jurorId))) {
+      await notifications.notify(id, { kind: 'appeal.created', message: 'An entry you reviewed, “{title}” in {event}, was appealed.', params: { title: submission.title, event: contest.title }, link: `${pathOf(contest)}/appeals`, contestId: contest.id }, tx);
+    }
     return appeal;
   });
 }
@@ -625,7 +632,7 @@ function appeals(contestId) {
   return prisma.appeal.findMany({
     where: { contestId },
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
-    include: { submission: { select: { id: true, title: true, url: true, wiki: true } }, user: { select: { username: true } }, resolvedBy: { select: { username: true } } },
+    include: { submission: { select: { id: true, title: true, url: true, wiki: true, status: true, wordCount: true, reviews: { select: { decision: true, comment: true, juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } } } }, user: { select: { username: true } }, resolvedBy: { select: { username: true } } },
   });
 }
 

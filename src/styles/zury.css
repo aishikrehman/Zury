@@ -1099,3 +1099,28 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-review-wrap > :not(.z-review-bar):not(.z-review-filters) { grid-column: 2; }
   .z-review-wrap [data-bs-target="#review-filters"] { display: none; }
 }
+
+/* Quick look (review page in the popup): just the entry and the tools — no filters, progress or picker. */
+.z-embed .z-review-wrap { display: block !important; padding: 0; }
+.z-embed .z-review-filters, .z-embed .z-review-progress, .z-embed .z-go, .z-embed [data-review-full], .z-embed [data-bs-target="#review-filters"], .z-embed .z-review-bar .me-auto { display: none !important; }
+.z-embed .z-review-bar { position: absolute; top: .5rem; right: 3rem; z-index: 3; margin: 0 !important; padding: 0; background: none; border: 0; box-shadow: none; }
+.z-embed .page-body, .z-embed .container-xl { margin: 0 !important; padding: .5rem !important; max-width: none; }
+.z-embed .z-review-layout { gap: .75rem; }
+
+.z-review-more { border: 1px solid var(--tblr-border-color); border-radius: 8px; padding: .5rem .75rem; }
+.z-review-more > summary { cursor: pointer; font-weight: 500; list-style: none; }
+.z-review-more > summary::-webkit-details-marker { display: none; }
+
+.z-bulkbar-top { position: sticky; top: 0; z-index: 5; background: var(--tblr-bg-surface); display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+
+/* Notifications: normal (blue), good (green), urgent (red) — icon and a light background. */
+.z-note-icon { font-size: 1.15rem; flex: none; }
+.z-note-normal .z-note-icon { color: var(--tblr-primary); }
+.z-note-good { background: color-mix(in srgb, var(--tblr-green) 8%, transparent); }
+.z-note-good .z-note-icon { color: var(--tblr-green); }
+.z-note-urgent { background: color-mix(in srgb, var(--tblr-red) 9%, transparent); }
+.z-note-urgent .z-note-icon { color: var(--tblr-red); }
+.z-unread.z-note-normal { background: color-mix(in srgb, var(--tblr-primary) 7%, transparent); }
+
+.z-compact td, .z-compact th { padding-top: .35rem; padding-bottom: .35rem; }
+.z-compact .avatar { --tblr-avatar-size: 1.6rem; }

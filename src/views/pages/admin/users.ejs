@@ -8,6 +8,16 @@
             <span class="input-icon-addon"><i class="ti ti-search"></i></span>
             <input class="form-control" type="search" name="q" value="<%= q %>" placeholder="<%= t("Search usernames") %>" aria-label="<%= t("Search usernames") %>">
           </div>
+          <select class="form-select w-auto" name="login" aria-label="<%= t('Logged in') %>" data-autosubmit>
+            <option value=""><%= t('Everyone') %></option>
+            <option value="yes"<%= login === 'yes' ? ' selected' : '' %>><%= t('Has logged in') %></option>
+            <option value="no"<%= login === 'no' ? ' selected' : '' %>><%= t('Has not logged in') %></option>
+          </select>
+          <select class="form-select w-auto" name="sort" aria-label="<%= t('Sort') %>" data-autosubmit>
+            <option value="name"<%= sort === 'name' ? ' selected' : '' %>><%= t('By name') %></option>
+            <option value="newest"<%= sort === 'newest' ? ' selected' : '' %>><%= t('Newest first') %></option>
+            <option value="lastLogin"<%= sort === 'lastLogin' ? ' selected' : '' %>><%= t('Last logged in') %></option>
+          </select>
           <select class="form-select w-auto" name="role" aria-label="<%= t('Roles') %>" data-autosubmit>
             <option value=""><%= t('Everyone') %></option>
             <% Object.entries(PLATFORM_ROLES).forEach(([key, r]) => { %><option value="<%= key %>"<%= roleFilter === key ? ' selected' : '' %>><%= t(r.label) %></option><% }) %>
@@ -16,7 +26,7 @@
         </form>
       </div>
       <div class="table-responsive">
-        <table class="table table-vcenter card-table">
+        <table class="table table-sm table-vcenter card-table z-compact">
           <thead><tr><th><%= t("User") %></th><th><%= t("Roles") %></th><th><%= t("Last login") %></th><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
           <tbody>
             <% if (!rows.length) { %><tr><td colspan="4" class="text-secondary"><%= t("No users found.") %></td></tr><% } %>
