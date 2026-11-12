@@ -165,12 +165,14 @@
                 <td class="text-secondary text-nowrap z-c-when"><%= formatDateTime(s.submittedAt, contest.timezone) %></td>
                 <td class="z-c-act">
                   <div class="z-row-actions">
-                    <% if (currentUser && canReview(s)) { %><a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a><% } %>
-                    <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= entryUrl(s) %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
-                    <% const more = canWithdraw(s) || canAppealRow(s) || canManage || can('deleteAnything'); if (more) { %>
-                      <div class="dropdown d-inline-block">
+                    <% if (currentUser && canReview(s)) { %><a class="btn btn-sm btn-ghost-primary btn-icon d-none d-md-inline-flex" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a><% } %>
+                    <a class="btn btn-sm btn-ghost-secondary btn-icon d-none d-md-inline-flex" href="<%= entryUrl(s) %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
+                    <% const more = canWithdraw(s) || canAppealRow(s) || canManage || can('deleteAnything'); { %>
+                      <div class="dropdown d-inline-block<%= more ? '' : ' d-md-none' %>">
                         <button class="btn btn-sm btn-ghost-secondary btn-icon" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="<%= t('More') %>"><i class="ti ti-dots-vertical"></i></button>
                         <div class="dropdown-menu dropdown-menu-end">
+                          <% if (currentUser && canReview(s)) { %><a class="dropdown-item d-md-none" href="<%= base %>/review?entry=<%= s.id %>"><i class="ti ti-gavel me-2"></i><%= t('Review') %></a><% } %>
+                          <a class="dropdown-item d-md-none" href="<%= entryUrl(s) %>" target="_blank" rel="noopener"><i class="ti ti-external-link me-2"></i><%= t('Open on wiki') %></a>
                           <% if (canAppealRow(s)) { %><form method="post" action="<%= base %>/submissions/<%= s.id %>/appeal" data-ask="reason" data-ask-text="<%= t('Why should the organizers look at this again?') %>"><%- hidden %><input type="hidden" name="reason"><button class="dropdown-item" type="submit"><i class="ti ti-scale me-2"></i><%= t('Appeal a decision') %></button></form><% } %>
                           <% if (canWithdraw(s)) { %><form method="post" action="<%= base %>/submissions/<%= s.id %>/withdraw" data-confirm="<%= t('Withdraw this entry?') %>"><%- hidden %><button class="dropdown-item" type="submit"><i class="ti ti-arrow-back-up me-2"></i><%= t('Withdraw my entry') %></button></form><% } %>
                           <% if (canManage && s.status !== 'withdrawn') { %><form method="post" action="<%= base %>/submissions/remove" data-confirm="<%= t('Remove this entry from the event?') %>"><%- hidden %><input type="hidden" name="ids" value="<%= s.id %>"><button class="dropdown-item text-danger" type="submit"><i class="ti ti-circle-minus me-2"></i><%= t('Remove') %></button></form><% } %>

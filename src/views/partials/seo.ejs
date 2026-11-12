@@ -17,3 +17,6 @@
   <meta property="og:image" content="<%= origin %>/images/zury-logo.svg">
   <meta property="og:locale" content="<%= lang.code === 'bn' ? 'bn_BD' : 'en_GB' %>">
   <meta name="twitter:card" content="summary">
+  <% if (ev && !hidden && ev.startDate) { const ld = { '@context': 'https://schema.org', '@type': 'Event', name: ev.title, description: desc, startDate: new Date(ev.startDate).toISOString(), ...(ev.endDate && { endDate: new Date(ev.endDate).toISOString() }), eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode', eventStatus: 'https://schema.org/EventScheduled', location: { '@type': 'VirtualLocation', url: origin + path }, organizer: { '@type': 'Organization', name: 'Zury', url: origin + '/' }, url: origin + path }; %>
+  <script type="application/ld+json"><%- JSON.stringify(ld).replace(/</g, '\\u003c') %></script>
+  <% } %>

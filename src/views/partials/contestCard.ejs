@@ -1,25 +1,21 @@
-<% const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-<% const typeIcon = TYPE_ICONS[c.type] || 'calendar'; const proj = eventProject(c); %>
-<div class="card card-link card-link-pop h-100 z-event-card z-proj" style="--z-proj: <%= proj.color %>; --z-proj-logo: url('<%= proj.logo %>')" data-type-color="<%= TYPE_COLORS[c.type] || 'blue' %>">
-  <div class="z-proj-strip"></div>
-  <div class="card-body d-flex flex-column">
-    <div class="d-flex align-items-center mb-2">
-      <span class="avatar avatar-sm z-proj-icon me-2" title="<%= proj.label %>"><i class="ti ti-<%= proj.icon %>"></i></span>
-      <div class="text-secondary small"><span class="z-proj-name"><%= proj.label %></span> · <%= CONTEST_TYPES[c.type] || c.type %> · <%= c.wikis && c.wikis.length > 1 ? t('{n} wikis', { n: c.wikis.length }) : (c.primaryWiki === 'metawiki' && c.wikis && !c.wikis.length ? t('No wikis yet') : wikiLocal(c.primaryWiki)) %></div>
-      <div class="ms-auto d-flex gap-1">
-        <% if (c.visibility === 'private') { %><span class="badge bg-yellow-lt"><%= t("Private") %></span><% } %>
-        <span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span>
+<% const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; const proj = eventProject(c); const stColor = st.badge === 'dark' ? 'secondary' : st.badge; %>
+<div class="card card-link h-100 z-ev2" style="--z-proj: <%= proj.color %>">
+  <div class="card-body">
+    <div class="z-ev2-top">
+      <span class="z-ev2-icon" title="<%= proj.label %>"><i class="ti ti-<%= proj.icon %>"></i></span>
+      <div class="min-w-0 flex-fill">
+        <h3 class="z-ev2-title"><a href="<%= eventPath(c) %>" class="stretched-link text-reset"><%= c.title %></a></h3>
+        <div class="z-ev2-sub"><%= c.wikis && c.wikis.length > 1 ? t('{n} wikis', { n: c.wikis.length }) : (c.primaryWiki === 'metawiki' && c.wikis && !c.wikis.length ? t('No wikis yet') : wikiLocal(c.primaryWiki)) %> · <%= CONTEST_TYPES[c.type] || c.type %></div>
       </div>
     </div>
-    <h3 class="card-title mb-2"><a href="<%= eventPath(c) %>" class="stretched-link text-reset"><%= c.title %></a></h3>
-    <div class="text-secondary small mt-auto">
-      <i class="ti ti-calendar me-1"></i><% if (c.startDate) { %><%= formatDate(c.startDate, c.timezone) %> – <%= formatDate(c.endDate, c.timezone) %><% } else { %><%= t('Dates not set') %><% } %>
-      <% if (c._count) { %><span class="ms-2"><i class="ti ti-users me-1"></i><%= formatNumber(c._count.memberships) %></span><% } %>
+    <div class="z-ev2-foot">
+      <span class="z-ev2-status is-<%= stColor %>"><i></i><%= t(st.label) %></span>
+      <% if (c.visibility === 'private') { %><span class="badge bg-yellow-lt"><%= t('Private') %></span><% } %>
+      <span class="z-ev2-meta"><i class="ti ti-calendar"></i><% if (c.startDate) { %><%= formatDate(c.startDate, c.timezone) %> – <%= formatDate(c.endDate, c.timezone) %><% } else { %><%= t('Dates not set') %><% } %></span>
+      <% if (c._count) { %><span class="z-ev2-meta"><i class="ti ti-users"></i><%= formatNumber(c._count.memberships) %></span><% } %>
     </div>
     <% if (typeof roles !== 'undefined' && roles.length) { %>
-      <div class="mt-2">
-        <% roles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r] ? t(EVENT_ROLES[r].label) : r %></span><% }) %>
-      </div>
+      <div class="mt-2"><% roles.forEach((r) => { %><span class="badge bg-blue-lt me-1"><%= EVENT_ROLES[r] ? t(EVENT_ROLES[r].label) : r %></span><% }) %></div>
     <% } %>
   </div>
 </div>
