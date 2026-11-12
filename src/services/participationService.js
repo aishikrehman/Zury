@@ -24,7 +24,7 @@ const MODES = {
 const ASK = { email: 'Email', phone: 'Phone', legalName: 'Legal name', nameEn: 'Name in English' };
 // The event's rules set on the Review tab (kept with participation).
 const RULES = {
-  maxReviews: null, onBehalf: 'staff', mass: 'anyone', bulk: 'reviewers', stats: 'reviewers', appeals: 'off', withdraw: 'participant', editors: 'organizers', results: 'always', reviewerNames: 'yes', revision: 'pinned', maxAppeals: 1, appealsPublic: 'yes',
+  maxReviews: null, onBehalf: 'staff', mass: 'anyone', bulk: 'reviewers', stats: 'reviewers', appeals: 'off', withdraw: 'participant', editors: 'organizers', results: 'always', reviewerNames: 'yes', revision: 'pinned', maxAppeals: 1, appealsPublic: 'yes', jurorRemoved: 'keep',
 };
 const SOURCES = {
   none: 'Any article',
@@ -80,6 +80,7 @@ function parse(body, errors) {
     appeals: ruleIn('appeals', ['off', 'rejected', 'any']),
     maxAppeals: Math.min(Math.max(Number.parseInt(body.rule_maxAppeals, 10) || 1, 1), 10),
     appealsPublic: ruleIn('appealsPublic', ['yes', 'no']),
+    jurorRemoved: ruleIn('jurorRemoved', ['keep', 'delete']),
     withdraw: ruleIn('withdraw', ['off', 'reviewers', 'participant', 'both']),
     editors: ruleIn('editors', ['organizers', 'staff']),
     results: ruleIn('results', ['always', 'afterReview', 'manual']),

@@ -193,3 +193,81 @@ async function deleteUser(req, res, next) {
   }
 }
 module.exports.deleteUser = deleteUser;
+
+// Every event in one place: search, filter by status and wiki, sort; hold (pause or resume) and delete.
+async function events(req, res, next) {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+    const status = typeof req.query.status === 'string' ? req.query.status : '';
+    const wiki = typeof req.query.wiki === 'string' ? req.query.wiki.trim().slice(0, 40) : '';
+    const sort = ['newest', 'oldest', 'title', 'entries'].includes(req.query.sort) ? req.query.sort : 'newest';
+    const page = pageParam(req);
+    const perPage = 50;
+    const deleted = req.query.deleted === '1';
+    const where = { deletedAt: deleted ? { not: null } : null, ...(q && { title: { contains: q } }), ...(status && { status }), ...(wiki && { primaryWiki: wiki }) };
+    const orderBy = sort === 'oldest' ? { createdAt: 'asc' } : sort === 'title' ? { title: 'asc' } : sort === 'entries' ? { submissions: { _count: 'desc' } } : { createdAt: 'desc' };
+    const [list, total] = await Promise.all([
+      prisma.contest.findMany({ where, orderBy, skip: (page - 1) * perPage, take: perPage, include: { series: true, _count: { select: { submissions: true, memberships: true } } } }),
+      prisma.contest.count({ where }),
+    ]);
+    res.render('pages/admin/events', { title: 'Events — Administration', list, total, page, pages: Math.max(1, Math.ceil(total / perPage)), q, status, wiki, sort, deleted });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function holdEvent(req, res, next) {
+  try {
+    const c = await prisma.contest.findFirst({ where: { id: Number(req.params.contestId), deletedAt: null } });
+    if (c) {
+      const to = c.status === 'paused' ? 'active' : 'paused';
+      await prisma.contest.update({ where: { id: c.id }, data: { status: to } });
+      await require('../services/auditService').record({ actorId: req.user.id, contestId: c.id, action: to === 'paused' ? 'contest.held' : 'contest.resumed', entityType: 'Contest', entityId: c.id, details: { title: c.title } });
+      req.flash('success', req.t(to === 'paused' ? 'Event on hold.' : 'Event resumed.'));
+    }
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(req.get('referer') && req.get('referer').includes('/admin/events') ? req.get('referer') : '/admin/events');
+}
+
+async function deleteEvent(req, res, next) {
+  try {
+    const c = await prisma.contest.findFirst({ where: { id: Number(req.params.contestId), deletedAt: null } });
+    if (c) {
+      await require('../services/eventService').softDelete({ actorId: req.user.id, contest: c, confirmation: c.slug });
+      req.flash('success', req.t('Event deleted.'));
+    }
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect('/admin/events');
+}
+module.exports.events = events;
+module.exports.holdEvent = holdEvent;
+module.exports.deleteEvent = deleteEvent;
+
+// For good: the event and everything in it leave the database. The typed address confirms it.
+async function purgeEvent(req, res, next) {
+  try {
+    const cst = await prisma.contest.findUnique({ where: { id: Number(req.params.contestId) } });
+    if (!cst) return res.redirect('/admin/events');
+    const typed = String(req.body.confirm || '').trim();
+    if (typed !== cst.slug && typed !== String(cst.id)) {
+      req.flash('danger', req.t('Type the event address to delete it for good.'));
+      return res.redirect('/admin/events');
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.localEvent.deleteMany({ where: { contestId: cst.id } });
+      await tx.seriesSlug.deleteMany({ where: { contestId: cst.id } });
+      await tx.contest.updateMany({ where: { mergedIntoId: cst.id }, data: { mergedIntoId: null } });
+      await tx.contest.delete({ where: { id: cst.id } });
+    });
+    await require('../services/auditService').record({ actorId: req.user.id, action: 'contest.purged', entityType: 'Contest', entityId: cst.id, details: { title: cst.title, slug: cst.slug } });
+    req.flash('success', req.t('Event deleted for good.'));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect('/admin/events');
+}
+module.exports.purgeEvent = purgeEvent;

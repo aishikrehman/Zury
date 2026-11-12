@@ -166,7 +166,7 @@ async function icons() {
   fs.writeFileSync(path.join(ROOT, 'public/icons/tabler-icons.woff2'), font);
   console.log(`icons: ${all.length} → ${keep.length} (${Math.round(font.length / 1024)} KB font)`);
   const base = css.slice(css.indexOf('.ti{'), css.indexOf('}', css.indexOf('.ti{')) + 1);
-  return '@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;font-display:block;src:url("/icons/tabler-icons.woff2") format("woff2")}'
+  return '@font-face{font-family:"tabler-icons";font-style:normal;font-weight:400;font-display:block;src:url("/icons/tabler-icons.woff2?v=' + require('crypto').createHash('md5').update(font).digest('hex').slice(0, 8) + '") format("woff2")}'
     + base + keep.map((i) => `.ti-${i.name}:before{content:"\\${i.code}"}`).join('');
 }
 

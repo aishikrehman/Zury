@@ -47,9 +47,9 @@
           <div class="d-flex mb-2"><div><%= t("Passed automatic checks") %></div><div class="ms-auto"><span class="text-green d-inline-flex align-items-center lh-1"><%= s.active - (s.status.invalid || 0) %> / <%= s.active %></span></div></div>
           <div class="progress progress-sm"><div class="progress-bar bg-green" style="width: <%= s.validRate %>%" role="progressbar" aria-valuenow="<%= s.validRate %>" aria-valuemin="0" aria-valuemax="100" aria-label="<%= s.validRate %>% valid"></div></div>
         </div>
-    <% } %>
       </div>
     </div>
+    <% } %>
     <div class="col-sm-6 col-xl">
       <div class="card">
         <div class="card-body">

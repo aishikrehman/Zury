@@ -14,7 +14,6 @@
         <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and reviewers see this page.') %><% } %>
       </div>
     </div>
-    <% if (showRanking && (can('manageEvent') || can('exportData'))) { %><div class="ms-auto"><%- include('../../partials/exportMenu', { dataset: 'results', btn: '' }) %></div><% } %>
     <% if (can('publishResults')) { %>
       <form method="post" action="<%= base %>/results/publish" class="ms-auto">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -55,7 +54,7 @@
       </div>
     <% } %>
     <div class="card">
-      <div class="card-header"><h3 class="card-title"><i class="ti ti-list-numbers me-2"></i><%= t('Leaderboard') %></h3></div>
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-list-numbers me-2"></i><%= t('Leaderboard') %></h3><% if (can('manageEvent') || can('exportData')) { %><div class="card-actions"><%- include('../../partials/exportMenu', { dataset: 'results', btn: '' }) %></div><% } %></div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
           <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Submitted') %></th><th class="text-end"><%= t('Accepted') %></th><% if (byWords) { %><th class="text-end"><%= t('Words') %></th><% } else { %><th class="text-end"><%= t('Points') %></th><% } %></tr></thead>

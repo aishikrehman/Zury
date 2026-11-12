@@ -2,7 +2,6 @@
   ['users', 'primary', 'Users', stats.users, '/admin/users'],
   ['calendar-event', 'green', 'Events', stats.contests, '/events'],
   ['shield-lock', 'orange', 'Zury administrators', stats.admins, '/admin/users'],
-  ['history', 'azure', 'Audit log entries', stats.auditEntries, '/admin/logs'],
 ]; %>
 <%- include('../../partials/adminHeader', { tab: 'overview' }) %>
 <div class="page-body">
@@ -84,8 +83,8 @@
           <div class="card-header"><h3 class="card-title"><%= t("Shortcuts") %></h3></div>
           <div class="list-group list-group-flush">
             <a class="list-group-item list-group-item-action" href="/admin/users"><i class="ti ti-users me-2"></i><%= t("Manage users and Zury roles") %></a>
+            <a class="list-group-item list-group-item-action" href="/admin/events"><i class="ti ti-calendar-event me-2"></i><%= t('All events') %></a>
             <a class="list-group-item list-group-item-action" href="/admin/permissions"><i class="ti ti-key me-2"></i><%= t("Permission matrix") %></a>
-            <% if (can('viewAuditLog')) { %><a class="list-group-item list-group-item-action" href="/admin/logs"><i class="ti ti-history me-2"></i><%= t("Audit log") %></a><% } %>
           </div>
         </div>
       </div>

@@ -1,0 +1,47 @@
+<% const qs = (o) => '?' + new URLSearchParams(Object.entries({ q, status, wiki, sort, deleted: deleted ? '1' : '', ...o }).filter(([, v]) => v)).toString(); %>
+<div class="page-body"><div class="container-xl">
+  <div class="d-flex align-items-center mb-3"><h2 class="page-title me-auto"><%= t('All events') %></h2><span class="text-secondary"><%= formatNumber(total) %></span></div>
+  <div class="card">
+    <div class="card-header">
+      <form method="get" class="d-flex flex-wrap gap-2 w-100">
+        <div class="input-icon flex-fill"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input class="form-control" type="search" name="q" value="<%= q %>" placeholder="<%= t('Search titles') %>"></div>
+        <select class="form-select w-auto" name="status" data-autosubmit aria-label="<%= t('Status') %>"><option value=""><%= t('All statuses') %></option><% Object.entries(CONTEST_STATUSES).forEach(([k, v]) => { %><option value="<%= k %>"<%= status === k ? ' selected' : '' %>><%= t(v.label) %></option><% }) %></select>
+        <input class="form-control w-auto" name="wiki" value="<%= wiki %>" placeholder="bnwiki" aria-label="<%= t('Wiki') %>" style="max-width:9rem">
+        <label class="form-check form-switch m-0 align-self-center"><input class="form-check-input" type="checkbox" name="deleted" value="1"<%= deleted ? ' checked' : '' %> data-autosubmit><span class="form-check-label"><%= t('Deleted') %></span></label>
+        <select class="form-select w-auto" name="sort" data-autosubmit aria-label="<%= t('Sort') %>">
+          <% [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['title', 'By name'], ['entries', 'Most entries']].forEach(([k, l]) => { %><option value="<%= k %>"<%= sort === k ? ' selected' : '' %>><%= t(l) %></option><% }) %>
+        </select>
+      </form>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-vcenter card-table z-compact">
+        <thead><tr><th><%= t('Event') %></th><th><%= t('Wiki') %></th><th><%= t('Status') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('People') %></th><th><%= t('Created') %></th><th class="w-1"></th></tr></thead>
+        <tbody>
+          <% list.forEach((c) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
+            <tr>
+              <td><a href="<%= eventPath(c) %>" class="fw-medium"><%= c.title %></a><% if (c.approval && c.approval !== 'approved') { %> <span class="badge bg-yellow-lt"><%= t('Waiting for approval') %></span><% } %></td>
+              <td class="text-secondary small"><%= wikiLocal(c.primaryWiki) %></td>
+              <td><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></td>
+              <td class="text-end"><%= formatNumber(c._count.submissions) %></td>
+              <td class="text-end"><%= formatNumber(c._count.memberships) %></td>
+              <td class="text-secondary small text-nowrap"><%= formatDate(c.createdAt) %></td>
+              <td class="text-nowrap">
+                <% if (can('deleteAnything')) { %>
+                  <form method="post" action="/admin/events/<%= c.id %>/hold" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-warning btn-icon" type="submit" title="<%= c.status === 'paused' ? t('Resume') : t('Hold') %>" aria-label="<%= c.status === 'paused' ? t('Resume') : t('Hold') %>"><i class="ti ti-player-<%= c.status === 'paused' ? 'play' : 'pause' %>"></i></button></form>
+                  <form method="post" action="/admin/events/<%= c.id %>/purge" class="d-inline" data-ask="confirm" data-ask-text="<%= t('Delete for good? Everything in the event leaves the database and cannot come back. Type its address ({slug}) to confirm.', { slug: c.slug }) %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="confirm"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Delete for good') %>" aria-label="<%= t('Delete for good') %>"><i class="ti ti-trash-x"></i></button></form>
+                  <% if (!c.deletedAt) { %><form method="post" action="/admin/events/<%= c.id %>/delete" class="d-inline" data-confirm="<%= t('Delete this event? It disappears everywhere but stays in the database.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Delete') %>" aria-label="<%= t('Delete') %>"><i class="ti ti-trash"></i></button></form><% } %>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (!list.length) { %><tr><td colspan="7" class="text-secondary text-center py-4"><%= t('Nothing matches these filters') %></td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+    <% if (pages > 1) { %>
+      <div class="card-footer d-flex align-items-center"><span class="text-secondary"><%= t('Page {page} of {pages}', { page, pages }) %></span>
+        <div class="ms-auto btn-list"><% if (page > 1) { %><a class="btn btn-sm" href="<%= qs({ page: page - 1 }) %>"><%= t('Previous') %></a><% } %><% if (page < pages) { %><a class="btn btn-sm" href="<%= qs({ page: page + 1 }) %>"><%= t('Next') %></a><% } %></div>
+      </div>
+    <% } %>
+  </div>
+</div></div>

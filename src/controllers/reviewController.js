@@ -5,10 +5,9 @@ const { dbnameToHost } = require('../wiki/wikiUrls');
 
 // The page itself, rendered by its wiki, for articles and other text pages.
 // Files and Wikidata items have their own previews.
-function pagePreview(entry) {
+function pagePreview(entry, base) {
   if (!entry || ['file', 'item', 'property', 'lexeme'].includes(entry.entryType)) return null;
-  const host = dbnameToHost(entry.wiki);
-  return host ? `https://${host}/w/rest.php/v1/page/${encodeURIComponent(entry.title.replace(/ /g, '_'))}/html` : null;
+  return dbnameToHost(entry.wiki) ? `${base}/review/${entry.id}/preview` : null;
 }
 
 const { ReviewError } = reviewService;
@@ -108,11 +107,36 @@ async function window(req, res, next) {
     const id = Number(req.query.entry) || q.nextId;
     const entry = id ? await reviewService.entryForReview(req.contest.id, id) : null;
     if (entry && !canJudge(req, entry)) return res.status(404).render('pages/404', { title: 'Submission Not Found' });
+    // Entries brought in with little data (e.g. from Fountain): the page's details are fetched once and kept.
+    if (entry && entry.entryType === 'article') {
+      let m = {}; try { m = JSON.parse(entry.metadata || '{}'); } catch { m = {}; }
+      if (!m.createdAt || m.sizeBytes == null) {
+        const fresh = await require('../wiki/entryMetadata').fetchEntryMetadata({ wiki: entry.wiki, title: entry.title }, { language: req.contest.language }).catch(() => null);
+        if (fresh && fresh.exists) {
+          const merged = { ...fresh, ...m, createdAt: fresh.createdAt, creator: fresh.creator, sizeBytes: m.sizeBytes ?? fresh.sizeBytes, currentRevId: fresh.revId };
+          entry.metadata = JSON.stringify(merged);
+          await require('../config/prisma').submission.update({ where: { id: entry.id }, data: { metadata: entry.metadata } }).catch(() => null);
+        }
+      }
+    }
+    const revMode = require('../services/participationService').read(req.settings).rules.revision === 'latest' ? 'latest' : 'pinned';
+    let revChanged = false;
+    if (entry && revMode === 'pinned' && entry.revId && !req.contest.resultsPublishedAt) {
+      const host = require('../wiki/wikiUrls').dbnameToHost(entry.wiki);
+      const q = new URLSearchParams({ action: 'query', prop: 'info', titles: entry.title, format: 'json', formatversion: '2' });
+      const info = host ? await fetch(`https://${host}/w/api.php?${q}`, { headers: { 'User-Agent': require('../config/env').userAgent } }).then((r) => r.json()).catch(() => null) : null;
+      const last = info && info.query && info.query.pages && info.query.pages[0] && info.query.pages[0].lastrevid;
+      revChanged = !!(last && last !== entry.revId);
+    }
+    res.locals.revMode = revMode;
+    res.locals.revChanged = revChanged;
+    const handTo = entry ? await reviewService.handOverChoices({ contest: req.contest, settings: req.eventSettings, entry, me: req.user.id }).catch(() => []) : [];
     res.render('pages/contest/review', {
       title: `Review — ${req.contest.title}`,
+      handTo,
       entry,
       meta: entry ? JSON.parse(entry.metadata || '{}') : null,
-      preview: pagePreview(entry),
+      preview: pagePreview(entry, req.base),
       validation: entry ? JSON.parse(entry.validation || '{}') : null,
       mine: entry ? entry.reviews.find((r) => r.jurorId === req.user.id) || null : null,
       // Secret ballot: other reviews stay hidden from reviewers until the entry is decided.
@@ -396,3 +420,37 @@ async function deleteAppeal(req, res, next) {
   res.redirect(`${req.base}/appeals`);
 }
 module.exports.deleteAppeal = deleteAppeal;
+
+async function handOver(req, res, next) {
+  const id = Number(req.params.submissionId);
+  try {
+    await reviewService.handOver({ actor: req.user, contest: req.contest, settings: req.eventSettings, submissionId: id, toId: Number(req.body.to) });
+    req.flash('success', req.t('Handed over; they have been told.'));
+  } catch (err) {
+    if (!(err instanceof ReviewError)) return next(err);
+    req.flash('danger', req.t(err.message));
+  }
+  res.redirect(`${req.base}/review?after=${id}`);
+}
+module.exports.handOver = handOver;
+
+// The entry's article as content only (no wiki header, search or menus), styled like the wiki's articles.
+async function previewPage(req, res, next) {
+  try {
+    const entry = await require('../config/prisma').submission.findFirst({ where: { id: Number(req.params.submissionId), contestId: req.contest.id } });
+    if (!entry || !canJudge(req, entry)) return res.status(404).end();
+    const host = dbnameToHost(entry.wiki);
+    if (!host) return res.status(404).end();
+    const q = new URLSearchParams({ action: 'parse', format: 'json', formatversion: '2', prop: 'text|displaytitle', disableeditsection: '1', disabletoc: '1', redirects: '1', ...(entry.revId && require('../services/participationService').read(req.settings).rules.revision !== 'latest' ? { oldid: String(entry.revId) } : { page: entry.title }) });
+    const r = await fetch(`https://${host}/w/api.php?${q}`, { headers: { 'User-Agent': require('../config/env').userAgent } });
+    const data = await r.json();
+    const html = (data && data.parse ? data.parse.text : '<p>—</p>').replace(/(src|srcset|href)="\/\//g, '$1="https://').replace(/, \/\//g, ', https://');
+    const styles = `https://${host}/w/load.php?lang=${encodeURIComponent(host.split('.')[0])}&modules=${encodeURIComponent('skins.vector.styles|ext.cite.styles|ext.tmh.player.styles|mediawiki.page.gallery.styles|wikibase.client.init')}&only=styles&skin=vector`;
+    res.setHeader('Content-Security-Policy', `default-src 'none'; style-src https://${host} 'unsafe-inline'; img-src https: data:; media-src https:; font-src https:; frame-ancestors 'self'; base-uri https://${host}`);
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.type('html').send(`<!doctype html><html lang="${host.split('.')[0]}"><head><meta charset="utf-8"><base href="https://${host}/wiki/" target="_blank"><link rel="stylesheet" href="${styles}"><link rel="stylesheet" href="https://${host}/w/load.php?lang=${encodeURIComponent(host.split('.')[0])}&modules=site.styles&only=styles&skin=vector"><style>body{margin:0;padding:12px 16px;font-family:sans-serif;background:#fff}.mw-parser-output{max-width:none}html,body{overflow-x:hidden}img{max-width:100%;height:auto}@media (max-width:700px){.infobox,.mw-parser-output table,.thumb,figure{float:none!important;width:auto!important;max-width:100%!important;margin-left:0!important;margin-right:0!important}.mw-parser-output table{display:block;overflow-x:auto}}h1.z-t{font-size:1.5rem;margin:0 0 .6rem;font-family:Georgia,serif;font-weight:normal;border-bottom:1px solid #eaecf0}</style></head><body class="skin-vector mediawiki"><div class="mw-body-content">${html}</div></body></html>`);
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports.previewPage = previewPage;

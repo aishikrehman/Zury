@@ -73,6 +73,7 @@
 <div class="z-navbar d-print-none">
   <div class="container-xl">
     <nav class="collapse z-navbar-collapse" id="z-navbar" aria-label="<%= t('Primary') %>">
+      <form action="/events" method="get" role="search" class="z-search z-search-menu"><i class="ti ti-search"></i><input type="search" name="q" placeholder="<%= t('Search events…') %>" aria-label="<%= t('Search events') %>"></form>
       <ul class="z-navbar-list">
         <% navItems.forEach((item) => { %>
           <% if (item.children) { %>

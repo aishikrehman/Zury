@@ -115,14 +115,35 @@ async function handleSubmit(req, res, next, { confirm }) {
     });
     if (!confirm) return renderForm(req, res, { text, participant: participantName, items });
 
-    const created = await submissionService.save({
+    const mineName = who.participant.username;
+    const byOther = (i) => i.ok && i.meta && i.meta.entryType === 'article' && i.meta.creator && i.meta.creator !== mineName && req.body[`as:${i.input}`] !== 'expansion';
+    const ownItems = items.filter((i) => !byOther(i));
+    const created = ownItems.some((i) => i.ok) ? await submissionService.save({
       actor: req.user,
       contest: req.contest,
       settings: req.settings,
       participant: who.participant,
-      items,
+      items: ownItems,
       ensureParticipant: who.ensureParticipant,
-    });
+    }) : [];
+    // Credited to the article's author (they join the event if they aren't in it yet).
+    const authors = new Map();
+    for (const i of items.filter(byOther)) authors.set(i.meta.creator, [...(authors.get(i.meta.creator) || []), i]);
+    for (const [name, list] of authors) {
+      const author = await userDirectory.findOrImport(name).catch(() => null);
+      const roles = author ? await membershipService.activeRoles(req.contest.id, author.id) : [];
+      // If the author can't be credited (unknown, or the save fails), the entry stays with the submitter.
+      const asSubmitter = () => submissionService.save({ actor: req.user, contest: req.contest, settings: req.settings, participant: who.participant, items: list, ensureParticipant: null });
+      if (!author) { created.push(...(await asSubmitter())); continue; }
+      created.push(...(await submissionService.save({
+        actor: req.user,
+        contest: req.contest,
+        settings: req.settings,
+        participant: author,
+        items: list,
+        ensureParticipant: roles.includes('participant') ? null : (tx) => membershipService.joinInTx(tx, { user: author, contest: req.contest, wiki: req.contextWiki?.wiki || '' }),
+      }).catch((e) => { console.warn('credit author:', e.message); return asSubmitter(); })));
+    }
     // The event's texts on the talk page and the article, with the submitter's login (in the background).
     const tcx = readTypeConfig(req.contest.type, req.settings.typeConfig);
     const talkText = tcx.talkText || (tcx.entryTemplateOnTalk !== false ? tcx.entryTemplate : '');
@@ -159,12 +180,13 @@ async function index(req, res, next) {
       sort: Object.keys(submissionService.SORTS).includes(req.query.sort) && (req.query.sort !== 'words' || req.settings.wordCountEnabled) ? req.query.sort : 'submitted',
       dir: req.query.dir === 'asc' ? 'asc' : 'desc',
       participant: Number.parseInt(req.query.participant, 10) || null,
+      view: ['people', 'reviewers'].includes(req.query.view) ? req.query.view : '',
     };
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
     // Anonymous events don't let visitors pick out one person's entries.
     const showNames = !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions');
     if (!showNames) filters.participant = null;
-    const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki, page, ...filters });
+    const result = await submissionService.list({ contestId: req.contest.id, user: req.user, can: can(req), wiki: req.wikiScope?.wiki, page, ...filters, ...(filters.view === 'people' && { sort: 'participant', dir: 'asc', perPage: 300 }), ...(filters.view === 'reviewers' && { perPage: 300 }) });
     const tc = readTypeConfig(req.contest.type, req.settings.typeConfig);
     const staffView = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
     res.locals.showReviewers = staffView || require('../services/participationService').read(req.settings).rules.reviewerNames === 'yes';
@@ -354,6 +376,12 @@ async function revalidateAll(req, res, next) {
   try {
     const list = await prisma.submission.findMany({ where: { contestId: req.contest.id, status: { in: ['pending', 'validated', 'invalid'] } }, take: 2000 });
     const fountain = req.eventWikis.filter((w) => w.fountainCode);
+    const followed = new Set(fountain.map((w) => w.wiki));
+    const everything = await prisma.submission.findMany({ where: { contestId: req.contest.id, status: { not: 'withdrawn' }, metadata: { contains: '"source":"fountain"' } } });
+    const orphans = everything.filter((s) => !followed.has(s.wiki));
+    for (const s of orphans) await submissionService.changeStatus({ actor: req.user, submission: s, contestId: req.contest.id, status: 'withdrawn', note: 'Fountain no longer followed' });
+    const orphanIds = new Set(orphans.map((s) => s.id));
+    for (let i = list.length - 1; i >= 0; i--) if (orphanIds.has(list[i].id)) list.splice(i, 1);
     const actor = req.user; const contest = req.contest; const settings = req.eventSettings; const eventWikis = req.eventWikis;
     setImmediate(async () => {
       for (const w of fountain) await require('../services/fountainService').sync(w, { actorId: actor.id }).catch(() => null);
@@ -404,3 +432,21 @@ async function bulkDeleteReviews(req, res, next) {
   res.redirect(backTo(req, `${req.base}/submissions`));
 }
 module.exports.bulkDeleteReviews = bulkDeleteReviews;
+
+// Review tools: judge the entry at a given revision (number or a link with oldid=).
+async function useRevision(req, res, next) {
+  try {
+    const s = await prisma.submission.findFirst({ where: { id: Number(req.params.submissionId), contestId: req.contest.id } });
+    if (!s) return next();
+    const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury') || req.permissions.has('reviewAssignedEntry');
+    if (!staff) return res.status(403).render('pages/403', { title: 'Forbidden' });
+    const raw = String(req.body.rev || '').trim();
+    const revId = Number((raw.match(/oldid=(\d+)/) || raw.match(/^(\d+)$/) || [])[1]);
+    const done = revId ? await submissionService.pinRevision(s, revId) : null;
+    req.flash(done ? 'success' : 'danger', req.t(done ? 'The entry is now judged at revision {n}.' : 'That revision was not found for this page.', { n: revId }));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(`${req.base}/review?entry=${req.params.submissionId}`);
+}
+module.exports.useRevision = useRevision;

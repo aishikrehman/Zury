@@ -49,7 +49,14 @@ document.addEventListener('change', (e) => {
   const boxes = [...document.querySelectorAll(`[data-check="${group}"]`)];
   if (box.dataset.checkAll) boxes.forEach((b) => { b.checked = box.checked; });
   const n = boxes.filter((b) => b.checked).length;
-  const bar = document.querySelector(`[data-bulk-bar="${group}"]`);
+  let bar = document.querySelector(`[data-live] [data-bulk-bar="${group}"]`) || document.querySelector(`[data-bulk-bar="${group}"]`);
+  // On an event page the selection's buttons sit in the event header, not in a bar over the list.
+  const head = document.querySelector('[data-live] .z-bulk-slot') || document.querySelector('.z-bulk-slot');
+  if (bar && head && !head.contains(bar)) {
+    document.querySelectorAll('.z-bulk-slot [data-bulk-bar]').forEach((old) => old.remove());
+    bar.classList.add('z-bulk-in-head');
+    head.append(bar);
+  }
   if (bar) {
     bar.hidden = n === 0;
     const count = bar.querySelector('[data-bulk-count]');
@@ -218,7 +225,7 @@ document.querySelectorAll('form').forEach((form) => {
       const fresh = doc.querySelector('[data-live]');
       if (fresh) {
         live.innerHTML = fresh.innerHTML;
-        if (push) history.pushState(null, '', url);
+        if (push) history.pushState(null, '', String(url).replace(/\?$/, ''));
         live.dispatchEvent(new CustomEvent('zury:refreshed', { bubbles: true }));
       }
     } catch { /* keep the list as it is */ }
@@ -226,8 +233,6 @@ document.querySelectorAll('form').forEach((form) => {
   }
   const sameList = (href) => { try { const u = new URL(href, location.href); return u.pathname === location.pathname; } catch { return false; } };
   live.addEventListener('click', (e) => {
-    const pop = e.target.closest('a[data-popup]');
-    if (pop) { e.preventDefault(); return openPopup(pop.href); }
     const a = e.target.closest('a[href]');
     if (a && !a.target && sameList(a.href) && !e.ctrlKey && !e.metaKey) { e.preventDefault(); load(a.href, true); }
   });
@@ -238,19 +243,10 @@ document.querySelectorAll('form').forEach((form) => {
   }, true);
   window.addEventListener('popstate', () => load(location.href, false));
   setInterval(() => {
-    if (document.hidden || document.querySelector('.z-popup') || live.querySelector('input[type=checkbox]:checked') || live.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+    if (document.hidden || live.querySelector('input[type=checkbox]:checked') || live.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
     load(location.href, false);
   }, 20000);
-  function openPopup(href) {
-    const wrap = document.createElement('div');
-    wrap.className = 'z-popup';
-    wrap.innerHTML = '<div class="z-popup-box"><button type="button" class="btn-close z-popup-close" aria-label="Close"></button><iframe title="Entry"></iframe></div>';
-    wrap.querySelector('iframe').src = href;
-    const close = () => { wrap.remove(); load(location.href, false); };
-    wrap.addEventListener('click', (e) => { if (e.target === wrap || e.target.closest('.z-popup-close')) close(); });
-    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { document.removeEventListener('keydown', esc); close(); } });
-    document.body.appendChild(wrap);
-  }
+
 })();
 
 // Inside the quick-look popup: only the page itself, without the site's header and footer.
@@ -304,11 +300,48 @@ document.addEventListener('click', (e) => {
 // Forms that ask one thing first (an appeal's reason).
 document.addEventListener('submit', (e) => {
   const f = e.target;
-  if (!f.matches || !f.matches('form[data-ask]')) return;
-  const field = f.querySelector(`[name="${f.dataset.ask}"]`);
+  const src = e.submitter && e.submitter.dataset.ask ? e.submitter : f;
+  if (!src.dataset || !src.dataset.ask) return;
+  const field = f.querySelector(`[name="${src.dataset.ask}"]`);
   if (field && !field.value) {
-    const v = prompt(f.dataset.askText || '');
-    if (!v || v.trim().length < 10) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    const v = prompt(src.dataset.askText || '');
+    if (!v || v.trim().length < (src.dataset.ask === 'reason' ? 10 : 1)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
     field.value = v.trim();
   }
 }, true);
+
+// Submitting: each requirement is checked off on screen, one after another, while the entries are checked.
+(() => {
+  const form = document.querySelector('form[data-check-anim]');
+  const holder = document.querySelector('[data-check-steps]');
+  if (!form || !holder) return;
+  form.addEventListener('submit', () => {
+    const rules = [...holder.parentElement.querySelectorAll('.list-group-item')].map((x) => x.textContent.trim()).filter(Boolean);
+    const box = document.createElement('div');
+    box.className = 'z-checking';
+    box.innerHTML = '<div class="z-checking-card"><div class="fw-bold mb-3"></div><ul class="list-unstyled m-0"></ul></div>';
+    box.querySelector('.fw-bold').textContent = holder.dataset.title;
+    const ul = box.querySelector('ul');
+    rules.forEach((r) => { const li = document.createElement('li'); li.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span><span></span>'; li.lastChild.textContent = r; ul.append(li); });
+    document.body.append(box);
+    [...ul.children].forEach((li, i) => setTimeout(() => { li.classList.add('is-done'); li.firstChild.className = 'ti ti-circle-check text-green me-2'; }, 450 * (i + 1)));
+  });
+})();
+
+// By participant: a click on a person's row folds or unfolds their entries.
+document.addEventListener('click', (e) => {
+  const head = e.target.closest && e.target.closest('[data-group-toggle]');
+  if (!head) return;
+  const id = head.dataset.groupToggle;
+  const open = !head.classList.toggle('is-folded');
+  document.querySelectorAll(`tr[data-group="${id}"]`).forEach((r) => { r.hidden = !open; });
+});
+
+// Quick action "Review": the first selected entry opens in the review window (popup); the rest follow with Skip/next.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-review-selected]');
+  if (!b) return;
+  const ids = [...document.querySelectorAll('[data-check="bulk-ids"]:checked')].map((c) => c.value).filter(Boolean);
+  if (!ids.length) return;
+  location.href = `${b.dataset.reviewSelected}?entry=${ids[0]}`;
+});

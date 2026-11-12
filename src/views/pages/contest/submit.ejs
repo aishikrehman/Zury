@@ -16,18 +16,18 @@
 
   <div class="row row-cards">
     <div class="col-lg-8">
-      <form method="post" action="<%= base %>/submit/preview" class="card">
+      <form method="post" action="<%= base %>/submit/preview" class="card" data-check-anim>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-upload me-2"></i><%= mass ? t('Submit entries') : t('Submit an entry') %></h3></div>
         <div class="card-body">
           <% if (error) { %><div class="alert alert-danger" role="alert"><i class="ti ti-alert-circle me-1"></i><%= error %></div><% } %>
           <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= t(window.reason) %><%= canOthers ? ' ' + t('As an organizer you can still submit for participants.') : '' %></div><% } %>
           <div class="mb-3">
-            <label class="form-label" for="entries"><%= t(mass ? 'URLs or titles, one per line' : 'URL or title') %></label>
+            <label class="form-label" for="entries"><%= t(mass ? 'Titles, one per line' : 'Title') %></label>
             <% if (mass) { %>
-              <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="https://commons.wikimedia.org/wiki/File:Example.jpg&#10;File:Another example.jpg"><%= text %></textarea>
+              <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="<%= t('One title per line') %>"><%= text %></textarea>
             <% } else { %>
-              <div class="z-suggest"><input class="form-control" id="entries" name="entries" value="<%= text %>" autocomplete="off" spellcheck="false" placeholder="<%= t("https://… or a page title") %>" data-suggest="<%= (eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki }]).map((w) => wikiHost(w.wiki)).filter(Boolean).join(',') %>" data-suggest-ns="<%= contest.type === 'writing' ? 0 : contest.type === 'photo' ? 6 : 0 %>"><div class="z-suggest-list list-group" hidden></div></div>
+              <div class="z-suggest"><input class="form-control" id="entries" name="entries" value="<%= text %>" autocomplete="off" spellcheck="false" placeholder="<%= t('Article title') %>" data-suggest="<%= (eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki }]).map((w) => wikiHost(w.wiki)).filter(Boolean).join(',') %>" data-suggest-ns="<%= contest.type === 'writing' ? 0 : contest.type === 'photo' ? 6 : 0 %>"><div class="z-suggest-list list-group" hidden></div></div>
             <% } %>
           </div>
           <% if (canOthers) { %>
@@ -65,6 +65,15 @@
                     <% if (i.meta && i.meta.file) { %><span class="badge bg-blue-lt"><%= i.meta.file.megapixels %> MP</span><% } %>
                     <% if (i.meta && i.meta.entity) { %><span class="badge bg-blue-lt"><%= i.meta.entity.label || i.meta.entity.id %> · <%= t('{n} statements', { n: i.meta.entity.statementCount }) %></span><% } %>
                   </div>
+                  <% if (i.ok && i.meta && i.meta.entryType === 'article' && i.meta.creator && i.meta.creator !== (participant || (currentUser && currentUser.username))) { %>
+                    <div class="z-author-ask mt-2">
+                      <div class="small mb-1"><i class="ti ti-user-question me-1"></i><%= t('This article was created by {name}. Is it your expansion?', { name: i.meta.creator }) %></div>
+                      <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="as:<%= i.input %>" id="au-<%= i.input %>" value="author" form="confirm-entries" checked><label class="btn" for="au-<%= i.input %>"><%= t('No: credit {name}', { name: i.meta.creator }) %></label>
+                        <input type="radio" class="btn-check" name="as:<%= i.input %>" id="ex-<%= i.input %>" value="expansion" form="confirm-entries"><label class="btn" for="ex-<%= i.input %>"><%= t('Yes, my expansion') %></label>
+                      </div>
+                    </div>
+                  <% } %>
                   <% i.reasons.forEach((r) => { %><div class="small text-red mt-1"><i class="ti ti-x me-1"></i><%= t(r) %></div><% }) %>
                   <% i.warnings.forEach((w) => { %><div class="small text-yellow mt-1"><i class="ti ti-alert-triangle me-1"></i><%= t(w) %></div><% }) %>
                 </div>
@@ -73,7 +82,7 @@
             <% }) %>
           </div>
           <% if (okCount) { %>
-            <form method="post" action="<%= base %>/submit" class="card-footer d-flex align-items-center">
+            <form method="post" action="<%= base %>/submit" class="card-footer d-flex align-items-center" id="confirm-entries">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="entries" value="<%= items.filter((i) => i.ok).map((i) => i.input).join('\n') %>">
               <input type="hidden" name="participant" value="<%= participant %>">
@@ -87,6 +96,7 @@
     <div class="col-lg-4">
       <div class="card">
         <div class="card-header"><h3 class="card-title"><%= t("What's accepted") %></h3></div>
+        <div hidden data-check-steps data-title="<%= t('Checking the requirements…') %>"></div>
         <div class="list-group list-group-flush">
           <div class="list-group-item"><%= t('{type} on {wikis}', { type: t(EVENT_TYPES[contest.type].label), wikis: (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiLocal).join(', ') }) %></div>
           <% rules.forEach((r) => { %><div class="list-group-item"><i class="ti ti-check text-green me-1"></i><%= r %></div><% }) %>

@@ -303,7 +303,14 @@ async function people(req, res, next) {
     const wiki = req.wikiScope?.wiki;
     const blocks = await membershipService.activeBlocks(req.contest.id);
     const pp = require('../services/participationService').read(req.settings);
+    // On the all-wikis page: the wikis each person submitted from.
+    const fromWikis = {};
+    if (!wiki && req.eventWikis.length > 1) {
+      const g = await prisma.submission.groupBy({ by: ['participantId', 'wiki'], where: { contestId: req.contest.id, status: { not: 'withdrawn' } } });
+      for (const r of g) (fromWikis[r.participantId] = fromWikis[r.participantId] || []).push(r.wiki);
+    }
     res.render('pages/contest/participants', {
+      fromWikis,
       importable: (pp.mode === 'onwiki' && !!pp.page) || pp.mode === 'list',
       blocks,
       canBlock: (req.wikiScope || req.eventWikis.length > 1 ? req.scope.global : req.permissions).has('manageParticipants'),
@@ -367,6 +374,22 @@ async function removeMember(req, res, next) {
       // Event-wide staff can only be removed with event-wide authority (unless the event has one wiki).
       allowed: (p, wiki) => (wiki ? req.scope.forWiki(wiki) : req.eventWikis.length > 1 && !p.includes('Participants') ? req.scope.global : req.permissions).has(p),
     });
+    // A reviewer leaving: unfinished assignments go back; their reviews stay or go (the event's setting).
+    const gone = await prisma.contestMembership.findUnique({ where: { id: Number(req.params.membershipId) } });
+    if (gone && gone.role === 'jury') {
+      const reviewService = require('../services/reviewService');
+      await reviewService.releaseJuror({ actor: req.user, contest: req.contest, jurorId: gone.userId, wiki: gone.wiki || null });
+      if (require('../services/participationService').read(req.settings).rules.jurorRemoved === 'delete') {
+        const theirs = await prisma.review.findMany({ where: { contestId: req.contest.id, jurorId: gone.userId, ...(gone.wiki && { submission: { wiki: gone.wiki } }) }, select: { id: true, submissionId: true } });
+        await prisma.review.deleteMany({ where: { id: { in: theirs.map((x) => x.id) } } });
+        for (const sid of new Set(theirs.map((x) => x.submissionId))) {
+          const s = await prisma.submission.findUnique({ where: { id: sid } });
+          const left = await prisma.review.findMany({ where: { submissionId: sid }, orderBy: { createdAt: 'asc' } });
+          const next = left.length ? reviewService.decide(left, req.eventSettings) : { status: 'pending', score: null };
+          if (['pending', 'validated', 'under_review', 'approved', 'rejected'].includes(s.status)) await prisma.submission.update({ where: { id: sid }, data: { status: next.status, score: next.score } });
+        }
+      }
+    }
     req.flash('success', 'Removed.');
   } catch (err) {
     if (!handled(err)) return next(err);

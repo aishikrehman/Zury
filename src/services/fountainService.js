@@ -331,6 +331,8 @@ async function unlink({ actorId, contest, wikiId }) {
   const eventWiki = await prisma.contestWiki.findFirst({ where: { id: wikiId, contestId: contest.id } });
   if (!eventWiki) return;
   await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: '', fountainSyncedAt: null } });
+  // What came from Fountain leaves the event with it (kept in the database, hidden).
+  await prisma.submission.updateMany({ where: { contestId: contest.id, wiki: eventWiki.wiki, status: { not: 'withdrawn' }, metadata: { contains: '"source":"fountain"' } }, data: { status: 'withdrawn' } });
   await audit.record({ actorId, contestId: contest.id, action: 'fountain.unlinked', entityType: 'ContestWiki', entityId: eventWiki.id, details: { code: eventWiki.fountainCode } });
 }
 
@@ -338,7 +340,7 @@ async function unlink({ actorId, contest, wikiId }) {
 async function syncAll() {
   const since = new Date(Date.now() - 30 * 24 * 3600 * 1000);
   const rows = await prisma.contestWiki.findMany({
-    where: { fountainCode: { not: '' }, status: 'active', contest: { deletedAt: null, OR: [{ endDate: null }, { endDate: { gte: since } }] } },
+    where: { fountainCode: { not: '' }, fountainAuto: true, status: 'active', contest: { deletedAt: null, OR: [{ endDate: null }, { endDate: { gte: since } }] } },
   });
   for (const row of rows) {
     try {

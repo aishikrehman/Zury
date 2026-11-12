@@ -17,7 +17,6 @@
   if (can('manageParticipants') || can('manageJury') || can('manageEvent')) tabs.push(['people', t('People'), '/participants', 'users']);
   else if (canAssign) tabs.push(['people', t('Assignments'), '/assignments', 'arrows-split']);
   if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'settings']);
-  if (can('manageEvent')) tabs.push(['activity', t('Activity'), '/activity', 'history']);
   const canSubmit = contest.status === 'active' && active !== 'submit' && typeDef.entries !== false;
 %>
 <% const headProj = eventProject({ wikis: eventWikis, primaryWiki: contest.primaryWiki }); %>
@@ -67,6 +66,9 @@
             %>
             <span class="z-evhead-dates" title="<%= formatDateTime(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDateTime(contest.endDate, contest.timezone) : '' %>">
               <i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDate(contest.endDate, contest.timezone) : '' %>
+              <% const hStartAt = new Date(contest.startDate).getTime(); const hEndAt = hEnd ? new Date(contest.endDate).getTime() : null; %>
+              <% if (hNow < hStartAt) { %><span class="z-days-left">· <%= tn('Starts in {n} day', 'Starts in {n} days', hDays(hStartAt)) %></span>
+              <% } else if (hEndAt && hNow <= hEndAt) { %><span class="z-days-left">· <%= tn('{n} day left', '{n} days left', hDays(hEndAt)) %></span><% } %>
             </span>
           <% } %>
         </div>
@@ -77,8 +79,7 @@
       </div>
       <div class="z-evhead-actions">
         <% if (contest.startDate) { const cNow = Date.now(); const cStart = new Date(contest.startDate).getTime(); const cEnd = contest.endDate ? new Date(contest.endDate).getTime() : null; const cDays = (at) => Math.ceil((at - cNow) / 86400000); const cDone = cEnd && cEnd > cStart ? Math.min(100, Math.max(0, Math.round(((cNow - cStart) / (cEnd - cStart)) * 100))) : null; %>
-          <% if (cNow < cStart) { %><span class="z-countdown"><i class="ti ti-hourglass"></i><%= tn('Starts in {n} day', 'Starts in {n} days', cDays(cStart)) %></span>
-          <% } else if (cEnd && cNow <= cEnd) { %><span class="z-countdown"><span class="z-countdown-bar"><i style="width: <%= cDone %>%"></i></span><%= tn('{n} day left', '{n} days left', cDays(cEnd)) %></span><% } %>
+          
         <% } %>
         <% if (allWikis.length > 1) { %>
           <div class="dropdown">

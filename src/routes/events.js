@@ -64,6 +64,7 @@ contest.post('/wikis', requireEventWide('manageEvent'), wikiController.add);
 contest.post('/fountain', requirePermission('importEvents'), fountainController.link);
 contest.post('/fountain/:wikiId(\\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
 contest.post('/fountain/:wikiId(\\d+)/:action(unlink)', requirePermission('importEvents'), fountainController.unlink);
+contest.post('/fountain/:wikiId(\\d+)/auto', requirePermission('importEvents'), fountainController.setAuto);
 contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume)', requireEventWide('manageEvent'), wikiController.change);
 contest.post('/wikis/:wikiId(\\d+)/:action(remove)', requireEventWide('deleteAnything'), wikiController.change);
 
@@ -79,14 +80,15 @@ contest.post('/blocks/:blockId(\\d+)/lift', requireEventWide('manageParticipants
 contest.post('/overrides', requireEventWide('manageEvent'), contestController.setOverride);
 contest.post('/overrides/:overrideId(\\d+)/remove', requireEventWide('manageEvent'), contestController.removeOverride);
 
-contest.get('/activity', requirePermission('manageEvent'), contestController.activity);
 contest.get('/statistics', contestController.statistics);
 contest.get('/tracking', trackingController.show);
 contest.post('/tracking/refresh', requirePermission('manageEvent'), trackingController.refresh);
 
 // Jury review, results and appeals.
 contest.get('/review', entriesOnly, requireAuth, reviewController.window);
+contest.get('/review/:submissionId(\\d+)/preview', entriesOnly, requireAuth, reviewController.previewPage);
 contest.post('/review/bulk', entriesOnly, requireAuth, reviewController.bulkSave);
+contest.post('/review/:submissionId(\\d+)/handover', entriesOnly, requireAuth, reviewController.handOver);
 contest.get('/review/entries', entriesOnly, requireAuth, reviewController.entries);
 contest.post('/review/:submissionId(\\d+)', entriesOnly, requireAuth, reviewController.save);
 contest.get('/assignments', entriesOnly, requirePermission('assignJury', 'manageAssignments'), reviewController.assignments);
@@ -121,6 +123,7 @@ contest.post('/submissions/:submissionId(\\d+)/delete', requireEventWide('delete
 contest.post('/submissions/:submissionId(\\d+)/reviews/:reviewId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroyReview);
 contest.post('/submissions/:submissionId(\\d+)/status', requirePermission('manageEvent'), submissionController.setStatus);
 contest.post('/submissions/:submissionId(\\d+)/latest', requireAuth, submissionController.useLatest);
+contest.post('/submissions/:submissionId(\\d+)/revision', requireAuth, submissionController.useRevision);
 contest.post('/submissions/revalidate-all', requirePermission('manageEvent'), submissionController.revalidateAll);
 contest.post('/review/bulk-delete', requireAuth, submissionController.bulkDeleteReviews);
 contest.post('/submissions/remove', requirePermission('manageEvent'), submissionController.removeMany);

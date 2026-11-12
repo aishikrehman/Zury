@@ -1,0 +1,1 @@
+ALTER TABLE `ContestWiki` ADD COLUMN `fountainAuto` BOOLEAN NOT NULL DEFAULT true;

@@ -84,3 +84,16 @@ function unlink(req, res, next) {
 }
 
 module.exports = { importForm, importEvent, link, sync, unlink };
+
+// Hourly sync on or off for one followed editathon.
+async function setAuto(req, res, next) {
+  try {
+    const prisma = require('../config/prisma');
+    await prisma.contestWiki.updateMany({ where: { id: Number(req.params.wikiId), contestId: req.contest.id }, data: { fountainAuto: req.body.auto === 'on' } });
+    req.flash('success', req.t(req.body.auto === 'on' ? 'Fountain will be followed every hour.' : 'Fountain is updated only when you ask.'));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(req.get('referer') || req.base + '/config');
+}
+module.exports.setAuto = setAuto;

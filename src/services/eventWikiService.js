@@ -78,8 +78,7 @@ async function changeWiki({ actorId, contest, wikiId, action }) {
       if (row.status === 'pending') throw new EventWikiError('Approve the request first.');
       await tx.contestWiki.update({ where: { id: row.id }, data: { status: action === 'pause' ? 'paused' : 'active' } });
     } else if (action === 'remove') {
-      const used = await tx.submission.count({ where: { contestId: contest.id, wiki: row.wiki } });
-      if (used) throw new EventWikiError(`${row.wiki} already has ${used} submission(s); pause it instead.`);
+      await tx.submission.updateMany({ where: { contestId: contest.id, wiki: row.wiki, status: { not: 'withdrawn' } }, data: { status: 'withdrawn' } });
       const others = await tx.contestWiki.count({ where: { contestId: contest.id, status: { not: 'pending' }, id: { not: row.id } } });
       if (row.status !== 'pending' && others === 0) throw new EventWikiError('An event needs at least one wiki.');
       await tx.contestWiki.delete({ where: { id: row.id } });

@@ -5,10 +5,11 @@
     if (filters.q) p.set('q', filters.q);
     if (filters.mine) p.set('mine', '1');
     if (filters.participant) p.set('participant', filters.participant);
+    if (filters.view) p.set('view', filters.view);
     if (filters.sort !== 'submitted' || filters.dir !== 'desc') { p.set('sort', filters.sort); p.set('dir', filters.dir); }
     Object.entries(extra).forEach(([k, v]) => (v === null ? p.delete(k) : p.set(k, v)));
     const s = p.toString();
-    return s ? `?${s}` : '';
+    return `?${s}`;
   };
   const pages = Math.max(1, Math.ceil(result.total / result.perPage));
   const totalAll = (result.counts.pending || 0) + (result.counts.approved || 0) + (result.counts.rejected || 0);
@@ -28,40 +29,61 @@
 <%- include('../../partials/contestHeader', { active: 'submissions' }) %>
 <div class="page-body"><div class="container-xl">
 
-  <% if (canManage) { %>
-    <form method="post" action="<%= base %>/submissions/revalidate-all" class="d-flex justify-content-end mb-2"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Check all again') %><%= allWikis && allWikis.some((w) => w.fountainCode) ? ' · Fountain' : '' %></button></form>
-  <% } %>
   <div class="card" data-live>
-    <div class="card-header flex-wrap gap-2">
-      <ul class="nav nav-pills card-header-pills">
-        <li class="nav-item"><a class="nav-link<%= !filters.status ? ' active' : '' %>" href="<%= qs({ status: null, page: null }) %>"><%= t("All") %> <span class="badge bg-secondary-lt ms-1"><%= totalAll %></span></a></li>
-        <% ['pending', 'approved', 'rejected', 'withdrawn'].filter((s) => result.counts[s]).forEach((s) => { %>
-          <li class="nav-item"><a class="nav-link<%= filters.status === s ? ' active' : '' %>" href="<%= qs({ status: s, page: null }) %>"><%= SUBMISSION_STATUSES[s].label %> <span class="badge bg-<%= SUBMISSION_STATUSES[s].color %>-lt ms-1"><%= result.counts[s] %></span></a></li>
-        <% }) %>
-      </ul>
-      <% if (can('manageEvent') || can('exportData')) { %><div class="order-last"><%- include('../../partials/exportMenu', { dataset: 'entries' }) %></div><% } %>
-      <form class="ms-auto d-flex gap-2" method="get">
-        <% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
+    <div class="card-header z-list-head">
+      <form class="z-list-filters" method="get">
+        <% if (filters.view) { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
+        <% if (filters.sort !== 'submitted' || filters.dir !== 'desc') { %><input type="hidden" name="sort" value="<%= filters.sort %>"><input type="hidden" name="dir" value="<%= filters.dir %>"><% } %>
+        <select class="form-select form-select-sm z-fit" name="status" aria-label="<%= t('Status') %>" data-autosubmit>
+          <option value=""><%= t('All') %> (<%= formatNumber(totalAll) %>)</option>
+          <% ['pending', 'approved', 'rejected', 'withdrawn'].filter((s) => result.counts[s] || filters.status === s).forEach((s) => { %>
+            <option value="<%= s %>"<%= filters.status === s ? ' selected' : '' %>><%= SUBMISSION_STATUSES[s].label %> (<%= formatNumber(result.counts[s] || 0) %>)</option>
+          <% }) %>
+        </select>
+        <div class="input-icon z-search-sm">
+          <span class="input-icon-addon"><i class="ti ti-search"></i></span>
+          <input class="form-control form-control-sm" type="search" name="q" value="<%= filters.q %>" placeholder="<%= t('Search titles') %>" aria-label="<%= t('Search titles') %>">
+        </div>
         <% if (showNames && result.participants.length > 1) { %>
-          <select class="form-select w-auto" name="participant" aria-label="<%= t('Participant') %>" data-autosubmit>
+          <select class="form-select form-select-sm z-fit" name="participant" aria-label="<%= t('Participant') %>" data-autosubmit>
             <option value=""><%= t('All participants') %></option>
-            <% result.participants.forEach((pp) => { %>
-              <option value="<%= pp.id %>"<%= filters.participant === pp.id ? ' selected' : '' %>><%= pp.username %> (<%= settings.wordCountEnabled ? t('{n} entries, {w} words', { n: pp.entries, w: formatNumber(pp.words) }) : pp.entries %>)</option>
+            <% [...result.participants].sort((x, y) => y.entries - x.entries).forEach((pp) => { %>
+              <option value="<%= pp.id %>"<%= filters.participant === pp.id ? ' selected' : '' %>><%= pp.username %> · <%= formatNumber(pp.entries) %></option>
             <% }) %>
           </select>
         <% } %>
-        <% if (filters.sort !== 'submitted' || filters.dir !== 'desc') { %><input type="hidden" name="sort" value="<%= filters.sort %>"><input type="hidden" name="dir" value="<%= filters.dir %>"><% } %>
         <% if (currentUser) { %>
-          <label class="form-check form-switch m-0 align-self-center">
+          <label class="form-check form-switch m-0">
             <input class="form-check-input" type="checkbox" name="mine" value="1"<%= filters.mine ? ' checked' : '' %> data-autosubmit>
-            <span class="form-check-label"><%= t("Only mine") %></span>
+            <span class="form-check-label small"><%= t('Only mine') %></span>
           </label>
         <% } %>
-        <div class="input-icon">
-          <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-          <input class="form-control" type="search" name="q" value="<%= filters.q %>" placeholder="<%= t("Search titles") %>" aria-label="<%= t("Search titles") %>">
-        </div>
       </form>
+      <div class="z-head-actions">
+        <span class="z-bulk-slot"></span>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-icon<%= filters.view ? ' btn-primary' : '' %>" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('Show') %>" aria-label="<%= t('Show') %>"><i class="ti ti-<%= { people: 'users', reviewers: 'gavel' }[filters.view] || 'layout-list' %>"></i></button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <h6 class="dropdown-header"><%= t('Show') %></h6>
+            <% [['', 'Plain list', 'list'], ['people', 'By participant', 'users'], ['reviewers', 'By reviewer', 'gavel']].forEach(([key, label, icon]) => { %>
+              <a class="dropdown-item<%= (filters.view || '') === key ? ' active' : '' %>" href="<%= qs({ view: key || null, page: null }) %>"><i class="ti ti-<%= icon %> me-2"></i><%= t(label) %></a>
+            <% }) %>
+          </div>
+        </div>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('More') %>" aria-label="<%= t('More') %>"><i class="ti ti-dots-vertical"></i></button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <% if (canManage) { %>
+              <form method="post" action="<%= base %>/submissions/revalidate-all"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="dropdown-item" type="submit"><i class="ti ti-refresh me-2"></i><%= t('Check all again') %><% if (allWikis && allWikis.some((w) => w.fountainCode)) { %> <span class="text-secondary small ms-1">+ Fountain</span><% } %></button></form>
+            <% } %>
+            <% if (can('manageEvent') || can('exportData')) { %>
+              <div class="dropdown-divider"></div>
+              <h6 class="dropdown-header"><%= t('Download') %></h6>
+              <% [['csv', 'CSV', 'file-type-csv'], ['xls', 'Excel', 'file-spreadsheet'], ['wiki', t('Wikitext'), 'brand-wikipedia'], ['md', 'Markdown', 'markdown']].forEach(([f, name, icon]) => { %><a class="dropdown-item" href="<%= base %>/export/entries.<%= f %>"><i class="ti ti-<%= icon %> me-2"></i><%= name %></a><% }) %>
+            <% } %>
+          </div>
+        </div>
+      </div>
     </div>
 
     <% const picked = filters.participant && result.participants.find((pp) => pp.id === filters.participant); %>
@@ -83,34 +105,48 @@
         <% if (currentUser && contest.status === 'active') { %><div class="empty-action"><a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a></div><% } %>
       </div>
     <% } else { %>
-        <form method="post" action="<%= base %>/review/bulk" id="bulk-review" class="card-body border-bottom z-bulkbar z-bulkbar-top" data-bulk-bar="bulk-ids" hidden>
+        <form method="post" action="<%= base %>/review/bulk" id="bulk-review" class="z-bulkbar" data-bulk-bar="bulk-ids" hidden>
           <%- hidden %>
-          <span class="fw-medium" data-bulk-count></span>
+          <span class="badge bg-primary-lt" data-bulk-count></span>
           <% marks.forEach((m) => { %>
             <select class="form-select form-select-sm w-auto" name="mark:<%= m.name %>" aria-label="<%= m.name %>" required>
               <option value=""><%= m.name %>…</option>
-              <% m.values.forEach((v) => { %><option value="<%= v.label %>"><%= v.label %> (<%= v.points %>)</option><% }) %>
+              <% m.values.forEach((val) => { %><option value="<%= val.label %>"><%= val.label %> (<%= val.points %>)</option><% }) %>
             </select>
           <% }) %>
-          <input class="form-control form-control-sm w-auto flex-fill" name="comment" maxlength="2000" placeholder="<%= t('Comment (optional)') %>" aria-label="<%= t('Comment (optional)') %>">
-          <button class="btn btn-sm btn-success" type="submit" name="decision" value="accept"><i class="ti ti-check me-1"></i><%= t('Accept selected') %></button>
-          <button class="btn btn-sm btn-danger" type="submit" name="decision" value="reject"><i class="ti ti-x me-1"></i><%= t('Reject selected') %></button>
-          <% if (canManage) { %><button class="btn btn-sm btn-ghost-danger" type="submit" formaction="<%= base %>/submissions/remove" data-confirm="<%= t('Remove the selected entries from the event?') %>"><i class="ti ti-trash me-1"></i><%= t('Remove selected') %></button><% } %>
-          <% if (bulk) { %><button class="btn btn-sm btn-ghost-warning" type="submit" formaction="<%= base %>/review/bulk-delete" data-confirm="<%= t('Delete the reviews of the selected entries? Reviewers delete only their own.') %>"><i class="ti ti-eraser me-1"></i><%= t('Delete reviews') %></button><% } %>
+          <input type="hidden" name="comment">
+          <% if (currentUser && (bulk || canManage)) { %><button class="btn btn-sm btn-icon btn-primary" type="button" data-review-selected="<%= base %>/review" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></button><% } %>
+          <% if (bulk) { %>
+            <button class="btn btn-sm btn-icon btn-success" type="submit" name="decision" value="accept" title="<%= t('Accept selected') %>" aria-label="<%= t('Accept selected') %>"><i class="ti ti-check"></i></button>
+            <button class="btn btn-sm btn-icon btn-danger" type="submit" name="decision" value="reject" data-ask="comment" data-ask-text="<%= t('Why are they not accepted?') %>" title="<%= t('Reject selected') %>" aria-label="<%= t('Reject selected') %>"><i class="ti ti-x"></i></button>
+            <button class="btn btn-sm btn-icon btn-ghost-warning" type="submit" formaction="<%= base %>/review/bulk-delete" data-confirm="<%= t('Delete the reviews of the selected entries? Reviewers delete only their own.') %>" title="<%= t('Delete reviews') %>" aria-label="<%= t('Delete reviews') %>"><i class="ti ti-eraser"></i></button>
+          <% } %>
+          <% if (canManage) { %><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" formaction="<%= base %>/submissions/remove" data-confirm="<%= t('Remove the selected entries from the event?') %>" title="<%= t('Remove selected') %>" aria-label="<%= t('Remove selected') %>"><i class="ti ti-trash"></i></button><% } %>
         </form>
       <div class="table-responsive">
-        <table class="table table-vcenter card-table">
-          <thead><tr><% if (bulk || canManage) { %><th class="w-1"><input class="form-check-input m-0" type="checkbox" data-check-all="bulk-ids" aria-label="<%= t('Select all') %>"></th><% } %><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><% if (showReviewers) { %><th><%= t('Reviewers') %></th><% } %><% if (settings.wordCountEnabled) { %><%- sortHead('words', t('Words'), 'text-end') %><% } %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
+        <table class="table table-vcenter card-table z-subs-table">
+          <thead><tr><% if (bulk || canManage) { %><th class="w-1"><input class="form-check-input m-0" type="checkbox" data-check-all="bulk-ids" aria-label="<%= t('Select all') %>"></th><% } %><%- sortHead('title', t('Entry')) %><%- sortHead('participant', t('Participant')) %><%- sortHead('status', t('Status')) %><% if (showReviewers) { %><%- sortHead('reviewers', t('Reviewers')) %><% } %><% if (settings.wordCountEnabled) { %><%- sortHead('words', t('Words'), 'text-end') %><% } %><%- sortHead('submitted', t('Submitted')) %><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
           <tbody>
-            <% result.items.forEach((s) => { const meta = JSON.parse(s.metadata); %>
-              <tr>
-                <% if (bulk || canManage) { %><td><% if (canManage || reviewable(s)) { %><input class="form-check-input m-0" type="checkbox" name="ids" value="<%= s.id %>" form="bulk-review" data-check="bulk-ids" aria-label="<%= t('Select') %> <%= s.title %>"><% } %></td><% } %>
-                <td>
+            <% let lastPerson = null; const personOf = Object.fromEntries(result.participants.map((pp) => [pp.id, pp])); %>
+            <% let rows = result.items.map((s) => ({ s, group: null })); %>
+            <% if (filters.view === 'reviewers') { const by = new Map(); result.items.forEach((s) => { const names = (s.reviews || []).map((rv) => rv.juror && rv.juror.username).filter(Boolean); (names.length ? [...new Set(names)] : ['']).forEach((n) => { if (!by.has(n)) by.set(n, []); by.get(n).push(s); }); }); rows = [...by.entries()].sort((x, y) => (x[0] === '') - (y[0] === '') || x[0].localeCompare(y[0])).flatMap(([n, list]) => list.map((s, i) => ({ s, group: n, first: i === 0, count: list.length }))); } %>
+            <% rows.forEach(({ s, group, first, count }) => { const meta = JSON.parse(s.metadata); %>
+              <% if (filters.view === 'reviewers' && first) { %>
+                <tr class="z-group-row" data-group-toggle="r-<%= group || 'none' %>"><td colspan="20"><i class="ti ti-chevron-down z-group-caret"></i><span class="fw-bold"><%= group || t('Not reviewed yet') %></span><span class="text-secondary small ms-2"><%= tn('{n} entry', '{n} entries', count) %></span></td></tr>
+              <% } %>
+              <% if (filters.view === 'people' && s.participantId !== lastPerson) { lastPerson = s.participantId; const pp = personOf[s.participantId] || { entries: 0, words: 0 }; %>
+                <tr class="z-group-row" data-group-toggle="<%= s.participantId %>"><td colspan="20">
+                  <i class="ti ti-chevron-down z-group-caret"></i>
+                  <span class="fw-bold"><%= showNames || (currentUser && currentUser.id === s.participantId) ? s.participant.username : t('Anonymous') %></span>
+                  <span class="text-secondary small ms-2"><%= tn('{n} entry', '{n} entries', pp.entries) %><%= settings.wordCountEnabled ? ' · ' + t('{n} words', { n: formatNumber(pp.words) }) : '' %></span>
+                </td></tr>
+              <% } %>
+              <tr<%- filters.view === 'people' ? ` data-group="${s.participantId}"` : filters.view === 'reviewers' ? ` data-group="r-${group || 'none'}"` : '' %>>
+                <% if (bulk || canManage) { %><td class="z-c-tick"><% if (canManage || reviewable(s)) { %><input class="form-check-input m-0" type="checkbox" name="ids" value="<%= s.id %>" form="bulk-review" data-check="bulk-ids" aria-label="<%= t('Select') %> <%= s.title %>"><% } %></td><% } %>
+                <td class="z-c-title">
                   <div class="d-flex align-items-center">
                     <% if (meta.file && meta.file.thumbUrl) { %>
                       <span class="avatar avatar-sm me-2" style="background-image: url('<%= meta.file.thumbUrl %>')"></span>
-                    <% } else { %>
-                      <span class="avatar avatar-sm me-2 bg-primary-lt"><i class="ti ti-<%= { article: 'file-text', file: 'photo', item: 'database', lexeme: 'language', property: 'tag' }[s.entryType] || 'file' %>"></i></span>
                     <% } %>
                     <div>
                       <a href="<%= entryUrl(s) %>" target="_blank" rel="noopener"><%= s.title %></a>
@@ -118,22 +154,22 @@
                     </div>
                   </div>
                 </td>
-                <td>
+                <td class="z-c-who">
                   <% if (showNames || (currentUser && currentUser.id === s.participantId)) { %>
                     <a href="<%= qs({ participant: s.participantId, page: null }) %>" title="<%= t('Only this participant') %>" class="z-user-name"><%= s.participant.username %></a>
                   <% } else { %><span class="text-secondary"><%= t('Anonymous') %></span><% } %>
                 </td>
-                <td><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
-                <% if (showReviewers) { %><td class="small"><% (s.reviews || []).forEach((rv, i) => { %><%= i ? ', ' : '' %><span class="text-<%= rv.decision === 'accept' ? 'green' : rv.decision === 'reject' ? 'red' : 'secondary' %>"><%= rv.juror ? rv.juror.username : '' %></span><% }) %><% if (!(s.reviews || []).length) { %><span class="text-secondary">—</span><% } %></td><% } %>
-                <% if (settings.wordCountEnabled) { %><td class="text-end"><%= s.wordCount != null ? formatNumber(s.wordCount) : '—' %></td><% } %>
-                <td class="text-secondary text-nowrap"><%= formatDateTime(s.submittedAt, contest.timezone) %></td>
-                <td>
+                <td class="z-c-status"><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
+                <% if (showReviewers) { %><td class="small z-c-rev"><% (s.reviews || []).forEach((rv, i) => { %><%= i ? ', ' : '' %><span class="text-<%= rv.decision === 'accept' ? 'green' : rv.decision === 'reject' ? 'red' : 'secondary' %>"><%= rv.juror ? rv.juror.username : '' %></span><% }) %><% if (!(s.reviews || []).length) { %><span class="text-secondary">—</span><% } %></td><% } %>
+                <% if (settings.wordCountEnabled) { %><td class="text-end z-c-words"><%= s.wordCount != null ? formatNumber(s.wordCount) : '—' %></td><% } %>
+                <td class="text-secondary text-nowrap z-c-when"><%= formatDateTime(s.submittedAt, contest.timezone) %></td>
+                <td class="z-c-act">
                   <div class="z-row-actions">
-                    <% if (currentUser && canReview(s)) { %><a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" data-popup title="<%= t('Quick look') %>" aria-label="<%= t('Quick look') %>"><i class="ti ti-eye"></i></a><% } %>
+                    <% if (currentUser && canReview(s)) { %><a class="btn btn-sm btn-ghost-primary btn-icon" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a><% } %>
                     <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= entryUrl(s) %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
                     <% const more = canWithdraw(s) || canAppealRow(s) || canManage || can('deleteAnything'); if (more) { %>
                       <div class="dropdown d-inline-block">
-                        <button class="btn btn-sm btn-ghost-secondary btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('More') %>"><i class="ti ti-dots-vertical"></i></button>
+                        <button class="btn btn-sm btn-ghost-secondary btn-icon" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="<%= t('More') %>"><i class="ti ti-dots-vertical"></i></button>
                         <div class="dropdown-menu dropdown-menu-end">
                           <% if (canAppealRow(s)) { %><form method="post" action="<%= base %>/submissions/<%= s.id %>/appeal" data-ask="reason" data-ask-text="<%= t('Why should the organizers look at this again?') %>"><%- hidden %><input type="hidden" name="reason"><button class="dropdown-item" type="submit"><i class="ti ti-scale me-2"></i><%= t('Appeal a decision') %></button></form><% } %>
                           <% if (canWithdraw(s)) { %><form method="post" action="<%= base %>/submissions/<%= s.id %>/withdraw" data-confirm="<%= t('Withdraw this entry?') %>"><%- hidden %><button class="dropdown-item" type="submit"><i class="ti ti-arrow-back-up me-2"></i><%= t('Withdraw my entry') %></button></form><% } %>

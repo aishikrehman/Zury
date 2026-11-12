@@ -219,6 +219,7 @@ async function entryForReview(contestId, submissionId) {
     where: { id: submissionId, contestId },
     include: {
       participant: { select: { id: true, username: true } },
+      submittedBy: { select: { id: true, username: true } },
       reviews: { include: { juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } },
     },
   });
@@ -636,7 +637,34 @@ function appeals(contestId) {
   });
 }
 
+async function handOver({ actor, contest, settings, submissionId, toId }) {
+  const entry = await prisma.submission.findFirst({ where: { id: submissionId, contestId: contest.id } });
+  if (!entry) throw new ReviewError('That entry no longer exists.');
+  if (toId === actor.id || toId === entry.participantId) throw new ReviewError('Choose another reviewer.');
+  if (!(await jurorsFor(contest.id, entry.wiki, settings)).includes(toId)) throw new ReviewError('This person is not on the reviewers for this wiki.');
+  if (settings.reviewAssignment === 'assigned') {
+    await prisma.reviewAssignment.deleteMany({ where: { contestId: contest.id, submissionId, jurorId: actor.id } });
+    await prisma.reviewAssignment.upsert({ where: { submissionId_jurorId: { submissionId, jurorId: toId } }, update: {}, create: { contestId: contest.id, submissionId, jurorId: toId, assignedById: actor.id } });
+  }
+  await notifications.notify(toId, {
+    kind: 'review.handover',
+    message: settings.reviewAssignment === 'assigned' ? '{who} handed you “{title}” to review in {event}.' : '{who} asks you to review “{title}” in {event}.',
+    params: { who: actor.username, title: entry.title, event: contest.title },
+    link: `${pathOf(contest)}/review?entry=${submissionId}`,
+    contestId: contest.id,
+  });
+  await audit.record({ actorId: actor.id, contestId: contest.id, action: 'review.handover', entityType: 'Submission', entityId: submissionId, details: { title: entry.title, to: toId } });
+}
+
+// Reviewers who could take this entry (for the hand-over list).
+async function handOverChoices({ contest, settings, entry, me }) {
+  const ids = (await jurorsFor(contest.id, entry.wiki, settings)).filter((id) => id !== me && id !== entry.participantId);
+  if (!ids.length) return [];
+  return prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, username: true }, orderBy: { username: 'asc' } });
+}
+
 module.exports = {
+  handOver, handOverChoices,
   reassignInactive,
   autoAssign,
   verdict, decide, DECISION_RULES, juryActivity, queuePage, QUEUE_SORTS,

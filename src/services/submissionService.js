@@ -191,6 +191,7 @@ function visibilityWhere({ contestId, user, can }) {
 const SORTS = {
   title: (dir) => [{ title: dir }],
   participant: (dir) => [{ participant: { username: dir } }],
+  reviewers: (dir) => [{ reviews: { _count: dir } }],
   status: (dir) => [{ status: dir }],
   submitted: (dir) => [{ submittedAt: dir }],
   words: (dir) => [{ wordCount: { sort: dir, nulls: 'last' } }],
@@ -378,7 +379,19 @@ async function repin(submission) {
   return prisma.submission.update({ where: { id: submission.id }, data: { revId: meta.revId ?? null, wordCount: meta.wordCount ?? null, metadata: JSON.stringify({ ...meta, currentRevId: meta.revId }) } });
 }
 
+async function pinRevision(submission, revId) {
+  const host = require('../wiki/wikiUrls').dbnameToHost(submission.wiki);
+  const q = new URLSearchParams({ action: 'query', prop: 'revisions', revids: String(revId), rvprop: 'ids|size|timestamp', format: 'json', formatversion: '2' });
+  const r = await fetch(`https://${host}/w/api.php?${q}`, { headers: { 'User-Agent': require('../config/env').userAgent } }).then((x) => x.json()).catch(() => null);
+  const page = r && r.query && r.query.pages && r.query.pages[0];
+  const rev = page && page.revisions && page.revisions[0];
+  if (!rev || (page.title && page.title.replace(/_/g, ' ') !== submission.title.replace(/_/g, ' '))) return null;
+  const meta = JSON.parse(submission.metadata || '{}');
+  return prisma.submission.update({ where: { id: submission.id }, data: { revId: rev.revid, metadata: JSON.stringify({ ...meta, sizeBytes: rev.size, pinnedAt: rev.timestamp }) } });
+}
+
 module.exports = {
+  pinRevision,
   repin,
   myEntries,
   myCountsByEvent, SORTS, MINE_SORTS,

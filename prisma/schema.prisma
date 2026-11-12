@@ -312,6 +312,8 @@ model ContestWiki {
   // The Fountain editathon this wiki follows (fountain.toolforge.org/editathons/<code>), if any.
   fountainCode     String    @default("")
   fountainSyncedAt DateTime?
+  // Brought up to date every hour by itself (else only with Update now).
+  fountainAuto     Boolean   @default(true)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
