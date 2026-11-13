@@ -80,7 +80,8 @@ function effectiveFor(contest, settings, eventWiki, now = new Date()) {
   if (!STICKY_STATUSES.includes(contest.status) && contest.statusMode !== 'manual') {
     effContest.status = computeAutoStatus(effContest, effSettings, now);
   }
-  if (eventWiki && eventWiki.status === 'paused' && !STICKY_STATUSES.includes(effContest.status)) effContest.status = 'paused';
+  // A paused wiki pauses an event that's running or about to; a finished event stays finished.
+  if (eventWiki && eventWiki.status === 'paused' && !STICKY_STATUSES.includes(effContest.status) && effContest.status !== 'completed') effContest.status = 'paused';
 
   const overridden = new Set([
     ...Object.keys(o.contest).map((k) => `contest.${k}`),

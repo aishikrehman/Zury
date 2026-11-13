@@ -70,6 +70,14 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     _count: { _all: true },
   });
   const approvedMap = toMap(approvedBy, 'participantId');
+  // Per person: not accepted too (for the participants chart); how many have something accepted; reviews given.
+  const [rejectedBy, withAccepted, reviewsGiven, reviewersActive] = await Promise.all([
+    prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: { in: ['rejected', 'disqualified'] }, participantId: { in: top.map((t) => t.participantId) } }, _count: { _all: true } }),
+    prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: 'approved' } }),
+    prisma.review.count({ where: { contestId: contest.id, ...(wiki && { submission: { wiki } }) } }),
+    prisma.review.groupBy({ by: ['jurorId'], where: { contestId: contest.id, ...(wiki && { submission: { wiki } }) } }),
+  ]);
+  const rejectedMap = toMap(rejectedBy, 'participantId');
 
   const from = contest.startDate && contest.startDate < now ? contest.startDate : dates[0]?.submittedAt || new Date(now - 13 * DAY_MS);
   const until = contest.endDate && contest.endDate < now ? contest.endDate : now;
@@ -124,7 +132,10 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     byType: toMap(byType, 'entryType'),
     byWiki: toMap(byWiki, 'wiki'),
     roles: toMap(memberships, 'role'),
-    topParticipants: top.map((t) => ({ username: name[t.participantId], count: t._count._all, approved: approvedMap[t.participantId] || 0 })),
+    topParticipants: top.map((t) => ({ username: name[t.participantId], count: t._count._all, approved: approvedMap[t.participantId] || 0, rejected: rejectedMap[t.participantId] || 0 })),
+    peopleAccepted: withAccepted.length,
+    reviewsGiven,
+    reviewersActive: reviewersActive.length,
     series,
     wordSeries,
     last7: series.values.slice(-7),

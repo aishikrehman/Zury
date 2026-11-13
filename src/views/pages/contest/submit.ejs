@@ -16,9 +16,15 @@
 
   <div class="row row-cards">
     <div class="col-lg-8">
-      <form method="post" action="<%= base %>/submit/preview" class="card" data-check-anim>
+      <% const stepNow = items ? 3 : 1; const anyOk = items && items.some((i) => i.ok); %>
+      <ol class="z-steps mb-3" data-steps>
+        <li class="<%= stepNow > 1 ? 'is-done' : 'is-now' %>"><span>১</span><%= t(mass ? 'Titles' : 'Title') %></li>
+        <li class="<%= stepNow > 2 ? 'is-done' : '' %>" data-step-check><span>২</span><%= t('Check') %></li>
+        <li class="<%= stepNow === 3 ? (anyOk ? 'is-now' : 'is-bad') : '' %>"><span>৩</span><%= t('Submit') %></li>
+      </ol>
+      <form method="post" action="<%= base %>/submit/preview" class="card<%= items ? ' z-form-folded' : '' %>" data-check-anim>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-upload me-2"></i><%= mass ? t('Submit entries') : t('Submit an entry') %></h3></div>
+        <% if (items) { %><div class="z-folded-line"><i class="ti ti-file-text"></i><span class="z-folded-sum text-truncate"><%= String(text || '').split(/\r?\n/).filter(Boolean).join(' · ') %></span><button type="button" class="btn btn-sm btn-ghost-primary ms-auto" data-unfold><i class="ti ti-pencil me-1"></i><%= t('Change') %></button></div><% } %>
         <div class="card-body">
           <% if (error) { %><div class="alert alert-danger" role="alert"><i class="ti ti-alert-circle me-1"></i><%= error %></div><% } %>
           <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= t(window.reason) %><%= canOthers ? ' ' + t('As an organizer you can still submit for participants.') : '' %></div><% } %>
@@ -42,12 +48,50 @@
         </div>
       </form>
 
+      <div data-check-slot></div>
       <% if (items) { %>
-        <div class="card mt-3">
-          <div class="card-header">
+        <div class="<%= items.length === 1 ? 'z-result-wrap mt-3' : 'card mt-3' %>">
+          <% if (items.length > 1) { %><div class="card-header">
             <h3 class="card-title"><%= t("Preview") %></h3>
-            <div class="card-actions"><span class="badge bg-green-lt"><%= t('{n} ready', { n: okCount }) %></span> <span class="badge bg-red-lt"><%= t('{n} with problems', { n: items.length - okCount }) %></span></div>
+            <div class="card-actions<%= items.length === 1 ? ' d-none' : '' %>"><span class="badge bg-green-lt"><%= t('{n} ready', { n: okCount }) %></span> <span class="badge bg-red-lt"><%= t('{n} with problems', { n: items.length - okCount }) %></span></div>
+          </div><% } %>
+          <% if (items.length === 1) { const i = items[0]; const state = i.ok ? (i.warnings.length ? 'warn' : 'ok') : 'bad'; %>
+          <div class="card-body z-result is-<%= state %>">
+            <div class="z-result-mark" aria-hidden="true">
+              <% if (state === 'ok') { %><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l7 7 15-16"/></svg>
+              <% } else if (state === 'warn') { %><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M26 15v14M26 36v.5"/></svg>
+              <% } else { %><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M18 18l16 16M34 18L18 34"/></svg><% } %>
+            </div>
+            <div class="z-result-head"><%= state === 'ok' ? t('Ready to submit') : state === 'warn' ? t('Ready, with warnings') : t('Cannot be submitted') %></div>
+            <div class="z-result-title">
+              <% if (i.meta && i.meta.exists) { %><a href="<%= i.meta.url %>" rel="noopener" target="_blank"><%= i.meta.title %> <i class="ti ti-external-link"></i></a>
+              <% } else { %><span><%= i.input %></span><% } %>
+            </div>
+            <div class="z-result-chips">
+              <% if (i.meta && i.meta.exists && eventWikis.length > 1) { %><span><i class="ti ti-world"></i><%= wikiLocal(i.meta.wiki) %></span><% } %>
+              <% if (i.meta && i.meta.wordCount != null) { %><span><i class="ti ti-align-justified"></i><%= t('{n} words', { n: formatNumber(i.meta.wordCount) }) %></span><% } %>
+              <% if (i.meta && i.meta.sizeBytes != null) { %><span><i class="ti ti-database"></i><%= t('{n} bytes', { n: formatNumber(i.meta.sizeBytes) }) %></span><% } %>
+              <% if (i.meta && i.meta.file) { %><span><i class="ti ti-photo"></i><%= i.meta.file.megapixels %> MP</span><% } %>
+              <% if (i.meta && i.meta.entity) { %><span><i class="ti ti-database"></i><%= t('{n} statements', { n: i.meta.entity.statementCount }) %></span><% } %>
+            </div>
+            <ul class="z-result-checks">
+              <% let row = 0; %>
+              <% i.reasons.forEach((r) => { %><li class="is-bad" style="--d: <%= row++ %>"><i class="ti ti-circle-x"></i><span><%= t(r) %></span></li><% }) %>
+              <% i.warnings.forEach((w) => { %><li class="is-warn" style="--d: <%= row++ %>"><i class="ti ti-alert-triangle"></i><span><%= t(w) %></span></li><% }) %>
+              <% if (i.ok) rules.forEach((r) => { %><li class="is-ok" style="--d: <%= row++ %>"><i class="ti ti-circle-check"></i><span><%= r %></span></li><% }) %>
+              <% if (i.ok && !rules.length && !i.warnings.length) { %><li class="is-ok" style="--d: 0"><i class="ti ti-circle-check"></i><span><%= t('Passed automatic checks') %></span></li><% } %>
+            </ul>
+                      <% if (i.ok && i.meta && i.meta.entryType === 'article' && i.meta.creator && i.meta.creator !== (participant || (currentUser && currentUser.username))) { %>
+              <div class="z-author-ask mt-3 text-start">
+                <div class="small mb-1"><i class="ti ti-user-question me-1"></i><%= t('This article was created by {name}. Is it your expansion?', { name: i.meta.creator }) %></div>
+                <div class="btn-group btn-group-sm" role="group">
+                  <input type="radio" class="btn-check" name="as:<%= i.input %>" id="au-<%= i.input %>" value="author" form="confirm-entries" checked><label class="btn" for="au-<%= i.input %>"><%= t('No: credit {name}', { name: i.meta.creator }) %></label>
+                  <input type="radio" class="btn-check" name="as:<%= i.input %>" id="ex-<%= i.input %>" value="expansion" form="confirm-entries"><label class="btn" for="ex-<%= i.input %>"><%= t('Yes, my expansion') %></label>
+                </div>
+              </div>
+            <% } %>
           </div>
+          <% } else { %>
           <div class="card-body z-check-list">
             <% items.forEach((i) => { %>
               <div class="z-check-item <%= i.ok ? (i.warnings.length ? 'is-warn' : 'is-ok') : 'is-bad' %>">
@@ -61,7 +105,7 @@
                   <div class="d-flex flex-wrap gap-1 mt-1">
                     <% if (i.meta && i.meta.exists && eventWikis.length > 1) { %><span class="badge bg-secondary-lt"><%= wikiLocal(i.meta.wiki) %></span><% } %>
                     <% if (i.meta && i.meta.entryType) { %><span class="badge bg-secondary-lt"><%= i.meta.entryType %></span><% } %>
-                    <% if (i.meta && i.meta.wordCount != null) { %><span class="badge bg-blue-lt"><i class="ti ti-letter-case me-1"></i><%= t('{n} words', { n: formatNumber(i.meta.wordCount) }) %></span><% } %>
+                    <% if (i.meta && i.meta.wordCount != null) { %><span class="badge bg-blue-lt"><i class="ti ti-align-justified me-1"></i><%= t('{n} words', { n: formatNumber(i.meta.wordCount) }) %></span><% } %>
                     <% if (i.meta && i.meta.file) { %><span class="badge bg-blue-lt"><%= i.meta.file.megapixels %> MP</span><% } %>
                     <% if (i.meta && i.meta.entity) { %><span class="badge bg-blue-lt"><%= i.meta.entity.label || i.meta.entity.id %> · <%= t('{n} statements', { n: i.meta.entity.statementCount }) %></span><% } %>
                   </div>
@@ -81,13 +125,20 @@
               </div>
             <% }) %>
           </div>
+          <% } %>
+          <% const another = `${base}/submit${participant ? `?participant=${encodeURIComponent(participant)}` : ''}`; %>
           <% if (okCount) { %>
-            <form method="post" action="<%= base %>/submit" class="card-footer d-flex align-items-center" id="confirm-entries">
+            <form method="post" action="<%= base %>/submit" class="card-footer d-flex align-items-center gap-2 z-result-actions" id="confirm-entries">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="hidden" name="entries" value="<%= items.filter((i) => i.ok).map((i) => i.input).join('\n') %>">
               <input type="hidden" name="participant" value="<%= participant %>">
+              <a class="btn btn-ghost-primary" href="<%= another %>"><i class="ti ti-plus me-1"></i><%= t('Submit another') %></a>
               <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-check me-1"></i><%= tn('Submit {n} entry', 'Submit {n} entries', okCount) %></button>
             </form>
+          <% } else { %>
+            <div class="card-footer d-flex z-result-actions">
+              <a class="btn btn-primary mx-auto" href="<%= another %>"><i class="ti ti-plus me-1"></i><%= t('Submit another') %></a>
+            </div>
           <% } %>
         </div>
       <% } %>

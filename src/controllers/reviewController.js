@@ -245,9 +245,20 @@ async function results(req, res, next) {
       return next(err);
     }
     const wiki = req.wikiScope?.wiki;
+    const rows = showRanking ? await reviewService.leaderboard({ contest: req.contest, settings: req.eventSettings, wiki }) : [];
+    // Word-based events: each person's words by status, in the leaderboard itself.
+    if (rows.length && req.settings.wordCountEnabled) {
+      const g = await prisma.submission.groupBy({ by: ['participantId', 'status'], where: { contestId: req.contest.id, ...(wiki && { wiki }), status: { not: 'withdrawn' } }, _sum: { wordCount: true } });
+      const users = await prisma.user.findMany({ where: { id: { in: [...new Set(g.map((x) => x.participantId))] } }, select: { id: true, username: true } });
+      const nameOf = Object.fromEntries(users.map((u) => [u.id, u.username]));
+      const by = {};
+      for (const x of g) { const k = x.status === 'approved' ? 'approved' : ['rejected', 'disqualified'].includes(x.status) ? 'rejected' : 'pending'; const w = (by[nameOf[x.participantId]] ||= { approved: 0, pending: 0, rejected: 0 }); w[k] += x._sum.wordCount || 0; }
+      for (const r of rows) r.wordsBy = by[r.username] || { approved: 0, pending: 0, rejected: 0 };
+      rows.withWordsBy = true;
+    }
     res.render('pages/contest/results', {
       title: `Results and statistics — ${req.contest.title}`,
-      rows: showRanking ? await reviewService.leaderboard({ contest: req.contest, settings: req.eventSettings, wiki }) : [],
+      rows,
       // Events without word counts are ranked by points, with no word column.
       showRanking,
       progress: insider || req.eventSettings.juryStatsEnabled !== false ? await reviewService.progress(req.contest.id, { wiki }) : null,
@@ -335,7 +346,48 @@ async function juryEventsFor(userId) {
 
 async function myQueue(req, res, next) {
   try {
-    res.render('pages/review/index', { title: 'Review — Zury', events: await juryEventsFor(req.user.id) });
+    const userId = req.user.id;
+    const events = await juryEventsFor(userId);
+    const ids = events.map((e) => e.contest.id);
+    const day = 86400000;
+    const now = Date.now();
+    const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+    const since30 = new Date(startToday.getTime() - 29 * day);
+    const [mine, byEvent, totals, appeals, recent] = await Promise.all([
+      prisma.review.findMany({ where: { jurorId: userId, createdAt: { gte: since30 } }, select: { createdAt: true } }),
+      prisma.review.groupBy({ by: ['contestId', 'decision'], where: { jurorId: userId, contestId: { in: ids } }, _count: { _all: true } }),
+      prisma.submission.groupBy({ by: ['contestId', 'status'], where: { contestId: { in: ids }, status: { not: 'withdrawn' } }, _count: { _all: true } }),
+      prisma.appeal.groupBy({ by: ['contestId'], where: { contestId: { in: ids }, status: 'open' }, _count: { _all: true } }),
+      prisma.review.findMany({ where: { jurorId: userId }, orderBy: { updatedAt: 'desc' }, take: 8, select: { decision: true, updatedAt: true, comment: true, submission: { select: { id: true, title: true, wiki: true } }, contest: { select: { id: true, title: true, slug: true, path: true, series: { select: { slug: true } } } } } }),
+    ]);
+    // My reviews per day, last 30 days.
+    const perDay = Array.from({ length: 30 }, (_, i) => ({ at: new Date(since30.getTime() + i * day), n: 0 }));
+    for (const r of mine) { const i = Math.floor((r.createdAt - since30) / day); if (perDay[i]) perDay[i].n += 1; }
+    let streak = 0; for (let i = perDay.length - 1; i >= 0 && perDay[i].n; i -= 1) streak += 1;
+    const weekAgo = new Date(startToday.getTime() - 6 * day);
+    const stats = {
+      waiting: events.reduce((a, e) => a + e.remaining, 0),
+      today: mine.filter((r) => r.createdAt >= startToday).length,
+      week: mine.filter((r) => r.createdAt >= weekAgo).length,
+      accepted: byEvent.filter((g) => g.decision === 'accept').reduce((a, g) => a + g._count._all, 0),
+      rejected: byEvent.filter((g) => g.decision === 'reject').reduce((a, g) => a + g._count._all, 0),
+      other: byEvent.filter((g) => !['accept', 'reject'].includes(g.decision)).reduce((a, g) => a + g._count._all, 0),
+      perDay, streak,
+    };
+    const DECIDED = ['approved', 'rejected', 'disqualified'];
+    for (const e of events) {
+      const id = e.contest.id;
+      e.mineAccept = byEvent.filter((g) => g.contestId === id && g.decision === 'accept').reduce((a, g) => a + g._count._all, 0);
+      e.mineReject = byEvent.filter((g) => g.contestId === id && g.decision === 'reject').reduce((a, g) => a + g._count._all, 0);
+      const t = totals.filter((g) => g.contestId === id);
+      e.total = t.reduce((a, g) => a + g._count._all, 0);
+      e.decided = t.filter((g) => DECIDED.includes(g.status)).reduce((a, g) => a + g._count._all, 0);
+      e.appeals = appeals.find((g) => g.contestId === id)?._count._all || 0;
+      const end = e.contest.endDate ? new Date(e.contest.endDate).getTime() : null;
+      e.daysLeft = end && end > now ? Math.ceil((end - now) / day) : null;
+      e.finished = ['completed', 'archived', 'cancelled'].includes(e.contest.status);
+    }
+    res.render('pages/review/index', { title: 'Review — Zury', events, stats, recent: recent.map((r) => ({ ...r, path: eventPath(r.contest) })) });
   } catch (err) {
     next(err);
   }
@@ -448,7 +500,7 @@ async function previewPage(req, res, next) {
     const styles = `https://${host}/w/load.php?lang=${encodeURIComponent(host.split('.')[0])}&modules=${encodeURIComponent('skins.vector.styles|ext.cite.styles|ext.tmh.player.styles|mediawiki.page.gallery.styles|wikibase.client.init')}&only=styles&skin=vector`;
     res.setHeader('Content-Security-Policy', `default-src 'none'; style-src https://${host} 'unsafe-inline'; img-src https: data:; media-src https:; font-src https:; frame-ancestors 'self'; base-uri https://${host}`);
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.type('html').send(`<!doctype html><html lang="${host.split('.')[0]}"><head><meta charset="utf-8"><base href="https://${host}/wiki/" target="_blank"><link rel="stylesheet" href="${styles}"><link rel="stylesheet" href="https://${host}/w/load.php?lang=${encodeURIComponent(host.split('.')[0])}&modules=site.styles&only=styles&skin=vector"><style>body{margin:0;padding:12px 16px;font-family:sans-serif;background:#fff}.mw-parser-output{max-width:none}html,body{overflow-x:hidden}img{max-width:100%;height:auto}@media (max-width:700px){.infobox,.mw-parser-output table,.thumb,figure{float:none!important;width:auto!important;max-width:100%!important;margin-left:0!important;margin-right:0!important}.mw-parser-output table{display:block;overflow-x:auto}}h1.z-t{font-size:1.5rem;margin:0 0 .6rem;font-family:Georgia,serif;font-weight:normal;border-bottom:1px solid #eaecf0}</style></head><body class="skin-vector mediawiki"><div class="mw-body-content">${html}</div></body></html>`);
+    res.type('html').send(`<!doctype html><html lang="${host.split('.')[0]}"><head><meta charset="utf-8"><base href="https://${host}/wiki/" target="_blank"><link rel="stylesheet" href="${styles}"><link rel="stylesheet" href="https://${host}/w/load.php?lang=${encodeURIComponent(host.split('.')[0])}&modules=site.styles&only=styles&skin=vector"><style>body{margin:0;padding:12px 16px;font-family:sans-serif;background:#fff}.mw-parser-output{max-width:none}html{overflow-x:hidden}img{max-width:100%;height:auto}.mw-parser-output{overflow-x:auto}@media (max-width:700px){.infobox,.thumb,figure{float:none!important;max-width:100%!important;margin-left:auto!important;margin-right:auto!important}.mw-parser-output>table:not(.infobox){float:none!important;margin-left:0!important;margin-right:0!important}}.wikitable{background:#f8f9fa;color:#202122;margin:1em 0;border:1px solid #a2a9b1;border-collapse:collapse}.wikitable>*>tr>th,.wikitable>*>tr>td,.wikitable>tr>th,.wikitable>tr>td{border:1px solid #a2a9b1;padding:.2em .4em}.wikitable>*>tr>th,.wikitable>tr>th{background:#eaecf0;text-align:center;font-weight:bold}.wikitable>caption{font-weight:bold;padding:.2em .4em}h1.z-t{font-size:1.5rem;margin:0 0 .6rem;font-family:Georgia,serif;font-weight:normal;border-bottom:1px solid #eaecf0}</style></head><body class="skin-vector mediawiki"><div class="mw-body-content">${html}</div></body></html>`);
   } catch (err) {
     next(err);
   }

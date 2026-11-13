@@ -25,6 +25,15 @@ const view = (req, res, n) => ({
   level: /not accepted|was appealed|blocked|removed/i.test(n.message || '') ? 'urgent' : /accepted|upheld|now /i.test(n.message || '') ? 'good' : 'normal',
 });
 
+// Just the unread count, for the bell's quiet check every minute.
+router.get('/notifications/count.json', requireAuth, async (req, res, next) => {
+  try {
+    res.set('Cache-Control', 'no-store').json({ unread: await notifications.unreadCount(req.user.id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/notifications.json', requireAuth, async (req, res, next) => {
   try {
     const [items, unread] = await Promise.all([notifications.latest(req.user.id), notifications.unreadCount(req.user.id)]);

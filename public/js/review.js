@@ -10,7 +10,7 @@
     const form = btn.closest('form');
     if (btn.dataset.decide === 'reject') {
       const box = form && form.querySelector('#comment');
-      if (box && !box.value.trim()) { e.preventDefault(); const d = box.closest('details'); if (d) d.open = true; const sel = document.querySelector('[data-reason-select]'); const target = box.hidden && sel ? sel : box; if (window.innerWidth < 768) document.documentElement.classList.add('z-side-open'); target.classList.add('is-invalid'); setTimeout(() => target.focus(), 250); return; }
+      if (box && !box.value.trim()) { e.preventDefault(); const d = box.closest('details'); if (d) d.open = true; const target = box; if (window.innerWidth < 768) document.documentElement.classList.add('z-note-open'); else target.scrollIntoView({ block: 'center' }); target.classList.add('is-invalid'); setTimeout(() => target.focus(), 250); return; }
     }
     const field = form && form.querySelector('[data-decision]');
     if (field) field.value = btn.dataset.decide;
@@ -46,7 +46,14 @@
 
   document.addEventListener('submit', async (e) => {
     const form = e.target;
-    if (form.method.toLowerCase() === 'get' && form.closest('.z-review-card')) { e.preventDefault(); swapTo(location.pathname + '?' + new URLSearchParams(new FormData(form))); return; }
+    if (form.method.toLowerCase() === 'get' && form.closest('.z-review-card')) {
+      e.preventDefault();
+      // Only the filters actually set go in the address; on phones the filters page closes once applied.
+      const q = new URLSearchParams([...new FormData(form)].filter(([, v]) => v !== ''));
+      if (form.id === 'review-filters' && window.innerWidth < 768) document.documentElement.classList.add('z-filters-applied');
+      swapTo(location.pathname + (q.toString() ? '?' + q : ''));
+      return;
+    }
     if (!form.matches('[data-review-form]')) return;
     e.preventDefault();
     const body = new URLSearchParams(new FormData(form));
@@ -197,8 +204,10 @@ document.addEventListener('click', (e) => {
   if (!b) return;
   const d = document.querySelector('.z-review-handover');
   if (!d) return;
-  const phone = window.innerWidth < 768;
-  if (phone) { document.documentElement.classList.add('z-side-open'); d.open = true; } else d.open = !d.open;
+  // Phones show the tools in the page (no side sheet): open it there and go to it.
+  // The reviewer list shows only when asked for: the button shows it, a second press hides it.
+  d.hidden = !d.hidden;
+  d.open = !d.hidden;
   if (d.open) { const sel = d.querySelector('select'); if (sel) setTimeout(() => { sel.scrollIntoView({ block: 'center' }); sel.focus(); }, 250); }
 });
 
@@ -278,8 +287,10 @@ document.addEventListener('change', (e) => {
   const box = document.getElementById('comment');
   if (!box) return;
   s.classList.remove('is-invalid'); box.classList.remove('is-invalid');
-  if (s.value === '__custom') { box.hidden = false; box.value = ''; box.focus(); }
-  else { box.hidden = true; box.value = s.value; }
+  // A ready reason is added to what's written; the box stays open for more.
+  if (s.value) { const now = box.value.trim(); if (!now.split(/;s*/).includes(s.value)) box.value = now ? `${now}; ${s.value}` : s.value; }
+  s.value = '';
+  box.focus();
 });
 
 // Full screen on/off or a new window width changes the article's height: measure again.
@@ -300,6 +311,12 @@ function placeBar() {
   const head = document.querySelector('.z-entry-head');
   const filters = document.getElementById('review-filters');
   if (head && filters && filters.previousElementSibling !== head) head.after(filters);
+  // Phones: one button (list + filters): the entry picker sits at the top of the filters sheet.
+  const go = document.querySelector('.z-go');
+  if (go && bar && filters) {
+    if (window.innerWidth < 768) { const after = filters.querySelector('.z-pop-close'); if (go.previousElementSibling !== after) (after ? after.after(go) : filters.prepend(go)); }
+    else if (go.parentElement !== bar) bar.prepend(go);
+  }
 }
 placeBar();
 window.addEventListener('resize', placeBar);
@@ -312,7 +329,7 @@ const closeSheet = () => document.documentElement.classList.remove('z-side-open'
 document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-side-close]')) closeSheet(); });
 document.addEventListener('change', (e) => {
   const s = e.target.closest && e.target.closest('[data-reason-select]');
-  if (s && s.value && s.value !== '__custom' && window.innerWidth < 768) setTimeout(closeSheet, 150);
+  if (s && s.value && window.innerWidth < 768) setTimeout(closeSheet, 150);
 });
 
 // The bell: picking how to tell the participant sets the hidden field and the bell's icon.
@@ -333,3 +350,35 @@ document.addEventListener('click', (e) => {
   setTimeout(show, 4000);
 })();
 document.addEventListener('zury:review-swapped', () => { const f = document.querySelector('.z-review-frame iframe'); if (f) setTimeout(() => f.classList.add('is-sized'), 3000); });
+
+// Phones: the comment opens as a pop-up from the 💬 button in the bottom bar (write a note, then Accept or Reject).
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-open-comment]');
+  const html = document.documentElement;
+  if (b) { html.classList.toggle('z-note-open'); if (html.classList.contains('z-note-open')) setTimeout(() => document.getElementById('comment')?.focus(), 50); return; }
+  // Closes only with its × (or Escape): a stray tap outside keeps what's being written.
+  if (e.target.closest && e.target.closest('[data-close-note]')) html.classList.remove('z-note-open');
+  if (e.target.closest && e.target.closest('[data-close-filters]')) document.getElementById('review-filters')?.classList.remove('show');
+});
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'comment') return;
+  document.querySelector('[data-open-comment]')?.classList.toggle('has-note', !!e.target.value.trim());
+});
+document.addEventListener('change', (e) => { if (e.target.closest && e.target.closest('[data-reason-select]')) document.querySelector('[data-open-comment]')?.classList.toggle('has-note', !!document.getElementById('comment')?.value.trim()); });
+
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.documentElement.classList.remove('z-note-open'); });
+
+// Phones: only the round list icon before the title opens the entry list; the title text itself is just a title.
+['mousedown', 'click', 'touchstart', 'focusin'].forEach((type) => document.addEventListener(type, (e) => {
+  if (window.innerWidth >= 768) return;
+  if (e.target.closest && e.target.closest('.z-entry-head .z-go .ts-control .item')) { e.stopPropagation(); if (type !== 'touchstart') e.preventDefault(); }
+}, true));
+
+// Phones: after filters are applied, the new entry shows (the filters page doesn't reopen by itself).
+document.addEventListener('zury:review-swapped', () => {
+  const html = document.documentElement;
+  if (!html.classList.contains('z-filters-applied')) return;
+  html.classList.remove('z-filters-applied');
+  document.getElementById('review-filters')?.classList.remove('show');
+  window.scrollTo(0, 0);
+});

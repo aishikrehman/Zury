@@ -31,12 +31,27 @@
       if (spec.type === 'area') config.fill = { opacity: 0.16, type: 'solid' };
       config.xaxis = { type: 'datetime', categories: spec.labels, labels: { padding: 0 }, tooltip: { enabled: false }, axisBorder: { show: false } };
       config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? v : '') } };
+      if (spec.dualAxis && spec.series.length > 1) {
+        const fmt = (v) => (Number.isInteger(v) ? v.toLocaleString() : '');
+        config.yaxis = [
+          { seriesName: spec.series[0].name, min: 0, forceNiceScale: true, labels: { padding: 4, formatter: fmt }, title: { text: spec.series[0].name, style: { fontWeight: 500 } } },
+          { seriesName: spec.series[1].name, opposite: true, min: 0, forceNiceScale: true, labels: { padding: 4, formatter: fmt }, title: { text: spec.series[1].name, style: { fontWeight: 500 } } },
+        ];
+        config.legend.show = true;
+        config.legend.position = 'top';
+        config.legend.horizontalAlign = 'right';
+        config.fill = { opacity: [0.16, 0], type: 'solid' };
+        config.stroke = { width: [2, 2], curve: 'smooth', dashArray: [0, 4] };
+      }
     }
     if (spec.type === 'bar') {
-      config.plotOptions = { bar: { columnWidth: (spec.labels || []).length < 4 ? '22%' : '50%', borderRadius: 4, horizontal: Boolean(spec.horizontal), distributed: Boolean(spec.distributed) } };
+      config.plotOptions = { bar: { columnWidth: (spec.labels || []).length < 4 ? '22%' : '50%', barHeight: '62%', borderRadius: 4, horizontal: Boolean(spec.horizontal), distributed: Boolean(spec.distributed) } };
+      if (spec.stacked) { config.chart.stacked = true; config.plotOptions.bar.borderRadius = 2; }
       config.xaxis = { categories: spec.labels, labels: { padding: 0 }, tooltip: { enabled: false }, axisBorder: { show: false } };
       config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? v : '') } };
       if (spec.distributed) config.legend.show = false;
+      // Horizontal bars: the names on the left axis as they are; numbers along the bottom.
+      if (spec.horizontal) { config.yaxis = { labels: { maxWidth: 150, style: { fontSize: '12px' }, formatter: (v) => { const s = String(v); return s.length > 14 ? s.slice(0, 13) + '…' : s; } } }; config.grid = { ...(config.grid || {}), padding: { left: 8, right: 8 } }; config.xaxis.labels = { padding: 0, formatter: (v) => (Number.isInteger(Number(v)) ? v : '') }; }
     }
     if (spec.type === 'donut' || spec.type === 'pie') {
       config.labels = spec.labels;

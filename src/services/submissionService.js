@@ -208,7 +208,7 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
   if (q) where.AND.push({ title: { contains: q } });
   if (mine && user) where.AND.push({ participantId: user.id });
   if (participant) where.AND.push({ participantId: participant });
-  const [items, total, grouped, sums, byPerson] = await Promise.all([
+  const [items, total, grouped, sums, byPerson, personStatus] = await Promise.all([
     prisma.submission.findMany({
       where,
       orderBy: [...(SORTS[sort] || SORTS.submitted)(dir === 'asc' ? 'asc' : 'desc'), { id: 'desc' }],
@@ -218,10 +218,18 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
     }),
     prisma.submission.count({ where }),
     prisma.submission.groupBy({ by: ['status'], where: base, _count: true }),
-    prisma.submission.aggregate({ where, _sum: { wordCount: true } }),
+    prisma.submission.groupBy({ by: ['status'], where, _sum: { wordCount: true } }),
     // Everyone with entries here, for the participant filter: entries and words each.
     prisma.submission.groupBy({ by: ['participantId'], where: base, _count: { _all: true }, _sum: { wordCount: true } }),
+    // Words per person by status (accepted / pending / not accepted).
+    prisma.submission.groupBy({ by: ['participantId', 'status'], where: base, _sum: { wordCount: true } }),
   ]);
+  const kindOf = (k) => (k === 'approved' || k === 'withdrawn' ? k : k === 'rejected' || k === 'disqualified' ? 'rejected' : 'pending');
+  const wordsBy = { approved: 0, pending: 0, rejected: 0 };
+  let words = 0;
+  for (const g of sums) { const n = g._sum.wordCount || 0; const k = kindOf(g.status); if (k !== 'withdrawn') { wordsBy[k] += n; words += n; } }
+  const personWords = {};
+  for (const g of personStatus) { const k = kindOf(g.status); if (k === 'withdrawn') continue; const w = (personWords[g.participantId] ||= { approved: 0, pending: 0, rejected: 0 }); w[k] += g._sum.wordCount || 0; }
   // Big events (Wikidata, lexemes) can have thousands of people: the filter lists the
   // busiest 300, plus whoever is picked; the rest are found through their name in the table.
   byPerson.sort((x, y) => y._count._all - x._count._all);
@@ -229,12 +237,12 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
   const names = await prisma.user.findMany({ where: { id: { in: shown.map((g) => g.participantId) } }, select: { id: true, username: true } });
   const nameOf = Object.fromEntries(names.map((u) => [u.id, u.username]));
   const participants = shown
-    .map((g) => ({ id: g.participantId, username: nameOf[g.participantId] || '?', entries: g._count._all, words: g._sum.wordCount || 0 }))
+    .map((g) => ({ id: g.participantId, username: nameOf[g.participantId] || '?', entries: g._count._all, words: g._sum.wordCount || 0, wordsBy: personWords[g.participantId] || { approved: 0, pending: 0, rejected: 0 } }))
     .sort((a, b) => a.username.localeCompare(b.username));
   const raw = Object.fromEntries(grouped.map((g) => [g.status, g._count]));
   const counts = { pending: 0, approved: 0, rejected: 0, withdrawn: 0 };
   for (const [k, n] of Object.entries(raw)) counts[k === 'approved' || k === 'withdrawn' ? k : k === 'rejected' || k === 'disqualified' ? 'rejected' : 'pending'] += n;
-  return { items, total, page, perPage, counts, words: sums._sum.wordCount || 0, participants };
+  return { items, total, page, perPage, counts, words, wordsBy, participants };
 }
 
 async function findVisible({ contestId, id, user, can, wiki }) {
@@ -318,6 +326,14 @@ const MINE_SORTS = { newest: { submittedAt: 'desc' }, oldest: { submittedAt: 'as
 async function listMine(userId, { status = '', contestId = null, q = '', sort = 'newest' } = {}) {
   const base = { participantId: userId, contest: { deletedAt: null } };
   const where = { ...base, ...(STATUSES.includes(status) && { status }), ...(contestId && { contestId }), ...(q && { title: { contains: q } }) };
+  // Without a chosen event: running events and those waiting for results in full; from finished
+  // events only what wasn't accepted (still worth an appeal or a look), so the page stays light.
+  if (!contestId) {
+    where.OR = [
+      { contest: { deletedAt: null, status: { in: ['published', 'upcoming', 'active', 'paused', 'submission_closed', 'under_review'] } } },
+      { status: { in: ['rejected', 'disqualified', 'appealed'] } },
+    ];
+  }
   const [items, byStatus, words, events] = await Promise.all([
     prisma.submission.findMany({
       where,

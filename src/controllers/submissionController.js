@@ -93,7 +93,9 @@ function renderForm(req, res, { text = '', participant = '', items = null, error
 }
 
 function submitForm(req, res) {
-  renderForm(req, res, {});
+  // "Submit another" keeps the person an organizer was submitting for.
+  const participant = typeof req.query.participant === 'string' ? req.query.participant.slice(0, 255) : '';
+  renderForm(req, res, { participant });
 }
 
 async function handleSubmit(req, res, next, { confirm }) {
@@ -176,7 +178,7 @@ async function index(req, res, next) {
     const filters = {
       status: submissionService.STATUSES.includes(req.query.status) ? req.query.status : '',
       q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
-      mine: req.query.mine === '1',
+      mine: req.query.mine === '1' || req.query.participant === 'me',
       sort: Object.keys(submissionService.SORTS).includes(req.query.sort) && (req.query.sort !== 'words' || req.settings.wordCountEnabled) ? req.query.sort : 'submitted',
       dir: req.query.dir === 'asc' ? 'asc' : 'desc',
       participant: Number.parseInt(req.query.participant, 10) || null,
@@ -362,6 +364,8 @@ async function useLatest(req, res, next) {
     if (!s) return next();
     const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
     if (!staff) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
+    // Published results don't move: hide them first to change an entry's revision.
+    if (req.contest.resultsPublishedAt) { req.flash('warning', req.t('Results are published, so the revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
     await submissionService.repin(s);
     if (req.get('X-Requested-With') === 'fetch') return res.json({ ok: true });
     req.flash('success', req.t('The entry is now the latest revision.'));
@@ -440,6 +444,8 @@ async function useRevision(req, res, next) {
     if (!s) return next();
     const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury') || req.permissions.has('reviewAssignedEntry');
     if (!staff) return res.status(403).render('pages/403', { title: 'Forbidden' });
+    // Published results don't move: hide them first to change an entry's revision.
+    if (req.contest.resultsPublishedAt) { req.flash('warning', req.t('Results are published, so the revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
     const raw = String(req.body.rev || '').trim();
     const revId = Number((raw.match(/oldid=(\d+)/) || raw.match(/^(\d+)$/) || [])[1]);
     const done = revId ? await submissionService.pinRevision(s, revId) : null;

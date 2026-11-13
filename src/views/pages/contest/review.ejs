@@ -19,7 +19,7 @@
       </select>
     </div>
     <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters" title="<%= t('Filter') %>" aria-label="<%= t('Filter') %>" data-filter-btn><i class="ti ti-filter"></i></button>
-    <button class="btn btn-icon d-none d-md-inline-flex" type="button" data-review-full title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>" aria-pressed="false"><i class="ti ti-maximize"></i></button>
+    <button class="btn btn-icon" type="button" data-review-full title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>" aria-pressed="false"><i class="ti ti-maximize"></i></button>
   </div>
 
   <div class="z-review-stats" title="<%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= t('{n}% decided', { n: done }) %>">
@@ -30,6 +30,8 @@
     </span>
   </div>
   <form method="get" class="z-review-filters collapse<%= filtered ? ' show' : '' %>" id="review-filters">
+    <div class="z-pop-title"><%= t('Entries and filters') %></div>
+    <button type="button" class="btn-close z-pop-close" data-close-filters aria-label="<%= t('Close') %>"></button>
     <div class="row g-2 align-items-end">
       <div class="col-sm-6 col-lg-3">
         <label class="form-label" for="f-mode"><%= t('Show') %></label>
@@ -110,9 +112,9 @@
           <h2 class="z-entry-title" title="<%= entry.title %>"><%= entry.title %></h2>
           <% const eBase = entry.url.split('/wiki/')[0]; const eTitle = encodeURIComponent(entry.title.replace(/ /g, '_')); %>
           <span class="z-entry-links">
-            <a class="btn btn-sm btn-icon btn-ghost-secondary" href="<%= entry.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i></a>
-            <a class="btn btn-sm btn-icon btn-ghost-secondary" href="<%= eBase %>/wiki/Talk:<%= eTitle %>" target="_blank" rel="noopener" title="<%= t('Talk page') %>" aria-label="<%= t('Talk page') %>"><i class="ti ti-messages"></i></a>
-            <a class="btn btn-sm btn-icon btn-ghost-secondary" href="<%= eBase %>/w/index.php?title=<%= eTitle %>&action=history" target="_blank" rel="noopener" title="<%= t('History') %>" aria-label="<%= t('History') %>"><i class="ti ti-history"></i></a>
+            <a class="btn btn-sm btn-icon btn-ghost-secondary" href="<%= entry.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i><span class="z-link-label"><%= t('Open on wiki') %></span></a>
+            <a class="btn btn-sm btn-icon btn-ghost-secondary" href="<%= eBase %>/wiki/Talk:<%= eTitle %>" target="_blank" rel="noopener" title="<%= t('Talk page') %>" aria-label="<%= t('Talk page') %>"><i class="ti ti-messages"></i><span class="z-link-label"><%= t('Talk page') %></span></a>
+            <a class="btn btn-sm btn-icon btn-ghost-secondary" href="<%= eBase %>/w/index.php?title=<%= eTitle %>&action=history" target="_blank" rel="noopener" title="<%= t('History') %>" aria-label="<%= t('History') %>"><i class="ti ti-history"></i><span class="z-link-label"><%= t('History') %></span></a>
           </span>
           <div class="z-entry-tools" data-bar-slot></div>
         </div>
@@ -173,17 +175,17 @@
             <% } %>
             <details class="z-review-more z-review-comment mb-2" open>
               <summary title="<%= t('(needed to reject)') %>"><i class="ti ti-message me-1"></i><%= t('Comment') %></summary>
+              <button type="button" class="btn-close z-pop-close" data-close-note aria-label="<%= t('Close') %>"></button>
               <div class="pt-2">
               
               <% const readyReasons = ['Too short', 'Not enough words', 'Created before the event', 'Machine translation', 'Not encyclopedic', 'No references', 'Copied text', 'Wrong namespace'].map((r) => t(r)); const ownText = mine && mine.comment && !readyReasons.includes(mine.comment); %>
               <div class="z-reason-row">
               <div class="z-comment-box">
                 <select class="form-select form-select-sm" data-reason-select aria-label="<%= t('Reason') %>">
-                  <option value=""><%= t('Reason (needed to reject)') %></option>
-                  <% readyReasons.forEach((r) => { %><option value="<%= r %>"<%= mine && mine.comment === r ? ' selected' : '' %>><%= r %></option><% }) %>
-                  <option value="__custom"<%= ownText ? ' selected' : '' %>><%= t('Custom…') %></option>
+                  <option value=""><%= t('Add a ready reason…') %></option>
+                  <% readyReasons.forEach((r) => { %><option value="<%= r %>"><%= r %></option><% }) %>
                 </select>
-                <textarea class="form-control form-control-sm mt-1" id="comment" name="comment" rows="2" maxlength="2000" placeholder="<%= t('Write the reason') %>"<%= ownText ? '' : ' hidden' %>><%= mine ? mine.comment : '' %></textarea>
+                <textarea class="form-control form-control-sm mt-1" id="comment" name="comment" rows="2" maxlength="2000" placeholder="<%= t('Comment (needed to reject)') %>"><%= mine ? mine.comment : '' %></textarea>
               </div>
                 <div class="dropdown z-notify">
                   <input type="hidden" name="notify" id="notify" value="auto">
@@ -204,12 +206,13 @@
             <div class="z-decide">
               <button type="submit" class="btn btn-success" data-decide="accept" title="<%= t('Accept') %> (A)" aria-label="<%= t('Accept') %>"><i class="ti ti-check me-1"></i><%= t('Accept') %><kbd class="ms-2 d-none d-md-inline">A</kbd></button>
               <button type="submit" class="btn btn-danger" data-decide="reject" title="<%= t('Reject') %> (R)" aria-label="<%= t('Reject') %>"><i class="ti ti-x me-1"></i><%= t('Reject') %><kbd class="ms-2 d-none d-md-inline">R</kbd></button>
+              <button class="btn d-md-none" type="button" data-open-comment title="<%= t('Comment') %>" aria-label="<%= t('Comment') %>"><i class="ti ti-message"></i></button>
               <a class="btn" href="<%= base %>/review?<%= fq({ after: entry.id }) %>" data-review-skip title="<%= t('Skip') %> (S)"><i class="ti ti-player-skip-forward me-1"></i><%= t('Skip') %></a>
               <% if (handTo.length) { %><button class="btn" type="button" data-open-handover title="<%= settings.reviewAssignment === 'assigned' ? t('Hand to another reviewer') : t('Ask another reviewer') %>"><i class="ti ti-arrows-exchange me-1"></i><%= settings.reviewAssignment === 'assigned' ? t('Hand over') : t('Ask another') %></button><% } %>
             </div>
             <% } %>
         <% if (handTo.length) { %>
-          <details class="z-review-more z-review-handover mt-2">
+          <details class="z-review-more z-review-handover mt-2" hidden>
             <summary><i class="ti ti-arrows-exchange me-1"></i><%= settings.reviewAssignment === 'assigned' ? t('Hand to another reviewer') : t('Ask another reviewer') %></summary>
             <div class="d-flex gap-2 pt-2">
                             <select class="form-select form-select-sm" name="to" form="handover-form" required aria-label="<%= t('Reviewer') %>"><option value=""><%= t('Choose…') %></option><% handTo.forEach((u) => { %><option value="<%= u.id %>"><%= u.username %></option><% }) %></select>
@@ -225,18 +228,18 @@
           <div class="card-body py-2">
             <% const wordsNow = entry.wordCount != null ? entry.wordCount : meta.wordCount; const wikiBase = entry.url.split('/wiki/')[0]; const startsAt = contest.startDate ? new Date(contest.startDate) : null; const createdAt = meta.createdAt ? new Date(meta.createdAt) : null; const expansion = startsAt && createdAt && createdAt < startsAt; %>
             <dl class="z-facts-list d-none d-md-grid">
-              <% if (wordsNow != null) { %><dt><%= t('Words') %></dt><dd class="fw-bold"><%= formatNumber(wordsNow) %></dd><% } %>
-              <% if (meta.sizeBytes != null) { %><dt><%= t('Size') %></dt><dd><%= t('{n} bytes', { n: formatNumber(meta.sizeBytes) }) %></dd><% } %>
+              <% if (wordsNow != null) { %><dt class="z-f-words" title="<%= t('Words') %>"><span class="visually-hidden"><%= t('Words') %></span></dt><dd class="fw-bold" title="<%= t('Words') %>"><i class="z-f-ico ti ti-align-justified" aria-hidden="true"></i><%= formatNumber(wordsNow) %></dd><% } %>
+              <% if (meta.sizeBytes != null) { %><dt class="z-f-size" title="<%= t('Size') %>"><span class="visually-hidden"><%= t('Size') %></span></dt><dd title="<%= t('Size') %>"><i class="z-f-ico ti ti-database" aria-hidden="true"></i><%= t('{n} bytes', { n: formatNumber(meta.sizeBytes) }) %></dd><% } %>
               <% const resultsOut = !!contest.resultsPublishedAt; %>
-              <dt><%= t('Revision') %></dt><dd><% if (revMode === 'latest') { %><span class="text-secondary"><%= t('Always the latest') %></span><% } else if (entry.revId) { %><a href="<%= wikiBase %>/w/index.php?oldid=<%= entry.revId %>" target="_blank" rel="noopener">#<%= entry.revId %></a><% } else { %><span class="text-secondary"><%= t('Latest') %></span><% } %></dd>
-              <% if (createdAt) { %><dt><%= t('Created') %></dt><dd><%= formatDateTime(createdAt, contest.timezone) %></dd><% } %>
-              <dt><%= t('Submitted') %></dt><dd><%= formatDateTime(entry.submittedAt, contest.timezone) %></dd>
-              <% if (meta.creator) { %><dt><%= t('Created by') %></dt><dd><%= meta.creator %></dd><% } %>
-              <dt><%= t('Participant') %></dt><dd><a href="<%= base %>/review?<%= filterQuery({ ...filters, participantId: entry.participantId }) %>" title="<%= t('Only this participant') %>"><%= entry.participant.username %></a></dd>
-              <% if (entry.submittedBy && entry.submittedBy.id !== entry.participantId) { %><dt><%= t('Submitted by') %></dt><dd><%= entry.submittedBy.username %></dd><% } %>
-              <% if (createdAt && startsAt) { %><dt><%= t('Kind') %></dt><dd><span class="badge <%= expansion ? 'bg-azure-lt' : 'bg-green-lt' %>"><%= expansion ? t('Expansion') : t('New article') %></span></dd><% } %>
-              <% if (meta.file) { %><dt><%= t('Resolution') %></dt><dd><%= meta.file.width %>×<%= meta.file.height %> (<%= meta.file.megapixels %> MP)</dd><% } %>
-              <% if (meta.proofread) { %><dt><%= t('Proofreading level') %></dt><dd><%= meta.proofread.label || meta.proofread.level %></dd><% } %>
+              <dt class="z-f-rev" title="<%= t('Revision') %>"><span class="visually-hidden"><%= t('Revision') %></span></dt><dd title="<%= t('Revision') %>"><i class="z-f-ico ti ti-git-commit" aria-hidden="true"></i><% if (revMode === 'latest') { %><span class="text-secondary"><%= t('Always the latest') %></span><% } else if (entry.revId) { %><a href="<%= wikiBase %>/w/index.php?oldid=<%= entry.revId %>" target="_blank" rel="noopener">#<%= entry.revId %></a><% } else { %><span class="text-secondary"><%= t('Latest') %></span><% } %></dd>
+              <% if (createdAt) { %><dt class="z-f-created" title="<%= t('Created') %>"><span class="visually-hidden"><%= t('Created') %></span></dt><dd title="<%= t('Created') %>"><i class="z-f-ico ti ti-calendar-plus" aria-hidden="true"></i><%= formatDateTime(createdAt, contest.timezone) %></dd><% } %>
+              <dt class="z-f-submitted" title="<%= t('Submitted') %>"><span class="visually-hidden"><%= t('Submitted') %></span></dt><dd title="<%= t('Submitted') %>"><i class="z-f-ico ti ti-send" aria-hidden="true"></i><%= formatDateTime(entry.submittedAt, contest.timezone) %></dd>
+              <% if (meta.creator) { %><dt class="z-f-creator" title="<%= t('Created by') %>"><span class="visually-hidden"><%= t('Created by') %></span></dt><dd title="<%= t('Created by') %>"><i class="z-f-ico ti ti-pencil" aria-hidden="true"></i><%= meta.creator %></dd><% } %>
+              <dt class="z-f-participant" title="<%= t('Participant') %>"><span class="visually-hidden"><%= t('Participant') %></span></dt><dd title="<%= t('Participant') %>"><i class="z-f-ico ti ti-user" aria-hidden="true"></i><a href="<%= base %>/review?<%= filterQuery({ ...filters, participantId: entry.participantId }) %>" title="<%= t('Only this participant') %>"><%= entry.participant.username %></a></dd>
+              <% if (entry.submittedBy && entry.submittedBy.id !== entry.participantId) { %><dt class="z-f-by" title="<%= t('Submitted by') %>"><span class="visually-hidden"><%= t('Submitted by') %></span></dt><dd title="<%= t('Submitted by') %>"><i class="z-f-ico ti ti-user-share" aria-hidden="true"></i><%= entry.submittedBy.username %></dd><% } %>
+              <% if (createdAt && startsAt) { %><dt class="z-f-kind" title="<%= t('Kind') %>"><span class="visually-hidden"><%= t('Kind') %></span></dt><dd title="<%= t('Kind') %>"><i class="z-f-ico ti ti-tag" aria-hidden="true"></i><span class="badge <%= expansion ? 'bg-azure-lt' : 'bg-green-lt' %>"><%= expansion ? t('Expansion') : t('New article') %></span></dd><% } %>
+              <% if (meta.file) { %><dt class="z-f-res" title="<%= t('Resolution') %>"><span class="visually-hidden"><%= t('Resolution') %></span></dt><dd title="<%= t('Resolution') %>"><i class="z-f-ico ti ti-dimensions" aria-hidden="true"></i><%= meta.file.width %>×<%= meta.file.height %> (<%= meta.file.megapixels %> MP)</dd><% } %>
+              <% if (meta.proofread) { %><dt class="z-f-proof" title="<%= t('Proofreading level') %>"><span class="visually-hidden"><%= t('Proofreading level') %></span></dt><dd title="<%= t('Proofreading level') %>"><i class="z-f-ico ti ti-checks" aria-hidden="true"></i><%= meta.proofread.label || meta.proofread.level %></dd><% } %>
             </dl>
             <% if (revMode === 'pinned' && !resultsOut && revChanged) { %>
               <div class="alert alert-warning py-2 px-2 mt-2 mb-0 small"><i class="ti ti-alert-triangle me-1"></i><%= t('The article has changed after this revision.') %> <a href="<%= wikiBase %>/w/index.php?diff=cur&oldid=<%= entry.revId %>" target="_blank" rel="noopener"><%= t('See the changes') %></a></div>
@@ -249,6 +252,8 @@
                   <form method="post" action="<%= base %>/submissions/<%= entry.id %>/revision" class="d-flex gap-1 flex-fill"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input class="form-control form-control-sm" name="rev" placeholder="<%= t('Revision number or link') %>" required><button class="btn btn-sm btn-primary" type="submit"><%= t('Use') %></button></form>
                 </div>
               </details>
+            <% } else if (entry.entryType === 'article' && revMode === 'pinned' && resultsOut) { %>
+              <div class="small text-secondary mt-2"><i class="ti ti-lock me-1"></i><%= t('Revision locked: results are out') %></div>
             <% } %>
             <div class="small mt-1">
               <% if (!problems.length) { %><span class="text-success d-none d-md-inline"><i class="ti ti-circle-check me-1"></i><%= t('Passed automatic checks') %></span><% } %>

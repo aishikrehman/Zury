@@ -115,20 +115,20 @@
         <tbody>
           <% if (!pageRows.length) { %><tr><td colspan="5" class="text-secondary"><%= t('No members yet.') %></td></tr><% } %>
           <% pageRows.forEach((p) => { const u = p.user; const panel = `person-${u.id}`; %>
-            <tr data-filter-text="<%= u.username.toLowerCase() %>">
-              <td>
+            <tr class="z-person-row" data-filter-text="<%= u.username.toLowerCase() %>">
+              <td class="z-p-user">
                 <div class="d-flex align-items-center">
-                  <span class="me-2"><%- include('../../partials/avatar', { u, size: 'sm' }) %></span>
+                  <span class="me-2"<% if (u.lastLoginAt === null) { %> title="<%= t('Has not logged in to Zury yet') %>"<% } %>><%- include('../../partials/avatar', { u, size: 'sm' }) %></span>
                   <div class="min-w-0">
                     <a href="<%= userPath(u.username) %>" class="fw-medium"><%= u.username %></a>
                     <% const pm = p.roles.find((m) => m.role === 'participant'); let det = {}; try { det = JSON.parse((pm && pm.details) || '{}'); } catch (e) { det = {}; } %>
                     <% if (pm && pm.team) { %><span class="badge bg-azure-lt ms-1"><i class="ti ti-users-group me-1"></i><%= pm.team.name %></span><% } %>
                     <% if (can('manageEvent') && Object.keys(det).length) { %><div class="small text-secondary"><%= Object.values(det).join(' · ') %></div><% } %>
-                    <div class="text-secondary small"><%= (fromWikis[u.id] || []).map(wikiLocal).join(', ') %><% if (u.lastLoginAt === null) { %><span class="ms-1">· <%= t('Has not logged in to Zury yet') %></span><% } %></div>
+                    <div class="text-secondary small"><%= (fromWikis[u.id] || []).map(wikiLocal).join(', ') %></div>
                   </div>
                 </div>
               </td>
-              <td>
+              <td class="z-p-roles">
                 <div class="d-flex flex-wrap gap-1">
                   <% p.roles.forEach((m) => { %>
                     <span class="badge bg-<%= roleColor[m.role] %>-lt"><%= t(EVENT_ROLES[m.role].label) %><%= m.wiki && !wikiScope && allWikis.length > 1 ? ` · ${wikiLocal(m.wiki)}` : '' %>
@@ -139,71 +139,65 @@
                       <% } %>
                     </span>
                   <% }) %>
-                  <% if (!p.roles.length) { %><span class="text-secondary">—</span><% } %>
+                  <% if (!p.roles.length && !roleOptions.length) { %><span class="text-secondary">—</span><% } %>
+                  <% p.overrides.forEach((o) => { %>
+                    <span class="badge bg-<%= o.allowed ? 'green' : 'red' %>-lt z-ovr-pill" title="<%= o.allowed ? t('Allow') : t('Deny') %>"><i class="ti ti-<%= o.allowed ? 'key' : 'key-off' %> me-1"></i><%= permissionLabels[o.permission] || o.permission %>
+                      <% if (manage) { %><form method="post" action="<%= base %>/overrides/<%= o.id %>/remove" class="d-inline"><%- csrf %><button class="z-pill-x" type="submit" aria-label="<%= t('Remove override') %>" title="<%= t('Remove override') %>"><i class="ti ti-x"></i></button></form><% } %>
+                    </span>
+                  <% }) %>
+                  <% const canAdd = roleOptions.filter(([key]) => !p.roles.some((m) => m.role === key && (!m.wiki || wikiScope || !memberWikis.length))); if (canAdd.length) { %>
+                    <div class="dropdown d-inline-block">
+                      <button class="badge z-role-add" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="<%= t('Add a role') %>" aria-label="<%= t('Add a role') %>"><i class="ti ti-plus"></i></button>
+                      <div class="dropdown-menu">
+                        <% canAdd.forEach(([key, role]) => { %>
+                          <% if (memberWikis.length) { %><h6 class="dropdown-header"><%= t(role.label) %></h6><% } %>
+                          <% [['', memberWikis.length ? t('Whole event') : t(role.label)], ...memberWikis.map((w) => [w.wiki, wikiLocal(w.wiki)])].forEach(([wk, lab]) => { %>
+                            <form method="post" action="<%= base %>/members"><%- csrf %><input type="hidden" name="username" value="<%= u.username %>"><input type="hidden" name="role" value="<%= key %>"><% if (wk) { %><input type="hidden" name="wiki" value="<%= wk %>"><% } %><button class="dropdown-item" type="submit"><%= lab %></button></form>
+                          <% }) %>
+                        <% }) %>
+                      </div>
+                    </div>
+                  <% } %>
                 </div>
               </td>
-              <td>
+              <td class="z-p-status">
                 <div class="d-flex flex-wrap gap-1">
                   <% if (p.block) { %><span class="badge bg-red-lt" title="<%= p.block.reason || t('No reason given') %>"><i class="ti ti-ban me-1"></i><%= t('Blocked') %></span><% } %>
-                  <% if (p.overrides.length) { %><span class="badge bg-purple-lt"><i class="ti ti-key me-1"></i><%= tn('{n} permission change', '{n} permission changes', p.overrides.length) %></span><% } %>
-                  <% if (!p.block && !p.overrides.length) { %><span class="text-secondary"><%= t('Active') %></span><% } %>
+                  
+                  <% if (!p.block) { %><span class="text-secondary"><%= t('Active') %></span><% } %>
                 </div>
               </td>
-              <td class="text-secondary text-nowrap"><%= p.since ? formatDate(p.since, contest.timezone) : p.block ? formatDate(p.block.createdAt, contest.timezone) : '—' %></td>
-              <td>
-                <div class="z-row-actions">
-                  <a class="btn btn-sm btn-ghost-secondary btn-icon" href="<%= userPath(u.username) %>" title="<%= t('View') %>" aria-label="<%= t('View') %>"><i class="ti ti-eye"></i></a>
-                  <% if (manage || roleOptions.length) { %>
-                    <button class="btn btn-sm btn-ghost-primary btn-icon" type="button" data-bs-toggle="collapse" data-bs-target="#<%= panel %>" aria-expanded="false" aria-controls="<%= panel %>" title="<%= t('Manage rights') %>" aria-label="<%= t('Manage rights') %>"><i class="ti ti-key"></i></button>
+              <td class="text-secondary text-nowrap z-p-since"><%= p.since ? formatDate(p.since, contest.timezone) : p.block ? formatDate(p.block.createdAt, contest.timezone) : '—' %></td>
+              <td class="z-p-act">
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-ghost-secondary btn-icon" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" aria-label="<%= t('Actions') %>"><i class="ti ti-dots-vertical"></i></button>
+                  <div class="dropdown-menu dropdown-menu-end">
+                  <a class="dropdown-item" href="<%= userPath(u.username) %>"><i class="ti ti-eye me-2"></i><%= t('View') %></a>
+                  <% if (manage) { %>
+                    <button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#<%= panel %>" aria-expanded="false" aria-controls="<%= panel %>"><i class="ti ti-key me-2"></i><%= t('Permission overrides') %></button>
                   <% } %>
                   <% if (canBlock && p.block) { %>
                     <form method="post" action="<%= base %>/blocks/<%= p.block.id %>/lift"><%- csrf %>
-                      <button class="btn btn-sm btn-ghost-secondary btn-icon" type="submit" title="<%= t('Unblock') %>" aria-label="<%= t('Unblock') %>"><i class="ti ti-lock-open"></i></button>
+                      <button class="dropdown-item" type="submit" ><i class="ti ti-lock-open me-2"></i><%= t('Unblock') %></button>
                     </form>
                   <% } else if (canBlock) { %>
                     <form method="post" action="<%= base %>/blocks" data-confirm="<%= t('Block {user} from this event?', { user: u.username }) %>"><%- csrf %>
                       <input type="hidden" name="username" value="<%= u.username %>">
-                      <button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Block from this event') %>" aria-label="<%= t('Block from this event') %>"><i class="ti ti-ban"></i></button>
+                      <button class="dropdown-item text-danger" type="submit" ><i class="ti ti-ban me-2"></i><%= t('Block from this event') %></button>
                     </form>
                   <% } %>
+                  </div>
                 </div>
               </td>
             </tr>
-            <% if (manage || roleOptions.length) { %>
+            <% if (manage) { %>
               <tr class="collapse z-person-panel" id="<%= panel %>">
                 <td colspan="5">
                   <div class="row g-3">
-                    <% if (roleOptions.length) { %>
-                      <div class="col-lg-5">
-                        <div class="subheader mb-2"><%= t('Add a role') %></div>
-                        <form method="post" action="<%= base %>/members" class="d-flex gap-2"><%- csrf %>
-                          <input type="hidden" name="username" value="<%= u.username %>">
-                          <select class="form-select form-select-sm" name="role" aria-label="<%= t('Role') %>">
-                            <% roleOptions.filter(([key]) => !p.roles.some((m) => m.role === key && !m.wiki)).forEach(([key, role]) => { %><option value="<%= key %>"><%= t(role.label) %></option><% }) %>
-                          </select>
-                          <% if (memberWikis.length) { %>
-                            <select class="form-select form-select-sm" name="wiki" aria-label="<%= t('For') %>">
-                              <option value=""><%= t('Whole event') %></option>
-                              <% memberWikis.forEach((w) => { %><option value="<%= w.wiki %>"><%= wikiLocal(w.wiki) %></option><% }) %>
-                            </select>
-                          <% } %>
-                          <button class="btn btn-sm btn-primary" type="submit"><%= t('Add') %></button>
-                        </form>
-                      </div>
-                    <% } %>
                     <% if (manage) { %>
                       <div class="col-lg-7">
                         <div class="subheader mb-2"><%= t('Permission overrides') %></div>
-                        <% p.overrides.forEach((o) => { %>
-                          <div class="d-flex align-items-center gap-2 mb-1 small">
-                            <span class="badge bg-<%= o.allowed ? 'green' : 'red' %>-lt"><%= o.allowed ? t('Allow') : t('Deny') %></span>
-                            <span><%= permissionLabels[o.permission] || o.permission %></span>
-                            <form method="post" action="<%= base %>/overrides/<%= o.id %>/remove" class="ms-auto"><%- csrf %>
-                              <button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Remove override') %>" aria-label="<%= t('Remove override') %>"><i class="ti ti-x"></i></button>
-                            </form>
-                          </div>
-                        <% }) %>
-                        <form method="post" action="<%= base %>/overrides" class="d-flex gap-2 mt-2"><%- csrf %>
+                        <form method="post" action="<%= base %>/overrides" class="d-flex gap-2"><%- csrf %>
                           <input type="hidden" name="username" value="<%= u.username %>">
                           <select class="form-select form-select-sm" name="permission" aria-label="<%= t('Permission') %>">
                             <% overridable.forEach((perm) => { %><option value="<%= perm %>"><%= permissionLabels[perm] %></option><% }) %>

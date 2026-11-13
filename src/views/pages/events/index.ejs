@@ -68,7 +68,7 @@
           <% if (filters.view === 'list') { %>
             <div class="card">
               <div class="table-responsive">
-                <table class="table table-vcenter card-table">
+                <table class="table table-vcenter card-table z-ev-table">
                   <thead><tr><th><%= t('Event') %></th><th><%= t('Type') %></th><th><%= t('Dates') %></th><th class="text-end"><%= t('Participants') %></th><th><%= t('Status') %></th></tr></thead>
                   <tbody>
                     <% result.items.forEach((c) => { const pr = eventProject(c); const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>

@@ -1,7 +1,6 @@
 <%
   const byWords = !!rows.byWords;
   const medal = { 1: 'gold', 2: 'silver', 3: 'bronze' };
-  const podium = rows.filter((r) => r.rank <= 3 && (r.points > 0 || r.words > 0)).slice(0, 3);
 %>
 <%- include('../../partials/contestHeader', { active: 'results' }) %>
 <div class="page-body"><div class="container-xl">
@@ -41,23 +40,11 @@
   <% } else if (!rows.length) { %>
     <div class="card"><%- include('../../partials/emptyArt', { title: t('No results yet'), text: t('The ranking fills in as entries are decided.') }) %></div>
   <% } else { %>
-    <% if (podium.length) { %>
-      <div class="z-podium mb-4">
-        <% podium.forEach((r) => { %>
-          <div class="z-podium-place z-<%= medal[r.rank] %>">
-            <div class="z-podium-medal"><i class="ti ti-trophy"></i><span><%= formatNumber(r.rank) %></span></div>
-            <div class="z-podium-name"><%= showNames ? r.username : t('Participant') %></div>
-            <div class="z-podium-points"><%= byWords ? t('{n} words', { n: formatNumber(r.words) }) : t('{n} points', { n: r.points }) %></div>
-            <div class="text-secondary small"><%= tn('{n} entry', '{n} entries', r.entries) %></div>
-          </div>
-        <% }) %>
-      </div>
-    <% } %>
     <div class="card">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-list-numbers me-2"></i><%= t('Leaderboard') %></h3><% if (can('manageEvent') || can('exportData')) { %><div class="card-actions"><%- include('../../partials/exportMenu', { dataset: 'results', btn: '' }) %></div><% } %></div>
       <div class="table-responsive">
         <table class="table table-vcenter card-table">
-          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Submitted') %></th><th class="text-end"><%= t('Accepted') %></th><% if (byWords) { %><th class="text-end"><%= t('Words') %></th><% } else { %><th class="text-end"><%= t('Points') %></th><% } %></tr></thead>
+          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Submitted') %></th><th class="text-end"><%= t('Accepted') %></th><% if (rows.withWordsBy) { %><th class="text-end text-green"><%= t('Accepted words') %></th><th class="text-end text-yellow"><%= t('Pending words') %></th><th class="text-end text-red"><%= t('Not accepted words') %></th><% } %><% if (byWords) { %><th class="text-end"><%= t('Words') %></th><% } else { %><th class="text-end"><%= t('Points') %></th><% } %></tr></thead>
           <tbody>
             <% rows.forEach((r) => { %>
               <tr>
@@ -65,6 +52,7 @@
                 <td><% if (showNames) { %><a href="<%= userPath(r.username) %>"><%= r.username %></a><% } else { %><span class="text-secondary"><%= t('Participant') %></span><% } %></td>
                 <td class="text-end text-secondary"><%= formatNumber(r.submitted ?? r.entries) %></td>
                 <td class="text-end"><%= formatNumber(r.entries) %></td>
+                <% if (rows.withWordsBy) { %><td class="text-end text-green"><%= formatNumber(r.wordsBy.approved) %></td><td class="text-end text-yellow"><%= formatNumber(r.wordsBy.pending) %></td><td class="text-end text-red"><%= formatNumber(r.wordsBy.rejected) %></td><% } %>
                 <% if (!byWords) { %><td class="text-end fw-bold"><%= formatNumber(r.points) %></td><% } %>
                 <% if (byWords) { %><td class="text-end fw-bold"><%= formatNumber(r.words) %></td><% } %>
               </tr>

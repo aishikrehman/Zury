@@ -45,7 +45,7 @@
         <% } else { %>
           <div class="list-group list-group-flush">
             <% myEvents.slice(0, 10).forEach(({ contest: c, roles }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-              <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="<%= eventPath(c) %>">
+              <a class="list-group-item list-group-item-action d-flex align-items-center gap-3 z-myev" href="<%= eventPath(c) %>">
                 <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
                 <span class="flex-fill min-w-0"><span class="d-block text-truncate fw-medium"><%= c.title %></span><span class="text-secondary small"><%= roles.map((r) => t(EVENT_ROLES[r].label)).join(' · ') %></span></span>
                 <% const mc = myCounts.get(c.id); if (mc) { %><span class="d-flex gap-1 text-nowrap small"><span class="badge bg-green-lt" title="<%= t('Accepted') %>"><%= formatNumber(mc.accepted) %></span><span class="badge bg-yellow-lt" title="<%= t('Pending') %>"><%= formatNumber(mc.pending) %></span><span class="badge bg-red-lt" title="<%= t('Not accepted') %>"><%= formatNumber(mc.rejected) %></span></span><% } %>

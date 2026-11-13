@@ -3,28 +3,82 @@
   <% if (!events.length) { %>
     <div class="card"><%- include('../../partials/emptyArt', { title: t('You are not on any reviewers'), text: t('Organizers add reviewers on the People page of their event.') }) %></div>
   <% } else { %>
-    <div class="row row-cards">
-      <% events.forEach((e) => { %>
-        <div class="col-md-6 col-lg-4">
-          <a class="card card-link h-100 z-event-card" data-type-color="<%= TYPE_COLORS[e.contest.type] || 'blue' %>" href="<%= e.path %>/review">
-            <div class="card-body">
-              <div class="d-flex align-items-center mb-2">
-                <span class="avatar avatar-sm z-type-icon me-2"><i class="ti ti-<%= TYPE_ICONS[e.contest.type] || 'calendar' %>"></i></span>
-                <div class="text-secondary small"><%= CONTEST_TYPES[e.contest.type] %><%= e.wikis ? ' · ' + e.wikis.map(wikiLocal).join(', ') : '' %></div>
+    <% const decidedAll = stats.accepted + stats.rejected + stats.other; const pct = (n) => (decidedAll ? Math.round((n / decidedAll) * 100) : 0); %>
+    <div class="z-rv-tiles mb-3">
+      <div class="z-rv-tile"><span><i class="ti ti-hourglass"></i><%= t('Waiting for you') %></span><b class="<%= stats.waiting ? 'text-primary' : 'text-success' %>"><%= formatNumber(stats.waiting) %></b><small><%= tn('in {n} event', 'in {n} events', events.filter((e) => e.remaining).length) %></small></div>
+      <div class="z-rv-tile"><span><i class="ti ti-calendar-check"></i><%= t('Today') %></span><b><%= formatNumber(stats.today) %></b><small><%= stats.streak > 1 ? t('{n} days in a row', { n: formatNumber(stats.streak) }) : t('reviews') %></small></div>
+      <div class="z-rv-tile"><span><i class="ti ti-calendar-week"></i><%= t('Last 7 days') %></span><b><%= formatNumber(stats.week) %></b><small><%= t('{n} a day on average', { n: formatNumber(Math.round((stats.week / 7) * 10) / 10) }) %></small></div>
+      <div class="z-rv-tile"><span><i class="ti ti-gavel"></i><%= t('All my reviews') %></span><b><%= formatNumber(decidedAll) %></b>
+        <% if (decidedAll) { %><div class="z-stack mt-1" title="<%= t('Accepted') %> <%= pct(stats.accepted) %>% · <%= t('Not accepted') %> <%= pct(stats.rejected) %>%"><i class="bg-green" style="width: <%= pct(stats.accepted) %>%"></i><i class="bg-red" style="width: <%= pct(stats.rejected) %>%"></i><i class="bg-secondary" style="width: <%= pct(stats.other) %>%"></i></div>
+        <small><span class="text-green">✓ <%= formatNumber(stats.accepted) %></span> · <span class="text-red">✗ <%= formatNumber(stats.rejected) %></span></small><% } %>
+      </div>
+    </div>
+
+    <% if (stats.perDay.some((d) => d.n)) { %>
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title"><%= t('My reviews, last 30 days') %></h3></div>
+        <div class="card-body py-2">
+          <%- include('../../partials/chart', { spec: { type: 'area', height: 150, series: [{ name: t('Reviews'), data: stats.perDay.map((d) => d.n) }], labels: stats.perDay.map((d) => d.at.toISOString().slice(0, 10)), colors: ['primary'] }, label: t('My reviews, last 30 days') }) %>
+        </div>
+      </div>
+    <% } %>
+
+    <% const open = events.filter((e) => e.remaining || !e.finished); const done = events.filter((e) => !e.remaining && e.finished); %>
+    <% const card = (e) => { const prog = e.total ? Math.round((e.decided / e.total) * 100) : 0; %>
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 z-event-card z-rv-card" data-type-color="<%= TYPE_COLORS[e.contest.type] || 'blue' %>">
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex align-items-center mb-2 gap-2">
+              <span class="avatar avatar-sm z-type-icon"><i class="ti ti-<%= TYPE_ICONS[e.contest.type] || 'calendar' %>"></i></span>
+              <div class="text-secondary small text-truncate"><%= CONTEST_TYPES[e.contest.type] %><%= e.wikis ? ' · ' + e.wikis.map(wikiLocal).join(', ') : '' %></div>
+              <% if (e.daysLeft != null) { %><span class="ms-auto text-secondary small text-nowrap"><i class="ti ti-clock me-1"></i><%= tn('{n} day left', '{n} days left', e.daysLeft) %></span><% } %>
+            </div>
+            <h3 class="card-title mb-3"><a href="<%= e.path %>" class="text-reset"><%= e.contest.title %></a></h3>
+            <div class="d-flex align-items-end mb-2">
+              <div>
+                <div class="h1 m-0 <%= e.remaining ? 'text-primary' : 'text-success' %>"><%= formatNumber(e.remaining) %></div>
+                <div class="text-secondary small"><%= t('waiting for you') %></div>
               </div>
-              <h3 class="card-title mb-3"><%= e.contest.title %></h3>
-              <div class="d-flex align-items-end">
-                <div>
-                  <div class="h1 m-0 <%= e.remaining ? 'text-primary' : 'text-success' %>"><%= formatNumber(e.remaining) %></div>
-                  <div class="text-secondary small"><%= t('waiting for you') %></div>
-                </div>
-                <div class="ms-auto text-end text-secondary small"><%= t('{n} reviewed by you', { n: e.reviewed }) %></div>
+              <div class="ms-auto text-end small">
+                <div class="text-secondary"><%= t('{n} reviewed by you', { n: formatNumber(e.reviewed) }) %></div>
+                <% if (e.mineAccept || e.mineReject) { %><div><span class="text-green">✓ <%= formatNumber(e.mineAccept) %></span> · <span class="text-red">✗ <%= formatNumber(e.mineReject) %></span></div><% } %>
               </div>
             </div>
-          </a>
+            <div class="d-flex justify-content-between small text-secondary mb-1"><span><%= t('Event decided') %></span><span><%= formatNumber(e.decided) %> / <%= formatNumber(e.total) %></span></div>
+            <div class="progress progress-sm mb-3"><div class="progress-bar bg-green" style="width: <%= prog %>%" role="progressbar" aria-valuenow="<%= prog %>" aria-valuemin="0" aria-valuemax="100" aria-label="<%= prog %>%"></div></div>
+            <div class="d-flex flex-wrap gap-2 mt-auto">
+              <a class="btn btn-sm <%= e.remaining ? 'btn-primary' : '' %>" href="<%= e.path %>/review"><i class="ti ti-gavel me-1"></i><%= e.remaining ? t('Start reviewing') : t('Open review') %></a>
+              <a class="btn btn-sm" href="<%= e.path %>/submissions"><i class="ti ti-list me-1"></i><%= t('Submissions') %></a>
+              <% if (e.appeals) { %><a class="btn btn-sm btn-outline-warning" href="<%= e.path %>/appeals"><i class="ti ti-message-exclamation me-1"></i><%= tn('{n} appeal', '{n} appeals', e.appeals) %></a><% } %>
+            </div>
+          </div>
         </div>
-      <% }) %>
-    </div>
+      </div>
+    <% } %>
+
+    <% if (open.length) { %><div class="row row-cards"><% open.forEach(card) %></div><% } %>
+
+    <% if (recent.length) { %>
+      <div class="card mt-3">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-history me-2"></i><%= t('My recent reviews') %></h3></div>
+        <div class="list-group list-group-flush">
+          <% recent.forEach((r) => { %>
+            <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<%= r.path %>/review?entry=<%= r.submission.id %>">
+              <span class="<%= r.decision === 'accept' ? 'text-green' : r.decision === 'reject' ? 'text-red' : 'text-secondary' %> fw-bold"><%= r.decision === 'accept' ? '✓' : r.decision === 'reject' ? '✗' : '•' %></span>
+              <span class="flex-fill min-w-0"><span class="d-block text-truncate"><%= r.submission.title %></span><span class="d-block text-truncate small text-secondary"><%= r.contest.title %><%= r.comment ? ' · ' + r.comment : '' %></span></span>
+              <span class="small text-secondary text-nowrap"><%= formatDate(r.updatedAt) %></span>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
+    <% if (done.length) { %>
+      <details class="mt-3 z-rv-done">
+        <summary class="text-secondary"><%= tn('{n} finished event', '{n} finished events', done.length) %></summary>
+        <div class="row row-cards mt-1"><% done.forEach(card) %></div>
+      </details>
+    <% } %>
   <% } %>
 </div>
 </div>

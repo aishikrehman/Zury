@@ -14,7 +14,7 @@
   const creating = action === '/events/create';
   // New events: the sections as tabs down the side (any can be opened); Configuration: tabs across the top.
   const pageMode = false;
-  const sideTabs = true;
+  const sideTabs = false;
   const extra = typeof extraPane === 'string' && extraPane ? extraPane : '';
   const judged = !typeDef || typeDef.entries !== false;
   const dateLabel = Object.fromEntries(DATE_FIELDS);
@@ -50,7 +50,7 @@
           <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
             <% steps.forEach(([key, label, hint], i) => { %>
               <li class="nav-item step-item<%= i === 0 ? ' active' : '' %>" role="presentation">
-                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><% if (key !== 'database') { %><span class="z-step-num"><%= formatNumber(i + 1) %></span><% } %><%= label %></a>
+                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><span class="z-step-num"><i class="ti ti-<%= ({ basics: 'info-circle', participation: 'users', submission: 'upload', judging: 'gavel', access: 'lock', database: 'database' })[key] || 'point' %>"></i></span><span class="z-step-label"><%= label %></span></a>
               </li>
             <% }) %>
           </ul>
@@ -236,29 +236,11 @@
               <div class="row g-3">
                 <div class="col-12">
                   <span class="form-label d-block"><%= t("Who can see the event") %></span>
-                  <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column flex-md-row gap-2">
-                    <label class="form-selectgroup-item flex-fill">
-                      <input type="radio" name="visibility" value="public" class="form-selectgroup-input"<%= !['private', 'unlisted'].includes(v('visibility')) ? ' checked' : '' %>>
-                      <span class="form-selectgroup-label d-flex align-items-center p-3">
-                        <span class="me-3"><span class="form-selectgroup-check"></span></span>
-                        <span><strong><%= t("Public") %></strong><span class="d-block text-secondary"><%= t("Anyone can see it once published.") %></span></span>
-                      </span>
-                    </label>
-                    <label class="form-selectgroup-item flex-fill">
-                      <input type="radio" name="visibility" value="unlisted" class="form-selectgroup-input"<%= v('visibility') === 'unlisted' ? ' checked' : '' %>>
-                      <span class="form-selectgroup-label d-flex align-items-center p-3">
-                        <span class="me-3"><span class="form-selectgroup-check"></span></span>
-                        <span><strong><%= t("Link only") %></strong><span class="d-block text-secondary"><%= t("Not listed anywhere; opens from its link.") %></span></span>
-                      </span>
-                    </label>
-                    <label class="form-selectgroup-item flex-fill">
-                      <input type="radio" name="visibility" value="private" class="form-selectgroup-input"<%= v('visibility') === 'private' ? ' checked' : '' %>>
-                      <span class="form-selectgroup-label d-flex align-items-center p-3">
-                        <span class="me-3"><span class="form-selectgroup-check"></span></span>
-                        <span><strong><%= t("Members only") %></strong><span class="d-block text-secondary"><%= t("Only people with a role in the event.") %></span></span>
-                      </span>
-                    </label>
-                  </div>
+                  <select class="form-select" name="visibility" aria-label="<%= t('Who can see the event') %>">
+                    <option value="public"<%= !['private', 'unlisted'].includes(v('visibility')) ? ' selected' : '' %>><%= t('Public') %> — <%= t('Anyone can see it once published.') %></option>
+                    <option value="unlisted"<%= v('visibility') === 'unlisted' ? ' selected' : '' %>><%= t('Link only') %> — <%= t('Not listed anywhere; opens from its link.') %></option>
+                    <option value="private"<%= v('visibility') === 'private' ? ' selected' : '' %>><%= t('Members only') %> — <%= t('Only people with a role in the event.') %></option>
+                  </select>
                 </div>
                 <% if (creating) { %>
                   <div class="col-md-6">

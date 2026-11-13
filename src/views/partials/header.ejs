@@ -4,7 +4,7 @@
       <i class="ti ti-menu-2"></i>
     </button>
     <a href="<%= currentUser ? '/dashboard' : '/' %>" class="z-brand" aria-label="<%= t('Zury') %>">
-      <img src="/images/zury-logo.svg" width="32" height="32" alt=""><span><%= t('Zury') %></span>
+      <span><%= t('Zury') %></span>
     </a>
 
     <form action="/events" method="get" role="search" class="z-search">
@@ -28,7 +28,7 @@
       </div>
 
       <% if (currentUser) { %>
-        <div class="dropdown" data-notifications>
+        <div class="dropdown" data-notifications data-bell-known="<%= unreadNotifications || 0 %>">
           <button class="z-bell-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t('Notifications') %><%= unreadNotifications ? ` (${unreadNotifications})` : '' %>" title="<%= t('Notifications') %>">
             <i class="ti ti-bell"></i><% if (unreadNotifications) { %><span class="z-bell-count" data-bell-count><%= unreadNotifications > 99 ? '99+' : formatNumber(unreadNotifications) %></span><% } %>
           </button>
@@ -36,6 +36,7 @@
             <div class="z-bell-head">
               <strong><%= t('Notifications') %></strong>
               <button class="z-bell-readall" type="button" data-bell-read-all<%= unreadNotifications ? '' : ' hidden' %>><%= t('Mark all as read') %></button>
+              <button class="z-bell-sound" type="button" data-bell-sound title="<%= t('Sound') %>" aria-label="<%= t('Sound') %>" aria-pressed="true"><i class="ti ti-volume"></i></button>
               <a class="z-bell-link" href="/notifications"><%= t('See all') %></a>
             </div>
             <div data-bell-list><div class="z-bell-empty"><%= t('Loading…') %></div></div>

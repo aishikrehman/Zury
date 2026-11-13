@@ -132,6 +132,14 @@ async function update({ actorId, contest, settings, parsed, autoSlug }) {
 
 async function changeStatus({ actorId, contest, settings, action, status }) {
   if (action === 'publish' && contest.approval && contest.approval !== 'approved') throw new EventError(contest.approval === 'rejected' ? 'This event was not approved.' : 'This event waits for approval before it can be published.');
+  // The event itself runs but its wiki is paused (the page shows it paused): resuming starts the wiki again.
+  if (action === 'resume' && contest.status !== 'paused') {
+    const { count } = await prisma.contestWiki.updateMany({ where: { contestId: contest.id, status: 'paused' }, data: { status: 'active' } });
+    if (count) {
+      await audit.record({ actorId, contestId: contest.id, action: 'contest.wikiResumed', entityType: 'Contest', entityId: contest.id, details: { wikis: count } });
+      return contest;
+    }
+  }
   const next = lifecycle.applyAction(contest, settings, { action, status });
   return prisma.$transaction(async (tx) => {
     const updated = await tx.contest.update({ where: { id: contest.id }, data: next });

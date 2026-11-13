@@ -570,13 +570,13 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
 .z-evhead-path a:hover { color: var(--z-brand); }
 .z-evhead-path span { opacity: 0.5; }
 .z-evhead-main { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; }
-.z-evhead-logo { flex: none; width: 3.5rem; height: 3.5rem; border-radius: 16px; background: var(--z-surface) center / contain no-repeat; box-shadow: 0 0 0 1px var(--z-border), 0 8px 24px -12px rgba(16, 24, 40, 0.35); }
+.z-evhead-logo { flex: none; width: 3.5rem; height: 3.5rem; border-radius: 16px; background: var(--z-surface) center / contain no-repeat; }
 .z-evhead-logo.is-icon { display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 1.6rem; background: linear-gradient(140deg, var(--z-proj), color-mix(in srgb, var(--z-proj) 65%, #000)); box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--z-proj) 80%, transparent); }
 .z-evhead-text { flex: 1 1 20rem; min-width: 0; }
 .z-evhead-title { margin: 0; font-size: clamp(1.35rem, 1.1rem + 1vw, 1.85rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; }
 .z-evhead-title a { color: var(--z-fg); text-decoration: none; }
 .z-evhead-wiki { color: var(--z-fg-muted); font-weight: 500; }
-.z-evhead-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 1rem; margin-top: 0.4rem; font-size: 0.875rem; color: var(--z-fg-muted); }
+.z-evhead-meta { flex-wrap: wrap; align-items: center; gap: 0.35rem 1rem; margin-top: 0.4rem; font-size: 0.875rem; color: var(--z-fg-muted); }
 .z-evhead-meta > span { display: inline-flex; align-items: center; gap: 0.35rem; }
 .z-evhead-meta .ti { font-size: 1rem; opacity: 0.8; }
 .z-evhead-status { font-weight: 600; color: var(--z-fg); }
@@ -639,12 +639,12 @@ html[lang="bn"] .subheader { text-transform: none; letter-spacing: 0; font-size:
 }
 
 /* ── Review window ───────────────────────────────────────────────────────── */
-.z-review-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-bottom: 1.25rem; }
+.z-review-bar { display: flex; align-items: center; }
 .z-review-progress { flex: 1 1 220px; max-width: 360px; display: flex; align-items: center; gap: 0.75rem; }
 .z-review-progress .progress { flex: 1; }
 .z-review-media { display: flex; align-items: center; justify-content: center; min-height: 320px; padding: 1rem; background: repeating-conic-gradient(var(--z-surface-2) 0 25%, var(--z-surface) 0 50%) 0 0 / 20px 20px; border-bottom: 1px solid var(--z-border); }
 .z-review-media img { max-width: 100%; max-height: 60vh; border-radius: var(--z-radius-sm); box-shadow: var(--z-shadow-lg); }
-.z-decide { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.z-decide { display: grid; }
 kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0, 0, 0, 0.12); color: inherit; box-shadow: none; font-family: var(--z-mono); }
 .btn kbd { background: rgba(255, 255, 255, 0.22); }
 .btn:not(.btn-success):not(.btn-danger):not(.btn-primary) kbd { background: var(--z-hover); color: var(--z-fg-muted); }
@@ -702,24 +702,22 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 /* Review page: the entry's page in a frame that scrolls on its own, tools on the right.
    On phones the two stack: the page first, then the verdict. */
 .z-review-wrap { max-width: 1680px; }
-.z-review-bar { gap: .5rem 1rem; margin-bottom: .75rem; }
 .z-review-bar .z-review-progress { max-width: 320px; margin-top: .25rem; }
 .z-go { flex: 1 1 220px; max-width: 360px; }
-.z-review-filters { background: var(--z-surface); border: 1px solid var(--z-border); border-radius: var(--z-radius, 10px); padding: .75rem 1rem; margin-bottom: .75rem; }
+.z-review-filters { background: var(--z-surface); border: 1px solid var(--z-border); border-radius: var(--z-radius, 10px); margin-bottom: .75rem; }
 .z-review-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 1rem; align-items: start; }
 .z-review-entry { margin: 0; }
-.z-review-frame { height: calc(100vh - 260px); min-height: 520px; border-top: 1px solid var(--z-border); background: #fff; }
+.z-review-frame { border-top: 1px solid var(--z-border); }
 .z-review-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
 .z-review-frame .z-review-media { height: 100%; min-height: 0; border: 0; }
-.z-review-side { position: sticky; top: 66px; max-height: calc(100vh - 80px); overflow-y: auto; display: flex; flex-direction: column; gap: .75rem; padding-bottom: .5rem; }
+.z-review-side { position: sticky; top: 66px; max-height: calc(100vh - 80px); overflow-y: auto; flex-direction: column; padding-bottom: .5rem; }
 .z-review-side > .card { margin: 0; }
-.z-facts-list { display: grid; grid-template-columns: auto 1fr; gap: .2rem .75rem; margin: 0; font-size: .85rem; }
+.z-facts-list { display: grid; gap: .2rem .75rem; margin: 0; font-size: .85rem; }
 .z-facts-list dt { color: var(--z-fg-muted); font-weight: 500; }
-.z-facts-list dd { margin: 0; text-align: end; overflow-wrap: anywhere; }
-@media (max-width: 991.98px) {
+.z-facts-list dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 767.98px) {
   .z-review-layout { grid-template-columns: 1fr; }
-  .z-review-frame { height: 65vh; min-height: 360px; }
-  .z-review-side { position: static; max-height: none; overflow: visible; }
+  .z-review-side { overflow: visible; }
   .z-go { max-width: none; order: 5; flex-basis: 100%; }
 }
 
@@ -731,7 +729,6 @@ kbd { font-size: 11px; padding: 1px 5px; border-radius: 4px; background: rgba(0,
 .z-statebar .card-body { padding-block: .75rem; }
 
 /* The review window sits in a frame inside the event page. */
-.z-review-card > .card-body { padding: 1rem; }
 .z-go { flex: 1 1 320px; max-width: 560px; }
 
 
@@ -951,8 +948,7 @@ html.zury-still *, html.zury-still *::before, html.zury-still *::after { animati
 
 /* The review frame in full screen (on request). */
 .z-review-full, .z-review-full body { overflow: hidden; }
-.z-review-full .z-review-card { position: fixed; inset: 0; z-index: 1035; margin: 0; border: 0; border-radius: 0; overflow-y: auto; }
-.z-review-full .z-review-frame { height: calc(100vh - 150px); }
+.z-review-full .z-review-card { inset: 0; z-index: 1035; margin: 0; border: 0; border-radius: 0; }
 .z-review-full .z-review-side { top: .75rem; max-height: calc(100vh - 1.5rem); }
 @media (max-width: 991.98px) { .z-review-full .z-review-frame { height: 65vh; } }
 
@@ -1126,10 +1122,8 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-review-bar { flex-wrap: wrap; gap: .4rem; }
   .z-review-bar .z-go { order: 3; flex: 1 1 100%; }
   .z-review-layout { grid-template-columns: 1fr; gap: .6rem; }
-  .z-review-frame { height: 62vh; min-height: 360px; }
-  .z-review-side { position: static; max-height: none; overflow: visible; padding-bottom: 5.5rem; }
-  .z-decide { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; padding: .6rem .75rem calc(.6rem + env(safe-area-inset-bottom)); background: var(--tblr-bg-surface); box-shadow: 0 -6px 20px rgba(0,0,0,.12); }
-  .z-decide .btn { padding: .7rem; font-size: 1rem; }
+  .z-review-side { overflow: visible; padding-bottom: 5.5rem; }
+  .z-decide { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; }
   .z-decide kbd, [data-review-skip] kbd { display: none !important; }
   [data-review-skip].w-100 { position: fixed; z-index: 41; right: .75rem; bottom: 4.4rem; width: auto !important; border-radius: 999px; background: var(--tblr-bg-surface); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
   .z-review-more { padding: .45rem .6rem; }
@@ -1139,7 +1133,6 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 .z-list-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
 .z-list-head > .z-status-pills { flex: 1 1 auto; min-width: 0; order: 1; }
 .z-list-head > .order-last { order: 1; flex: none; }
-.z-list-head > .z-list-filters { flex: 1 1 100%; order: 2; }
 .z-status-pills { flex-wrap: nowrap; overflow-x: auto; gap: .25rem; margin: 0; scrollbar-width: none; }
 .z-status-pills .nav-link { white-space: nowrap; padding: .3rem .7rem; }
 .z-list-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
@@ -1153,7 +1146,7 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-search-menu { display: flex; margin: .5rem .75rem .25rem; max-width: none; width: auto; }
 }
 
-.z-list-head > .z-head-actions { order: 1; flex: none; display: flex; gap: .4rem; align-items: center; margin-left: auto; }
+.z-list-head > .z-head-actions { flex: none; display: flex; gap: .4rem; align-items: center; margin-left: auto; }
 .z-list-filters > .input-icon { order: 1; } .z-list-filters > .form-select { order: 2; } .z-list-filters > .form-switch { order: 3; }
 
 /* Days left: the bar runs along the event header's bottom edge; only the words stay up top. */
@@ -1198,22 +1191,21 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 .z-days-left { margin-left: .25rem; color: var(--tblr-primary); font-weight: 500; }
 
 /* Review: a slim top line, filters folded, and full screen filling the whole window. */
-.z-review-bar { margin-bottom: .5rem !important; flex-wrap: nowrap; align-items: center; }
+.z-review-bar { margin-bottom: .5rem !important; align-items: center; }
 .z-review-stat { display: flex; align-items: center; gap: .4rem; min-width: 0; white-space: nowrap; overflow: hidden; font-size: .875rem; }
 .z-review-mini { display: inline-block; width: 70px; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--tblr-primary) 15%, transparent); overflow: hidden; flex: none; }
 .z-review-mini > i { display: block; height: 100%; background: var(--tblr-primary); }
-.z-review-bar .z-go { flex: 0 1 22rem; min-width: 10rem; }
 .z-review-bar .btn { padding: .3rem .55rem; }
 .z-review-full .z-review-card > .card-body { display: flex; flex-direction: column; height: 100vh; padding: .5rem .75rem; }
 .z-review-full .z-review-layout { flex: 1; min-height: 0; }
 .z-review-full .z-review-entry { display: flex; flex-direction: column; height: 100%; }
-.z-review-full .z-review-frame { flex: 1; height: auto !important; min-height: 0; }
+.z-review-full .z-review-frame { min-height: 0; }
 .z-review-full .z-review-side { max-height: 100%; }
 @media (max-width: 767.98px) { .z-review-stat .text-secondary:not(.small) { display: none; } }
 
 /* Review page: the article takes the left side from top to bottom; the right column holds the top line
    (counts, picker, filters, full screen), the filters panel, then the review tools. */
-@media (min-width: 992px) {
+@media (min-width: 768px) {
   .z-review-wrap:has(> .z-review-layout) { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto auto 1fr; column-gap: 1rem; align-items: start; }
   .z-review-wrap > .z-review-bar { grid-column: 2; grid-row: 1; flex-wrap: wrap !important; gap: .4rem; margin-bottom: .5rem !important; }
   .z-review-wrap > .z-review-bar .z-review-stat { flex: 1 1 100%; flex-wrap: wrap; white-space: normal; }
@@ -1237,18 +1229,16 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-review-bar .z-review-stat { flex: 1 1 100%; white-space: normal; flex-wrap: wrap; }
   .z-review-bar .z-go { order: 5; flex: 1 1 100% !important; min-width: 0 !important; }
   .z-review-frame { height: 68vh !important; min-height: 380px !important; }
-  .z-decide { grid-template-columns: 1fr 1fr auto !important; padding-right: .75rem; }
   [data-review-skip].w-100 { position: fixed !important; z-index: 42; right: .75rem; bottom: calc(.6rem + env(safe-area-inset-bottom)); width: auto !important; height: 2.9rem; border-radius: 8px; box-shadow: none; background: var(--tblr-bg-surface-secondary); }
-  .z-decide { right: 0; padding-right: 6.5rem !important; }
+  .z-decide { right: 0; }
   html:has(.z-decide) .zury-a11y { bottom: 5rem !important; }
 }
 
 /* Verdict card: tighter; the comment opens as a floating panel; filters compact. */
 .z-review-panel .card-header { padding: .5rem .85rem; min-height: 0; }
-.z-review-panel .card-body { padding: .65rem .85rem; }
 .z-review-panel .z-review-more { position: relative; margin-bottom: .6rem !important; padding: .35rem .6rem; }
 .z-review-panel .z-review-more:not(.z-review-handover)[open] > div { position: absolute; left: -1px; right: -1px; top: calc(100% + 4px); z-index: 30; background: var(--tblr-bg-surface); border: 1px solid var(--tblr-border-color); border-radius: 10px; padding: .6rem .7rem !important; box-shadow: 0 14px 34px rgba(0,0,0,.16); }
-.z-decide { display: grid; grid-template-columns: 1fr 1fr auto; gap: .4rem; }
+.z-decide { display: grid; }
 .z-review-handover { border: 0 !important; padding: 0 !important; font-size: .85rem; }
 .z-review-handover > summary { color: var(--tblr-secondary); font-weight: 400; }
 .z-review-filters { padding: .5rem .65rem !important; }
@@ -1258,7 +1248,6 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 @media (max-width: 991.98px) { .z-decide { padding-right: .75rem !important; } }
 
 /* Review side: compact buttons — decision in one row; the entry's links two per row. */
-.z-decide .btn { padding: .35rem .5rem; font-size: .875rem; }
 .z-decide kbd { display: none; }
 .z-entry-btns { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
 .z-entry-btns > .btn, .z-entry-btns > form > .btn { padding: .25rem .4rem; font-size: .78rem; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
@@ -1266,14 +1255,12 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 .z-review-side .btn-sm { padding: .25rem .5rem; }
 
 /* Decision: two rows of two — Accept | Reject, Skip | Ask another. The hand-over list opens below. */
-.z-decide { grid-template-columns: 1fr 1fr !important; }
 .z-review-handover > summary { display: none; }
 .z-decide .btn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 991.98px) { .z-decide { grid-template-columns: 1fr 1fr !important; } }
 
 .z-review-entry { overflow: hidden; }
 .z-review-entry > .z-review-frame { border-top: 0; }
-.z-review-frame { height: calc(100vh - 140px); }
 
 /* Review top: one compact row — the current entry's picker (its title), then icon buttons for filter
    and full screen. */
@@ -1294,19 +1281,13 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   html:has(.z-review-wrap) .page-body { margin-top: .25rem !important; }
   html:has(.z-review-wrap) .page-body > .container-xl { padding-left: .35rem; padding-right: .35rem; }
   .z-review-card { border: 0; box-shadow: none; background: transparent; }
-  .z-review-card > .card-body { padding: 0 !important; }
-  .z-review-frame { height: calc(100vh - 290px) !important; min-height: 320px !important; }
-  .z-decide { gap: .3rem !important; padding: .4rem .5rem calc(.4rem + env(safe-area-inset-bottom)) !important; }
-  .z-decide .btn { padding: .4rem .3rem !important; font-size: .85rem !important; }
-}
-@media (max-width: 767.98px) { html:has(.z-review-wrap) .zury-a11y { display: none !important; } }
-@media (max-width: 767.98px) {
+  .z-review-card > .card-body { padding: 0 !important; } html:has(.z-review-wrap) .zury-a11y { display: none !important; }
   html:has(.z-review-wrap) .gh-footer { display: none !important; }
   html:has(.z-review-wrap) .z-review-side { gap: .4rem; padding-bottom: 6.5rem; }
   html:has(.z-review-wrap) .z-review-panel { border: 0; box-shadow: none; background: transparent; }
   html:has(.z-review-wrap) .z-review-panel .card-body { padding: .25rem 0 !important; }
   html:has(.z-review-wrap) .z-review-panel:not(:has(.z-review-more)) { display: none; }
-  .z-review-frame { height: calc(100dvh - 250px) !important; min-height: 300px !important; }
+  .z-review-frame { min-height: 300px !important; }
 }
 
 /* Phones: the article and the action buttons only; picker, filters, comment and the rest in a sidebar. */
@@ -1315,9 +1296,8 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-side-toggle { display: inline-flex; align-items: center; justify-content: center; position: fixed; right: .6rem; bottom: 6.2rem; z-index: 1036; width: 2.75rem; height: 2.75rem; border-radius: 50%; border: 1px solid var(--tblr-border-color); background: var(--tblr-bg-surface); box-shadow: 0 6px 18px rgba(0,0,0,.15); font-size: 1.25rem; }
   .z-review-wrap > .z-review-bar, .z-review-wrap > .z-review-filters { display: none !important; }
   html.z-side-open .z-review-wrap > .z-review-bar { display: flex !important; position: fixed; top: .6rem; right: .6rem; width: calc(86vw - 1.2rem); z-index: 1042; margin: 0 !important; }
-  html.z-side-open .z-review-wrap > .z-review-filters.show { display: block !important; position: fixed; top: 3.6rem; right: .6rem; width: calc(86vw - 1.2rem); max-height: 60vh; overflow-y: auto; z-index: 1043; background: var(--tblr-bg-surface); box-shadow: 0 10px 30px rgba(0,0,0,.18); }
-  .z-review-side { position: fixed !important; top: 0; bottom: 0; right: -90vw; width: 86vw; z-index: 1041; background: var(--tblr-bg-surface); overflow-y: auto !important; max-height: none !important; padding: 3.6rem .6rem 6.5rem !important; transition: right .2s ease; box-shadow: -10px 0 30px rgba(0,0,0,.12); display: flex; flex-direction: column; gap: .5rem; }
-  html.z-side-open .z-review-side { right: 0; }
+  html.z-side-open .z-review-wrap > .z-review-filters.show { display: block !important; position: fixed; right: .6rem; width: calc(86vw - 1.2rem); max-height: 60vh; overflow-y: auto; z-index: 1043; background: var(--tblr-bg-surface); box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+  .z-review-side { position: fixed !important; z-index: 1041; background: var(--tblr-bg-surface); overflow-y: auto !important; display: flex; flex-direction: column; gap: .5rem; }
   html.z-side-open .z-side-backdrop { display: block; position: fixed; inset: 0; z-index: 1040; background: rgba(15,23,42,.35); }
   html.z-side-open .z-side-toggle { z-index: 1044; }
   .z-review-side .z-facts-list, .z-review-side .z-entry-btns { display: grid !important; }
@@ -1326,22 +1306,19 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 }
 
 /* The queue's numbers: a small row of tiles under the picker. */
-.z-review-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .35rem; margin-bottom: .5rem; }
+.z-review-stats { gap: .35rem; margin-bottom: .5rem; }
 .z-stat { display: flex; flex-direction: column; align-items: center; padding: .3rem .2rem; border: 1px solid var(--tblr-border-color); border-radius: 8px; background: var(--tblr-bg-surface); line-height: 1.15; }
 .z-stat b { font-size: .95rem; }
 .z-stat small { font-size: .68rem; color: var(--tblr-secondary); }
-@media (min-width: 992px) { .z-review-wrap > .z-review-stats { grid-column: 2; grid-row: 2; } .z-review-wrap > .z-review-filters { grid-row: 2 !important; } }
+@media (min-width: 992px) { .z-review-wrap > .z-review-stats { grid-column: 2; } }
 @media (max-width: 767.98px) {
   .z-review-wrap > .z-review-stats { display: none; }
-  html.z-side-open .z-review-wrap > .z-review-stats { display: grid; position: fixed; top: 3.4rem; right: .6rem; width: calc(86vw - 1.2rem); z-index: 1042; }
-  html.z-side-open .z-review-side { padding-top: 7rem !important; }
-  html.z-side-open .z-review-wrap > .z-review-filters.show { top: 7rem; }
+  html.z-side-open .z-review-wrap > .z-review-stats { position: fixed; right: .6rem; z-index: 1042; }
 }
 @media (min-width: 992px) {
   .z-review-wrap:has(> .z-review-layout) { grid-template-rows: auto auto auto 1fr !important; }
-  .z-review-wrap > .z-review-stats { grid-column: 2; grid-row: 2 !important; }
-  .z-review-wrap > .z-review-filters { grid-column: 2; grid-row: 3 !important; }
-  .z-review-layout > .z-review-side { grid-row: 4 !important; }
+  .z-review-wrap > .z-review-stats { grid-column: 2; }
+  .z-review-wrap > .z-review-filters { grid-column: 2; }
   .z-review-layout > .z-review-entry { grid-row: 1 / span 4 !important; }
 }
 
@@ -1351,7 +1328,7 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 .z-review-side .card, .z-review-panel { border: 0 !important; box-shadow: none !important; background: transparent !important; }
 .z-review-side .card-body, .z-review-panel .card-body { padding: .25rem 0 !important; }
 .z-review-side .card + .card, .z-review-side > * + * { border-top: 1px solid var(--tblr-border-color-translucent, rgba(0,0,0,.06)) !important; padding-top: .5rem; }
-.z-review-entry { border: 1px solid var(--tblr-border-color) !important; border-radius: 10px; box-shadow: none !important; }
+.z-review-entry { box-shadow: none !important; }
 .z-review-comment { border: 0 !important; padding: 0 !important; }
 .z-review-comment > summary { display: none; }
 .z-review-comment > div { position: static !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; background: transparent !important; }
@@ -1361,15 +1338,14 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 
 /* Numbers as one quiet line; the reasons dropdown sits inside the comment box; one scrollbar (the page
    stays put on wide screens, only the article and the side column scroll). */
-.z-review-stats { display: flex !important; align-items: center; gap: .6rem; font-size: .8rem; color: var(--tblr-secondary); margin: 0 0 .4rem; grid-template-columns: none !important; }
+.z-review-stats { align-items: center; gap: .6rem; font-size: .8rem; color: var(--tblr-secondary); margin: 0 0 .4rem; grid-template-columns: none !important; }
 .z-review-stats .z-review-mini { width: 60px; }
 .z-comment-box { position: relative; }
-.z-comment-box textarea { padding-bottom: 1.8rem; }
 .z-reason-pick { position: absolute; right: .4rem; bottom: .35rem; max-width: 60%; font-size: .75rem; border: 0; background: var(--tblr-bg-surface-secondary); border-radius: 6px; padding: .1rem .4rem; color: var(--tblr-secondary); cursor: pointer; }
 
 /* One scrollbar: the article is as tall as its content and scrolls with the page; the right column stays
    in view on wide screens. */
-.z-review-frame { height: auto !important; min-height: 60vh; }
+.z-review-frame { height: auto !important; }
 .z-review-frame iframe { height: 60vh; overflow: hidden; }
 @media (min-width: 992px) {
   .z-review-layout > .z-review-side { position: sticky !important; top: .75rem; max-height: calc(100vh - 1.5rem) !important; overflow-y: auto; align-self: start; }
@@ -1405,35 +1381,27 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 
 /* Phones: the sidebar takes the whole screen. */
 @media (max-width: 767.98px) {
-  .z-review-side { width: 100vw !important; right: -100vw; }
-  html.z-side-open .z-review-side { right: 0 !important; }
   html.z-side-open .z-review-wrap > .z-review-bar, html.z-side-open .z-review-wrap > .z-review-stats, html.z-side-open .z-review-wrap > .z-review-filters.show { width: calc(100vw - 1.2rem) !important; }
-}
-@media (max-width: 767.98px) {
   html:not(.z-side-open) .z-review-wrap > .z-review-stats { display: none !important; }
-  html.z-side-open .z-review-wrap > .z-review-stats { display: flex !important; position: fixed; top: 3.4rem; left: .6rem; right: .6rem; width: auto !important; z-index: 1042; }
+  html.z-side-open .z-review-wrap > .z-review-stats { display: flex !important; position: fixed; left: .6rem; right: .6rem; width: auto !important; z-index: 1042; }
 }
 
 /* Article box head: the current title, large; the entry picker (normal dropdown) and filter beside it. */
-.z-entry-head { display: flex; align-items: center; gap: .75rem; padding: .6rem .9rem; border-bottom: 1px solid var(--tblr-border-color); }
+.z-entry-head { display: flex; align-items: center; gap: .75rem; padding: .6rem .9rem; }
 .z-entry-title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 1.35rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .z-entry-tools { flex: 0 1 22rem; min-width: 12rem; }
-.z-entry-tools > .z-review-bar { display: flex !important; margin: 0 !important; position: static !important; width: auto !important; }
+.z-entry-tools > .z-review-bar { margin: 0 !important; position: static !important; width: auto !important; }
 @media (min-width: 992px) { .z-review-wrap > .z-review-stats { grid-row: 1 !important; } .z-review-wrap > .z-review-filters { grid-row: 2 !important; } .z-review-layout > .z-review-side { grid-row: 3 / span 2 !important; } }
-@media (max-width: 767.98px) { .z-entry-head { padding: .5rem .6rem; } .z-entry-title { font-size: 1.1rem; } .z-entry-tools { display: none; } }
+@media (max-width: 767.98px) { .z-entry-title { font-size: 1.1rem; } .z-entry-tools { display: none; } }
 
 /* The picker, filter and full screen live in the article box's head on every screen. */
 .z-entry-tools { display: block !important; }
 .z-entry-tools > .z-review-bar { display: flex !important; }
 @media (max-width: 767.98px) {
-  .z-entry-head { flex-wrap: wrap; gap: .4rem; }
   .z-entry-title { flex: 1 1 100%; }
   .z-entry-tools { flex: 1 1 100%; min-width: 0; }
   html.z-side-open .z-entry-tools > .z-review-bar { position: static !important; width: auto !important; }
-}
-@media (max-width: 767.98px) {
   html.z-side-open .z-review-wrap > .z-review-stats { top: .6rem !important; }
-  html.z-side-open .z-review-side { padding-top: 4rem !important; }
   html.z-side-open .z-review-wrap > .z-review-filters.show { top: 4rem !important; }
 }
 
@@ -1451,7 +1419,7 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 .z-review-side .card:not(.z-review-panel) .card-body { padding: .7rem !important; }
 .z-facts-list { font-size: .8rem; gap: .25rem .6rem; }
 .z-facts-list dt { color: var(--tblr-secondary); font-weight: 400; }
-.z-facts-list dd { margin: 0; text-align: right; }
+.z-facts-list dd { margin: 0; }
 .z-entry-btns > .btn { background: var(--tblr-bg-surface); border-color: transparent; }
 @media (max-width: 767.98px) {
   html:has(.z-review-wrap) .z-review-side .z-review-panel { background: var(--tblr-bg-surface-secondary) !important; border-radius: 12px !important; }
@@ -1465,15 +1433,13 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-decide .btn i { font-size: 1.05rem !important; margin-right: .35rem !important; }
 }
 @media (max-width: 767.98px) {
-  .z-decide { grid-template-columns: repeat(4, 1fr) !important; }
   /* Filters open right under the article's title bar. */
   html:not(.z-side-open) .z-review-wrap > .z-review-filters.show,
-  html:not(.z-side-open) .z-review-wrap > .z-review-filters.collapsing { display: block !important; position: static !important; width: auto !important; box-shadow: none; margin: 0 0 .5rem; }
+  html:not(.z-side-open) .z-review-wrap > .z-review-filters.collapsing { display: block !important; }
   /* Room under the article so its last lines aren't hidden behind the buttons. */
-  .z-review-wrap { padding-bottom: 4.75rem; }
   .z-review-entry { margin-bottom: .5rem; }
 }
-.z-review-entry > .z-review-filters { margin: 0 !important; border: 0 !important; border-bottom: 1px solid var(--tblr-border-color) !important; border-radius: 0 !important; background: var(--tblr-bg-surface-secondary) !important; position: static !important; width: auto !important; box-shadow: none !important; max-height: none !important; }
+.z-review-entry > .z-review-filters { margin: 0 !important; border-bottom: 1px solid var(--tblr-border-color) !important; background: var(--tblr-bg-surface-secondary) !important; position: static !important; width: auto !important; box-shadow: none !important; max-height: none !important; }
 .z-review-entry > .z-review-filters.show { display: block !important; }
 
 /* Filters: an even grid at every width (equal columns that fit), the button on its own row. */
@@ -1499,23 +1465,15 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 @media (max-width: 767.98px) {
   .z-review-side { top: auto !important; left: .5rem !important; right: .5rem !important; width: auto !important;
     bottom: calc(4.4rem + env(safe-area-inset-bottom)) !important; max-height: 72vh !important; border-radius: 16px;
-    padding: 2.4rem .75rem .75rem !important; box-shadow: 0 18px 50px rgba(0,0,0,.25) !important;
-    opacity: 0; visibility: hidden; transition: opacity .15s ease, visibility .15s !important; }
+    padding: 2.4rem .75rem .75rem !important; box-shadow: 0 18px 50px rgba(0,0,0,.25) !important; visibility: hidden; }
   html.z-side-open .z-review-side { opacity: 1; visibility: visible; right: .5rem !important; }
   .z-review-side .z-decide { visibility: visible; }
   .z-sheet-close { display: block; position: absolute; top: .7rem; right: .8rem; }
   html .z-review-wrap > .z-review-stats { display: none !important; }
   html.z-side-open .z-review-side { padding-top: 2.4rem !important; }
-}
-@media (max-width: 767.98px) {
   .z-review-side { opacity: 1 !important; transition: none !important; }
-  .z-review-side > :not(.z-review-panel):not(.z-sheet-close), .z-review-side .z-review-panel > .card-body > :not(.z-decide) { }
-}
-@media (max-width: 767.98px) {
   html.z-side-open .z-review-side, .z-review-side { height: auto !important; top: auto !important; min-height: 0 !important; overflow-y: auto !important; }
   html.z-side-open .z-review-wrap > .z-review-stats, html .z-review-wrap > .z-review-stats { display: none !important; }
-}
-@media (max-width: 767.98px) {
   html body .z-review-wrap .z-review-layout > .z-review-side { height: fit-content !important; max-height: 72vh !important; min-height: 0 !important; top: auto !important; padding-bottom: .75rem !important; }
   html body .z-review-wrap > .z-review-stats { display: none !important; }
 }
@@ -1530,13 +1488,13 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
 @media (max-width: 767.98px) {
   .z-subs-table thead { display: none; }
   .z-subs-table, .z-subs-table tbody { display: block; }
-  .z-subs-table tr:not(.z-group-row) { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "tick title act" "tick who status" "tick meta meta"; gap: .1rem .6rem; padding: .6rem .75rem; border-bottom: 1px solid var(--tblr-border-color); }
+  .z-subs-table tr:not(.z-group-row) { display: grid; border-bottom: 1px solid var(--tblr-border-color); }
   .z-subs-table tr.z-group-row { display: block; }
   .z-subs-table td { display: block; padding: 0 !important; border: 0 !important; }
   .z-subs-table .z-c-tick { grid-area: tick; align-self: center; }
   .z-subs-table .z-c-title { grid-area: title; font-weight: 500; min-width: 0; overflow: hidden; }
-  .z-subs-table .z-c-who { grid-area: who; font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .z-subs-table .z-c-status { grid-area: status; justify-self: end; }
+  .z-subs-table .z-c-who { font-size: .8rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .z-subs-table .z-c-status { justify-self: end; }
   .z-subs-table .z-c-act { grid-area: act; justify-self: end; }
   .z-subs-table .z-c-rev, .z-subs-table .z-c-words, .z-subs-table .z-c-when { grid-area: meta; font-size: .72rem; color: var(--tblr-secondary); text-align: left !important; display: inline; }
   .z-subs-table .z-c-words { justify-self: center; }
@@ -1544,8 +1502,6 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-subs-table .z-row-actions .btn-icon { width: 1.9rem; height: 1.9rem; }
   .z-list-head { padding: .6rem .75rem !important; }
   .z-list-filters > .input-icon, .z-list-filters > .form-select { flex: 1 1 100% !important; max-width: none !important; }
-}
-@media (max-width: 767.98px) {
   .z-subs-table .z-c-rev, .z-subs-table .z-c-words { display: none !important; }
   .z-subs-table .z-c-when { justify-self: start; }
 }
@@ -1618,10 +1574,8 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-list-filters > .form-switch { align-self: center; }
   .z-list-head > .z-head-actions { position: absolute; right: .75rem; top: .6rem; }
   .z-list-head { position: relative; }
-}
 
 /* Phones: list footer — the page count on one line, page numbers below (scrollable). */
-@media (max-width: 767.98px) {
   .card-footer:has(> .pagination) { flex-wrap: wrap; gap: .5rem; }
   .card-footer:has(> .pagination) > p { flex: 1 1 100%; white-space: nowrap; font-size: .8rem; }
   .card-footer > .pagination { margin: 0 !important; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; }
@@ -1629,4 +1583,622 @@ html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -ap
   .z-evhead-actions { width: 100%; justify-content: stretch !important; flex-wrap: nowrap !important; }
   .z-evhead-actions > .btn, .z-evhead-actions > a.btn { flex: 1 1 0; justify-content: center; }
   .z-evhead-actions > .dropdown { flex: none; }
+
+/* Review on phones: one row on top — entry dropdown, filter, wiki/talk/history — pinned while scrolling;
+   the separate title line goes (the dropdown shows it). */
+  .z-entry-head { position: sticky; top: 0; z-index: 30; background: var(--tblr-body-bg, #fff); gap: .3rem !important; padding: .35rem 0 !important; }
+  .z-entry-head > .z-entry-tools { order: 1; flex: 1 1 auto !important; min-width: 0 !important; }
+  .z-entry-head > .z-entry-links { order: 2; gap: 0; }
+  .z-entry-head > .z-entry-links .btn-icon { width: 1.75rem; height: 1.75rem; }
+  .z-entry-tools > .z-review-bar { gap: .25rem !important; }
+  .z-entry-tools .z-go { min-width: 0 !important; }
+  html:has(.z-review-wrap) .z-evhead { padding-bottom: 0; }
+
+/* Events list on phones: each row a compact block — name, then one small line (project · wiki · type ·
+   dates · people), status on the right. No sideways scrolling. */
+  .z-ev-table thead { display: none; }
+  .z-ev-table, .z-ev-table tbody { display: block; }
+  .z-ev-table tr { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "ev st" "ty st" "dt st"; gap: .1rem .6rem; padding: .65rem .8rem; border-bottom: 1px solid var(--tblr-border-color); }
+  .z-ev-table td { display: block; padding: 0 !important; border: 0 !important; }
+  .z-ev-table td:nth-child(1) { grid-area: ev; }
+  .z-ev-table td:nth-child(2) { grid-area: ty; font-size: .75rem; }
+  .z-ev-table td:nth-child(3) { grid-area: dt; font-size: .75rem; white-space: normal !important; }
+  .z-ev-table td:nth-child(4) { display: none; }
+  .z-ev-table td:nth-child(5) { grid-area: st; align-self: center; }
+  .z-ev-table td:nth-child(1) .avatar { display: none; }
+  .z-ev-table td:nth-child(1) .fw-medium { font-size: .95rem; }
+  .z-ev-table td:nth-child(1) .small { font-size: .75rem; }
+  .z-ev-table td:nth-child(1) .small .z-proj-name { font-weight: 400; }
+  .table-responsive:has(> .z-ev-table) { overflow-x: visible; }
+  /* Review: the pinned row needs its box not to clip. */
+  .z-review-entry { overflow: visible !important; }
+
+/* Phones: event header dates on one line, "days left" on its own; overview entry lists readable
+   (title on its line, name and status below). */
+  .z-evhead-dates { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: .3rem; white-space: nowrap; }
+  .z-evhead-dates > .z-days-left { flex-basis: 100%; margin-left: 1.45rem !important; }
+  .z-evhead-dates > .z-days-left > .z-days-sep { display: none; }
+  .page-body .list-group-item.d-flex.align-items-center.gap-2:has(> .fw-medium.text-truncate) { flex-wrap: wrap; row-gap: .15rem; }
+  .page-body .list-group-item.d-flex.align-items-center.gap-2 > .fw-medium.text-truncate { flex: 1 1 100%; white-space: normal; }
+  .page-body .list-group-item.d-flex.align-items-center.gap-2:has(> .fw-medium.text-truncate) > .text-secondary.small.text-truncate { flex: 1 1 0; min-width: 0; }
 }
+
+/* The event's time as a slim strip in the header: start · days left · end, with its bar. */
+.z-evhead-timeline { margin-top: .55rem; max-width: 34rem; }
+.z-evhead-timeline .small { font-size: .74rem; }
+.z-evhead-timeline .progress { height: 4px; background: color-mix(in srgb, var(--tblr-primary) 14%, transparent); }
+
+/* Event header: status, type and wiki on one line; on phones the status is just its coloured dot. */
+.z-evhead-meta { display: inline-flex !important; flex-wrap: wrap; align-items: center; gap: .3rem .9rem; margin-right: .9rem; vertical-align: middle; }
+.z-evhead-meta:empty { display: none !important; }
+@media (max-width: 767.98px) {
+  .z-evhead-status .z-status-word { display: none; }
+  .z-evhead-meta { margin-right: .6rem; gap: .3rem .7rem; }
+}
+
+/* Breadcrumb: small pills above the title (beside the logo), chevrons between. */
+.z-evhead-text > .z-evhead-path { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin: 0 0 .35rem !important; font-size: .72rem; }
+.z-evhead-text > .z-evhead-path > a { display: inline-flex; align-items: center; gap: .25rem; padding: .1rem .55rem; border-radius: 999px; background: color-mix(in srgb, var(--z-proj, var(--tblr-primary)) 9%, var(--tblr-bg-surface)); color: var(--tblr-secondary); text-decoration: none; line-height: 1.5; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-evhead-text > .z-evhead-path > a:hover { color: var(--z-proj, var(--tblr-primary)); }
+.z-evhead-text > .z-evhead-path > i { font-size: .7rem; color: var(--tblr-secondary); opacity: .6; }
+.z-evhead-text > .z-evhead-path > a:last-child { color: var(--tblr-body-color); font-weight: 600; }
+@media (max-width: 767.98px) { .z-evhead-text > .z-evhead-path > a { max-width: 9rem; } }
+
+/* Event header status: the dot and the word, on every screen. */
+.z-evhead-status .z-status-word { display: inline !important; }
+
+/* Time left: a small pill in the header's meta line (dates on hover). */
+.z-time-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .1rem .55rem .1rem .45rem; border-radius: 999px; font-size: .76rem; font-weight: 600; color: var(--tblr-primary); background: color-mix(in srgb, var(--tblr-primary) 10%, var(--tblr-bg-surface)); white-space: nowrap; }
+.z-time-pill > i { font-size: .85rem; }
+.z-time-bar { display: inline-block; width: 2.6rem; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--tblr-primary) 20%, transparent); overflow: hidden; }
+.z-time-bar > b { display: block; height: 100%; background: var(--tblr-primary); }
+
+/* Status and time left in one pill: ● চলমান · ১৮ দিন বাকি ▬ */
+.z-evhead-meta:has(.z-time-pill) > .z-evhead-status { display: none !important; }
+.z-time-pill { color: var(--tblr-body-color); }
+.z-pill-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--tblr-secondary); flex: none; }
+.z-pill-dot.is-green { background: var(--tblr-green); }
+.z-pill-dot.is-blue, .z-pill-dot.is-azure { background: var(--tblr-blue); }
+.z-pill-dot.is-yellow, .z-pill-dot.is-orange { background: var(--tblr-yellow); }
+.z-pill-dot.is-red { background: var(--tblr-red); }
+.z-pill-status { font-weight: 700; }
+.z-pill-sep { opacity: .45; }
+
+/* By status (overview tile): one stacked bar and a small list. */
+.z-stack { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--tblr-bg-surface-secondary); margin: .4rem 0 .7rem; }
+.z-stack > i { display: block; height: 100%; }
+.z-stack-legend { display: grid; gap: .3rem; font-size: .82rem; }
+.z-stack-legend > div { display: flex; align-items: center; gap: .45rem; }
+.z-sw { width: .6rem; height: .6rem; border-radius: 3px; flex: none; }
+
+/* Under the daily chart: four small numbers. */
+.z-insights { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-top: .75rem; }
+.z-insights > div { display: flex; flex-direction: column; padding: .5rem .65rem; border-radius: 10px; background: var(--tblr-bg-surface-secondary); line-height: 1.25; }
+.z-insights span { font-size: .72rem; color: var(--tblr-secondary); }
+.z-insights b { font-size: 1.15rem; }
+.z-insights small { font-size: .72rem; color: var(--tblr-secondary); }
+@media (max-width: 767.98px) { .z-insights { grid-template-columns: 1fr 1fr; } }
+
+/* "My entries" (overview): title and note on top; the counts wrap below on narrow screens. */
+.z-my-needs > .card-header { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.z-my-needs > .card-header > div:first-child { flex: 1 1 12rem; min-width: 0; }
+.z-my-needs > .card-header .card-actions { margin: 0; flex-wrap: wrap; }
+
+/* Submissions on phones (tighter): title; participant · date and status; reviewers (if any). */
+@media (max-width: 767.98px) {
+  .z-subs-table tr:not(.z-group-row) { gap: 0 .45rem !important; padding: .45rem .6rem !important; align-items: center; }
+  .z-subs-table .z-c-title { line-height: 1.3; }
+  .z-subs-table .z-c-who { grid-area: who !important; }
+  .z-subs-table .z-c-when { grid-area: when !important; display: block !important; font-size: .72rem; justify-self: start; white-space: nowrap; }
+  .z-subs-table .z-c-when::before { content: "· "; }
+  .z-subs-table .z-c-status { grid-area: status !important; }
+  .z-subs-table .z-c-status .badge { font-size: .68rem; padding: .15rem .4rem; }
+  .z-subs-table .z-c-rev { grid-area: rev !important; font-size: .72rem !important; }
+  .z-subs-table .z-c-rev:has(> .text-secondary:only-child) { display: none !important; }
+  .z-subs-table .z-c-act .btn-icon { width: 1.6rem; height: 1.6rem; }
+  .z-subs-table .z-c-rev { margin-top: 0 !important; justify-self: end; overflow: hidden; text-overflow: ellipsis; }
+  .z-subs-table .z-c-rev .d-md-none { font-size: 0; }
+  .z-subs-table .z-c-rev .d-md-none > i { font-size: .8rem; margin-right: .15rem !important; }
+  .z-subs-table .z-c-when { margin-left: .2rem; }
+  .z-subs-table .z-c-rev .d-md-none { display: none !important; }
+  .z-subs-table .z-c-who, .z-subs-table .z-c-rev { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .z-subs-table .z-c-when { white-space: nowrap; }
+  .z-subs-table .z-c-rev * { display: inline; }
+  .z-subs-table .z-c-rev { width: auto !important; max-width: 100% !important; }
+}
+/* Phones with room: participant, date, reviewer and status on one line; narrow ones keep three lines. */
+@media (min-width: 440px) and (max-width: 767.98px) {
+  .z-subs-table tr:not(.z-group-row) { grid-template-areas: "tick title title title title act" "tick who when rev status status" !important; }
+  .z-subs-table .z-c-who { max-width: 9rem; }
+  .z-subs-table .z-c-rev { text-align: right; padding-left: .35rem; }
+}
+
+.z-empty-line{padding:1rem 1.25rem}
+/* Phones: search on the first line (beside the buttons), status next to the participant below. */
+@media (max-width: 767.98px) {
+  .z-list-filters > .input-icon.z-search-sm { order: -1 !important; }
+  .z-list-filters > select[name="status"] { grid-column: 1; }
+  .z-list-filters > .input-icon.z-search-sm { grid-column: 1 / -1 !important; }
+}
+/* Wider screens: filters, switch and buttons on one line; the boxes shrink to fit. */
+@media (min-width: 768px) {
+  .z-list-head { flex-wrap: nowrap !important; align-items: center; }
+  .z-list-head > .z-list-filters { flex: 1 1 0 !important; min-width: 0; flex-wrap: nowrap !important; align-items: center; }
+  .z-list-filters > .input-icon, .z-list-filters > .form-select { flex: 1 1 12rem !important; min-width: 6rem !important; }
+  .z-list-filters > .form-switch { flex: 0 0 auto !important; white-space: nowrap; }
+  .z-list-head > .z-head-actions { flex: 0 0 auto !important; }
+}
+.z-mine .form-check-label { font-size: 1.1rem; line-height: 1; color: var(--tblr-secondary); }
+.z-mine:has(:checked) .form-check-label { color: var(--tblr-primary); }
+/* "Only mine" as an icon toggle joined to the participant box. */
+.z-people-pick { flex-wrap: nowrap; width: auto; }
+.z-people-pick .z-mine-btn { border: 1px solid var(--tblr-border-color); background: var(--tblr-bg-surface); color: var(--tblr-secondary); }
+.z-people-pick .z-mine-btn.btn-primary { background: var(--tblr-primary); border-color: var(--tblr-primary); color: #fff; }
+@media (min-width: 768px) { .z-list-filters > .z-people-pick { flex: 1 1 13rem !important; min-width: 8rem !important; } }
+@media (max-width: 767.98px) { .z-list-filters > .z-people-pick { width: 100% !important; } }
+.z-people-pick { align-items: stretch; }
+.z-people-pick .z-mine-btn { height: auto; min-height: 0; width: 2.1rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--tblr-border-radius) 0 0 var(--tblr-border-radius) !important; margin: 0 !important; }
+.z-people-pick .z-mine-btn:only-child { border-radius: var(--tblr-border-radius) !important; }
+.z-people-pick .z-mine-btn + .form-select { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; margin-left: -1px !important; }
+.z-people-pick .form-select:disabled { opacity: .55; }
+/* Phones: the reviewer quiet and uniform — small grey text, like the participant. */
+@media (max-width: 767.98px) {
+  .z-subs-table .z-c-rev, .z-subs-table .z-c-rev * { font-size: .75rem !important; font-weight: 400 !important; font-family: inherit !important; color: var(--tblr-secondary) !important; }
+  .z-subs-table .z-c-rev { align-self: center; }
+}
+/* Submissions: status as coloured text with its dot, no background. */
+.z-subs-table .z-c-status .badge { background: transparent !important; padding-left: 0; padding-right: 0; }
+/* Phones: reviewer and status on the same middle line. */
+@media (max-width: 767.98px) {
+  .z-subs-table .z-c-rev, .z-subs-table .z-c-status { align-self: center !important; display: flex !important; align-items: center; justify-content: flex-end; line-height: 1.2 !important; padding-top: 0 !important; padding-bottom: 0 !important; height: 1.4rem; }
+  .z-subs-table .z-c-rev > span:not(.d-md-none) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .z-subs-table .z-c-status .badge { line-height: 1.2; padding-top: 0; padding-bottom: 0; }
+/* Phones: with entries selected, the selection bar takes its own row on top. */
+  .z-list-head:has(.z-bulkbar:not([hidden])) { flex-wrap: wrap !important; }
+  .z-list-head:has(.z-bulkbar:not([hidden])) > .z-head-actions { position: static !important; order: -1 !important; width: 100%; display: flex; align-items: center; gap: .4rem; margin-bottom: .5rem; }
+  .z-list-head:has(.z-bulkbar:not([hidden])) .z-bulk-slot { flex: 1 1 auto; min-width: 0; }
+  .z-list-head:has(.z-bulkbar:not([hidden])) .z-list-filters > .input-icon.z-search-sm { width: 100% !important; }
+  .z-list-filters > .input-icon.z-search-sm { width: calc(100% - 8rem) !important; }
+}
+.z-check-all-m { border: var(--tblr-border-width) solid var(--tblr-border-color) !important; }
+.z-check-all-m:has(:checked) { background: var(--tblr-primary); border-color: var(--tblr-primary) !important; color: #fff; }
+/* Bangla names look smaller than Latin at the same size: lift them a little. */
+.z-subs-table .z-c-rev .z-bn { font-size: .84rem !important; }
+/* Phones: line 1 title, line 2 participant · date, line 3 status then reviewers (from the left). */
+@media (max-width: 767.98px) {
+  .z-subs-table tr:not(.z-group-row) { grid-template-columns: auto auto minmax(0, 1fr) auto !important; }
+  .z-subs-table .z-c-who { max-width: 12rem !important; }
+  .z-subs-table .z-c-when { justify-self: start; }
+  .z-subs-table .z-c-status { justify-content: flex-start !important; justify-self: start; }
+  .z-subs-table .z-c-rev { justify-content: flex-start !important; text-align: left !important; justify-self: start; max-width: 100%; }
+  .z-subs-table .z-c-rev > span:not(.d-md-none) { display: inline !important; }
+  .z-subs-table tr:not(.z-group-row) { grid-template-areas: "tick title title act" "tick who when ." "tick rev rev rev" !important; }
+  .z-subs-table .z-c-status { display: none !important; }
+  .z-subs-table .z-c-rev { padding-left: 0 !important; flex-wrap: wrap; gap: 0 .45rem; }
+  .z-subs-table .z-c-rev .z-rev-status { display: inline-flex !important; }
+  .z-subs-table .z-c-rev .z-rev-status .badge { font-size: .75rem !important; padding: 0 !important; background: transparent !important; }
+  .z-subs-table .z-c-rev .z-rev-status .badge, .z-subs-table .z-c-rev .z-rev-status .badge * { color: inherit; }
+  .z-subs-table .z-c-rev .z-rev-status .badge.bg-green-lt, .z-subs-table .z-c-rev .z-rev-status .badge.bg-green-lt * { color: var(--tblr-green) !important; }
+  .z-subs-table .z-c-rev .z-rev-status .badge.bg-red-lt, .z-subs-table .z-c-rev .z-rev-status .badge.bg-red-lt * { color: var(--tblr-red) !important; }
+  .z-subs-table .z-c-rev .z-rev-status .badge.bg-yellow-lt, .z-subs-table .z-c-rev .z-rev-status .badge.bg-yellow-lt * { color: #b26b00 !important; }
+  .z-subs-table .z-c-rev .z-rev-status .badge { display: inline-flex !important; align-items: center; gap: .25rem; }
+  .z-subs-table .z-c-rev { display: block !important; height: auto !important; white-space: normal !important; }
+  .z-subs-table .z-c-rev .z-rev-status { margin-right: .45rem; vertical-align: middle; }
+/* Phones: each reviewer's own decision as a small mark before their name. */
+  .z-subs-table .z-c-rev > span.text-green::before { content: "✓"; margin-right: .15rem; color: var(--tblr-green); font-weight: 700; }
+  .z-subs-table .z-c-rev > span.text-red::before { content: "✗"; margin-right: .15rem; color: var(--tblr-red); font-weight: 700; }
+/* One reviewer: the status already says it, no mark. */
+  .z-subs-table .z-c-rev > span.text-green:only-of-type::before, .z-subs-table .z-c-rev > span.text-red:only-of-type::before { content: none; }
+  .z-subs-table .z-c-rev:not(.z-multi) > span.text-green::before, .z-subs-table .z-c-rev:not(.z-multi) > span.text-red::before { content: none; }
+}
+/* Configuration steps: no tinted inset band; on phones all steps fit (3 per row), no sideways scroll. */
+.z-config > .card-header { padding: 0 !important; border-bottom: 1px solid var(--tblr-border-color); }
+.z-config-tabs { background: transparent !important; box-shadow: none !important; margin: 0 !important; }
+@media (max-width: 767.98px) {
+  .z-config-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible !important; gap: .25rem; border: 0 !important; }
+  .z-config-tabs > .nav-item { min-width: 0; }
+  .z-config-tabs .nav-link { display: flex !important; align-items: center; gap: .2rem; font-size: .74rem; line-height: 1.2; text-align: center; white-space: normal !important; border: 0 !important; border-radius: 8px; margin: 0 !important; }
+/* Phones: steps as a one-line stepper; only the current step shows its name. */
+  .z-config-tabs { display: flex !important; flex-wrap: nowrap !important; align-items: center; gap: .3rem; }
+  .z-config-tabs > .nav-item { flex: 0 0 auto; }
+  .z-config-tabs > .nav-item:has(.active) { flex: 1 1 auto; min-width: 0; }
+  .z-config-tabs .nav-link { flex-direction: row !important; justify-content: center; padding: .25rem !important; background: transparent !important; }
+  .z-config-tabs .nav-link .z-step-label { display: none; }
+  .z-config-tabs .nav-link.active { padding: .25rem .6rem .25rem .25rem !important; border-radius: 999px; background: color-mix(in srgb, var(--tblr-primary) 10%, transparent) !important; }
+  .z-config-tabs .nav-link.active .z-step-label { display: inline; font-size: .8rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .z-config-tabs .z-step-num { display: inline-flex; align-items: center; justify-content: center; margin: 0 !important; flex: none; }
+  .z-config-tabs > .nav-item.active { min-width: 0; }
+  .z-config-tabs > .nav-item.active .nav-link { padding: .25rem .7rem .25rem .25rem !important; border-radius: 999px; background: color-mix(in srgb, var(--tblr-primary) 10%, transparent) !important; color: var(--tblr-primary); min-width: 0; }
+  .z-config-tabs > .nav-item.active .z-step-label { display: inline; margin-left: .4rem; font-size: .8rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .z-config-tabs > .nav-item.active { flex: 0 1 auto !important; }
+  .z-config-tabs { justify-content: space-around !important; }
+/* Phones: steps as light tabs — plain icons; the current one blue with its name and an underline. */
+  .z-config-tabs { padding: 0 .4rem !important; }
+  .z-config-tabs .z-step-num { width: auto !important; height: auto !important; background: transparent !important; color: var(--tblr-secondary) !important; border: 0 !important; font-size: 1.05rem; }
+  .z-config-tabs .nav-link, .z-config-tabs > .nav-item.active .nav-link { background: transparent !important; border-radius: 0 !important; padding: .6rem .35rem !important; border-bottom: 2px solid transparent !important; }
+  .z-config-tabs > .nav-item.active .nav-link { border-bottom-color: var(--tblr-primary) !important; }
+  .z-config-tabs > .nav-item.active .z-step-num { color: var(--tblr-primary) !important; }
+  .z-config-tabs > .nav-item.active .z-step-label { margin-left: .3rem; font-weight: 500; }
+}
+/* Configuration steps on wider screens: one row of tabs (icon + name), current one blue with an underline. */
+@media (min-width: 768px) {
+  .z-config-tabs { display: flex !important; flex-wrap: nowrap; gap: .25rem; padding: 0 1rem !important; border: 0 !important; overflow-x: auto; }
+  .z-config-tabs .nav-link { display: inline-flex !important; align-items: center; gap: .4rem; padding: .75rem .6rem !important; border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; background: transparent !important; color: var(--tblr-secondary); white-space: nowrap; margin: 0 !important; }
+  .z-config-tabs .z-step-num { width: auto !important; height: auto !important; background: transparent !important; border: 0 !important; color: inherit !important; font-size: 1.05rem; margin: 0 !important; }
+  .z-config-tabs > .nav-item.active .nav-link { color: var(--tblr-primary); border-bottom-color: var(--tblr-primary) !important; font-weight: 500; }
+}
+/* Phones: date-time pairs one under the other, full width. */
+@media (max-width: 767.98px) {
+  .z-set-control:has(> input[type="datetime-local"]), .z-set-control:has(> input[type="date"]) { flex-direction: column; }
+  .z-set-control > input[type="datetime-local"], .z-set-control > input[type="date"] { width: 100%; min-width: 0; }
+/* Phones: people as cards — name and actions, then roles, then status and date. Role filters wrap. */
+  .z-status-pills { flex-wrap: wrap !important; gap: .3rem; overflow: visible !important; }
+  .z-status-pills .nav-link { padding: .3rem .55rem; font-size: .82rem; }
+  #people-table, #people-table tbody { display: block; width: 100%; }
+  #people-table thead { display: none; }
+  #people-table tr.z-person-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "user user act" "roles roles roles" "status since since"; gap: .3rem .5rem; padding: .7rem .9rem; border-bottom: 1px solid var(--tblr-border-color); }
+  #people-table tr.z-person-row > td { display: block; padding: 0 !important; border: 0 !important; min-width: 0; }
+  #people-table .z-p-user { grid-area: user; }
+  #people-table .z-p-act { grid-area: act; align-self: start; }
+  #people-table .z-p-roles { grid-area: roles; }
+  #people-table .z-p-status { grid-area: status; font-size: .8rem; }
+  #people-table .z-p-since { grid-area: since; font-size: .78rem; justify-self: end; align-self: center; }
+  #people-table tr:not(.z-person-row) { display: block; }
+  #people-table tr:not(.z-person-row) > td { display: block; }
+  .table-responsive:has(> #people-table) { overflow-x: visible; }
+  #people-table tr.collapse:not(.show), #people-table tr[hidden] { display: none !important; }
+}
+/* The one-line toolbar is for the submissions list; other lists (people) may wrap. */
+@media (min-width: 768px) {
+  .z-list-head:not(:has(> .z-head-actions)) { flex-wrap: wrap !important; }
+  .z-list-head:not(:has(> .z-head-actions)) > .z-list-filters { flex: 1 1 auto !important; flex-wrap: wrap !important; justify-content: flex-end; min-width: min(100%, 22rem); }
+  .z-list-head:not(:has(> .z-head-actions)) > .z-list-filters > .input-icon { flex: 1 1 12rem !important; }
+}
+/* Touch screens: no hover background left on a tapped row or card. */
+@media (hover: none), (max-width: 767.98px) {
+  .table > tbody > tr:hover > *, .table > tbody > tr:hover { --tblr-table-bg-state: transparent !important; --tblr-table-accent-bg: transparent !important; --tblr-table-hover-bg: transparent !important; box-shadow: none !important; }
+  #people-table tr.z-person-row:hover, .z-subs-table tr:hover { background: transparent !important; }
+}
+/* "+" beside the role pills: add a role from a short list. */
+.z-role-add { border: 1px dashed var(--tblr-border-color); background: transparent; color: var(--tblr-secondary); cursor: pointer; }
+.z-role-add:hover { color: var(--tblr-primary); border-color: var(--tblr-primary); }
+/* Role pills and the "+" on one middle line, same height. */
+#people-table .z-p-roles > .d-flex { align-items: center; }
+#people-table .z-p-roles .dropdown { display: inline-flex !important; }
+#people-table .z-p-roles .badge, .z-role-add { line-height: 1.2; height: 1.45rem; display: inline-flex; align-items: center; vertical-align: middle; }
+.z-role-add { width: 1.45rem; justify-content: center; padding: 0 !important; border-radius: 999px; }
+/* Phones: my events — title and date on line 1, roles (one line) and counts on line 2. */
+@media (max-width: 767.98px) {
+  .z-myev { display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "dot main date" "dot main counts"; column-gap: .6rem !important; row-gap: .2rem; }
+  .z-myev > .z-evhead-status { grid-area: dot; align-self: center; }
+  .z-myev > .flex-fill { grid-area: main; }
+  .z-myev > .flex-fill > .small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .z-myev > .d-flex { grid-area: counts; justify-self: end; }
+  .z-myev > .text-nowrap:last-child { grid-area: date; justify-self: end; font-size: .72rem; }
+/* Phones: a compact calendar — small days, a dot per event instead of bars. */
+  .z-cal { gap: 2px !important; padding: .4rem !important; }
+  .z-cal-day { min-height: 2.6rem !important; padding: .15rem !important; align-items: center; gap: 2px; background: transparent !important; flex-direction: column; }
+  .z-cal-day.is-weekend { background: transparent !important; }
+  .z-cal-num { align-self: center !important; font-size: .74rem; min-width: 1.5rem; height: 1.5rem; }
+  .z-cal-today { box-shadow: none !important; background: transparent !important; }
+  .z-cal-day > .z-cal-ev { display: inline-block !important; width: 5px !important; height: 5px !important; padding: 0 !important; border-radius: 50%; font-size: 0 !important; background: var(--z-proj, var(--tblr-primary)) !important; box-shadow: none !important; flex: none; }
+  .z-cal-day:has(> .z-cal-ev) { flex-wrap: wrap; justify-content: flex-start; }
+  .z-cal-head { font-size: .62rem; padding-bottom: .2rem; }
+  .z-cal-more { display: none !important; }
+/* Phones: dashboard numbers fill the width, two per row. */
+  .z-dash-numbers { display: grid !important; grid-template-columns: 1fr 1fr; gap: .5rem; width: 100%; }
+  .z-dash-numbers > * { width: auto !important; min-width: 0; max-width: none !important; }
+}
+/* Reviewer page: four numbers on top. */
+.z-rv-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+.z-rv-tile { display: flex; flex-direction: column; gap: .15rem; padding: .8rem 1rem; border-radius: 12px; background: var(--tblr-bg-surface); border: 1px solid var(--tblr-border-color); min-width: 0; }
+.z-rv-tile span { font-size: .78rem; color: var(--tblr-secondary); display: flex; align-items: center; gap: .3rem; }
+.z-rv-tile b { font-size: 1.6rem; line-height: 1.1; }
+.z-rv-tile small { font-size: .74rem; color: var(--tblr-secondary); }
+.z-rv-tile .z-stack { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--tblr-bg-surface-secondary); }
+.z-rv-tile .z-stack i { display: block; height: 100%; }
+.z-rv-done summary { cursor: pointer; padding: .3rem 0; }
+@media (max-width: 767.98px) { .z-rv-tiles { grid-template-columns: 1fr 1fr; gap: .5rem; } .z-rv-tile b { font-size: 1.35rem; }
+/* Phones: my entries as cards — title (and note), then status · words · date; actions on the right. */
+  .z-mine-table, .z-mine-table tbody { display: block; width: 100%; }
+  .z-mine-table thead { display: none; }
+  .z-mine-table tbody tr { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "title title title act" "status words date act"; gap: .3rem .6rem; align-items: center; padding: .65rem .9rem; border-bottom: 1px solid var(--tblr-border-color); }
+  .z-mine-table tbody tr > td { display: block; padding: 0 !important; border: 0 !important; min-width: 0; }
+  .z-mine-table .z-m-title { grid-area: title; }
+  .z-mine-table .z-m-status { grid-area: status; }
+  .z-mine-table .z-m-words { grid-area: words; font-size: .78rem; color: var(--tblr-secondary); }
+  .z-mine-table .z-m-date { grid-area: date; font-size: .78rem; }
+  .z-mine-table .z-m-act { grid-area: act; align-self: start; }
+  .table-responsive:has(> .z-mine-table) { overflow-x: visible; } }
+.z-rv-tile small span, .z-rv-tile small { display: inline; }
+.z-rv-tile > span { display: flex; }
+.z-rv-tile span:not(:first-child) { display: inline; font-size: inherit; color: inherit; }
+.z-rv-tile small .text-green { color: var(--tblr-green) !important; } .z-rv-tile small .text-red { color: var(--tblr-red) !important; }
+.z-bell-sound { border: 0; background: transparent; color: var(--tblr-secondary); padding: 0 .25rem; line-height: 1; font-size: 1rem; }
+.z-bell-sound:hover { color: var(--tblr-primary); }
+
+/* Tablets: the review tools keep their own column, a little narrower. */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .z-review-wrap:has(> .z-review-layout) { grid-template-columns: minmax(0, 1fr) 300px !important; }
+  .z-review-layout { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+/* One column (phones, narrow pop-ups): title bar, then the entry's details, then the article, then the review tools. */
+@media (max-width: 767.98px) {
+  .z-review-layout { display: flex !important; flex-direction: column; }
+  .z-review-layout > .z-review-entry { display: contents; }
+  .z-review-layout > .z-review-entry > .z-entry-head { order: 1; }
+  .z-review-layout > .z-review-side { display: contents !important; }
+  .z-review-side > .z-facts-card { order: 2; display: block !important; margin: 0; }
+  .z-review-layout > .z-review-entry > .z-review-frame { order: 3; border: 1px solid var(--tblr-border-color); border-radius: 10px; overflow: hidden; }
+  .z-review-side > :not(.z-facts-card) { order: 4; } .z-side-toggle, .z-side-backdrop, .z-sheet-close { display: none !important; } .z-review-layout > .z-review-side { visibility: visible !important; opacity: 1 !important; }
+/* Phones: a calm bottom bar — skip and hand-over as quiet icons at the ends; Not accept and Accept, with words, in the middle. */
+  .z-decide { gap: .45rem !important; padding: .5rem .6rem calc(.5rem + env(safe-area-inset-bottom)) !important; background: color-mix(in srgb, var(--tblr-bg-surface) 92%, transparent) !important; backdrop-filter: blur(8px); border-top: 1px solid var(--tblr-border-color); box-shadow: none !important; }
+  .z-decide > [data-decide="reject"] { order: 2; }
+  .z-decide > [data-decide="accept"] { order: 3; }
+  .z-decide > [data-open-handover] { order: 4; }
+  .z-decide .btn { border-radius: 999px !important; font-weight: 600; padding: 0 .6rem !important; display: inline-flex; align-items: center; justify-content: center; }
+  .z-decide .btn i { font-size: 1.1rem !important; margin-right: .35rem !important; }
+  .z-decide > [data-review-skip], .z-decide > [data-open-handover] { font-size: 0 !important; background: transparent !important; border: 0 !important; color: var(--tblr-secondary) !important; padding: 0 !important; }
+  .z-decide > [data-review-skip] i, .z-decide > [data-open-handover] i { margin: 0 !important; font-size: 1.25rem !important; }
+  .z-decide > [data-decide="reject"] { background: color-mix(in srgb, var(--tblr-red) 10%, var(--tblr-bg-surface)) !important; color: var(--tblr-red) !important; border: 1px solid color-mix(in srgb, var(--tblr-red) 30%, transparent) !important; }
+  .z-decide > [data-decide="accept"] { box-shadow: 0 2px 8px color-mix(in srgb, var(--tblr-green) 35%, transparent); }
+  .z-review-layout { align-items: stretch !important; }
+  .z-review-side > .z-facts-card { width: 100% !important; align-self: stretch; } .z-review-wrap { padding-left: .6rem !important; padding-right: .6rem !important; }
+/* Phones: review filters as a pop-up sheet over the page, not pushed into it. */
+  html:not(.z-side-open) .z-review-wrap > .z-review-filters.show,
+  html:not(.z-side-open) .z-review-wrap > .z-review-filters.collapsing { position: fixed !important; left: .5rem !important; right: .5rem !important; top: auto !important; bottom: calc(4.2rem + env(safe-area-inset-bottom)) !important; width: auto !important; max-height: 70vh; overflow-y: auto; z-index: 60; margin: 0 !important; border-radius: 16px; background: var(--tblr-bg-surface); box-shadow: 0 0 0 100vmax rgba(0,0,0,.35), 0 18px 50px rgba(0,0,0,.25) !important; height: auto !important; transition: none !important; }
+  .z-review-filters.show, .z-review-filters.collapsing { position: fixed !important; width: auto !important; overflow-y: auto; margin: 0 !important; background: var(--tblr-bg-surface) !important; transition: none !important; order: 0 !important; }
+/* Phones: the comment as a pop-up above the bottom bar, opened with 💬. */
+  .z-decide > [data-open-comment] { order: 1; font-size: 0 !important; background: transparent !important; border: 0 !important; color: var(--tblr-secondary) !important; padding: 0 !important; position: relative; }
+  .z-decide > [data-open-comment] i { margin: 0 !important; font-size: 1.25rem !important; }
+  .z-decide > [data-open-comment].has-note { color: var(--tblr-primary) !important; }
+  .z-decide > [data-open-comment].has-note::after { content: ""; position: absolute; top: .45rem; right: .35rem; width: 7px; height: 7px; border-radius: 50%; background: var(--tblr-primary); }
+  .z-decide > [data-review-skip] { order: 0 !important; }
+  .z-review-side .z-review-comment { display: none !important; }
+  html.z-note-open .z-review-side .z-review-comment { display: block !important; position: fixed; z-index: 60; margin: 0 !important; background: var(--tblr-bg-surface); }
+  html.z-note-open .z-review-comment textarea { min-height: 5.5rem; }
+/* Phones: a slimmer bottom bar — Accept/Reject only as wide as their words. */
+  .z-decide { grid-template-columns: 2.3rem 2.3rem auto auto 2.3rem !important; justify-content: space-between !important; padding-top: .4rem !important; padding-bottom: calc(.4rem + env(safe-area-inset-bottom)) !important; }
+  .z-decide .btn { height: 2.3rem !important; font-size: .85rem !important; }
+  .z-decide > [data-decide] { padding: 0 1.1rem !important; min-width: 6.5rem; }
+  .z-review-wrap { padding-bottom: 4rem !important; }
+  .z-decide > .btn[data-review-skip], .z-decide > .btn[data-open-handover], .z-decide > .btn[data-open-comment] { font-size: 0 !important; padding: 0 !important; }
+/* Phones: the comment sheet — full width above the bar, a title, the reason list and bell on one row, the box below. */
+  html.z-note-open .z-review-side .z-review-comment { box-sizing: border-box; max-width: 100vw; box-shadow: 0 0 0 100vmax rgba(0,0,0,.4), 0 -8px 30px rgba(0,0,0,.15) !important; }
+  html.z-note-open .z-review-comment > summary { display: flex !important; align-items: center; gap: .35rem; font-weight: 600; font-size: .9rem; pointer-events: none; list-style: none; }
+  html.z-note-open .z-review-comment > summary::-webkit-details-marker { display: none; }
+  html.z-note-open .z-review-comment .z-reason-row { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: .45rem; align-items: start; }
+  html.z-note-open .z-review-comment .z-comment-box { display: contents; }
+  html.z-note-open .z-review-comment [data-reason-select] { grid-column: 1; grid-row: 1; }
+  html.z-note-open .z-review-comment .z-notify { grid-column: 2; grid-row: 1; }
+  html.z-note-open .z-review-comment textarea { grid-column: 1 / -1; grid-row: 2; width: 100% !important; margin: 0 !important; min-height: 6rem; }
+}
+/* × on the pop-ups (phones); hidden where they're not pop-ups. */
+.z-pop-close { display: none; }
+@media (max-width: 767.98px) {
+  .z-review-filters.show > .z-pop-close, html.z-note-open .z-review-comment .z-pop-close { display: block; position: absolute; top: .8rem; right: .9rem; z-index: 2; }
+  .z-review-filters.show { padding-top: 2.4rem !important; }
+/* Phones: the article's title under the top bar; the details lighter — two pairs per line, small text. */
+  .z-entry-head { flex-wrap: wrap !important; }
+  .z-entry-head > .z-entry-title { display: block !important; order: 5; margin: .5rem 0 0 !important; font-size: 1.15rem !important; line-height: 1.35; white-space: normal !important; overflow: visible !important; }
+  .z-review-side > .z-facts-card { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--tblr-border-color) !important; border-radius: 0 !important; box-shadow: none !important; }
+  .z-review-side > .z-facts-card .card-body { padding: .2rem 0 .55rem !important; }
+  .z-review-side > .z-facts-card .z-facts-list { column-gap: .5rem !important; align-items: baseline; }
+  .z-review-side > .z-facts-card .z-facts-list dt { font-weight: 400; }
+  .z-review-side > .z-facts-card .z-facts-list dd { text-align: start !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .z-review-side > .z-facts-card .badge { font-size: .68rem; padding: .1rem .35rem; }
+}
+/* Details: an icon for each label (name on hover), so the values get the room. */
+.z-facts-list dt { color: var(--tblr-secondary); }
+.z-facts-list dt .ti { font-size: 1rem; vertical-align: -2px; }
+.z-facts-list dd { text-align: start !important; }
+@media (max-width: 767.98px) {
+  .z-review-side > .z-facts-card .z-facts-list { row-gap: .3rem !important; }
+/* Phones: key facts in one flowing line (words · kind · submitted · participant); the rest under "Details". */
+  .z-review-side > .z-facts-card .z-facts-list { flex-wrap: wrap; align-items: center; font-size: .8rem !important; }
+  .z-review-side > .z-facts-card .z-facts-list dt { margin: 0 .25rem 0 0; }
+  .z-review-side > .z-facts-card .z-facts-list dd { white-space: nowrap; max-width: 12rem; }
+  .z-review-side > .z-facts-card:not(.z-open) .z-facts-list :is(dt, dd):is(.z-f-size, .z-f-rev, .z-f-created, .z-f-creator, .z-f-by, .z-f-res, .z-f-proof, .z-f-size + dd, .z-f-rev + dd, .z-f-created + dd, .z-f-creator + dd, .z-f-by + dd, .z-f-res + dd, .z-f-proof + dd) { display: none; }
+  .z-review-side > .z-facts-card .card-body { display: flex; flex-direction: column; }
+  .z-review-side > .z-facts-card .z-facts-list { order: 1; }
+  .z-facts-more { order: 2; align-self: flex-start; border: 0; background: none; padding: .25rem 0 0; font-size: .75rem; color: var(--tblr-secondary); display: inline-flex; align-items: center; gap: .2rem; }
+  .z-review-side > .z-facts-card.z-open .z-facts-more i { transform: rotate(180deg); }
+  .z-review-side > .z-facts-card .card-body > :not(.z-facts-list):not(.z-facts-more) { order: 3; }
+}
+/* The label's icon sits inside its value; the label itself is for screen readers. */
+.z-facts-list dt:has(> .visually-hidden:only-child) { display: none; }
+.z-facts-list { grid-template-columns: minmax(0, 1fr) !important; }
+.z-facts-list dd { display: flex; align-items: center; gap: .35rem; min-width: 0; }
+.z-f-ico { color: var(--tblr-secondary); font-size: 1rem; flex: none; }
+@media (max-width: 767.98px) {
+  .z-review-side > .z-facts-card .z-facts-list dd { margin: 0 !important; max-width: 100%; overflow: hidden; }
+  .z-review-side > .z-facts-card:not(.z-open) .z-facts-list dd:is(.z-f-size, .z-f-rev, .z-f-created, .z-f-creator, .z-f-by, .z-f-res, .z-f-proof) { display: none; }
+/* Phones: every detail shows (no "Details" fold). */
+  .z-review-side > .z-facts-card .z-facts-list :is(dt, dd) { display: revert; }
+  .z-review-side > .z-facts-card .z-facts-list dt { display: none !important; }
+/* Phones: details in two even columns. */
+  .z-review-side > .z-facts-card .z-facts-list { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: .4rem .75rem !important; }
+  .z-review-side > .z-facts-card .z-facts-list dd { display: flex !important; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .z-review-side > .z-facts-card .z-facts-list dd > :not(.z-f-ico) { overflow: hidden; text-overflow: ellipsis; }
+/* Phones: top bar on its own line; the title below it with the wiki/talk/history links beside it. */
+  .z-entry-head > .z-entry-tools { order: 1; flex: 1 1 100%; min-width: 0; }
+  .z-entry-head > .z-entry-title { order: 5; flex: 1 1 0 !important; min-width: 0; }
+  .z-entry-head > .z-entry-links { order: 6; align-self: center; margin-top: .5rem; flex: none; }
+  .z-review-layout .z-entry-head > .z-entry-tools { max-width: 100% !important; }
+  .z-review-layout .z-entry-head > .z-entry-title { width: auto !important; }
+/* Phones: the article's title like the wiki's own heading — serif, larger, a rule under it; the links quiet beside it. */
+  .z-review-layout .z-entry-head > .z-entry-title { padding-bottom: .35rem; color: var(--tblr-body-color); }
+  .z-review-layout .z-entry-head { padding-bottom: .15rem; }
+  .z-review-layout .z-entry-head { border-bottom: 0 !important; margin-bottom: .35rem !important; }
+  .z-review-layout .z-entry-head > .z-entry-title, .z-review-layout .z-entry-head > .z-entry-links { padding-bottom: .4rem !important; }
+  .z-review-layout .z-entry-head > .z-entry-links { align-self: stretch; }
+  .z-review-layout .z-entry-head > .z-entry-title, .z-review-layout .z-entry-head > .z-entry-links { border-bottom: 0 !important; }
+  .z-review-layout .z-entry-head::after { content: ""; order: 7; flex: 0 0 100%; height: 1px; background: #a2a9b1; }
+/* Phones: one heading line — the entry picker is the title (serif, no box, ▾ to switch), tools and wiki links beside it. */
+  .z-review-layout .z-entry-head { flex-wrap: wrap !important; align-items: center !important; }
+  .z-review-layout .z-entry-head > .z-entry-tools { order: 1; flex: 1 1 0 !important; width: auto !important; min-width: 0; }
+  .z-review-layout .z-entry-head > .z-entry-links { margin-top: 0 !important; align-self: center; }
+  .z-review-layout .z-review-bar { flex-wrap: nowrap !important; gap: .15rem !important; margin: 0 !important; }
+  .z-review-layout .z-review-bar .z-go { flex: 1 1 auto !important; min-width: 0; order: 0 !important; }
+  .z-review-layout .z-review-bar .btn { border: 0 !important; background: transparent !important; color: var(--tblr-secondary); width: 1.9rem; height: 1.9rem; padding: 0; }
+  .z-review-layout .z-review-bar .btn.btn-primary, .z-review-layout .z-review-bar .btn[aria-expanded="true"] { color: var(--tblr-primary); }
+  .z-review-layout .z-go .ts-control { border: 0 !important; background: transparent !important; box-shadow: none !important; min-height: 0; }
+  .z-review-layout .z-go .ts-control .item { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; font-family: "Noto Serif Bengali Variable", Georgia, serif; font-size: 1.3rem; font-weight: 500; line-height: 1.3; color: var(--tblr-body-color); }
+  .z-review-layout .z-go .ts-wrapper.single .ts-control::after { right: .2rem; }
+/* Phones: the title takes the whole line; the tools and wiki links sit in a small row under it, on the right. */
+  .z-review-layout .z-entry-head > .z-entry-tools, .z-review-layout .z-entry-head .z-review-bar { display: contents !important; }
+}
+/* Phones: window tools (filter, full screen) on the left; the article's links (wiki, talk, history) on the right. */
+/* Phones: the article's links on the left (under its title), the window tools on the right. */
+@media (max-width: 767.98px) {
+  .z-review-layout .z-entry-head > .z-entry-links { margin-right: auto !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn { order: 3 !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn:first-of-type { margin-left: 0 !important; }
+/* Phones: a small chevron right after the title shows it opens a list of entries. */
+  .z-review-layout .z-go .ts-wrapper { background-image: none !important; padding: 0 !important; }
+  .z-review-layout .z-go .ts-control { display: inline-flex !important; width: auto !important; max-width: 100%; padding: .1rem 0 !important; }
+  .z-review-layout .z-go .ts-control::after { position: static !important; flex: none; width: .5rem !important; height: .5rem !important; margin: -.25rem 0 0 .55rem !important; border: 0 !important; border-right: 2px solid var(--tblr-secondary) !important; border-bottom: 2px solid var(--tblr-secondary) !important; transform: rotate(45deg); }
+  .z-review-layout .z-go .ts-wrapper.dropdown-active .ts-control::after { transform: rotate(-135deg); margin-top: .2rem !important; }
+/* Phones: the chevron before the title instead of after it. */
+  .z-review-layout .z-go .ts-control::after { display: none !important; content: none !important; }
+  .z-review-layout .z-go .ts-control::before { flex: none; border-right: 2px solid var(--tblr-secondary); border-bottom: 2px solid var(--tblr-secondary); transition: transform .15s; }
+  .z-review-layout .z-go .ts-control { align-items: flex-start !important; }
+  .z-review-layout .z-go .ts-control::before { margin-top: .55rem !important; }
+/* Phones: a small list icon in a soft circle before the title, showing it opens the list of entries. */
+  .z-review-layout .z-go .ts-control::before { content: "\eb6b" !important; font-family: "tabler-icons" !important; font-size: 1rem; line-height: 1; border: 0 !important; transform: none !important; width: 1.8rem !important; height: 1.8rem !important; margin: .1rem .55rem 0 0 !important; display: inline-flex !important; align-items: center; justify-content: center; border-radius: 50%; background: color-mix(in srgb, var(--tblr-primary) 10%, transparent); color: var(--tblr-primary); }
+  .z-review-layout .z-go .ts-wrapper.dropdown-active .ts-control::before { transform: none !important; margin-top: .1rem !important; background: var(--tblr-primary); color: #fff; }
+  .z-review-layout .z-go .ts-control { cursor: default !important; }
+  .z-review-layout .z-go .ts-control .item { cursor: text; user-select: text; }
+  .z-review-layout .z-go .ts-control::before { cursor: pointer; }
+/* Phones: filter beside the list icon before the title; full screen as a round floating button where the accessibility button sits (that one steps aside on this page). */
+  .z-review-layout .z-entry-head .z-go { order: 1 !important; flex: 1 1 0 !important; width: auto !important; min-width: 0; }
+  .z-review-layout .z-entry-head [data-bs-target="#review-filters"] { order: 0 !important; margin: .1rem .1rem 0 -.2rem !important; align-self: flex-start; width: 1.8rem !important; height: 1.8rem !important; border-radius: 50% !important; }
+  .z-review-layout .z-entry-head > .z-entry-links { order: 3 !important; flex: 0 0 100%; margin-left: -.35rem !important; }
+  .z-review-layout [data-review-full] { position: fixed !important; right: 20px; bottom: calc(4.2rem + env(safe-area-inset-bottom)); z-index: 45; width: 2.75rem !important; height: 2.75rem !important; border-radius: 50% !important; background: var(--tblr-bg-surface) !important; border: 1px solid var(--tblr-border-color) !important; box-shadow: 0 4px 14px rgba(0,0,0,.15); color: var(--tblr-body-color) !important; margin: 0 !important; }
+  body:has(.z-review-layout) .zury-a11y { display: none !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .z-go { order: 1 !important; flex: 1 1 auto !important; width: calc(100% - 2.2rem) !important; max-width: none !important; min-width: 0; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"] { order: 0 !important; }
+/* Phones: one round button before the title opens a sheet with the entry list (search) on top and the filters below. */
+  .z-review-layout .z-entry-head > .z-entry-title { display: block !important; order: 1 !important; flex: 1 1 0 !important; min-width: 0; font-family: "Noto Serif Bengali Variable", Georgia, serif !important; font-size: 1.3rem !important; font-weight: 500 !important; line-height: 1.3 !important; white-space: normal !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"] { background: color-mix(in srgb, var(--tblr-primary) 10%, transparent) !important; color: var(--tblr-primary) !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"][aria-expanded="true"] { background: var(--tblr-primary) !important; color: #fff !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"] i::before { content: "\eb6b"; }
+  /* The picker inside the sheet: an ordinary search box. */
+  .z-review-filters > .z-go { display: block; width: 100% !important; margin: 0 0 .75rem !important; }
+  .z-review-filters > .z-go .ts-control { display: flex !important; width: 100% !important; border: 1px solid var(--tblr-border-color) !important; background: var(--tblr-bg-surface) !important; padding: .45rem 2rem .45rem .65rem !important; border-radius: 8px; cursor: pointer !important; }
+  .z-review-filters > .z-go .ts-control::before { display: none !important; content: none !important; }
+  .z-review-filters > .z-go .ts-control .item { font-family: inherit !important; font-size: .9rem !important; font-weight: 400 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+}
+/* The links' words show only on phones (Minerva-style row); wide screens keep the icons. */
+.z-link-label { display: none; }
+@media (max-width: 767.98px) {
+  .z-review-layout .z-entry-head > .z-entry-links { display: flex !important; gap: 1.1rem !important; }
+  .z-review-layout .z-entry-head > .z-entry-links .btn { width: auto !important; border: 0 !important; background: none !important; color: #3366cc !important; font-size: .85rem; gap: .3rem; display: inline-flex; align-items: center; }
+  .z-review-layout .z-entry-head > .z-entry-links .btn i { font-size: 1.05rem; color: #54595d; }
+  .z-review-layout .z-entry-head > .z-entry-links .z-link-label { display: inline; }
+}
+/* Phones: the entries-and-filters sheet as a full page of its own. */
+.z-pop-title { display: none; }
+@media (max-width: 767.98px) {
+  .z-review-filters.show, .z-review-filters.collapsing { inset: 0 !important; top: 0 !important; bottom: 0 !important; left: 0 !important; right: 0 !important; max-height: none !important; height: 100dvh !important; border-radius: 0 !important; z-index: 1080 !important; padding: 0 1rem calc(1rem + env(safe-area-inset-bottom)) !important; box-shadow: none !important; overflow-y: auto; }
+  .z-review-filters.show > .z-pop-title { display: flex; align-items: center; position: sticky; top: 0; z-index: 3; margin: 0 -1rem .9rem; padding: .9rem 3rem .9rem 1rem; font-size: 1.05rem; font-weight: 600; background: var(--tblr-bg-surface); border-bottom: 1px solid var(--tblr-border-color); }
+  .z-review-filters.show > .z-pop-close { position: fixed !important; top: 1.05rem !important; right: 1rem !important; z-index: 4; }
+/* Phones: a tighter heading block. */
+  .z-review-layout .z-entry-head { padding: 0 !important; margin: 0 0 .3rem !important; row-gap: 0 !important; min-height: 0 !important; }
+  .z-review-layout .z-entry-head > .z-entry-title { margin: 0 !important; padding: 0 !important; }
+  .z-review-layout .z-entry-head > .z-entry-links .btn { padding: .1rem 0 !important; min-height: 0 !important; }
+  .z-review-layout .z-entry-head::after { margin-top: .4rem !important; }
+  .z-review-side > .z-facts-card { margin-top: .2rem !important; }
+  .z-review-side > .z-facts-card .card-body { padding-top: .35rem !important; padding-bottom: .4rem !important; }
+  .z-review-layout .z-entry-head > .z-entry-links .btn { height: auto !important; line-height: 1.3 !important; }
+  .z-review-layout .z-entry-head > .z-entry-links { align-items: center !important; min-height: 0 !important; }
+/* Phones: the list button on the left beside both lines; title and links stacked to its right, aligned. */
+  .z-review-layout .z-entry-head { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: .65rem; align-items: center; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"] { grid-column: 1; grid-row: 1 / 3; align-self: center; margin: 0 !important; width: 2.4rem !important; height: 2.4rem !important; }
+  .z-review-layout .z-entry-head > .z-entry-title { grid-column: 2; grid-row: 1; }
+  .z-review-layout .z-entry-head > .z-entry-links { grid-column: 2; grid-row: 2; margin: .15rem 0 0 !important; }
+  .z-review-layout .z-entry-head::after { grid-column: 1 / -1; grid-row: 3; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"] i { font-size: 1.2rem; }
+/* Phones: while the entries-and-filters page (or the comment sheet) is open, the page behind doesn't scroll. */
+  html:has(.z-review-filters.show), html:has(.z-review-filters.show) body, html.z-note-open, html.z-note-open body { overflow: hidden !important; overscroll-behavior: none; }
+  .z-review-filters.show { overscroll-behavior: contain; width: 100vw !important; }
+/* Phones: the comment sheet floats with a margin — off the screen edges and the bottom bar, more room inside. */
+  html.z-note-open .z-review-side .z-review-comment { left: .6rem !important; right: .6rem !important; width: auto !important; bottom: calc(3.6rem + env(safe-area-inset-bottom)) !important; border-radius: 16px !important; padding: 1rem 1.1rem 1.1rem !important; }
+  html.z-note-open .z-review-comment .z-pop-close { top: 1rem !important; right: 1.1rem !important; }
+  html.z-note-open .z-review-comment > summary { margin-bottom: .6rem !important; }
+}
+/* Phones: the heading scrolls with the page; quieter colours; a solid bottom bar; a smaller full-screen button out of the text's way. */
+@media (max-width: 767.98px) {
+  .z-review-layout .z-entry-head { position: static !important; top: auto !important; background: transparent !important; box-shadow: none !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"] { background: transparent !important; border: 1px solid var(--tblr-border-color) !important; color: var(--tblr-secondary) !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn[data-bs-target="#review-filters"][aria-expanded="true"] { background: var(--tblr-primary) !important; border-color: var(--tblr-primary) !important; color: #fff !important; }
+  .z-decide { background: var(--tblr-bg-surface) !important; backdrop-filter: none !important; box-shadow: 0 -2px 8px rgba(16, 24, 40, .06) !important; }
+  .z-review-layout [data-review-full] { width: 2.3rem !important; height: 2.3rem !important; bottom: calc(4.6rem + env(safe-area-inset-bottom)) !important; right: 12px !important; opacity: .9; }
+}
+/* Phones in full screen: same order as normal — title, details, then the article. */
+@media (max-width: 767.98px) {
+  .z-review-full .z-review-layout > .z-review-entry { display: contents !important; height: auto !important; }
+  .z-review-full .z-review-layout > .z-review-side { display: contents !important; max-height: none !important; }
+}
+/* Title suggestions open above everything after them (the check button included). */
+.z-suggest:focus-within { z-index: 1050; }
+.z-suggest-list { z-index: 1060 !important; background: var(--tblr-bg-surface); }
+/* Submit: one entry's result — an animated mark, a headline, the article and a checklist that comes in row by row. */
+.z-result { text-align: center; padding: 1.75rem 1.25rem 1.5rem; --c: var(--tblr-green); }
+.z-result.is-warn { --c: #e8a317; }
+.z-result.is-bad { --c: var(--tblr-red); }
+.z-result-mark { width: 4.25rem; height: 4.25rem; margin: 0 auto .75rem; }
+.z-result-mark svg { width: 100%; height: 100%; fill: none; stroke: var(--c); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.z-result-mark circle { fill: color-mix(in srgb, var(--c) 10%, transparent); stroke-dasharray: 151; stroke-dashoffset: 151; animation: z-draw .6s ease-out forwards; }
+.z-result-mark path { stroke-width: 4; stroke-dasharray: 60; stroke-dashoffset: 60; animation: z-draw .4s .45s ease-out forwards; }
+.z-result.is-bad .z-result-mark { animation: z-shake .45s .85s ease-in-out; }
+.z-result.is-warn .z-result-mark { animation: z-pulse 1.6s .9s ease-in-out 2; }
+.z-result-head { font-size: 1.2rem; font-weight: 700; color: var(--c); animation: z-rise .4s .3s both; }
+.z-result-title { margin-top: .35rem; font-size: 1.05rem; animation: z-rise .4s .4s both; }
+.z-result-title a { font-weight: 600; }
+.z-result-title .ti { font-size: .85rem; }
+.z-result-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin-top: .7rem; animation: z-rise .4s .5s both; }
+.z-result-chips span { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; font-size: .8rem; background: var(--tblr-bg-surface-secondary); color: var(--tblr-secondary); }
+.z-result-checks { list-style: none; margin: 1.1rem auto 0; padding: 0; max-width: 32rem; text-align: start; display: flex; flex-direction: column; gap: .4rem; }
+.z-result-checks li { display: flex; align-items: flex-start; gap: .55rem; padding: .55rem .75rem; border-radius: 10px; font-size: .88rem; animation: z-rise .35s calc(.6s + var(--d, 0) * .12s) both; }
+.z-result-checks li .ti { font-size: 1.15rem; flex: none; margin-top: .05rem; }
+.z-result-checks li.is-bad { background: color-mix(in srgb, var(--tblr-red) 8%, transparent); color: var(--tblr-red); }
+.z-result-checks li.is-warn { background: color-mix(in srgb, #e8a317 12%, transparent); color: #9a6a00; }
+.z-result-checks li.is-ok { background: color-mix(in srgb, var(--tblr-green) 8%, transparent); color: var(--tblr-green); }
+@keyframes z-draw { to { stroke-dashoffset: 0; } }
+@keyframes z-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes z-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+@keyframes z-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .z-result *, .z-result-mark { animation: none !important; stroke-dashoffset: 0 !important; } }
+/* Phones: the name beside the logo too. */
+@media (max-width: 767.98px) { .z-brand span { display: inline !important; } .z-brand { gap: .45rem; font-size: 1.05rem; } }
+/* Submit page: a three-step bar (title → check → submit), and the form folded to one line once checked. */
+.z-steps { display: flex; list-style: none; margin: 0; padding: 0; counter-reset: s; }
+.z-steps li { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: .3rem; font-size: .82rem; color: var(--tblr-secondary); }
+.z-steps li::before { content: ""; position: absolute; top: 1rem; left: calc(-50% + 1.2rem); right: calc(50% + 1.2rem); height: 2px; background: var(--tblr-border-color); }
+.z-steps li:first-child::before { display: none; }
+.z-steps li > span { width: 2rem; height: 2rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; background: var(--tblr-bg-surface); border: 2px solid var(--tblr-border-color); transition: all .3s; z-index: 1; }
+.z-steps li.is-done { color: var(--tblr-green); }
+.z-steps li.is-done > span { background: var(--tblr-green); border-color: var(--tblr-green); color: #fff; }
+.z-steps li.is-done::before, .z-steps li.is-now::before, .z-steps li.is-bad::before { background: var(--tblr-green); }
+.z-steps li.is-now { color: var(--tblr-primary); font-weight: 600; }
+.z-steps li.is-now > span { border-color: var(--tblr-primary); color: var(--tblr-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tblr-primary) 15%, transparent); }
+.z-steps li.is-bad { color: var(--tblr-red); font-weight: 600; }
+.z-steps li.is-bad > span { border-color: var(--tblr-red); color: var(--tblr-red); }
+.z-form-folded > .card-body, .z-form-folded > .card-footer { display: none; }
+.z-form-folded > .card-header { gap: .6rem; flex-wrap: nowrap; }
+.z-form-folded > .card-header .card-title { flex: none; }
+.z-folded-sum { min-width: 0; color: var(--tblr-secondary); font-size: .9rem; }
+.card-header .z-folded-sum, .card-header [data-unfold] { display: none; }
+.z-form-folded > .card-header .z-folded-sum, .z-form-folded > .card-header [data-unfold] { display: block; }
+/* Submit page: plain flow — no extra headings or boxes. */
+.z-folded-line { display: none; }
+.z-form-folded { background: transparent; border: 0; box-shadow: none; }
+.z-form-folded > .z-folded-line { display: flex; align-items: center; gap: .55rem; padding: .55rem .25rem; border-bottom: 1px solid var(--tblr-border-color); }
+.z-form-folded > .z-folded-line > .ti { color: var(--tblr-secondary); font-size: 1.1rem; }
+.z-folded-sum { font-weight: 600; color: var(--tblr-body-color) !important; }
+.z-result-wrap > .z-result { padding-top: .75rem; }
+/* The checking steps in the page, under the form. */
+.z-checking.is-inline { position: static; inset: auto; background: none; padding: 1.25rem 0; display: block; }
+.z-checking.is-inline .z-checking-card { box-shadow: none; padding: 0; width: 100%; max-width: 32rem; margin: 0 auto; background: none; }
+.z-result-wrap > .z-result-actions { background: transparent; border-top: 0; padding: .25rem 0 0; }

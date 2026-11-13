@@ -1,5 +1,5 @@
 <div class="row row-cards mb-3">
-  <% [[t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Words accepted'), totals.approvedWords, 'letter-case'], [t('Wikis'), totals.wikis.length, 'world']].forEach(([label, value, icon]) => { %>
+  <% [[t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Words accepted'), totals.approvedWords, 'align-justified'], [t('Wikis'), totals.wikis.length, 'world']].forEach(([label, value, icon]) => { %>
     <div class="col-6 col-lg"><div class="card card-sm"><div class="card-body d-flex align-items-center">
       <span class="avatar bg-primary-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
       <div><div class="h2 m-0"><%= formatNumber(value) %></div><div class="text-secondary small"><%= label %></div></div>

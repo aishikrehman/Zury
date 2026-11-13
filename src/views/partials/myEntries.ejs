@@ -1,13 +1,12 @@
+<% const needs = my.entries.filter((e) => ['rejected', 'disqualified', 'appealed'].includes(e.status) || (e.comments && e.comments.length)); %>
+<% if (needs.length) { %>
 <% const groupBadge = { accepted: ['green', t('Accepted')], pending: ['yellow', t('Pending')], rejected: ['red', t('Not accepted')] }; %>
-<div class="card mb-3">
+<div class="card mb-3 z-my-needs">
   <div class="card-header">
-    <h3 class="card-title"><i class="ti ti-user-check me-2"></i><%= t('My entries') %></h3>
-    <div class="card-actions d-flex gap-2">
-      <% ['accepted', 'pending', 'rejected'].forEach((g) => { %><span class="badge bg-<%= groupBadge[g][0] %>-lt"><%= groupBadge[g][1] %> <%= formatNumber(my.counts[g]) %></span><% }) %>
-    </div>
+    <div><h3 class="card-title"><i class="ti ti-message-exclamation me-2"></i><%= t('My entries') %></h3><div class="text-secondary small"><%= t('Not accepted, with feedback or appealed') %></div></div>
   </div>
   <div class="list-group list-group-flush">
-    <% my.entries.slice(0, 50).forEach((e) => { const st = SUBMISSION_STATUSES[e.status] || { label: e.status, color: 'secondary' }; %>
+    <% needs.slice(0, 50).forEach((e) => { const st = SUBMISSION_STATUSES[e.status] || { label: e.status, color: 'secondary' }; %>
       <div class="list-group-item">
         <div class="d-flex align-items-center gap-2">
           <a class="fw-medium text-truncate" href="<%= entryUrl(e) %>" target="_blank" rel="noopener"><%= e.title %></a>
@@ -19,3 +18,4 @@
     <% }) %>
   </div>
 </div>
+<% } %>

@@ -34,12 +34,6 @@
 <header class="z-evhead d-print-none<%= contest.bannerUrl ? ' has-cover' : ' has-proj' %>" style="--z-proj: <%= headProj.color %>">
   <% if (contest.bannerUrl) { %><div class="z-evhead-cover" style="background-image: url('<%= contest.bannerUrl %>')"></div><% } %>
   <div class="container-xl">
-    <nav class="z-evhead-path" aria-label="<%= t('Breadcrumb') %>">
-      <a href="/events"><%= t('Events') %></a>
-      <% if (series) { %><span>/</span><a href="/<%= series.slug %>"><%= series.title %></a><% } %>
-      <% if (typeof edition !== 'undefined' && edition) { %><span>/</span><a href="<%= contest.path === `/${series.slug}/${edition.slug}` ? `/series/${series.slug}/${edition.slug}` : `/${series.slug}/${edition.slug}` %>"><%= edition.slug %></a><% } %>
-      <% if (wikiScope) { %><span>/</span><a href="<%= eventBase %>"><%= contest.title %></a><% } %>
-    </nav>
     <div class="z-evhead-main">
       <% if (contest.logoUrl) { %>
         <span class="z-evhead-logo" style="background-image: url('<%= contest.logoUrl %>')"></span>
@@ -47,13 +41,18 @@
         <span class="z-evhead-logo is-icon" title="<%= headProj.label %> · <%= CONTEST_TYPES[contest.type] %>"><i class="ti ti-<%= headProj.icon %>"></i></span>
       <% } %>
       <div class="z-evhead-text">
-        <% if (active === 'overview' && !wikiScope && can('editEvent')) { %>
-          <%- include('./inlineEdit', { action: `${eventBase}/inline`, name: 'title', value: contest.title, label: t('Title'), multiline: false, maxlength: 1000, viewTag: 'h1', viewClass: 'z-evhead-title' }) %>
-        <% } else { %>
+        <nav class="z-evhead-path" aria-label="<%= t('Breadcrumb') %>">
+          <a href="/events"><i class="ti ti-calendar-event" aria-hidden="true"></i><%= t('Events') %></a>
+          <% if (series) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="/<%= series.slug %>"><%= series.title %></a><% } %>
+          <% if (typeof edition !== 'undefined' && edition) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="<%= contest.path === `/${series.slug}/${edition.slug}` ? `/series/${series.slug}/${edition.slug}` : `/${series.slug}/${edition.slug}` %>"><%= edition.slug %></a><% } %>
+          <% if (wikiScope) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="<%= eventBase %>"><%= contest.title %></a><% } %>
+        </nav>
         <h1 class="z-evhead-title"><a href="<%= base %>"><%= contest.title %></a><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
-        <% } %>
         <div class="z-evhead-meta">
-          <span class="z-evhead-status is-<%= color %>"><i></i><%= t(st.label) %></span>
+          <span class="z-evhead-status is-<%= color %>" title="<%= t(st.label) %>"><i></i><span class="z-status-word"><%= t(st.label) %></span></span>
+          <% if (contest.startDate && contest.endDate) { const tNow = Date.now(); const tS = new Date(contest.startDate).getTime(); const tE = new Date(contest.endDate).getTime(); if (tE > tS) { const tDone = Math.min(100, Math.max(0, Math.round(((tNow - tS) / (tE - tS)) * 100))); const tLeft = Math.ceil((tE - tNow) / 86400000); %>
+            <span class="z-time-pill" title="<%= formatDate(contest.startDate, contest.timezone) %> – <%= formatDate(contest.endDate, contest.timezone) %>"><i class="z-pill-dot is-<%= color %>"></i><span class="z-pill-status"><%= t(st.label) %></span><span class="z-pill-sep">·</span><%= tNow < tS ? tn('Starts in {n} day', 'Starts in {n} days', Math.ceil((tS - tNow) / 86400000)) : tNow <= tE ? tn('{n} day left', '{n} days left', tLeft) : tn('Ended {n} day ago', 'Ended {n} days ago', Math.max(1, Math.floor((tNow - tE) / 86400000))) %><% if (tNow >= tS && tNow <= tE) { %><span class="z-time-bar"><b style="width: <%= tDone %>%"></b></span><% } %></span>
+          <% } } %>
           <% if (contest.visibility === 'private') { %><span><i class="ti ti-lock"></i><%= t('Private') %></span><% } %>
           <% if (contest.startDate) { %>
             <%
@@ -66,9 +65,6 @@
             %>
             <span class="z-evhead-dates" title="<%= formatDateTime(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDateTime(contest.endDate, contest.timezone) : '' %>">
               <i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDate(contest.endDate, contest.timezone) : '' %>
-              <% const hStartAt = new Date(contest.startDate).getTime(); const hEndAt = hEnd ? new Date(contest.endDate).getTime() : null; %>
-              <% if (hNow < hStartAt) { %><span class="z-days-left">· <%= tn('Starts in {n} day', 'Starts in {n} days', hDays(hStartAt)) %></span>
-              <% } else if (hEndAt && hNow <= hEndAt) { %><span class="z-days-left">· <%= tn('{n} day left', '{n} days left', hDays(hEndAt)) %></span><% } %>
             </span>
           <% } %>
         </div>

@@ -3,7 +3,19 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-print]')) window.print();
 });
 document.addEventListener('change', (e) => {
-  if (e.target.matches('[data-autosubmit]')) e.target.form.submit();
+  if (!e.target.matches('[data-autosubmit]')) return;
+  const form = e.target.form;
+  const card = form.closest('[data-live]');
+  if (!card || !window.fetch) { form.submit(); return; }
+  // Filters in a live card: fetch the new list and swap it in, no page reload.
+  const url = location.pathname + '?' + new URLSearchParams([...new FormData(form)].filter(([, v]) => v !== '')).toString();
+  card.style.opacity = '.6';
+  fetch(url, { headers: { Accept: 'text/html' } }).then((r) => r.text()).then((html) => {
+    const next = new DOMParser().parseFromString(html, 'text/html').querySelector('[data-live]');
+    if (!next) { location.href = url; return; }
+    card.replaceWith(next);
+    history.replaceState(null, '', url);
+  }).catch(() => form.submit());
 });
 
 // "/" jumps to the search box, as on GitHub (not while typing in a field).
@@ -316,6 +328,9 @@ document.addEventListener('submit', (e) => {
   const holder = document.querySelector('[data-check-steps]');
   if (!form || !holder) return;
   form.addEventListener('submit', () => {
+    // The step bar: title done, checking now.
+    const steps = document.querySelector('[data-steps]');
+    if (steps) { steps.children[0].className = 'is-done'; steps.children[1].className = 'is-now'; steps.children[2].className = ''; }
     const rules = [...holder.parentElement.querySelectorAll('.list-group-item')].map((x) => x.textContent.trim()).filter(Boolean);
     const box = document.createElement('div');
     box.className = 'z-checking';
@@ -323,7 +338,9 @@ document.addEventListener('submit', (e) => {
     box.querySelector('.fw-bold').textContent = holder.dataset.title;
     const ul = box.querySelector('ul');
     rules.forEach((r) => { const li = document.createElement('li'); li.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span><span></span>'; li.lastChild.textContent = r; ul.append(li); });
-    document.body.append(box);
+    // In the page under the form (old results make way), not as a pop-up.
+    const slot = document.querySelector('[data-check-slot]');
+    if (slot) { box.classList.add('is-inline'); slot.replaceChildren(box); document.querySelectorAll('.z-result-wrap, [data-check-slot] ~ .card').forEach((el) => el.remove()); box.scrollIntoView({ block: 'center', behavior: 'smooth' }); } else document.body.append(box);
     [...ul.children].forEach((li, i) => setTimeout(() => { li.classList.add('is-done'); li.firstChild.className = 'ti ti-circle-check text-green me-2'; }, 450 * (i + 1)));
   });
 })();
@@ -345,3 +362,18 @@ document.addEventListener('click', (e) => {
   if (!ids.length) return;
   location.href = `${b.dataset.reviewSelected}?entry=${ids[0]}`;
 });
+
+// Forms marked data-once: the first submit goes, repeated clicks don't send it again.
+document.addEventListener('submit', (e) => {
+  const form = e.target;
+  if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-once') || e.defaultPrevented) return;
+  if (form.dataset.sent) { e.preventDefault(); return; }
+  // After the other handlers (a confirm may cancel it): only a submit that goes locks the form.
+  setTimeout(() => { if (e.defaultPrevented) return; form.dataset.sent = '1'; form.querySelectorAll('button[type=submit]').forEach((b) => { b.disabled = true; }); });
+});
+
+// Phones: the review filters sheet closes with its × or Escape (not a stray tap).
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelector('.z-review-filters.show')?.classList.remove('show'); });
+
+// Submit page: after a check the form folds to one line; Change opens it again.
+document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-unfold]'); if (!b) return; const f = b.closest('form'); f.classList.remove('z-form-folded'); f.querySelector('#entries')?.focus(); });
