@@ -881,7 +881,8 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-evhead-dates b { font-weight: 600; color: var(--z-brand); }
 
 /* A reviewer's comment under a participant's own entry. */
-.z-review-note { padding: .35rem .6rem; border-radius: 8px; background: var(--z-hover, rgba(0,0,0,.04)); }
+.z-review-note { max-width: 32rem; padding: .2rem .5rem; border-radius: 6px; background: var(--z-hover); color: var(--z-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.z-review-note.is-open { white-space: normal; }
 
 /* Event header: a bigger logo, as it is (no frame or shadow); the banner fades out slowly. */
 .z-evhead-logo { width: 5rem; height: 5rem; border-radius: 0; box-shadow: none !important; background-color: transparent; }
@@ -1727,14 +1728,6 @@ th.text-end .z-sort-th { flex-direction: row-reverse; }
 .z-pe-meta span { display: inline-flex; align-items: center; gap: .25rem; }
 @media (max-width: 767.98px) { .z-person-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .z-person-name { font-size: 1.25rem; } }
 /* Words by status: a small three-colour bar and the accepted words, instead of coloured text. */
-.z-wordsby { display: inline-flex; align-items: center; gap: .6rem; }
-.z-wbar-wrap { display: inline-flex; align-items: center; gap: .45rem; margin-left: .5rem; vertical-align: middle; }
-.z-wbar { display: inline-flex; width: 4.5rem; height: 6px; border-radius: 3px; overflow: hidden; background: var(--tblr-bg-surface-secondary); }
-.z-wbar i { display: block; height: 100%; }
-.z-wbar i.is-ok { background: var(--tblr-green); }
-.z-wbar i.is-wait { background: #e8a317; }
-.z-wbar i.is-bad { background: var(--tblr-red); }
-.z-wbar-ok { font-size: .8rem; font-weight: 600; color: var(--tblr-green); white-space: nowrap; }
 .z-person-tiles { grid-template-columns: repeat(auto-fit, minmax(7.25rem, 1fr)); }
 /* All events in sections: running, upcoming (cards), finished (compact rows). */
 .z-ev-section { margin-bottom: 1.75rem; }
@@ -2192,3 +2185,24 @@ th.text-end .z-sort-th { flex-direction: row-reverse; }
 @media (prefers-reduced-motion: reduce) { .z-result * { animation: none !important; stroke-dashoffset: 0 !important; } }
 .z-result-wrap > .z-result { padding-top: .75rem; }
 .z-result-wrap > .z-result-actions { background: transparent; border-top: 0; padding: .25rem 0 0; }
+.z-subs-table .z-c-who .z-user-name { font-size: .875rem; white-space: nowrap; }
+/* Words by status: the bar takes the free width of its row, the parts follow with their colour. */
+.z-wordsby { display: flex; align-items: center; gap: .75rem; flex: 1 1 18rem; min-width: 0; }
+.z-wbar-wrap { display: flex; align-items: center; gap: .9rem; flex: 1 1 auto; min-width: 0; }
+.z-wbar { display: flex; flex: 1 1 6rem; min-width: 4rem; height: 6px; border-radius: 3px; overflow: hidden; background: var(--z-hover); }
+.z-wbar i { display: block; height: 100%; }
+.z-wbar i + i { margin-left: 2px; }
+.z-wbar .is-ok { background: var(--z-green); }
+.z-wbar .is-wait { background: #e8a317; }
+.z-wbar .is-bad { background: var(--z-red); }
+.z-wbar-legend { display: flex; gap: .8rem; flex: none; font-size: .8rem; color: var(--z-fg-muted); white-space: nowrap; }
+.z-wbar-legend > span::before { content: ''; display: inline-block; width: .5rem; height: .5rem; border-radius: 50%; margin-right: .3rem; vertical-align: .05em; }
+.z-wbar-legend b { font-weight: 600; color: var(--z-fg); }
+.z-wbar-legend .is-ok::before { background: var(--z-green); }
+.z-wbar-legend .is-wait::before { background: #e8a317; }
+.z-wbar-legend .is-bad::before { background: var(--z-red); }
+.z-group-line { display: flex; align-items: center; gap: .75rem; }
+.z-group-line > a, .z-group-line > .fw-bold { white-space: nowrap; }
+.z-group-stats { font-size: .8rem; color: var(--z-fg-muted); white-space: nowrap; }
+@media (max-width: 767.98px) { .z-group-line, .z-wordsby { flex-wrap: wrap; row-gap: .3rem; } .z-wbar-wrap { flex-basis: 100%; } }
+@media (max-width: 767.98px) { .z-subs-table tr.z-group-row > td { display: block; padding: .6rem .75rem !important; border-bottom: 1px solid var(--z-border); } .z-group-line { gap: .5rem; } .z-group-caret { font-size: 1rem; } }

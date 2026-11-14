@@ -411,3 +411,9 @@ document.addEventListener('change', (e) => {
     e.target.files[0].text().then((txt) => { box.value = txt; box.focus(); });
   }
 });
+
+// Long notes show one line; a click opens the rest.
+document.addEventListener('click', (e) => {
+  const n = e.target.closest('[data-toggle-open]');
+  if (n) n.classList.toggle('is-open');
+});

@@ -1818,5 +1818,7 @@
   "New users": "নতুন ব্যবহারকারী",
   "Commons, Wikidata and other wikis": "কমন্স, উইকিউপাত্ত ও অন্যান্য উইকি",
   "No edit token": "সম্পাদনা টোকেন পাওয়া যায়নি",
-  "Certificate": "সনদ"
+  "Certificate": "সনদ",
+  "accepted": "গৃহীত",
+  "not accepted": "অগৃহীত"
 }
