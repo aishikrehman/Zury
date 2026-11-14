@@ -7,7 +7,7 @@
   } catch {
     dict = {};
   }
-  const locale = document.documentElement.lang === 'bn' ? 'bn-BD' : 'en-GB';
+  const locale = document.documentElement.dataset.locale || document.documentElement.lang || 'en-GB';
   const number = new Intl.NumberFormat(locale);
   window.zuryLocale = locale;
   window.zt = (text, values) =>

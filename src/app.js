@@ -148,6 +148,8 @@ app.use(async (req, res, next) => {
     const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const both = ({ name, localName }) => (localName ? `${name} · ${localName}` : name);
     Object.assign(res.locals, {
+      // This site's own address (zury.toolforge.org, or wherever it runs).
+      siteHost: req.get('host') || '',
       wikiName: (db) => (db ? names.wiki(db).name : ''),
       // Each event's project colour and icon (Wikipedia, Commons, Wikidata…).
       eventProject: require('./utils/projectStyle').eventProject,

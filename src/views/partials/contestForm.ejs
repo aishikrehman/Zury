@@ -18,7 +18,7 @@
   const extra = typeof extraPane === 'string' && extraPane ? extraPane : '';
   const judged = !typeDef || typeDef.entries !== false;
   const dateLabel = Object.fromEntries(DATE_FIELDS);
-  const origin = 'zury.toolforge.org';
+  const origin = siteHost;
   const steps = [
     ['basics', t('Basic info'), wikiMode ? t('Description, contact and dates') : t('Type, project, name, address and dates')],
     ['participation', t('Participation'), t('Who takes part and how')],

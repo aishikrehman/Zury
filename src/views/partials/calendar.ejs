@@ -1,5 +1,5 @@
 <%
-  const loc = calLang === 'bn' ? 'bn-BD' : 'en-GB';
+  const loc = (LANGUAGES[calLang] || lang).locale;
   const first = new Date(Date.UTC(cal.year, cal.month, 1));
   const daysIn = new Date(Date.UTC(cal.year, cal.month + 1, 0)).getUTCDate();
   const lead = (first.getUTCDay() + 6) % 7; // weeks start on Monday

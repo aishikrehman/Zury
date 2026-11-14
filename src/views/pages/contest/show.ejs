@@ -68,7 +68,7 @@
     });
     const current = stops.filter((x) => new Date(x.at).getTime() <= now).length - 1;
     const daysTo = (at) => Math.ceil((new Date(at).getTime() - now) / 86400000);
-    const dayPart = (at, opts) => new Intl.DateTimeFormat(lang.code === 'bn' ? 'bn-BD' : 'en-GB', { timeZone: tz, ...opts }).format(new Date(at));
+    const dayPart = (at, opts) => new Intl.DateTimeFormat(lang.locale, { timeZone: tz, ...opts }).format(new Date(at));
     const start = contest.startDate ? new Date(contest.startDate).getTime() : null;
     const finish = contest.endDate ? new Date(contest.endDate).getTime() : null;
     const length = start && finish ? Math.max(1, Math.round((finish - start) / 86400000)) : null;
