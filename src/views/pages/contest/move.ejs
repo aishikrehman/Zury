@@ -9,10 +9,10 @@
         <% if (plan.existing) { %><%= t('(that wiki is already in it, so they will be joined)') %><% } %>
       </p>
       <div class="datagrid mb-4">
-        <div class="datagrid-item"><div class="datagrid-title"><%= t("Entries") %></div><div class="datagrid-content"><%= plan.counts.submissions %></div></div>
-        <div class="datagrid-item"><div class="datagrid-title"><%= t("People with a role") %></div><div class="datagrid-content"><%= plan.counts.members %></div></div>
-        <div class="datagrid-item"><div class="datagrid-title"><%= t("Sessions") %></div><div class="datagrid-content"><%= plan.counts.sessions %></div></div>
-        <div class="datagrid-item"><div class="datagrid-title"><%= t("Tracked edits") %></div><div class="datagrid-content"><%= plan.counts.contributions %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("Entries") %></div><div class="datagrid-content"><%= formatNumber(plan.counts.submissions) %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("People with a role") %></div><div class="datagrid-content"><%= formatNumber(plan.counts.members) %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("Sessions") %></div><div class="datagrid-content"><%= formatNumber(plan.counts.sessions) %></div></div>
+        <div class="datagrid-item"><div class="datagrid-title"><%= t("Tracked edits") %></div><div class="datagrid-content"><%= formatNumber(plan.counts.contributions) %></div></div>
       </div>
       <ul class="text-secondary">
         <li><%= t('Participants take part in “{event}” from {wiki}; organizers and reviewers run that wiki.', { event: target.title, wiki: wikiLocal(plan.wiki) }) %></li>

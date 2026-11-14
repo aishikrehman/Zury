@@ -79,6 +79,7 @@ function renderForm(req, res, { text = '', participant = '', items = null, error
     typeDef: EVENT_TYPES[req.contest.type],
     typeConfig: readTypeConfig(req.contest.type, req.settings.typeConfig),
     maxBatch: submissionService.MAX_BATCH,
+    eligibleList: !!require('../services/participationService').eligibleSet(req.settings),
   });
 }
 
@@ -95,7 +96,16 @@ async function handleSubmit(req, res, next, { confirm }) {
     if (submissionService.splitLines(text).length > 1) {
       throw new SubmissionError('This event accepts one entry at a time.');
     }
-    const who = await resolveSubmitter(req);
+    // Someone who can't take part (a reviewer, say) may still submit another person's article: it goes to its author.
+    let who;
+    let selfBlocked = null;
+    try {
+      who = await resolveSubmitter(req);
+    } catch (e) {
+      if (!(e instanceof SubmissionError) || participantName.trim()) throw e;
+      selfBlocked = e.message;
+      who = { participant: req.user, ensureParticipant: null };
+    }
     const items = await submissionService.prepare({
       contest: req.contest,
       settings: req.eventSettings,
@@ -104,12 +114,21 @@ async function handleSubmit(req, res, next, { confirm }) {
       eventWikis: req.eventWikis,
       defaultWiki: req.contextWiki?.wiki,
       lateAllowed: req.permissions.has('submitOthersEntry'),
+      bypassRules: req.permissions.has('maintainSite'),
     });
-    if (!confirm) return renderForm(req, res, { text, participant: participantName, items });
-
     const mineName = who.participant.username;
     const byOther = (i) => i.ok && i.meta && i.meta.entryType === 'article' && i.meta.creator && i.meta.creator !== mineName && req.body[`as:${i.input}`] !== 'expansion';
-    const ownItems = items.filter((i) => !byOther(i));
+    // Not allowed to take part: only articles written by someone else can go in (credited to them).
+    if (selfBlocked) {
+      for (const i of items) {
+        const others = i.ok && i.meta && i.meta.entryType === 'article' && i.meta.creator && i.meta.creator !== mineName;
+        if (!others && i.ok) { i.ok = false; i.reasons = [selfBlocked]; }
+        if (others) i.forAuthor = true;
+      }
+      if (confirm) items.forEach((i) => { if (i.forAuthor) req.body[`as:${i.input}`] = 'author'; });
+    }
+    if (!confirm) return renderForm(req, res, { text, participant: participantName, items });
+    const ownItems = selfBlocked ? [] : items.filter((i) => !byOther(i));
     const created = ownItems.some((i) => i.ok) ? await submissionService.save({
       actor: req.user,
       contest: req.contest,
@@ -154,7 +173,7 @@ async function handleSubmit(req, res, next, { confirm }) {
     res.redirect(`${req.base}/submissions${who.participant.id === req.user.id ? '?mine=1' : ''}`);
   } catch (err) {
     if (err instanceof SubmissionError || err instanceof WikiApiError) {
-      return renderForm(req, res, { text, participant: participantName, error: err.message, status: err.status === 403 ? 403 : 422 });
+      return renderForm(req, res, { text, participant: participantName, error: req.t(err.message), status: err.status === 403 ? 403 : 422 });
     }
     next(err);
   }
@@ -184,7 +203,16 @@ async function index(req, res, next) {
     res.locals.showReviewers = staffView || require('../services/participationService').read(req.settings).rules.reviewerNames === 'yes';
     const templateLink = (s) => (tc.entryTemplate ? require('../wiki/wikiUrls').templateEditUrl({ wiki: s.wiki, title: s.title, namespace: s.entryType === 'article' ? 0 : -1 }, tc.entryTemplate, tc.entryTemplateOnTalk !== false) : null);
     const reviewService = require('../services/reviewService');
+    const ps = require('../services/participationService');
+    const pp = ps.read(req.settings);
+    const joinedNow = req.user ? (await membershipService.activeRoles(req.contest.id, req.user.id)).includes('participant') : false;
+    const showSignUp = req.user && pp.page && (pp.mode === 'onwiki' ? !joinedNow : joinedNow);
     res.render('pages/contest/submissions', {
+      keyStats: (req.settings.publicStatisticsEnabled || req.permissions.has('viewStatistics')) ? await require('../services/statsService').eventStats(req.contest, { wiki: req.wikiScope?.wiki }).catch(() => null) : null,
+      intro: {
+        myEntries: req.user ? await submissionService.myEntries(req.user.id, req.contest.id) : null,
+        signUp: showSignUp ? { url: ps.signUpUrl(req.contest, req.settings, req.user.username), onwiki: pp.mode === 'onwiki' } : null,
+      },
       templateLink,
       canWithdraw: (s) => req.user?.id === s.participantId && submissionService.WITHDRAWABLE.includes(s.status) && ['participant', 'both'].includes(require('../services/participationService').read(req.settings).rules.withdraw),
       canAppealRow: (s) => reviewService.canAppeal({ submission: s, contest: req.effective.contest, settings: req.settings, user: req.user }),
@@ -355,7 +383,7 @@ async function useLatest(req, res, next) {
     const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
     if (!staff) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
     // Published results don't move: hide them first to change an entry's revision.
-    if (req.contest.resultsPublishedAt) { req.flash('warning', req.t('Results are published, so the revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
+    if (require('../services/reviewService').resultsFinal(req.effective.contest)) { req.flash('warning', req.t('The event is archived, so the revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
     await submissionService.repin(s);
     if (req.get('X-Requested-With') === 'fetch') return res.json({ ok: true });
     req.flash('success', req.t('The entry is now the latest revision.'));
@@ -435,7 +463,7 @@ async function useRevision(req, res, next) {
     const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury') || req.permissions.has('reviewAssignedEntry');
     if (!staff) return res.status(403).render('pages/403', { title: 'Forbidden' });
     // Published results don't move: hide them first to change an entry's revision.
-    if (req.contest.resultsPublishedAt) { req.flash('warning', req.t('Results are published, so the revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
+    if (require('../services/reviewService').resultsFinal(req.effective.contest)) { req.flash('warning', req.t('The event is archived, so the revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
     const raw = String(req.body.rev || '').trim();
     const revId = Number((raw.match(/oldid=(\d+)/) || raw.match(/^(\d+)$/) || [])[1]);
     const done = revId ? await submissionService.pinRevision(s, revId) : null;

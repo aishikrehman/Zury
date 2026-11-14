@@ -7,7 +7,7 @@
 
   <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <div>
-      <div class="h3 m-0"><%= t('Results and statistics') %></div>
+      <div class="h3 m-0"><%= t('Results') %></div>
       <div class="text-secondary small">
         <% if (published) { %><i class="ti ti-world me-1"></i><%= t('Published {date}', { date: formatDateTime(published, contest.timezone) }) %>
         <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and reviewers see this page.') %><% } %>
@@ -23,18 +23,13 @@
   </div>
 
   <% if (progress) { %>
-    <div class="row row-cards mb-3">
-      <% [[t('Waiting for review'), progress.waiting, 'hourglass', 'yellow'], [t('Approved'), progress.approved, 'circle-check', 'green'], [t('Rejected'), progress.rejected, 'circle-x', 'red'], [t('Reviewers'), progress.jurors.length, 'gavel', 'purple']].forEach(([label, value, icon, color]) => { %>
-        <div class="col-6 col-lg-3">
-          <div class="card card-sm"><div class="card-body d-flex align-items-center">
-            <span class="avatar bg-<%= color %>-lt me-3"><i class="ti ti-<%= icon %>"></i></span>
-            <div><div class="h2 m-0"><%= formatNumber(value) %></div><div class="text-secondary"><%= label %></div></div>
-          </div></div>
-        </div>
-      <% }) %>
+    <div class="z-keystats mb-3">
+      <div class="z-ks is-wait"><b><%= formatNumber(progress.waiting) %></b><span><%= t('Waiting for review') %></span></div>
+      <div class="z-ks is-ok"><b><%= formatNumber(progress.approved) %></b><span><%= t('Approved') %></span></div>
+      <div class="z-ks is-bad"><b><%= formatNumber(progress.rejected) %></b><span><%= t('Rejected') %></span></div>
+      <div class="z-ks"><b><%= formatNumber(progress.jurors.length) %></b><span><%= t('Reviewers') %></span></div>
     </div>
   <% } %>
-
   <% if (!showRanking) { %>
     <div class="alert alert-info"><i class="ti ti-lock"></i><div><%= t('The ranking is published when the reviewers has finished.') %></div></div>
   <% } else if (!rows.length) { %>
@@ -67,6 +62,6 @@
     </div>
   <% } %>
 
-  <% if (stats) { %><div class="mt-3"><%- include('../../partials/eventStats', { stats, part: 'breakdown' }) %></div><% } %>
+  <% if (stats && stats.wordStats) { %><div class="mt-3"><%- include('../../partials/eventStats', { stats, part: 'breakdown' }) %></div><% } %>
 </div>
 </div>

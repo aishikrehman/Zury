@@ -2,14 +2,16 @@
   const st = CONTEST_STATUSES[contest.status] || { label: contest.status, badge: 'secondary' };
   const color = st.badge === 'dark' ? 'secondary' : st.badge;
   const typeDef = EVENT_TYPES[contest.type];
-  const tabs = [['overview', t('Overview'), '', 'info-circle']];
+  const landing = typeDef.entries !== false && !typeDef.activity;
+  const tabs = landing ? [] : [['overview', t('Overview'), '', 'info-circle']];
   if (typeDef.activity) tabs.push(['sessions', t('Sessions'), '/sessions', 'calendar-event']);
-  if (typeDef.entries !== false) tabs.push(['submissions', typeDef.activity ? t('Uploads') : t('Submissions'), '/submissions', 'files']);
+  if (typeDef.entries !== false) tabs.push(['submissions', typeDef.activity ? t('Uploads') : t('Submissions'), landing ? '' : '/submissions', 'files']);
   const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
   if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', t('Contributions'), '/tracking', 'activity']);
   // The jury's way in is a button in the header, not a tab.
   const canReview = typeDef.entries !== false && (can('reviewAssignedEntry') || (scope.wikisWith && scope.wikisWith('reviewAssignedEntry').length));
-  if (typeDef.entries !== false && (contest.resultsPublishedAt || can('reviewEvent') || can('manageEvent') || settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['results', t('Results and statistics'), '/results', 'chart-bar']);
+  if (typeDef.entries !== false && (contest.resultsPublishedAt || can('reviewEvent') || can('manageEvent') || settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['results', t('Results'), '/results', 'trophy']);
+  if (typeDef.entries !== false && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['statistics', t('Statistics and analysis'), '/statistics', 'chart-bar']);
   let appealsOpen = true; try { appealsOpen = ((JSON.parse(settings.participation || '{}').rules) || {}).appealsPublic !== 'no'; } catch (e) {}
   if (settings.appealsEnabled && (appealsOpen || currentUser || can('reviewAppeal') || can('manageAppeals'))) tabs.push(['appeals', t('Appeals'), '/appeals', 'scale']);
   // People and the jury's assignments share one tab.
@@ -127,7 +129,8 @@
         <% if (canReview) { %>
           <a href="<%= base %>/review" class="btn btn-outline-primary"><i class="ti ti-gavel me-1"></i><%= t('Review') %></a>
         <% } %>
-        <% const organizerSubmit = currentUser && can('manageEvent') && typeDef.entries !== false && active !== 'submit'; %>
+        <% const eventOver = ['completed', 'archived', 'cancelled'].includes(contest.status) || (contest.endDate && new Date(contest.endDate) < new Date()); %>
+        <% const organizerSubmit = !eventOver && currentUser && can('manageEvent') && typeDef.entries !== false && active !== 'submit'; %>
         <% if (organizerSubmit) { %>
           <%# Organizers: Submit, with Import beside it in a small menu (works after the event too). %>
           <div class="btn-group z-submit-split">
@@ -137,7 +140,7 @@
               <a class="dropdown-item" href="<%= base %>/import"><i class="ti ti-file-import me-2"></i><%= t('Import entries') %><div class="small text-secondary"><%= t('From a wiki page, CSV or Fountain') %></div></a>
             </div>
           </div>
-        <% } else if (canSubmit && !(currentUser && !(scope.eventRoles || []).length && joinable)) { %>
+        <% } else if (!eventOver && canSubmit && !(currentUser && !(scope.eventRoles || []).length && joinable)) { %>
           <a href="<%= currentUser ? base + '/submit' : '/login' %>" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
         <% } %>
       </div>

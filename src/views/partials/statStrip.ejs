@@ -1,0 +1,22 @@
+<%
+  // Figures in columns, as in ztools: entries by status, words (accepted of all), share accepted, a small bar.
+  // locals: st { entries, people?, counts { approved, pending, rejected }, words?, wordsBy? }, compact
+  const c = st.counts || {};
+  const wb = st.wordsBy || {};
+  const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+  const cell = (label, value, cls = '') => `<span class="z-st ${cls}"><span class="z-st-l">${label}</span><span class="z-st-v">${value}</span></span>`;
+  const cells = [];
+  cells.push(cell(t('Entries'), formatNumber(st.entries || 0)));
+  if (st.people != null) cells.push(cell(t('Participants'), formatNumber(st.people)));
+  cells.push(cell(t('Accepted'), formatNumber(c.approved || 0), 'is-ok'));
+  cells.push(cell(t('Pending'), formatNumber(c.pending || 0), 'is-wait'));
+  cells.push(cell(t('Not accepted'), formatNumber(c.rejected || 0), 'is-bad'));
+  if (st.words != null) {
+    cells.push(cell(t('Words'), formatNumber(st.words || 0)));
+    cells.push(cell(t('Accepted words'), formatNumber(wb.approved || 0), 'is-ok'));
+    cells.push(cell(t('Accepted share'), formatNumber(pct(wb.approved || 0, st.words)) + '%'));
+    if (!locals.compact) cells.push(cell(t('Words per entry'), formatNumber(st.entries ? Math.round(st.words / st.entries) : 0)));
+  }
+  const all = (wb.approved || 0) + (wb.pending || 0) + (wb.rejected || 0);
+  const bar = st.words != null && all ? `<span class="z-st-bar" title="${formatNumber(wb.approved || 0)} · ${formatNumber(wb.pending || 0)} · ${formatNumber(wb.rejected || 0)}"><i class="is-ok" style="width:${pct(wb.approved || 0, all)}%"></i><i class="is-wait" style="width:${pct(wb.pending || 0, all)}%"></i><i class="is-bad" style="width:${pct(wb.rejected || 0, all)}%"></i></span>` : '';
+%><span class="z-stats<%= locals.compact ? ' is-compact' : '' %>"><%- cells.join('') %><%- bar %></span>

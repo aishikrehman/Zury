@@ -1,0 +1,50 @@
+<%
+  // Reviewers and activity: who decided how much, reviews per day, and the words adding up.
+  const s = stats;
+  const revs = s.reviewers || [];
+  const growth = settings.wordCountEnabled && s.wordGrowth && s.wordGrowth.values.some((n) => n > 0);
+  const anyReviews = (s.reviewSeries && s.reviewSeries.values || []).some((n) => n > 0);
+%>
+<% if (growth || anyReviews) { %>
+<div class="row row-cards mb-3">
+  <% if (growth) { %>
+  <div class="<%= anyReviews ? 'col-lg-6' : 'col-12' %>">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-trending-up me-2"></i><%= t('Words over time') %></h3><div class="card-actions text-secondary small"><%= t('{n} words in all', { n: formatNumber(s.wordGrowth.values[s.wordGrowth.values.length - 1] || 0) }) %></div></div>
+      <div class="card-body"><%- include('./chart', { spec: { type: 'area', height: 260, legend: true, dualAxis: true, series: [{ name: t('Words in all'), data: s.wordGrowth.values }, { name: t('Entries in all'), data: s.wordGrowth.entries }], labels: s.wordGrowth.labels, colors: ['orange', 'primary'] } }) %></div>
+    </div>
+  </div>
+  <% } %>
+  <% if (anyReviews) { %>
+  <div class="<%= growth ? 'col-lg-6' : 'col-12' %>">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= t('Reviews per day') %></h3><div class="card-actions text-secondary small"><%= t('{n} reviews', { n: formatNumber(s.reviewsGiven || 0) }) %></div></div>
+      <div class="card-body"><%- include('./chart', { spec: { type: 'area', height: 240, series: [{ name: t('Reviews'), data: s.reviewSeries.values }], labels: s.reviewSeries.labels, colors: ['purple'] } }) %></div>
+    </div>
+  </div>
+  <% } %>
+</div>
+<% } %>
+<% if (revs.length) { %>
+<div class="card mb-3">
+  <div class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('Reviewers') %></h3><div class="card-actions text-secondary small"><%= tn('{n} reviewer', '{n} reviewers', revs.length) %></div></div>
+  <div class="table-responsive">
+    <table class="table table-vcenter card-table z-lb" data-sortable>
+      <thead><tr><th><%= t('Reviewer') %></th><th class="text-end"><%= t('Reviews') %></th><th class="text-end text-green"><%= t('Accepted') %></th><th class="text-end text-red"><%= t('Not accepted') %></th><th class="text-end"><%= t('Accepted share') %></th><th class="text-end"><%= t('Active days') %></th><th class="text-end"><%= t('Last review') %></th></tr></thead>
+      <tbody>
+        <% revs.forEach((r) => { const share = r.reviews ? Math.round((r.accepted / r.reviews) * 100) : 0; %>
+        <tr>
+          <td class="z-lb-name" data-v="<%= r.username %>"><a href="<%= base %>/user/<%= nameInPath(r.username) %>"><%= r.username %></a></td>
+          <td class="text-end z-lb-stat" data-v="<%= r.reviews %>" data-label="<%= t('Reviews') %>"><b><%= formatNumber(r.reviews) %></b></td>
+          <td class="text-end text-green z-lb-stat" data-v="<%= r.accepted %>" data-label="<%= t('Accepted') %>"><%= formatNumber(r.accepted) %></td>
+          <td class="text-end text-red z-lb-stat" data-v="<%= r.rejected %>" data-label="<%= t('Not accepted') %>"><%= formatNumber(r.rejected) %></td>
+          <td class="text-end z-lb-stat" data-v="<%= share %>" data-label="<%= t('Accepted share') %>"><%= formatNumber(share) %>%</td>
+          <td class="text-end z-lb-stat" data-v="<%= r.activeDays %>" data-label="<%= t('Active days') %>"><%= formatNumber(r.activeDays) %></td>
+          <td class="text-end text-secondary z-lb-stat" data-v="<%= r.last ? new Date(r.last).getTime() : 0 %>" data-label="<%= t('Last review') %>"><%= r.last ? formatDate(r.last, contest.timezone) : '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>

@@ -122,6 +122,22 @@
           <% } %>
         </div>
       </div>
+      <% if (s.wordStats && statsPart === '') { const w = s.wordStats; %>
+      <div class="card mt-3 z-words-mini">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-align-justified me-1"></i><%= t('Word statistics') %></h3></div>
+        <div class="list-group list-group-flush">
+          <% [['All entries', w.all, ''], ['Accepted', w.accepted, 'text-green'], ['Pending', w.pending, 'text-yellow'], ['Not accepted', w.rejected, 'text-red']].forEach(([label, x, cls]) => { %>
+            <div class="list-group-item d-flex align-items-baseline gap-2 py-2"><span class="flex-fill"><%= t(label) %> <span class="text-secondary small">· <%= tn('{n} article', '{n} articles', x.count) %></span></span><b class="<%= cls %>"><%= formatNumber(x.words) %></b></div>
+          <% }) %>
+          <div class="list-group-item small text-secondary py-2"><%= t('Average per article: {n} words', { n: formatNumber(w.average) }) %></div>
+          <% if (w.biggest.length) { %>
+            <div class="list-group-item py-2"><div class="subheader mb-1"><%= t('Longest articles') %></div>
+              <% w.biggest.slice(0, 5).forEach((x) => { %><div class="d-flex gap-2 small py-1"><a class="flex-fill text-truncate" href="<%= entryUrl(x) %>" target="_blank" rel="noopener"><%= x.title %></a><span class="text-secondary"><%= formatNumber(x.words) %></span></div><% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+      <% } %>
     </div>
     <% } %>
   </div>

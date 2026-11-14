@@ -40,7 +40,7 @@
   <div class="card">
     <div class="card-header z-list-head">
       <ul class="nav nav-pills z-status-pills">
-        <li class="nav-item"><a class="nav-link<%= !show ? ' active' : '' %>" href="?"><%= t('All') %> <span class="badge bg-secondary-lt ms-1"><%= rows.length %></span></a></li>
+        <li class="nav-item"><a class="nav-link<%= !show ? ' active' : '' %>" href="?"><%= t('All') %> <span class="badge bg-secondary-lt ms-1"><%= formatNumber(rows.length) %></span></a></li>
         <% roleOrder.filter((r) => count(r)).forEach((r) => { %>
           <li class="nav-item"><a class="nav-link<%= show === r ? ' active' : '' %>" href="?show=<%= r %>"><%= t(EVENT_ROLES[r].label) %> <span class="badge bg-<%= roleColor[r] %>-lt ms-1"><%= count(r) %></span></a></li>
         <% }) %>

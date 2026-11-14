@@ -152,7 +152,7 @@ model Contest {
   mergedIntoId       Int?
   mergedWikiCode     String?
   // When the results were made public; until then only organizers and jury see them.
-  resultsPublishedAt DateTime?
+  resultsPublishedAt DateTime? @default(now())
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

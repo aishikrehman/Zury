@@ -121,7 +121,7 @@ async function window(req, res, next) {
     }
     const revMode = require('../services/participationService').read(req.settings).rules.revision === 'latest' ? 'latest' : 'pinned';
     let revChanged = false;
-    if (entry && revMode === 'pinned' && entry.revId && !req.contest.resultsPublishedAt) {
+    if (entry && revMode === 'pinned' && entry.revId && !reviewService.resultsFinal(req.effective.contest)) {
       const host = require('../wiki/wikiUrls').dbnameToHost(entry.wiki);
       const q = new URLSearchParams({ action: 'query', prop: 'info', titles: entry.title, format: 'json', formatversion: '2' });
       const info = host ? await fetch(`https://${host}/w/api.php?${q}`, { headers: { 'User-Agent': require('../config/env').userAgent } }).then((r) => r.json()).catch(() => null) : null;
@@ -257,7 +257,7 @@ async function results(req, res, next) {
       rows.withWordsBy = true;
     }
     res.render('pages/contest/results', {
-      title: `Results and statistics — ${req.contest.title}`,
+      title: `Results — ${req.contest.title}`,
       rows,
       // Events without word counts are ranked by points, with no word column.
       showRanking,

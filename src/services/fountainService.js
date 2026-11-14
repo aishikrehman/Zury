@@ -94,8 +94,17 @@ async function syncReviews(contestId, submissionId, article, marksConfig, person
 
 async function pageIds(wiki, titles) {
   const ids = new Map();
-  for (let i = 0; i < titles.length; i += 50) {
-    const data = await wikiApi.get(wiki, { action: 'query', titles: titles.slice(i, i + 50).join('|'), redirects: '1' });
+  // At most 50 titles a request, and short enough for the address (Bangla titles grow ninefold when encoded).
+  const batches = [];
+  let cur = [], len = 0;
+  for (const t of titles) {
+    const n = encodeURIComponent(t).length + 3;
+    if (cur.length && (cur.length >= 50 || len + n > 6000)) { batches.push(cur); cur = []; len = 0; }
+    cur.push(t); len += n;
+  }
+  if (cur.length) batches.push(cur);
+  for (const batch of batches) {
+    const data = await wikiApi.get(wiki, { action: 'query', titles: batch.join('|'), redirects: '1' });
     const q = data.query || {};
     const back = new Map([...(q.normalized || []), ...(q.redirects || [])].map((r) => [r.to, r.from]));
     for (const p of q.pages || []) {

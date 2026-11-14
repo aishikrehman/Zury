@@ -42,7 +42,7 @@ router.get('/review', requireAuth, reviewController.myQueue);
 // and one wiki's part of it (/wam/2026/bn); permissions follow the context.
 const contest = express.Router({ mergeParams: true });
 
-contest.get('/', contestController.show);
+contest.get('/', (req, res, next) => (EVENT_TYPES[req.contest.type]?.entries !== false && !EVENT_TYPES[req.contest.type]?.activity ? submissionController.index(req, res, next) : contestController.show(req, res, next)));
 // Joining is a form button; opening /join directly goes to the event page with that button.
 contest.get('/join', requireAuth, contestController.joinForm);
 contest.post('/join', requireAuth, contestController.join);
@@ -66,9 +66,16 @@ contest.post('/fountain', requirePermission('importEvents'), fountainController.
 // Import entries from a wiki page, a CSV or plain list, or Fountain (organizers).
 // One person's work in this event.
 contest.get('/user/:username', personController.event);
-contest.get('/import', requireEventWide('manageEvent'), importController.page);
-contest.post('/import/preview', requireEventWide('manageEvent'), importController.preview);
-contest.post('/import', requireEventWide('manageEvent'), importController.commit);
+// Once the event is over nobody adds entries, by submitting or importing.
+const isOver = (c) => ['completed', 'archived', 'cancelled'].includes(c.status) || (c.endDate && new Date(c.endDate) < new Date());
+const notOver = (req, res, next) => {
+  if (!isOver(req.effective.contest)) return next();
+  req.flash('warning', req.t('The event is over: entries can no longer be added.'));
+  return res.redirect(`${req.base}/submissions`);
+};
+contest.get('/import', notOver, requireEventWide('manageEvent'), importController.page);
+contest.post('/import/preview', notOver, requireEventWide('manageEvent'), importController.preview);
+contest.post('/import', notOver, requireEventWide('manageEvent'), importController.commit);
 contest.post('/fountain/:wikiId(\\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
 contest.post('/fountain/:wikiId(\\d+)/:action(unlink)', requirePermission('importEvents'), fountainController.unlink);
 contest.post('/fountain/:wikiId(\\d+)/auto', requirePermission('importEvents'), fountainController.setAuto);
@@ -120,9 +127,9 @@ contest.post('/sessions/:sessionId(\\d+)/cancel', activityOnly, requireAuth, ses
 contest.post('/sessions/:sessionId(\\d+)/attendance', activityOnly, requirePermission('manageEvent'), sessionController.attendance);
 contest.post('/sessions/:sessionId(\\d+)/update', activityOnly, requirePermission('manageEvent'), sessionController.update);
 
-contest.get('/submit', entriesOnly, requireAuth, submissionController.submitForm);
-contest.post('/submit/preview', entriesOnly, requireAuth, submissionController.preview);
-contest.post('/submit', entriesOnly, requireAuth, submissionController.submit);
+contest.get('/submit', entriesOnly, notOver, requireAuth, submissionController.submitForm);
+contest.post('/submit/preview', entriesOnly, notOver, requireAuth, submissionController.preview);
+contest.post('/submit', entriesOnly, notOver, requireAuth, submissionController.submit);
 contest.get('/submissions', entriesOnly, submissionController.index);
 contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissionController.withdraw);
 // Superusers delete a single entry, or a single review (the entry is then decided again).

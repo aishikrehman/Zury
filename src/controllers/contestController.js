@@ -44,7 +44,7 @@ function handled(err) {
   );
 }
 
-async function show(req, res, next) {
+async function show(req, res, next, view = 'pages/contest/show') {
   try {
     const [members, roles, participants, blocked] = await Promise.all([
       contestService.members(req.contest.id),
@@ -63,7 +63,7 @@ async function show(req, res, next) {
       blocked,
     });
     const mine = req.user && members.find((m) => m.user.id === req.user.id && m.role === 'participant');
-    res.render('pages/contest/show', {
+    res.render(view, {
       joinWikis: req.eventWikis.length > 1 && !req.wikiScope ? req.eventWikis.filter((w) => w.status === 'active') : [],
       defaultJoinWiki: defaultWikiFor(req),
       myWiki: mine?.wiki || '',
@@ -488,9 +488,10 @@ async function unblockUser(req, res, next) {
 
 const canSeeStats = (req) => req.settings.publicStatisticsEnabled || req.permissions.has('viewStatistics');
 
-// Statistics are part of the overview now; old links land there.
-function statistics(req, res) {
-  res.redirect(301, `${req.base || '/'}#statistics`);
+// Statistics and analysis: the event's numbers, wikis, reviewers, rules, and the charts.
+function statistics(req, res, next) {
+  if (!canSeeStats(req) && !req.permissions.has('reviewEvent') && !req.permissions.has('manageEvent')) return res.status(404).render('pages/404', { title: 'Page Not Found' });
+  return show(req, res, next, 'pages/contest/statistics');
 }
 
 async function activity(req, res, next) {

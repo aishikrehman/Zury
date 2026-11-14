@@ -61,7 +61,7 @@ function activeCount(contestId, participantId, client = prisma) {
  * that wiki's overrides) and that wiki's submission window.
  * eventWikis: the event's active wikis; defaultWiki: used for plain titles.
  */
-async function prepare({ contest, settings, participantId, text, eventWikis, defaultWiki, lateAllowed = false }) {
+async function prepare({ contest, settings, participantId, text, eventWikis, defaultWiki, lateAllowed = false, bypassRules = false }) {
   const lines = splitLines(text);
   if (!lines.length) throw new SubmissionError('Enter at least one URL or title.');
   if (lines.length > MAX_BATCH) throw new SubmissionError(`At most ${MAX_BATCH} entries at a time.`);
@@ -101,10 +101,12 @@ async function prepare({ contest, settings, participantId, text, eventWikis, def
       entriesByParticipant: accepted,
       allowedWikis: [eventWiki.wiki],
     });
-    if (!window.open && !lateAllowed) result.hard.unshift(`${eventWiki.code}: ${window.reason}`);
+    if (!window.open && !lateAllowed && !bypassRules) result.hard.unshift(`${eventWiki.code}: ${window.reason}`);
     const auto = eff.settings.autoValidationEnabled;
-    const blocking = auto ? [...result.hard, ...result.rules] : result.hard;
-    const warnings = auto ? result.warnings : [...result.rules, ...result.warnings];
+    // The event's required rules always block. A superuser may pass anything except a missing or repeated page.
+    const MUST = /does not exist|Already submitted/;
+    const blocking = bypassRules ? result.hard.filter((m) => MUST.test(m)) : [...result.hard, ...result.rules];
+    const warnings = bypassRules ? [...result.hard.filter((m) => !MUST.test(m)), ...result.rules, ...result.warnings] : result.warnings;
     const ok = blocking.length === 0;
     if (ok) {
       seen.add(pageKeyFor(item.meta));
@@ -222,14 +224,18 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
     // Everyone with entries here, for the participant filter: entries and words each.
     prisma.submission.groupBy({ by: ['participantId'], where: base, _count: { _all: true }, _sum: { wordCount: true } }),
     // Words per person by status (accepted / pending / not accepted).
-    prisma.submission.groupBy({ by: ['participantId', 'status'], where: base, _sum: { wordCount: true } }),
+    prisma.submission.groupBy({ by: ['participantId', 'status'], where: base, _sum: { wordCount: true }, _count: { _all: true } }),
   ]);
   const kindOf = (k) => (k === 'approved' || k === 'withdrawn' ? k : k === 'rejected' || k === 'disqualified' ? 'rejected' : 'pending');
   const wordsBy = { approved: 0, pending: 0, rejected: 0 };
   let words = 0;
   for (const g of sums) { const n = g._sum.wordCount || 0; const k = kindOf(g.status); if (k !== 'withdrawn') { wordsBy[k] += n; words += n; } }
   const personWords = {};
-  for (const g of personStatus) { const k = kindOf(g.status); if (k === 'withdrawn') continue; const w = (personWords[g.participantId] ||= { approved: 0, pending: 0, rejected: 0 }); w[k] += g._sum.wordCount || 0; }
+  const personCounts = {};
+  for (const g of personStatus) { const k = kindOf(g.status); if (k === 'withdrawn') continue; const w = (personWords[g.participantId] ||= { approved: 0, pending: 0, rejected: 0 }); w[k] += g._sum.wordCount || 0; const c = (personCounts[g.participantId] ||= { approved: 0, pending: 0, rejected: 0 }); c[k] += g._count._all; }
+  // Rank by accepted words, then accepted entries.
+  const rankOf = {};
+  Object.keys(personWords).sort((a, b) => (personWords[b].approved - personWords[a].approved) || ((personCounts[b]?.approved || 0) - (personCounts[a]?.approved || 0))).forEach((id, i) => { rankOf[id] = i + 1; });
   // Big events (Wikidata, lexemes) can have thousands of people: the filter lists the
   // busiest 300, plus whoever is picked; the rest are found through their name in the table.
   byPerson.sort((x, y) => y._count._all - x._count._all);
@@ -237,12 +243,12 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
   const names = await prisma.user.findMany({ where: { id: { in: shown.map((g) => g.participantId) } }, select: { id: true, username: true } });
   const nameOf = Object.fromEntries(names.map((u) => [u.id, u.username]));
   const participants = shown
-    .map((g) => ({ id: g.participantId, username: nameOf[g.participantId] || '?', entries: g._count._all, words: g._sum.wordCount || 0, wordsBy: personWords[g.participantId] || { approved: 0, pending: 0, rejected: 0 } }))
+    .map((g) => ({ id: g.participantId, username: nameOf[g.participantId] || '?', entries: g._count._all, words: g._sum.wordCount || 0, wordsBy: personWords[g.participantId] || { approved: 0, pending: 0, rejected: 0 }, countsBy: personCounts[g.participantId] || { approved: 0, pending: 0, rejected: 0 }, rank: rankOf[g.participantId] || null }))
     .sort((a, b) => a.username.localeCompare(b.username));
   const raw = Object.fromEntries(grouped.map((g) => [g.status, g._count]));
   const counts = { pending: 0, approved: 0, rejected: 0, withdrawn: 0 };
   for (const [k, n] of Object.entries(raw)) counts[k === 'approved' || k === 'withdrawn' ? k : k === 'rejected' || k === 'disqualified' ? 'rejected' : 'pending'] += n;
-  return { items, total, page, perPage, counts, words, wordsBy, participants };
+  return { items, total, page, perPage, counts, words, wordsBy, participants, people: byPerson.length };
 }
 
 async function findVisible({ contestId, id, user, can, wiki }) {

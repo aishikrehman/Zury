@@ -95,8 +95,8 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
 
   // Word statistics (when results count words): words by status, per participant, per article.
   let wordStats = null;
-  const rankRow = await prisma.contestSettings.findUnique({ where: { contestId: contest.id }, select: { rankBy: true } });
-  if (rankRow && ['words', 'both'].includes(rankRow.rankBy)) {
+  const rankRow = await prisma.contestSettings.findUnique({ where: { contestId: contest.id }, select: { rankBy: true, wordCountEnabled: true } });
+  if (rankRow && (rankRow.wordCountEnabled || ['words', 'both'].includes(rankRow.rankBy))) {
     const [byStatusW, byPerson, biggest] = await Promise.all([
       prisma.submission.groupBy({ by: ['status'], where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true }, _count: { _all: true } }),
       prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: { notIn: INACTIVE } }, _sum: { wordCount: true }, _count: { _all: true }, orderBy: { _sum: { wordCount: 'desc' } }, take: 10 }),
@@ -121,6 +121,26 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     };
   }
 
+  // Reviewers: how many each decided, accepted or not, and when last; reviews per day; words adding up day by day.
+  const reviewRows = await prisma.review.findMany({ where: { contestId: contest.id, ...(wiki && { submission: { wiki } }) }, select: { jurorId: true, decision: true, createdAt: true, updatedAt: true } });
+  const byJuror = new Map();
+  for (const r of reviewRows) {
+    const j = byJuror.get(r.jurorId) || { reviews: 0, accepted: 0, rejected: 0, last: null, days: new Set() };
+    j.reviews += 1;
+    if (r.decision === 'accept') j.accepted += 1; else if (r.decision === 'reject') j.rejected += 1;
+    const at = r.updatedAt || r.createdAt;
+    if (!j.last || at > j.last) j.last = at;
+    j.days.add(dayKey(new Date(r.createdAt), contest.timezone));
+    byJuror.set(r.jurorId, j);
+  }
+  const jurorNames = byJuror.size ? Object.fromEntries((await prisma.user.findMany({ where: { id: { in: [...byJuror.keys()] } }, select: { id: true, username: true } })).map((u) => [u.id, u.username])) : {};
+  const reviewers = [...byJuror.entries()].map(([id, j]) => ({ username: jurorNames[id] || '?', reviews: j.reviews, accepted: j.accepted, rejected: j.rejected, last: j.last, activeDays: j.days.size })).sort((x, y) => y.reviews - x.reviews);
+  const reviewSeries = dailySeries(reviewRows.map((r) => r.createdAt), from, until > from ? until : now, contest.timezone);
+  let run = 0;
+  let runAcc = 0;
+  let runN = 0;
+  const wordGrowth = { labels: wordSeries.labels, values: wordSeries.values.map((v) => (run += v)), accepted: wordSeries.accepted.map((v) => (runAcc += v)), entries: series.values.map((v) => (runN += v)) };
+
   return {
     wordStats,
     total,
@@ -138,6 +158,9 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
     reviewersActive: reviewersActive.length,
     series,
     wordSeries,
+    reviewers,
+    reviewSeries,
+    wordGrowth,
     last7: series.values.slice(-7),
     words: words._sum.wordCount || 0,
     approvedWords: approvedWords._sum.wordCount || 0,

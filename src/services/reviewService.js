@@ -381,6 +381,11 @@ async function leaderboard({ contest, settings, wiki }) {
   return ranked;
 }
 
+// Revisions are locked only once the event is archived.
+function resultsFinal(contest) {
+  return contest.status === 'archived';
+}
+
 async function setResultsPublished({ actor, contest, published }) {
   await prisma.contest.update({ where: { id: contest.id }, data: { resultsPublishedAt: published ? new Date() : null } });
   await audit.record({ actorId: actor.id, contestId: contest.id, action: published ? 'results.published' : 'results.unpublished', entityType: 'Contest', entityId: contest.id, details: { title: contest.title } });
@@ -694,6 +699,7 @@ module.exports = {
   progress,
   leaderboard,
   setResultsPublished,
+  resultsFinal,
   canAppeal,
   createAppeal,
   resolveAppeal,

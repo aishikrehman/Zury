@@ -327,11 +327,12 @@ document.addEventListener('submit', (e) => {
   const form = document.querySelector('form[data-check-anim]');
   const holder = document.querySelector('[data-check-steps]');
   if (!form || !holder) return;
-  form.addEventListener('submit', () => {
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
     // The step bar: title done, checking now.
     const steps = document.querySelector('[data-steps]');
     if (steps) { steps.children[0].className = 'is-done'; steps.children[1].className = 'is-now'; steps.children[2].className = ''; }
-    const rules = [...holder.parentElement.querySelectorAll('.list-group-item')].map((x) => x.textContent.trim()).filter(Boolean);
+    const rules = [...document.querySelectorAll('[data-check-rules] [data-rule], [data-check-rules] .z-rule-where')].map((x) => x.textContent.trim()).filter(Boolean);
     const box = document.createElement('div');
     box.className = 'z-checking';
     box.innerHTML = '<div class="z-checking-card"><div class="fw-bold mb-3"></div><ul class="list-unstyled m-0"></ul></div>';
@@ -342,6 +343,33 @@ document.addEventListener('submit', (e) => {
     const slot = document.querySelector('[data-check-slot]');
     if (slot) { box.classList.add('is-inline'); slot.replaceChildren(box); document.querySelectorAll('.z-result-wrap, [data-check-slot] ~ .card').forEach((el) => el.remove()); box.scrollIntoView({ block: 'center', behavior: 'smooth' }); } else document.body.append(box);
     [...ul.children].forEach((li, i) => setTimeout(() => { li.classList.add('is-done'); li.firstChild.className = 'ti ti-circle-check text-green me-2'; }, 450 * (i + 1)));
+    // Checked in the background: the page stays, only the steps, the form's top line and the result change.
+    const started = Date.now();
+    const minWait = 450 * (rules.length + 1);
+    fetch(form.action, { method: 'POST', body: new URLSearchParams(new FormData(form)), headers: { Accept: 'text/html' } })
+      .then((r) => r.text())
+      .then((html) => new Promise((ok) => setTimeout(() => ok(html), Math.max(0, minWait - (Date.now() - started)))))
+      .then((html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const newForm = doc.querySelector('form[data-check-anim]');
+        if (!newForm) throw new Error('no form');
+        const newSteps = doc.querySelector('[data-steps]');
+        if (steps && newSteps) steps.replaceWith(newSteps);
+        form.className = newForm.className;
+        form.querySelector('.z-folded-line')?.remove();
+        const line = newForm.querySelector('.z-folded-line');
+        if (line) form.prepend(line);
+        form.querySelectorAll('.card-body > .alert').forEach((x) => x.remove());
+        const body = form.querySelector('.card-body');
+        [...newForm.querySelectorAll('.card-body > .alert')].reverse().forEach((x) => body.prepend(x));
+        // Everything after the form in the column comes from the answer.
+        const col = form.parentElement;
+        while (form.nextElementSibling) form.nextElementSibling.remove();
+        let n = newForm.nextElementSibling;
+        while (n) { const next = n.nextElementSibling; col.append(n); n = next; }
+        (col.querySelector('.z-result-wrap, .z-result, [data-check-slot] ~ .card') || form).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      })
+      .catch(() => { form.removeAttribute('data-check-anim'); HTMLFormElement.prototype.submit.call(form); });
   });
 })();
 
@@ -376,7 +404,7 @@ document.addEventListener('submit', (e) => {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelector('.z-review-filters.show')?.classList.remove('show'); });
 
 // Submit page: after a check the form folds to one line; Change opens it again.
-document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-unfold]'); if (!b) return; const f = b.closest('form'); f.classList.remove('z-form-folded'); f.querySelector('#entries')?.focus(); });
+document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-unfold]'); if (!b) return; const f = document.querySelector('form[data-check-anim]'); if (!f) return; f.classList.remove('z-form-folded'); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); f.querySelector('#entries')?.focus(); });
 
 // Sortable tables (table[data-sortable]): a click on a heading sorts by that column; again reverses.
 document.addEventListener('click', (e) => {
@@ -434,3 +462,19 @@ document.addEventListener('click', (e) => {
   pop.style.top = `${r.bottom + 6}px`;
 });
 window.addEventListener('scroll', () => document.querySelectorAll('.z-note-btn.is-open').forEach((b) => b.classList.remove('is-open')), { passive: true });
+
+// By participant: a click on a heading sorts the people (each keeps their entries under them).
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest && e.target.closest('.z-psort');
+  if (!btn) return;
+  const head = btn.closest('tr');
+  const body = head.parentNode;
+  const i = Number(btn.dataset.psort);
+  const desc = btn.dataset.kind === 'num' && i !== 1 ? btn.getAttribute('aria-sort') !== 'descending' : btn.getAttribute('aria-sort') === 'ascending';
+  head.querySelectorAll('.z-psort').forEach((b) => b.removeAttribute('aria-sort'));
+  btn.setAttribute('aria-sort', desc ? 'descending' : 'ascending');
+  const groups = [...body.querySelectorAll('tr.z-group-row')].map((row) => ({ row, rows: [...body.querySelectorAll(`tr[data-group="${row.dataset.groupToggle}"]`)] }));
+  const val = (g) => { const cell = g.row.querySelector('.z-pgrid').children[i]; return btn.dataset.kind === 'num' ? Number(cell.dataset.v || 0) : cell.textContent.trim().toLowerCase(); };
+  groups.sort((a, b) => { const x = val(a), y = val(b); const c = typeof x === 'number' ? x - y : x.localeCompare(y); return desc ? -c : c; });
+  groups.forEach((g) => { body.appendChild(g.row); g.rows.forEach((r) => body.appendChild(r)); });
+});

@@ -10,37 +10,43 @@
   if (typeConfig.createdDuringEventOnly) rules.push(t(typeConfig.allowExpansions ? 'Created or expanded during the event' : 'Created during the event'));
   if (typeConfig.requiredProperties && typeConfig.requiredProperties.length) rules.push(t('Required properties: {list}', { list: typeConfig.requiredProperties.join(', ') }));
   if (typeConfig.minStatements) rules.push(t('At least {n} statements', { n: typeConfig.minStatements }));
+  if (typeConfig.entityTypes && typeConfig.entityTypes.length) rules.push(t('Kinds: {list}', { list: typeConfig.entityTypes.join(', ') }));
+  if (typeConfig.minQualityLevel != null && contest.type === 'proofread') rules.push(t('At least “{level}”', { level: t(['without text', 'not proofread', 'problematic', 'proofread', 'validated'][typeConfig.minQualityLevel] || '') }));
+  if (typeConfig.indexPages && typeConfig.indexPages.length) rules.push(t('From the books: {list}', { list: typeConfig.indexPages.join(', ') }));
+  if (typeConfig.editedDuringEventOnly) rules.push(t('Changed during the event'));
+  if (typeConfig.allowedLicenses && typeConfig.allowedLicenses.length) rules.push(t('Licences: {list}', { list: typeConfig.allowedLicenses.map((l) => ({ pd: 'PD', cc0: 'CC0', ccbysa: 'CC BY-SA', ccby: 'CC BY' }[l] || l)).join(', ') }));
+  if (typeConfig.fileFormats && typeConfig.fileFormats.length) rules.push(t('Formats: {list}', { list: typeConfig.fileFormats.map((f) => f.toUpperCase()).join(', ') }));
+  if (locals.eligibleList) rules.push(t("Only articles on the event's list"));
+  const softRules = typeConfig.warnOnly || [];
+  const bypass = can('maintainSite');
 %>
 <%- include('../../partials/contestHeader', { active: 'submit' }) %>
 <div class="page-body"><div class="container-xl">
 
-  <div class="row row-cards">
-    <div class="col-lg-8">
+  <div class="z-submit-wrap">
       <% const stepNow = items ? 3 : 1; const anyOk = items && items.some((i) => i.ok); %>
-      <ol class="z-steps mb-3" data-steps>
+      <ol class="z-steps mb-4" data-steps>
         <li class="<%= stepNow > 1 ? 'is-done' : 'is-now' %>"><span>১</span><%= t('Title') %></li>
         <li class="<%= stepNow > 2 ? 'is-done' : '' %>" data-step-check><span>২</span><%= t('Check') %></li>
         <li class="<%= stepNow === 3 ? (anyOk ? 'is-now' : 'is-bad') : '' %>"><span>৩</span><%= t('Submit') %></li>
       </ol>
-      <form method="post" action="<%= base %>/submit/preview" class="card<%= items ? ' z-form-folded' : '' %>" data-check-anim>
+      <form method="post" action="<%= base %>/submit/preview" class="z-submit-form<%= items ? ' z-form-folded' : '' %>" data-check-anim>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <% if (items) { %><div class="z-folded-line"><i class="ti ti-file-text"></i><span class="z-folded-sum text-truncate"><%= String(text || '').split(/\r?\n/).filter(Boolean).join(' · ') %></span><button type="button" class="btn btn-sm btn-ghost-primary ms-auto" data-unfold><i class="ti ti-pencil me-1"></i><%= t('Change') %></button></div><% } %>
-        <div class="card-body">
+        <% if (items) { %><div class="z-folded-line"><i class="ti ti-file-text"></i><span class="z-folded-sum text-truncate"><%= String(text || '').split(/\r?\n/).filter(Boolean).join(' · ') %></span></div><% } %>
+        <div class="z-submit-main">
           <% if (error) { %><div class="alert alert-danger" role="alert"><i class="ti ti-alert-circle me-1"></i><%= error %></div><% } %>
           <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= t(window.reason) %><%= canOthers ? ' ' + t('As an organizer you can still submit for participants.') : '' %></div><% } %>
-          <div class="mb-3">
-            <label class="form-label" for="entries"><%= t('Title') %></label>
-              <div class="z-suggest"><input class="form-control" id="entries" name="entries" value="<%= text %>" autocomplete="off" spellcheck="false" placeholder="<%= t('Article title') %>" data-suggest="<%= (eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki }]).map((w) => wikiHost(w.wiki)).filter(Boolean).join(',') %>" data-suggest-ns="<%= contest.type === 'writing' ? 0 : contest.type === 'photo' ? 6 : 0 %>"><div class="z-suggest-list list-group" hidden></div></div>
+          <div class="z-submit-bar">
+            <i class="ti ti-file-text z-submit-bar-icon" aria-hidden="true"></i>
+            <div class="z-suggest flex-fill"><input class="z-submit-input" id="entries" name="entries" value="<%= text %>" autocomplete="off" spellcheck="false" aria-label="<%= t('Article title') %>" placeholder="<%= t('Article title') %>" data-suggest="<%= (eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki }]).map((w) => wikiHost(w.wiki)).filter(Boolean).join(',') %>" data-suggest-ns="<%= contest.type === 'writing' ? 0 : contest.type === 'photo' ? 6 : 0 %>"><div class="z-suggest-list list-group" hidden></div></div>
+            <button class="btn btn-primary z-submit-go" type="submit"><i class="ti ti-search me-1"></i><%= t("Check entries") %></button>
           </div>
-          <% if (canOthers) { %>
-            <div class="mb-3">
-              <label class="form-label" for="participant"><%= t("On behalf of") %> <span class="text-secondary fw-normal"><%= t("(optional)") %></span></label>
-              <select class="form-select" id="participant" name="participant" data-picker="user" placeholder="<%= t("Search participants…") %>"><% if (participant) { %><option value="<%= participant %>" selected><%= participant %></option><% } %></select>
-            </div>
-          <% } %>
-        </div>
-        <div class="card-footer d-flex align-items-center">
-          <button class="btn btn-primary ms-auto" type="submit"><i class="ti ti-search me-1"></i><%= t("Check entries") %></button>
+          <div class="z-submit-rules" data-check-rules>
+            <span class="z-rule-where"><i class="ti ti-world"></i><%= (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiLocal).join(', ') %></span>
+            <% rules.forEach((r) => { %><span class="z-rule" data-rule><i class="ti ti-check"></i><%= r %></span><% }) %>
+            <% if (bypass) { %><span class="z-rule is-note" title="<%= t('As a superuser you can submit past any rule.') %>"><i class="ti ti-shield-check"></i><%= t('Superuser') %></span><% } %>
+          </div>
+          <div hidden data-check-steps data-title="<%= t('Checking the requirements…') %>"></div>
         </div>
       </form>
 
@@ -129,27 +135,17 @@
               <input type="hidden" name="entries" value="<%= items.filter((i) => i.ok).map((i) => i.input).join('\n') %>">
               <input type="hidden" name="participant" value="<%= participant %>">
               <a class="btn btn-ghost-primary" href="<%= another %>"><i class="ti ti-plus me-1"></i><%= t('Submit another') %></a>
+              <button type="button" class="btn btn-ghost-secondary" data-unfold><i class="ti ti-pencil me-1"></i><%= t('Change') %></button>
               <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-check me-1"></i><%= tn('Submit {n} entry', 'Submit {n} entries', okCount) %></button>
             </form>
           <% } else { %>
-            <div class="card-footer d-flex z-result-actions">
-              <a class="btn btn-primary mx-auto" href="<%= another %>"><i class="ti ti-plus me-1"></i><%= t('Submit another') %></a>
+            <div class="card-footer d-flex gap-2 justify-content-center z-result-actions">
+              <button type="button" class="btn btn-ghost-secondary" data-unfold><i class="ti ti-pencil me-1"></i><%= t('Change') %></button>
+              <a class="btn btn-primary" href="<%= another %>"><i class="ti ti-plus me-1"></i><%= t('Submit another') %></a>
             </div>
           <% } %>
         </div>
       <% } %>
-    </div>
-
-    <div class="col-lg-4">
-      <div class="card">
-        <div class="card-header"><h3 class="card-title"><%= t("What's accepted") %></h3></div>
-        <div hidden data-check-steps data-title="<%= t('Checking the requirements…') %>"></div>
-        <div class="list-group list-group-flush">
-          <div class="list-group-item"><%= t('{type} on {wikis}', { type: t(EVENT_TYPES[contest.type].label), wikis: (eventWikis.length ? eventWikis.map((w) => w.wiki) : [contest.primaryWiki]).map(wikiLocal).join(', ') }) %></div>
-          <% rules.forEach((r) => { %><div class="list-group-item"><i class="ti ti-check text-green me-1"></i><%= r %></div><% }) %>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 </div>

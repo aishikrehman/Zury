@@ -83,7 +83,6 @@
     <div class="<%= hasSide ? 'col-lg-8' : 'col-12' %>">
       <% if (stats) { %>
         <%- include('../../partials/eventStats', { stats, part: 'tiles', wide: !hasSide }) %>
-        <%- include('../../partials/eventStats', { stats, part: 'charts' }) %>
       <% } %>
       <% if (jury) { %><%- include('../../partials/juryProgress', { jury }) %><% } %>
       <% if (myEntries && myEntries.entries.length) { %><%- include('../../partials/myEntries', { my: myEntries }) %><% } %>

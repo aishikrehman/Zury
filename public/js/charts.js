@@ -4,6 +4,9 @@
   const nodes = document.querySelectorAll('[data-chart]');
   if (!nodes.length) return;
 
+  // Numbers in the page's language (Bangla digits on the Bangla interface).
+  const NUM = new Intl.NumberFormat(document.documentElement.dataset.locale || document.documentElement.lang || undefined);
+  const num = (v) => (typeof v === 'number' ? NUM.format(v) : v);
   const color = (name) => (name.startsWith('#') || name.startsWith('var(') ? name : `var(--tblr-${name})`);
 
   function build(spec) {
@@ -22,7 +25,7 @@
       colors: (spec.colors || ['primary']).map(color),
       dataLabels: { enabled: false },
       legend: { show: Boolean(spec.legend), position: 'bottom', offsetY: 8, markers: { width: 10, height: 10, radius: 100 }, itemMargin: { horizontal: 8, vertical: 6 } },
-      tooltip: { theme: 'dark', fillSeriesColor: false },
+      tooltip: { theme: 'dark', fillSeriesColor: false, y: { formatter: num } },
       grid: { strokeDashArray: 4, padding: sparkline ? {} : { top: -20, right: 0, left: -4, bottom: -4 } },
     };
 
@@ -30,9 +33,9 @@
       config.stroke = { width: 2, lineCap: 'round', curve: 'smooth' };
       if (spec.type === 'area') config.fill = { opacity: 0.16, type: 'solid' };
       config.xaxis = { type: 'datetime', categories: spec.labels, labels: { padding: 0 }, tooltip: { enabled: false }, axisBorder: { show: false } };
-      config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? v : '') } };
+      config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? num(v) : '') } };
       if (spec.dualAxis && spec.series.length > 1) {
-        const fmt = (v) => (Number.isInteger(v) ? v.toLocaleString() : '');
+        const fmt = (v) => (Number.isInteger(v) ? num(v) : '');
         config.yaxis = [
           { seriesName: spec.series[0].name, min: 0, forceNiceScale: true, labels: { padding: 4, formatter: fmt }, title: { text: spec.series[0].name, style: { fontWeight: 500 } } },
           { seriesName: spec.series[1].name, opposite: true, min: 0, forceNiceScale: true, labels: { padding: 4, formatter: fmt }, title: { text: spec.series[1].name, style: { fontWeight: 500 } } },
@@ -48,10 +51,10 @@
       config.plotOptions = { bar: { columnWidth: (spec.labels || []).length < 4 ? '22%' : '50%', barHeight: '62%', borderRadius: 4, horizontal: Boolean(spec.horizontal), distributed: Boolean(spec.distributed) } };
       if (spec.stacked) { config.chart.stacked = true; config.plotOptions.bar.borderRadius = 2; }
       config.xaxis = { categories: spec.labels, labels: { padding: 0 }, tooltip: { enabled: false }, axisBorder: { show: false } };
-      config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? v : '') } };
+      config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? num(v) : '') } };
       if (spec.distributed) config.legend.show = false;
       // Horizontal bars: the names on the left axis as they are; numbers along the bottom.
-      if (spec.horizontal) { config.yaxis = { labels: { maxWidth: 150, style: { fontSize: '12px' }, formatter: (v) => { const s = String(v); return s.length > 14 ? s.slice(0, 13) + '…' : s; } } }; config.grid = { ...(config.grid || {}), padding: { left: 8, right: 8 } }; config.xaxis.labels = { padding: 0, formatter: (v) => (Number.isInteger(Number(v)) ? v : '') }; }
+      if (spec.horizontal) { config.yaxis = { labels: { maxWidth: 150, style: { fontSize: '13px' }, formatter: (v) => { const s = String(v); return s.length > 14 ? s.slice(0, 13) + '…' : s; } } }; config.grid = { ...(config.grid || {}), padding: { left: 8, right: 8 } }; config.xaxis.labels = { padding: 0, formatter: (v) => (Number.isInteger(Number(v)) ? v : '') }; }
     }
     if (spec.type === 'donut' || spec.type === 'pie') {
       config.labels = spec.labels;
@@ -64,7 +67,7 @@
         radialBar: {
           hollow: { size: '62%' },
           track: { background: 'var(--tblr-gray-200)' },
-          dataLabels: { name: { show: Boolean(spec.label), offsetY: 20 }, value: { offsetY: -8, fontSize: '1.5rem', fontWeight: 600, formatter: (v) => `${v}%` } },
+          dataLabels: { name: { show: Boolean(spec.label), offsetY: 20 }, value: { offsetY: -8, fontSize: '1.5rem', fontWeight: 600, formatter: (v) => `${num(Math.round(v))}%` } },
         },
       };
       config.labels = [spec.label || ''];
