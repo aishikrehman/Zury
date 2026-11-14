@@ -18,7 +18,7 @@
     <div class="col-lg-8">
       <% const stepNow = items ? 3 : 1; const anyOk = items && items.some((i) => i.ok); %>
       <ol class="z-steps mb-3" data-steps>
-        <li class="<%= stepNow > 1 ? 'is-done' : 'is-now' %>"><span>১</span><%= t(mass ? 'Titles' : 'Title') %></li>
+        <li class="<%= stepNow > 1 ? 'is-done' : 'is-now' %>"><span>১</span><%= t('Title') %></li>
         <li class="<%= stepNow > 2 ? 'is-done' : '' %>" data-step-check><span>২</span><%= t('Check') %></li>
         <li class="<%= stepNow === 3 ? (anyOk ? 'is-now' : 'is-bad') : '' %>"><span>৩</span><%= t('Submit') %></li>
       </ol>
@@ -29,12 +29,8 @@
           <% if (error) { %><div class="alert alert-danger" role="alert"><i class="ti ti-alert-circle me-1"></i><%= error %></div><% } %>
           <% if (!window.open) { %><div class="alert alert-warning"><i class="ti ti-clock me-1"></i><%= t(window.reason) %><%= canOthers ? ' ' + t('As an organizer you can still submit for participants.') : '' %></div><% } %>
           <div class="mb-3">
-            <label class="form-label" for="entries"><%= t(mass ? 'Titles, one per line' : 'Title') %></label>
-            <% if (mass) { %>
-              <textarea class="form-control font-monospace" id="entries" name="entries" rows="8" placeholder="<%= t('One title per line') %>"><%= text %></textarea>
-            <% } else { %>
+            <label class="form-label" for="entries"><%= t('Title') %></label>
               <div class="z-suggest"><input class="form-control" id="entries" name="entries" value="<%= text %>" autocomplete="off" spellcheck="false" placeholder="<%= t('Article title') %>" data-suggest="<%= (eventWikis.length ? eventWikis : [{ wiki: contest.primaryWiki }]).map((w) => wikiHost(w.wiki)).filter(Boolean).join(',') %>" data-suggest-ns="<%= contest.type === 'writing' ? 0 : contest.type === 'photo' ? 6 : 0 %>"><div class="z-suggest-list list-group" hidden></div></div>
-            <% } %>
           </div>
           <% if (canOthers) { %>
             <div class="mb-3">
@@ -43,8 +39,8 @@
             </div>
           <% } %>
         </div>
-        <div class="card-footer text-end">
-          <button class="btn btn-primary" type="submit"><i class="ti ti-search me-1"></i><%= t("Check entries") %></button>
+        <div class="card-footer d-flex align-items-center">
+          <button class="btn btn-primary ms-auto" type="submit"><i class="ti ti-search me-1"></i><%= t("Check entries") %></button>
         </div>
       </form>
 

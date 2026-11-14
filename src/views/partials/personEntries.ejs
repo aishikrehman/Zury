@@ -1,0 +1,18 @@
+<% // A person's entries as a list: title (to the wiki), status, words, date, and notes when shown. locals: entries %>
+<% const label = { accepted: t('Accepted'), pending: t('Pending'), rejected: t('Not accepted') }; %>
+<div class="z-person-entries">
+  <% if (!entries.length) { %><div class="text-secondary small p-3"><%= t('No entries.') %></div><% } %>
+  <% entries.forEach((e) => { %>
+    <div class="z-pe is-<%= e.group %>">
+      <div class="z-pe-main">
+        <a href="<%= e.url %>" target="_blank" rel="noopener" class="z-pe-title"><%= e.title %></a>
+        <div class="z-pe-meta">
+          <span class="z-pe-status"><%= label[e.group] || e.group %></span>
+          <% if (e.wordCount != null) { %><span><i class="ti ti-align-justified"></i><%= t('{n} words', { n: formatNumber(e.wordCount) }) %></span><% } %>
+          <span><i class="ti ti-calendar"></i><%= formatDate(e.submittedAt) %></span>
+        </div>
+        <% (e.notes || []).forEach((n) => { %><div class="z-review-note small mt-1"><i class="ti ti-message-2 me-1 text-secondary"></i><%= n %></div><% }) %>
+      </div>
+    </div>
+  <% }) %>
+</div>

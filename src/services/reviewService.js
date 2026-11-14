@@ -271,12 +271,13 @@ async function saveReview({ actor, contest, settings, submission, decision, mark
     }
     // The participant hears when their entry is decided (if the event notifies participants).
     // Not accepted: the bell rings by itself. Otherwise the reviewer chooses (bell, on-wiki message or nothing).
-    const ring = notify === 'bell' || notify === 'onwiki' || (notify === 'auto' && status === 'rejected');
-    if (ring && status !== submission.status && ['approved', 'rejected'].includes(status) && settings.participantNotificationsEnabled !== false && submission.participantId !== actor.id) {
+    const said = String(comment || '').trim();
+    const ring = notify === 'bell' || notify === 'onwiki' || (notify === 'auto' && (status === 'rejected' || said));
+    if (ring && (status !== submission.status || said) && ['approved', 'rejected'].includes(status) && settings.participantNotificationsEnabled !== false && submission.participantId !== actor.id) {
       await notifications.notify(submission.participantId, {
         kind: 'entry.decided',
-        message: note || (status === 'approved' ? 'Your entry “{title}” in {event} was accepted.' : 'Your entry “{title}” in {event} was not accepted.'),
-        params: { title: submission.title, event: contest.title },
+        message: note || (status === 'approved' ? (said ? 'Your entry “{title}” in {event} was accepted. Note: {note}' : 'Your entry “{title}” in {event} was accepted.') : (said ? 'Your entry “{title}” in {event} was not accepted. Reason: {note}' : 'Your entry “{title}” in {event} was not accepted.')),
+        params: { title: submission.title, event: contest.title, note: said.slice(0, 300) },
         link: `${pathOf(contest)}/submissions?mine=1`,
         contestId: contest.id,
       }, tx);
@@ -337,7 +338,9 @@ async function leaderboard({ contest, settings, wiki }) {
   } else {
     // Added up by the database, one row per person: fast with 100,000+ entries.
     // Everyone who submitted is listed; points and words come from the accepted entries.
-    const jury = settings.juryReviewEnabled;
+    // Reviewed events count only what reviewers accepted. An event can be reviewed with the
+    // setting off (Fountain imports start that way), so any review at all counts as reviewed.
+    const jury = settings.juryReviewEnabled || (await prisma.review.count({ where: { contestId: contest.id }, take: 1 })) > 0;
     const byPoints = jury && (settings.rankBy ? settings.rankBy === 'points' : markScheme(settings).length > 0);
     const [all, counted] = await Promise.all([
       prisma.submission.groupBy({ by: ['participantId'], where: { ...where, status: { notIn: ['withdrawn'] } }, _count: { _all: true } }),
@@ -353,6 +356,12 @@ async function leaderboard({ contest, settings, wiki }) {
       const row = rows.get(g.participantId) || { participantId: g.participantId, submitted: g._count._all };
       rows.set(g.participantId, { ...row, entries: g._count._all, points: byPoints ? g._sum.score || 0 : g._count._all, words: g._sum.wordCount || 0 });
     }
+  }
+  // Organizers and reviewers aren't ranked unless the event lets them take part.
+  const barred = [...(settings.allowJuryParticipation ? [] : ['jury']), ...(settings.allowOrganizerParticipation ? [] : ['organizer'])];
+  if (barred.length && rows.size) {
+    const staff = await prisma.contestMembership.findMany({ where: { contestId: contest.id, role: { in: barred }, status: 'active', userId: { in: [...rows.keys()] } }, select: { userId: true } });
+    for (const s of staff) rows.delete(s.userId);
   }
   // Ranking by words only means something when the entries have word counts.
   if (byWords && ![...rows.values()].some((r) => r.words > 0)) byWords = false;

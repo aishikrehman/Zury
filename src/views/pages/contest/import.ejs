@@ -1,0 +1,98 @@
+<%
+  const sourceTabs = [['wiki', 'brand-wikipedia', t('From a wiki page')], ['text', 'file-spreadsheet', t('CSV or plain text')], ['fountain', 'droplet', t('From Fountain')]];
+  const statusBadge = (s) => s === 'approved' ? `<span class="badge bg-green-lt">${h(t('Accepted'))}</span>` : s === 'rejected' ? `<span class="badge bg-red-lt">${h(t('Not accepted'))}</span>` : '';
+%>
+<%- include('../../partials/contestHeader', { active: 'configuration' }) %>
+<div class="page-body"><div class="container-xl">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <h2 class="m-0"><i class="ti ti-file-import me-2"></i><%= t('Import entries') %></h2>
+  </div>
+  <p class="text-secondary"><%= t('Bring entries in from a list on a wiki page, a CSV or plain list, or a Fountain editathon. You see everything first; nothing is saved until you confirm.') %></p>
+
+  <form method="post" action="<%= base %>/import/preview" class="card z-imp">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="card-header">
+      <div class="nav nav-pills z-imp-tabs" role="tablist">
+        <% sourceTabs.forEach(([key, icon, label]) => { %>
+          <label class="nav-link<%= f.source === key ? ' active' : '' %>"><input type="radio" name="source" value="<%= key %>" class="visually-hidden"<%= f.source === key ? ' checked' : '' %> data-imp-tab><i class="ti ti-<%= icon %> me-1"></i><%= label %></label>
+        <% }) %>
+      </div>
+    </div>
+    <div class="card-body">
+      <% if (error) { %><div class="alert alert-danger"><i class="ti ti-alert-circle me-1"></i><%= t(error) %></div><% } %>
+
+      <div class="z-imp-pane" data-pane="wiki">
+        <div class="row g-2">
+          <% if (wikis.length > 1) { %>
+            <div class="col-md-3"><label class="form-label" for="imp-wiki"><%= t('Wiki') %></label><select class="form-select" id="imp-wiki" name="wiki"><% wikis.forEach((w) => { %><option value="<%= w %>"<%= f.wiki === w ? ' selected' : '' %>><%= wikiLocal(w) %></option><% }) %></select></div>
+          <% } else { %><input type="hidden" name="wiki" value="<%= wikis[0] %>"><% } %>
+          <div class="col"><label class="form-label" for="imp-page"><%= t('Page with the list') %></label><input class="form-control" id="imp-page" name="page" value="<%= f.page %>" placeholder="<%= t('Page name or address, e.g. Wikipedia:Event/List') %>"></div>
+        </div>
+        <div class="form-hint mt-1"><%= t('Every listed title is read, whether written plainly or as [[links]]. Files, categories and other namespaces are left out.') %></div>
+      </div>
+
+      <div class="z-imp-pane" data-pane="text">
+        <label class="form-label" for="imp-text"><%= t('Paste CSV or a list') %></label>
+        <textarea class="form-control font-monospace" id="imp-text" name="text" rows="8" placeholder="article,participant,status,reviewer,note"><%= f.text %></textarea>
+        <div class="form-hint mt-1"><%= t('Columns: article, participant, status, reviewer, note (a header row in English or Bangla, or in that order). Only the article is needed; one title per line also works. Status: accepted or not accepted.') %></div>
+        <label class="btn btn-sm mt-2"><i class="ti ti-upload me-1"></i><%= t('Load a file') %><input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" class="visually-hidden" data-imp-file></label>
+      </div>
+
+      <div class="z-imp-pane" data-pane="fountain">
+        <label class="form-label" for="imp-code"><%= t('Fountain editathon') %></label>
+        <input class="form-control" id="imp-code" name="code" value="<%= f.code %>" placeholder="<%= t('Fountain editathon code or address') %>">
+        <div class="form-hint mt-1"><%= t('Its articles come with their status and each juror’s review, marked as reviewed on Fountain.') %></div>
+      </div>
+    </div>
+    <div class="card-footer text-end">
+      <button class="btn btn-primary" type="submit"><i class="ti ti-search me-1"></i><%= t('Check') %></button>
+    </div>
+  </form>
+
+  <% if (preview) { const s = preview.summary; %>
+    <div class="card mt-3">
+      <div class="card-header flex-wrap gap-2">
+        <h3 class="card-title"><%= t('Before importing') %></h3>
+        <div class="d-flex flex-wrap gap-1 ms-auto z-imp-sum">
+          <span class="badge bg-green-lt"><%= t('{n} ready', { n: formatNumber(s.ready) }) %></span>
+          <% if (s.duplicate) { %><span class="badge bg-secondary-lt"><%= t('{n} already in the event', { n: formatNumber(s.duplicate) }) %></span><% } %>
+          <% if (s.missing) { %><span class="badge bg-red-lt"><%= t('{n} not found', { n: formatNumber(s.missing) }) %></span><% } %>
+          <% if (s.problem) { %><span class="badge bg-yellow-lt"><%= t('{n} with problems', { n: formatNumber(s.problem) }) %></span><% } %>
+          <% if (s.noParticipant) { %><span class="badge bg-orange-lt"><%= t('{n} without a participant (credited to you)', { n: formatNumber(s.noParticipant) }) %></span><% } %>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table z-imp-table">
+          <thead><tr><th><%= t('Entry') %></th><th><%= t('Participant') %></th><th><%= t('Status') %></th><th><%= t('Notes') %></th></tr></thead>
+          <tbody>
+            <% preview.rows.forEach((r) => { %>
+              <tr class="is-<%= r.ok ? 'ok' : r.kind %>">
+                <td class="z-imp-title">
+                  <i class="ti ti-<%= r.ok ? 'circle-check text-green' : r.kind === 'duplicate' ? 'copy text-secondary' : 'circle-x text-red' %> me-1"></i>
+                  <% if (r.meta) { %><a href="<%= r.meta.url %>" target="_blank" rel="noopener"><%= r.meta.title %></a><% if (r.meta.wordCount != null) { %> <span class="text-secondary small">· <%= t('{n} words', { n: formatNumber(r.meta.wordCount) }) %></span><% } %><% } else { %><span class="font-monospace"><%= r.article %></span><% } %>
+                </td>
+                <td class="z-imp-person"><%= r.participant || '—' %><% if (r.participantFrom === 'creator') { %> <span class="text-secondary small">(<%= t('creator') %>)</span><% } %></td>
+                <td class="z-imp-status"><% if (r.status) { %><%- statusBadge(r.status) %> <span class="text-secondary small"><%= t('given') %></span><% } else if (r.ok) { %><span class="text-secondary small"><%= t('Waiting for review') %></span><% } %></td>
+                <td class="z-imp-notes small">
+                  <% (r.reasons || []).forEach((x) => { %><div class="text-red"><i class="ti ti-x me-1"></i><%= t(x) %></div><% }) %>
+                  <% (r.checks || []).forEach((x) => { %><div class="text-yellow"><i class="ti ti-alert-triangle me-1"></i><%= t('Check') %>: <%= t(x) %></div><% }) %>
+                  <% if (r.reviews && r.reviews.length) { %><div class="text-secondary"><i class="ti ti-gavel me-1"></i><%= r.reviews.map((v) => v.reviewer + ' ' + (v.decision === 'accept' ? '✓' : '✗')).join(', ') %> <span class="badge bg-azure-lt"><%= t('Fountain') %></span></div><% } %>
+                  <% if (!r.reviews && r.reviewer) { %><div class="text-secondary"><i class="ti ti-gavel me-1"></i><%= r.reviewer %> <span class="badge bg-azure-lt"><%= t('reviewed elsewhere') %></span></div><% } %>
+                  <% if (r.note) { %><div class="text-secondary"><i class="ti ti-message-2 me-1"></i><%= r.note %></div><% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <% if (s.ready) { %>
+        <form method="post" action="<%= base %>/import" class="card-footer d-flex align-items-center gap-2" data-once>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% ['source', 'page', 'text', 'code', 'wiki'].forEach((k) => { %><input type="hidden" name="<%= k %>" value="<%= f[k] %>"><% }) %>
+          <span class="text-secondary small"><%= t('You are the submitter; each entry is credited to its participant.') %></span>
+          <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-file-import me-1"></i><%= t('Import {n} entries', { n: formatNumber(s.ready) }) %></button>
+        </form>
+      <% } %>
+    </div>
+  <% } %>
+</div></div>

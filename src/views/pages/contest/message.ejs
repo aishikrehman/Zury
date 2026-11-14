@@ -62,7 +62,7 @@
         <% if (people && people.length) { %>
           <div class="list-group list-group-flush" style="max-height: 420px; overflow: auto">
             <% people.forEach((u) => { %>
-              <div class="list-group-item py-2 d-flex justify-content-between"><a href="<%= userPath(u.username) %>"><%= u.username %></a><span class="text-secondary small"><%= u.wiki && eventWikis.length > 1 && !wikiScope ? wikiLocal(u.wiki) : '' %></span></div>
+              <div class="list-group-item py-2 d-flex justify-content-between"><a href="<%= `${base}/user/${nameInPath(u.username)}` %>"><%= u.username %></a><span class="text-secondary small"><%= u.wiki && eventWikis.length > 1 && !wikiScope ? wikiLocal(u.wiki) : '' %></span></div>
             <% }) %>
           </div>
         <% } else { %>

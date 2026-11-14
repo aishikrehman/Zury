@@ -8,6 +8,8 @@ const messageController = require('../controllers/messageController');
 const trackingController = require('../controllers/trackingController');
 const sessionController = require('../controllers/sessionController');
 const reviewController = require('../controllers/reviewController');
+const importController = require('../controllers/importController');
+const personController = require('../controllers/personController');
 const { takesEntries, EVENT_TYPES } = require('../events/eventTypes');
 const { loadContest, eventAddresses, requirePermission, requireEventWide } = require('../middleware/permissions');
 const { requireAuth } = require('../middleware/auth');
@@ -55,13 +57,18 @@ contest.post('/status', requireEventWide('manageEvent'), contestController.chang
 contest.post('/delete', requireEventWide('deleteAnything'), contestController.destroy);
 contest.get('/export/:dataset([a-z]+).:format([a-z]+)', requirePermission('manageEvent', 'exportData'), contestController.exportData);
 // Removing anything is for superusers and Zury administrators (deleteEvent).
-contest.post('/data/clear/:what([a-z]+)', requireEventWide('deleteAnything'), contestController.clearData);
 contest.post('/move', requireEventWide('deleteAnything'), contestController.move);
 
 // Wikis taking part. Requests are open to logged-in users; the rest is for global controllers.
 contest.post('/wikis/request', requireAuth, wikiController.request);
 contest.post('/wikis', requireEventWide('manageEvent'), wikiController.add);
 contest.post('/fountain', requirePermission('importEvents'), fountainController.link);
+// Import entries from a wiki page, a CSV or plain list, or Fountain (organizers).
+// One person's work in this event.
+contest.get('/user/:username', personController.event);
+contest.get('/import', requireEventWide('manageEvent'), importController.page);
+contest.post('/import/preview', requireEventWide('manageEvent'), importController.preview);
+contest.post('/import', requireEventWide('manageEvent'), importController.commit);
 contest.post('/fountain/:wikiId(\\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
 contest.post('/fountain/:wikiId(\\d+)/:action(unlink)', requirePermission('importEvents'), fountainController.unlink);
 contest.post('/fountain/:wikiId(\\d+)/auto', requirePermission('importEvents'), fountainController.setAuto);
@@ -140,6 +147,9 @@ router.get('/series', requirePermission('importEvents'), eventsController.manage
 router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
 router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
 router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnything'), eventsController.seriesAction);
+// One person across a series or an edition.
+router.get(`/series/:series(${SLUG})/user/:username`, personController.group);
+router.get(`/series/:series(${SLUG})/:edition(${SLUG})/user/:username`, personController.group);
 router.get(`/series/:series(${SLUG})/new-edition`, requireAuth, eventsController.newEditionForm);
 router.post(`/series/:series(${SLUG})/new-edition`, requireAuth, eventsController.newEdition);
 router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSeries);

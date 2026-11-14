@@ -70,28 +70,4 @@ function render({ columns, rows }, format, title) {
   throw new Error('Unknown format.');
 }
 
-// What can be cleared, and how many rows each would remove.
-const CLEARABLE = {
-  activity: { label: 'Activity log', count: (id) => prisma.auditLog.count({ where: { contestId: id } }), clear: (id) => prisma.auditLog.deleteMany({ where: { contestId: id } }) },
-  contributions: { label: 'Tracked edits', count: (id) => prisma.contribution.count({ where: { contestId: id } }), clear: (id) => prisma.contribution.deleteMany({ where: { contestId: id } }) },
-  messages: { label: 'Entry history', count: (id) => prisma.submissionHistory.count({ where: { submission: { contestId: id } } }), clear: (id) => prisma.submissionHistory.deleteMany({ where: { submission: { contestId: id } } }) },
-  withdrawn: { label: 'Withdrawn and invalid entries', count: (id) => prisma.submission.count({ where: { contestId: id, status: { in: ['withdrawn', 'invalid'] } } }), clear: (id) => prisma.submission.deleteMany({ where: { contestId: id, status: { in: ['withdrawn', 'invalid'] } } }) },
-  assignments: { label: 'Reviewers assignments', count: (id) => prisma.reviewAssignment.count({ where: { contestId: id } }), clear: (id) => prisma.reviewAssignment.deleteMany({ where: { contestId: id } }) },
-};
-
-async function counts(contestId) {
-  const out = {};
-  for (const [key, c] of Object.entries(CLEARABLE)) out[key] = { label: c.label, count: await c.count(contestId) };
-  return out;
-}
-
-async function clear({ actor, contest, what }) {
-  const c = CLEARABLE[what];
-  if (!c) throw new Error('Unknown data.');
-  const { count } = await c.clear(contest.id);
-  // The one record kept: that it was cleared.
-  await audit.record({ actorId: actor.id, contestId: what === 'activity' ? null : contest.id, action: `eventData.cleared.${what}`, entityType: 'Contest', entityId: contest.id, details: { title: contest.title, removed: count } });
-  return count;
-}
-
-module.exports = { DATASETS, FORMATS, table, render, counts, clear, CLEARABLE };
+module.exports = { DATASETS, FORMATS, table, render };

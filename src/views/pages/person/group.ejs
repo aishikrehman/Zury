@@ -1,0 +1,19 @@
+<%- include('../../partials/pageHeader', { pretitle: edition ? series.title : t('Series'), heading: edition ? edition.title : series.title }) %>
+<div class="page-body"><div class="container-xl">
+  <%- include('../../partials/personTop', { person, totals: data.totals, reviews: data.reviews, rank: null, roles: null, since: null, isSelf }) %>
+  <% data.events.forEach((s) => { %>
+    <div class="card mt-3">
+      <div class="card-header flex-wrap gap-2">
+        <h3 class="card-title"><a href="<%= s.path %>/user/<%= nameInPath(person.username) %>"><%= s.contest.title %></a></h3>
+        <div class="d-flex flex-wrap gap-1 ms-auto small">
+          <% if (s.rank) { %><span class="badge bg-yellow-lt"><%= t('Rank') %> <%= formatNumber(s.rank) %></span><% } %>
+          <span class="badge bg-green-lt"><%= t('{n} accepted', { n: formatNumber(s.totals.accepted) }) %></span>
+          <span class="badge bg-secondary-lt"><%= tn('{n} entry', '{n} entries', s.totals.entries) %></span>
+          <% if (s.totals.wordsAccepted) { %><span class="badge bg-blue-lt"><%= t('{n} words', { n: formatNumber(s.totals.wordsAccepted) }) %></span><% } %>
+        </div>
+      </div>
+      <%- include('../../partials/personEntries', { entries: s.entries.slice(0, 5) }) %>
+      <% if (s.entries.length > 5) { %><div class="card-footer small"><a href="<%= s.path %>/user/<%= nameInPath(person.username) %>"><%= t('All {n} entries', { n: formatNumber(s.entries.length) }) %> <i class="ti ti-arrow-right"></i></a></div><% } %>
+    </div>
+  <% }) %>
+</div></div>

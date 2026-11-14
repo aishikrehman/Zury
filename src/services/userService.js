@@ -1,3 +1,4 @@
+const { isValidTimezone } = require('../utils/time');
 const prisma = require('../config/prisma');
 
 const LANGUAGE_CODE = /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i;
@@ -31,14 +32,6 @@ async function syncFromWikimedia({ wikimediaId, username, homeWiki, registeredAt
   });
 }
 
-function isValidTimezone(tz) {
-  try {
-    new Intl.DateTimeFormat('en', { timeZone: tz });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 // knownLanguage: check against the stored language catalog (permissive if not loaded).
 function validatePreferences({ preferredLanguage, timezone }, knownLanguage = () => true) {

@@ -116,9 +116,11 @@
     // Commons, Wikidata, Meta… have no language: they are listed in the first box
     // and picking one fills in the wiki directly; the second box is not needed.
     const MULTI = 'wiki:';
+    // For Commons and the like the second box stays in view, filled in and locked: read-only,
+    // but still sent with the form (a disabled box would not be, and the wiki would go missing).
     const single = (on) => {
-      row.children[1].hidden = on;
-      row.querySelectorAll('label')[0].textContent = on ? el.dataset.siteLabel || zt('Wiki') : el.dataset.languageLabel || zt('Language');
+      if (on) wikis.lock(); else wikis.unlock();
+      row.children[1].classList.toggle('z-wiki-locked', on);
     };
     const loadWikis = (code, keep) => {
       wikis.clear(true);
@@ -126,14 +128,20 @@
       single(!!code && code.startsWith(MULTI));
       if (code && code.startsWith(MULTI)) {
         const w = multiWikis.find((m) => m.value === code.slice(MULTI.length));
+        wikis.enable();
         if (w) { wikis.addOption(w); wikis.setValue(w.value, true); }
+        wikis.lock();
         return;
       }
       if (!code) return wikis.disable();
       wikis.enable();
       json(`/api/wiki-languages/${encodeURIComponent(code)}`).then((list) => {
+        const fam = el.dataset.family;
+        const SUFFIX = { wikipedia: 'wiki' };
+        if (fam) list = list.filter((w) => w.value.endsWith(SUFFIX[fam] || fam) && !(fam === 'wikipedia' && /(wikibooks|wiktionary|wikisource|wikiquote|wikinews|wikiversity|wikivoyage)$/.test(w.value)));
         wikis.addOptions(list.map((w) => ({ ...w, label: label(w), hint: w.value })));
         if (keep) wikis.setValue(keep, true);
+        else if (fam && list.length === 1) wikis.setValue(list[0].value, true);
       });
     };
 
@@ -166,7 +174,7 @@
     let multiWikis = [];
     Promise.all([json('/api/wiki-languages'), json('/api/wiki-languages/special')]).then(([list, multi]) => {
       multiWikis = multi.map((w) => ({ ...w, label: label(w), hint: w.value }));
-      languages.addOptions(multiWikis.map((w) => ({ ...w, value: MULTI + w.value, group: 'multi' })));
+      if (!el.dataset.family) languages.addOptions(multiWikis.map((w) => ({ ...w, value: MULTI + w.value, group: 'multi' })));
       languages.addOptions(list.filter((l) => l.value !== 'special').map((l) => ({ ...l, group: 'lang', label: label(l), hint: `${l.value} · ${l.count}` })));
       // Nothing is chosen for the person: a plain <select> would otherwise take the first option.
       if (!initial) return languages.clear(true);

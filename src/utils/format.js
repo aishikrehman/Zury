@@ -26,4 +26,10 @@ function eventPath(c) {
   return c.path || `/contest/${c.id}`;
 }
 
-module.exports = { formatDate, formatDateTime, userPath, eventPath };
+// A name as a readable path piece, the way Wikipedia writes titles: spaces as _, letters in
+// any script left as they are (তুষার_হোসেন), only characters that would break the address encoded.
+function nameInPath(name) {
+  return String(name || '').trim().replace(/ /g, '_').replace(/[%?#/&+\\]/g, (c) => encodeURIComponent(c));
+}
+
+module.exports = { formatDate, formatDateTime, userPath, eventPath, nameInPath };

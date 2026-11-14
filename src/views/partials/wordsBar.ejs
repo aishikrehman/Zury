@@ -1,0 +1,8 @@
+<%
+  // Words by status, quietly: a small three-colour bar (exact numbers on hover) and the accepted words.
+  // locals: wb { approved, pending, rejected }, total
+  const w = locals.wb || {};
+  const all = (w.approved || 0) + (w.pending || 0) + (w.rejected || 0) || 1;
+  const pc = (n) => Math.round(((n || 0) / all) * 1000) / 10;
+  const tip = `${t('{n} words accepted', { n: formatNumber(w.approved || 0) })} · ${t('{n} words pending', { n: formatNumber(w.pending || 0) })} · ${t('{n} words not accepted', { n: formatNumber(w.rejected || 0) })}`;
+%><span class="z-wbar-wrap" title="<%= tip %>"><span class="z-wbar" aria-label="<%= tip %>"><i class="is-ok" style="width:<%= pc(w.approved) %>%"></i><i class="is-wait" style="width:<%= pc(w.pending) %>%"></i><i class="is-bad" style="width:<%= pc(w.rejected) %>%"></i></span><span class="z-wbar-ok"><%= t('{n} accepted', { n: formatNumber(w.approved || 0) }) %></span></span>

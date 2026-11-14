@@ -1,5 +1,5 @@
 <div class="empty">
-  <div class="empty-img"><img src="/images/illustrations/<%= typeof art !== 'undefined' ? art : 'empty' %>.svg" height="128" alt=""></div>
+  <div class="empty-img"><img src="/images/illustrations/<%= typeof art !== 'undefined' && art === 'contest' ? 'contest' : 'empty' %>.svg" height="128" alt=""></div>
   <p class="empty-title"><%= title %></p>
   <% if (typeof text !== 'undefined' && text) { %><p class="empty-subtitle text-secondary"><%= text %></p><% } %>
   <% if (typeof action !== 'undefined' && action) { %><div class="empty-action"><%- action %></div><% } %>

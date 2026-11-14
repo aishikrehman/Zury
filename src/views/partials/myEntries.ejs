@@ -4,6 +4,7 @@
 <div class="card mb-3 z-my-needs">
   <div class="card-header">
     <div><h3 class="card-title"><i class="ti ti-message-exclamation me-2"></i><%= t('My entries') %></h3><div class="text-secondary small"><%= t('Not accepted, with feedback or appealed') %></div></div>
+    <div class="card-actions"><a class="small" href="<%= base %>/user/<%= nameInPath(currentUser.username) %>"><i class="ti ti-user me-1"></i><%= t('My page') %></a></div>
   </div>
   <div class="list-group list-group-flush">
     <% needs.slice(0, 50).forEach((e) => { const st = SUBMISSION_STATUSES[e.status] || { label: e.status, color: 'secondary' }; %>

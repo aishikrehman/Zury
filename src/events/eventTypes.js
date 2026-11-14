@@ -7,7 +7,7 @@ const EVENT_TYPES = {
     description: 'Photographers submit their Wikimedia Commons uploads, e.g. Wiki Loves Monuments.',
     defaultWiki: 'commonswiki',
     defaultNamespaces: [6],
-    defaults: { juryReviewEnabled: true, massSubmissionEnabled: true },
+    defaults: { juryReviewEnabled: true },
     fields: [
       { key: 'maxEntriesPerParticipant', label: 'Maximum entries per participant', type: 'int', min: 0, max: 10000, default: 0, help: '0 means no limit.' },
       { key: 'minResolutionMegapixels', label: 'Minimum resolution (megapixels)', type: 'int', min: 0, max: 200, default: 2 },
@@ -101,7 +101,7 @@ Object.assign(EVENT_TYPES, {
     defaultNamespaces: [6],
     activity: true,
     entries: true,
-    defaults: { juryReviewEnabled: false, registrationRequired: true, massSubmissionEnabled: true },
+    defaults: { juryReviewEnabled: false, registrationRequired: true },
     fields: [
       { key: 'meetingPoint', label: 'Meeting point', type: 'string', maxLength: 200, default: '' },
       { key: 'requiredCategory', label: 'Upload category', type: 'string', maxLength: 255, default: '', help: 'Without the "Category:" prefix. Leave blank for none.' },
@@ -120,7 +120,7 @@ Object.assign(EVENT_TYPES, {
     // The Page: namespace on most Wikisources.
     defaultNamespaces: [104],
     entries: true,
-    defaults: { juryReviewEnabled: false, massSubmissionEnabled: true, contributionDiscoveryEnabled: true },
+    defaults: { juryReviewEnabled: false, contributionDiscoveryEnabled: true },
     fields: [
       { key: 'indexPages', label: 'Books (Index pages)', type: 'list', maxItems: 100, maxLength: 255, default: [], help: 'One per line, e.g. "Index:Gitanjali.djvu". Leave empty to accept any book.' },
       { key: 'minQualityLevel', label: 'Lowest accepted level', type: 'int', min: 1, max: 4, default: 3, help: '3 = proofread, 4 = validated.' },
@@ -135,7 +135,7 @@ Object.assign(EVENT_TYPES, {
     defaultWiki: 'commonswiki',
     defaultNamespaces: [6],
     entries: true,
-    defaults: { juryReviewEnabled: false, massSubmissionEnabled: true },
+    defaults: { juryReviewEnabled: false },
     fields: [
       { key: 'partnerInstitution', label: 'Partner institution', type: 'string', maxLength: 200, default: '' },
       { key: 'collectionName', label: 'Collection', type: 'string', maxLength: 200, default: '' },
@@ -151,7 +151,7 @@ Object.assign(EVENT_TYPES, {
     defaultNamespaces: [6],
     activity: true,
     entries: true,
-    defaults: { juryReviewEnabled: false, massSubmissionEnabled: true, registrationRequired: true },
+    defaults: { juryReviewEnabled: false, registrationRequired: true },
     fields: [
       { key: 'holdingInstitution', label: 'Library or archive', type: 'string', maxLength: 200, default: '' },
       { key: 'targetPages', label: 'Target number of pages', type: 'int', min: 0, max: 10000000, default: 0, help: '0 means no target.' },

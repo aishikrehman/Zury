@@ -11,6 +11,12 @@ async function showProfile(req, res, next) {
     if (!profileUser || profileUser.status !== 'active') {
       return res.status(404).render('pages/404', { title: 'User Not Found' });
     }
+    // No public profiles: this page is for its owner (and platform admins). Others see a
+    // person's work on the event, edition or series pages (/EVENT/user/NAME).
+    const own = req.user?.id === profileUser.id;
+    if (!own && !req.permissions?.has('managePlatformRoles')) {
+      return res.status(404).render('pages/404', { title: 'User Not Found' });
+    }
     // Public page: only public events are listed, even to the user themself.
     const events = await contestService.listForUser(profileUser.id, { publicOnly: true });
     res.render('pages/users/profile', {

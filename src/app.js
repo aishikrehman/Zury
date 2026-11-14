@@ -155,8 +155,9 @@ app.use(async (req, res, next) => {
       // The name in its own language when there is one ("বাংলা উইকিপিডিয়া").
       entryUrl: (x) => { if (x.url) return x.url; const h = x.wiki && require('./wiki/wikiUrls').dbnameToHost(x.wiki); return h ? `https://${h}/wiki/${encodeURIComponent(String(x.title).replace(/ /g, '_')).replace(/%3A/g, ':').replace(/%2F/g, '/')}` : '#'; },
       wikiHost: (db) => require('./wiki/wikiUrls').dbnameToHost(db) || '',
-      wikiLocal: (db) => (db ? names.wiki(db).localName || names.wiki(db).name : ''),
-      langLocal: (code) => (code ? names.language(code).localName || names.language(code).name : ''),
+      // In the interface language: English names in English, the local name in Bangla.
+      wikiLocal: (db) => (db ? (req.lang === 'en' ? names.wiki(db).name : names.wiki(db).localName || names.wiki(db).name) : ''),
+      langLocal: (code) => (code ? (req.lang === 'en' ? names.language(code).name : names.language(code).localName || names.language(code).name) : ''),
       // Plain text: "Bangla Wikipedia · বাংলা উইকিপিডিয়া".
       wikiText: (db) => (db ? both(names.wiki(db)) : ''),
       langText: (code) => (code ? both(names.language(code)) : ''),

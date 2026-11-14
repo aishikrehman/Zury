@@ -214,7 +214,7 @@ async function list({ contestId, user, can, status, q, mine, participant, wiki, 
       orderBy: [...(SORTS[sort] || SORTS.submitted)(dir === 'asc' ? 'asc' : 'desc'), { id: 'desc' }],
       skip: (page - 1) * perPage,
       take: perPage,
-      include: { participant: { select: { username: true } }, reviews: { select: { decision: true, juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } } },
+      include: { participant: { select: { username: true } }, reviews: { select: { decision: true, comment: true, juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } } },
     }),
     prisma.submission.count({ where }),
     prisma.submission.groupBy({ by: ['status'], where: base, _count: true }),
@@ -332,6 +332,7 @@ async function listMine(userId, { status = '', contestId = null, q = '', sort = 
     where.OR = [
       { contest: { deletedAt: null, status: { in: ['published', 'upcoming', 'active', 'paused', 'submission_closed', 'under_review'] } } },
       { status: { in: ['rejected', 'disqualified', 'appealed'] } },
+      { reviews: { some: { comment: { not: '' } } } },
     ];
   }
   const [items, byStatus, words, events] = await Promise.all([

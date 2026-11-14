@@ -90,11 +90,41 @@
               </div>
             </div>
           <% } else { %>
+          <% if (!filters.group) { %>
+            <%
+              // All events: in sections — running first, then upcoming (cards), then finished (compact rows).
+              const sectionOf = (c) => STATUS_GROUPS.active.includes(c.status) || c.status === 'paused' ? 'active' : STATUS_GROUPS.upcoming.includes(c.status) || c.status === 'draft' ? 'upcoming' : 'completed';
+              const sections = [['active', t('Running'), 'player-play'], ['upcoming', t('Upcoming'), 'calendar-event'], ['completed', t('Finished'), 'flag-check']];
+            %>
+            <% sections.forEach(([key, label, icon]) => { const list = result.items.filter((c) => sectionOf(c) === key); if (!list.length) return; %>
+              <section class="z-ev-section is-<%= key %>">
+                <h2 class="z-ev-section-head"><i class="ti ti-<%= icon %>"></i><%= label %><span class="z-ev-count"><%= formatNumber(list.length) %></span><a class="ms-auto small" href="/events/<%= key %><%= qs({}) %>"><%= t('Only these') %> <i class="ti ti-arrow-right"></i></a></h2>
+                <% if (key !== 'completed') { %>
+                  <div class="row row-cards">
+                    <% list.forEach((c) => { %><div class="col-sm-6 col-lg-4 col-xxl-3"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
+                  </div>
+                <% } else { %>
+                  <div class="card z-ev-done">
+                    <% list.forEach((c, i) => { const pr = eventProject(c); %>
+                      <a class="z-ev-row z-proj<%= i >= 5 ? ' is-more' : '' %>" style="--z-proj: <%= pr.color %>" href="<%= eventPath(c) %>">
+                        <span class="avatar avatar-sm z-proj-icon"><i class="ti ti-<%= pr.icon %>"></i></span>
+                        <span class="z-ev-row-main"><span class="z-ev-row-title"><%= c.title %></span><span class="z-ev-row-sub"><%= c.wikis && c.wikis.length > 1 ? tn('{n} wiki', '{n} wikis', c.wikis.length) : wikiLocal(c.primaryWiki) %> · <%= CONTEST_TYPES[c.type] %></span></span>
+                        <span class="z-ev-row-date"><%= c.startDate ? formatDate(c.endDate || c.startDate, c.timezone) : '' %></span>
+                        <span class="z-ev-row-people" title="<%= t('Participants') %>"><i class="ti ti-users"></i><%= formatNumber(c._count ? c._count.memberships : 0) %></span>
+                      </a>
+                    <% }) %>
+                    <% if (list.length > 5) { %><button type="button" class="z-ev-more" onclick="this.closest('.z-ev-done').classList.add('is-open');this.remove()"><%= t('Show {n} more', { n: formatNumber(list.length - 5) }) %></button><% } %>
+                  </div>
+                <% } %>
+              </section>
+            <% }) %>
+          <% } else { %>
           <div class="row row-cards">
             <% result.items.forEach((c) => { %>
               <div class="col-sm-6 col-lg-4 col-xxl-3"><%- include('../../partials/contestCard', { c, roles: [] }) %></div>
             <% }) %>
           </div>
+          <% } %>
           <% } %>
         <% } %>
         <% if (result.pages > 1) { %>

@@ -7,17 +7,33 @@
 <div class="page-body">
   <div class="container-xl">
     <% if (!typeDef) { %>
-      <p class="text-secondary mb-3"><%= t('What kind of event? Its settings come next, on one page.') %></p>
-      <div class="row row-cards">
-        <% ORDER.filter((k) => EVENT_TYPES[k]).forEach((k) => { const d = EVENT_TYPES[k]; keep.set('type', k); %>
-          <div class="col-sm-6 col-lg-4 col-xl-3">
-            <a class="card card-link card-link-pop h-100 text-reset z-type-card" href="/events/create?<%= keep.toString() %>">
-              <div class="card-body">
-                <span class="avatar avatar-md bg-primary-lt mb-3"><i class="ti ti-<%= ICONS[k] || 'calendar-event' %>"></i></span>
-                <h3 class="card-title mb-1"><%= t(d.label) %></h3>
-                <p class="text-secondary small mb-0"><%= t(d.description) %></p>
-              </div>
-            </a>
+      <p class="text-secondary mb-2 small"><%= t('What kind of event? Its settings come next, on one page.') %></p>
+      <%
+        // Six choices. Close relatives share a card: the card picks the main kind, its small
+        // choices pick the variant (each still its own event type, with its own settings).
+        // What people write, on which project; then photos and sessions; kinds that don't fully work yet wait.
+        const CARDS = [
+          { key: 'writing', project: 'wikipedia', icon: 'brand-wikipedia', name: 'Wikipedia articles', desc: 'New or improved articles' },
+          { key: 'writing', project: 'wikibooks', icon: 'books', name: 'Wikibooks writing', desc: 'Book chapters and pages' },
+          { key: 'writing', project: 'wiktionary', icon: 'abc', name: 'Wiktionary entries', desc: 'New words and entries' },
+          { key: 'proofread', project: 'wikisource', icon: 'book', name: 'Wikisource proofreading', desc: 'Proofread scanned pages' },
+          { key: 'photo', icon: 'camera', name: 'Photo contest', desc: 'Photos on Commons' },
+          { key: 'workshop', icon: 'presentation', name: 'Sessions', desc: 'Registration and attendance' },
+          { key: 'data', icon: 'database', name: 'Data contest', desc: 'Wikidata items', soon: true },
+          { key: 'editathon', icon: 'edit', name: 'Edit-a-thon', desc: 'Edits counted over the dates', soon: true },
+          { key: 'photowalk', icon: 'walk', name: 'Photowalk', desc: 'A walk with a meeting point', soon: true },
+          { key: 'glam', icon: 'building-bank', name: 'Commons collections', desc: 'GLAM and scanning', soon: true },
+          { key: 'training', icon: 'school', name: 'Training course', desc: 'Topics and levels', soon: true },
+        ];
+        const link = (c) => { keep.set('type', c.key); if (c.project) keep.set('project', c.project); else keep.delete('project'); return `/events/create?${keep.toString()}`; };
+      %>
+      <div class="z-type-grid">
+        <% CARDS.filter((c) => EVENT_TYPES[c.key]).forEach((c) => { %>
+          <div class="z-type-card<%= c.soon ? ' is-soon' : '' %>">
+            <% if (c.soon) { %><span class="z-type-main" aria-disabled="true"><% } else { %><a class="z-type-main" href="<%= link(c) %>"><% } %>
+              <span class="z-type-icon"><i class="ti ti-<%= c.icon %>"></i></span>
+              <span class="z-type-text"><span class="z-type-name"><%= t(c.name) %><% if (c.soon) { %> <span class="badge bg-secondary-lt ms-1"><%= t('Coming soon') %></span><% } %></span><span class="z-type-desc"><%= t(c.desc) %></span></span>
+            <% if (c.soon) { %></span><% } else { %></a><% } %>
           </div>
         <% }) %>
       </div>

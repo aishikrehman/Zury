@@ -1,0 +1,25 @@
+<%
+  // A person's header and number tiles. locals: person, totals, reviews, rank, ranked, byWords, roles, since, isSelf
+  const roleNames = { participant: t('Participant'), jury: t('Reviewer'), organizer: t('Organizer'), viewer: t('Viewer') };
+  const wikiHost = person.homeWiki ? person.homeWiki : 'meta.wikimedia.org';
+%>
+<div class="z-person-top">
+  <span class="z-person-avatar"><%= person.username.slice(0, 1).toUpperCase() %></span>
+  <div class="min-w-0">
+    <h1 class="z-person-name"><%= person.username %><% if (isSelf) { %> <span class="badge bg-blue-lt"><%= t('You') %></span><% } %></h1>
+    <div class="z-person-meta">
+      <% (locals.roles || []).forEach((r) => { %><span class="badge bg-secondary-lt"><%= roleNames[r] || r %></span><% }) %>
+      <% if (locals.since) { %><span><i class="ti ti-calendar"></i><%= t('Since {date}', { date: formatDate(since) }) %></span><% } %>
+      <a href="https://meta.wikimedia.org/wiki/Special:CentralAuth/<%= nameInPath(person.username) %>" target="_blank" rel="noopener"><i class="ti ti-brand-wikipedia"></i><%= t('On Wikimedia') %></a>
+    </div>
+  </div>
+</div>
+<div class="z-person-tiles">
+  <% if (locals.rank) { %><div class="z-pt is-rank"><span><%= t('Rank') %></span><b><%= formatNumber(rank) %></b><small><%= t('of {n}', { n: formatNumber(ranked) }) %></small></div><% } %>
+  <div class="z-pt"><span><%= t('Entries') %></span><b><%= formatNumber(totals.entries) %></b><small><%= locals.totals.events != null ? tn('in {n} event', 'in {n} events', totals.events) : '' %></small></div>
+  <div class="z-pt is-ok"><span><%= t('Accepted') %></span><b><%= formatNumber(totals.accepted) %></b><small><%= totals.entries ? formatNumber(Math.round((totals.accepted / totals.entries) * 100)) + '%' : '' %></small></div>
+  <div class="z-pt is-wait"><span><%= t('Pending') %></span><b><%= formatNumber(totals.pending) %></b></div>
+  <div class="z-pt is-bad"><span><%= t('Not accepted') %></span><b><%= formatNumber(totals.rejected) %></b></div>
+  <% if (totals.words) { %><div class="z-pt"><span><%= t('Accepted words') %></span><b><%= formatNumber(totals.wordsAccepted) %></b><small><%= t('{n} in all', { n: formatNumber(totals.words) }) %></small></div><% } %>
+  <% if (reviews.accept || reviews.reject) { %><div class="z-pt"><span><%= t('Reviews given') %></span><b><%= formatNumber(reviews.accept + reviews.reject) %></b><small><span class="text-green">✓ <%= formatNumber(reviews.accept) %></span> · <span class="text-red">✗ <%= formatNumber(reviews.reject) %></span></small></div><% } %>
+</div>

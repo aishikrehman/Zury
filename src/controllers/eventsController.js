@@ -41,7 +41,10 @@ async function index(req, res, next) {
 }
 
 // The type is chosen on the first page; ?type= preselects it (from "Create" links per type).
+const PROJECTS = ['wikipedia', 'wikibooks', 'wiktionary', 'wikisource'];
 function renderForm(res, { type, form, errors = {}, status = 200 }) {
+  const p = (res.req.body && res.req.body.project) || res.req.query.project;
+  res.locals.project = PROJECTS.includes(p) ? p : '';
   res.status(status).render('pages/events/create', {
     title: 'Create an event — Zury',
     type: EVENT_TYPES[type] ? type : '',
@@ -65,6 +68,8 @@ async function createForm(req, res, next) {
   const type = EVENT_TYPES[req.query.type] ? req.query.type : '';
   const form = contestForm.newForm(type || 'writing');
   if (!type) form.type = '';
+  // Wiktionary entries are short: no word or size minimum.
+  if (req.query.project === 'wiktionary') { form.type_minWordCount = 0; form.type_minBytes = 0; }
   // From a series or edition page: the event is created there.
   if (/^[a-z0-9-]{1,80}$/.test(req.query.series || '')) form.seriesSlug = req.query.series;
   if (/^[a-z0-9-]{1,20}$/.test(req.query.edition || '')) form.edition = req.query.edition;

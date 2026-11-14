@@ -65,6 +65,7 @@
           <% const openIf = (...keys) => keys.some((k) => errors[k] || v(k)) ? ' open' : ''; %>
           <section class="wizard-pane" id="step-basics" data-step="0">
             <% if (!wikiMode) { %>
+              <% if (locals.project) { %><input type="hidden" name="project" value="<%= project %>"><% } %>
               <div class="z-form-group">
                 <div class="row g-3">
                 <% if (creating && typeDef) { %>
@@ -126,7 +127,7 @@
               <div class="z-form-group">
                 <div class="row g-3">
                 <div class="col-md-8">
-                  <select class="form-select<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" data-picker="wiki" required
+                  <select class="form-select<%= inv('primaryWiki') %>" id="primaryWiki" name="primaryWiki" data-picker="wiki" required data-family="<%= locals.project || '' %>"
                     data-language-label="<%= t('Project language') %>" data-site-label="<%= t('Project site') %>">
                     <% if (v('primaryWiki')) { %><option value="<%= v('primaryWiki') %>" selected><%= wikiText(v('primaryWiki')) %></option><% } %>
                   </select>

@@ -97,7 +97,6 @@
               <div class="z-set-row" data-show-when="reviewMethodChoice:stars,number,anynumber"><span class="z-set-label"><%= t('Pass mark (average)') %></span><div class="z-set-control"><input type="number" min="0" step="0.5" class="form-control" name="passScore" value="<%= v('passScore') || 0 %>"></div></div>
               <%- row('What the results count', sel('rankBy', [['words', 'Words'], ['articles', 'Articles'], ['points', 'Points'], ['both', 'Words and articles']], v('rankBy') || 'articles')) %>
               <%- row('Submitting for others', sel('rule_onBehalf', [['off', 'Off'], ['staff', 'Organizers and reviewers'], ['anyone', 'Anyone']], ruleOf('onBehalf', 'staff'))) %>
-              <%- row('Many entries at once', sel('rule_mass', [['off', 'Off'], ['anyone', 'Anyone'], ['reviewers', 'Reviewers']], ruleOf('mass', 'anyone'))) %>
               <%- row('Many reviews at once', sel('rule_bulk', [['off', 'Off'], ['reviewers', 'Reviewers']], ruleOf('bulk', 'reviewers'))) %>
               <%- row('Reviewer statistics', sel('rule_stats', [['anyone', 'Anyone'], ['reviewers', 'Reviewers'], ['organizers', 'Organizers only'], ['off', 'Off']], ruleOf('stats', 'reviewers'))) %>
               <%- row('Revision reviewed', sel('rule_revision', [['pinned', 'As submitted (or when another review was asked)'], ['latest', 'Always the latest']], ruleOf('revision', 'pinned'))) %>

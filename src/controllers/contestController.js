@@ -172,8 +172,6 @@ async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
 }
 
 async function config(req, res) {
-  // The data card: what could be cleared, and how much of it there is.
-  res.locals.dataCounts = await eventData.counts(req.contest.id);
   const shown = req.wikiScope ? req.effective.contest : req.contest;
   renderConfig(req, res, { form: contestForm.toForm({ ...shown, series: req.edition ? null : req.series, editionOf: req.edition ? { ...req.edition, series: req.series } : null }, req.settings) });
 }
@@ -521,17 +519,7 @@ async function exportData(req, res, next) {
   }
 }
 
-async function clearData(req, res, next) {
-  try {
-    const n = await eventData.clear({ actor: req.user, contest: req.contest, what: req.params.what });
-    req.flash('success', req.t('{n} rows removed.', { n }));
-    res.redirect(`${req.base}/config#data`);
-  } catch (err) {
-    next(err);
-  }
-}
-
-module.exports = { exportData, clearData,
+module.exports = { exportData,
   show,
   config,
   updateConfig,

@@ -67,7 +67,7 @@
         <div class="list-group list-group-flush">
           <% if (!summary.byUser.length) { %><div class="list-group-item text-secondary"><%= t("Nothing yet.") %></div><% } %>
           <% summary.byUser.forEach((u) => { %>
-            <div class="list-group-item d-flex justify-content-between"><a href="<%= userPath(u.username) %>"><%= u.username %></a><strong><%= n(u.count) %></strong></div>
+            <div class="list-group-item d-flex justify-content-between"><a href="<%= `${base}/user/${nameInPath(u.username)}` %>"><%= u.username %></a><strong><%= n(u.count) %></strong></div>
           <% }) %>
         </div>
       </div>

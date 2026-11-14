@@ -66,15 +66,6 @@ async function resolveSubmitter(req) {
   return { participant: user, ensureParticipant: (tx) => membershipService.joinInTx(tx, { user, contest, wiki: req.contextWiki?.wiki || '' }), joinsNow: true };
 }
 
-function massAllowed(req) {
-  const rule = require('../services/participationService').read(req.settings).rules.mass;
-  if (rule === 'off') return req.permissions.has('massSubmit');
-  if (rule === 'reviewers') return (req.scope.eventRoles || []).includes('jury') || req.permissions.has('manageEvent') || req.permissions.has('massSubmit');
-  return true;
-}
-function massAllowedOld(req) {
-  return req.settings.massSubmissionEnabled || req.permissions.has('massSubmit');
-}
 
 function renderForm(req, res, { text = '', participant = '', items = null, error = null, status = 200 }) {
   res.status(status).render('pages/contest/submit', {
@@ -83,7 +74,6 @@ function renderForm(req, res, { text = '', participant = '', items = null, error
     participant,
     items,
     error,
-    mass: massAllowed(req),
     canOthers: req.permissions.has('submitOthersEntry'),
     window: eventWindow(req),
     typeDef: EVENT_TYPES[req.contest.type],
@@ -102,7 +92,7 @@ async function handleSubmit(req, res, next, { confirm }) {
   const text = typeof req.body.entries === 'string' ? req.body.entries : '';
   const participantName = typeof req.body.participant === 'string' ? req.body.participant : '';
   try {
-    if (submissionService.splitLines(text).length > 1 && !massAllowed(req)) {
+    if (submissionService.splitLines(text).length > 1) {
       throw new SubmissionError('This event accepts one entry at a time.');
     }
     const who = await resolveSubmitter(req);

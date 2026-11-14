@@ -1,0 +1,8 @@
+<%- include('../../partials/contestHeader', { active: 'submissions' }) %>
+<div class="page-body"><div class="container-xl">
+  <%- include('../../partials/personTop', { person, totals: data.totals, reviews: data.reviews, rank: data.rank, ranked: data.ranked, roles: data.roles, since: data.since, isSelf }) %>
+  <div class="card mt-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-files me-2"></i><%= isSelf ? t('My entries') : t('Entries') %></h3><div class="card-actions"><a class="small" href="<%= data.path %>/submissions?participant=<%= person.id %>"><%= t('In the list') %> <i class="ti ti-arrow-right"></i></a></div></div>
+    <%- include('../../partials/personEntries', { entries: data.entries }) %>
+  </div>
+</div></div>

@@ -87,7 +87,7 @@
             <% if (!summary.length) { %><div class="list-group-item text-secondary"><%= t("No attendance recorded yet.") %></div><% } %>
             <% summary.forEach((s) => { %>
               <div class="list-group-item d-flex justify-content-between">
-                <a href="<%= userPath(s.username) %>"><%= s.username %></a>
+                <a href="<%= `${base}/user/${nameInPath(s.username)}` %>"><%= s.username %></a>
                 <span><%= s.attended %><% if (s.certified) { %> <i class="ti ti-certificate text-green" title="<%= t("Certificate earned") %>"></i><% } %></span>
               </div>
             <% }) %>

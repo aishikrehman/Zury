@@ -377,3 +377,37 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.q
 
 // Submit page: after a check the form folds to one line; Change opens it again.
 document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-unfold]'); if (!b) return; const f = b.closest('form'); f.classList.remove('z-form-folded'); f.querySelector('#entries')?.focus(); });
+
+// Sortable tables (table[data-sortable]): a click on a heading sorts by that column; again reverses.
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest && e.target.closest('[data-sort-col]');
+  if (!btn) return;
+  const th = btn.closest('th');
+  const table = th.closest('table[data-sortable]');
+  if (!table) return;
+  const col = [...th.parentElement.children].indexOf(th);
+  const dir = th.getAttribute('aria-sort') === 'descending' ? 'ascending' : 'descending';
+  table.querySelectorAll('thead th').forEach((x) => x.setAttribute('aria-sort', 'none'));
+  th.setAttribute('aria-sort', dir);
+  const body = table.tBodies[0];
+  const val = (tr) => { const c = tr.children[col]; return c ? (c.dataset.v ?? c.textContent.trim()) : ''; };
+  const rows = [...body.rows];
+  rows.sort((x, y) => {
+    const a = val(x); const b = val(y);
+    const na = Number(a); const nb = Number(b);
+    const cmp = a !== '' && b !== '' && !Number.isNaN(na) && !Number.isNaN(nb) ? na - nb : String(a).localeCompare(String(b));
+    return dir === 'ascending' ? cmp : -cmp;
+  });
+  body.append(...rows);
+});
+
+// Import page: the source tabs, and a file loaded into the text box.
+document.addEventListener('change', (e) => {
+  if (e.target.matches && e.target.matches('[data-imp-tab]')) {
+    e.target.closest('.z-imp-tabs').querySelectorAll('.nav-link').forEach((l) => l.classList.toggle('active', l.contains(e.target)));
+  }
+  if (e.target.matches && e.target.matches('[data-imp-file]') && e.target.files[0]) {
+    const box = document.getElementById('imp-text');
+    e.target.files[0].text().then((txt) => { box.value = txt; box.focus(); });
+  }
+});

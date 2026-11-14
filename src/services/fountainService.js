@@ -86,8 +86,8 @@ async function syncReviews(contestId, submissionId, article, marksConfig, person
     const r = reviewOf(m, marksConfig);
     await prisma.review.upsert({
       where: { submissionId_jurorId: { submissionId, jurorId: juror.id } },
-      update: { decision: r.decision, points: r.points, comment: r.comment },
-      create: { contestId, submissionId, jurorId: juror.id, decision: r.decision, points: r.points, comment: r.comment },
+      update: { decision: r.decision, points: r.points, comment: r.comment, source: 'fountain' },
+      create: { contestId, submissionId, jurorId: juror.id, decision: r.decision, points: r.points, comment: r.comment, source: 'fountain' },
     });
   }
 }
@@ -221,10 +221,12 @@ async function syncOnce(eventWiki, { actorId = null } = {}) {
     // Word counts come by page id; the entry's key is wiki:pageid, like any entry's.
     const idKey = String(pageid);
     const pageKey = `${wiki}:${pageid}`;
-    const { status, score } = decision(a, editathon.marks);
+    let { status, score } = decision(a, editathon.marks);
     const wordCount = counts.has(idKey) ? counts.get(idKey) : null;
     const have = byKey.get(pageKey);
     if (have) {
+      // Not marked on Fountain yet: a decision made in Zury stands.
+      if (status === 'pending') { status = have.status; score = have.score; }
       const newWords = wordCount ?? have.wordCount;
       const markFinal = ended && counts.has(idKey);
       if (have.status !== status || have.score !== score || have.wordCount !== newWords || markFinal) {
@@ -353,4 +355,4 @@ async function syncAll() {
 }
 
 module.exports = {
-  progressOf, FountainError, parseCode, fetchEditathon, decision, importEvent, link, unlink, sync, syncAll };
+  progressOf, FountainError, parseCode, fetchEditathon, decision, reviewOf, wikiOf, importEvent, link, unlink, sync, syncAll };

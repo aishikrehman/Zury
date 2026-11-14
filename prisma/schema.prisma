@@ -685,6 +685,8 @@ model Review {
   marks        String   @default("{}") @db.Text
   points       Float    @default(0)
   comment      String   @default("") @db.Text
+  // Where it was made: "" in Zury; "fountain" or "import" when it came from elsewhere.
+  source       String   @default("") @db.VarChar(32)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -43,18 +43,22 @@
     <div class="card">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-list-numbers me-2"></i><%= t('Leaderboard') %></h3><% if (can('manageEvent') || can('exportData')) { %><div class="card-actions"><%- include('../../partials/exportMenu', { dataset: 'results', btn: '' }) %></div><% } %></div>
       <div class="table-responsive">
-        <table class="table table-vcenter card-table">
-          <thead><tr><th class="w-1"><%= t('Rank') %></th><th><%= t('Participant') %></th><th class="text-end"><%= t('Submitted') %></th><th class="text-end"><%= t('Accepted') %></th><% if (rows.withWordsBy) { %><th class="text-end text-green"><%= t('Accepted words') %></th><th class="text-end text-yellow"><%= t('Pending words') %></th><th class="text-end text-red"><%= t('Not accepted words') %></th><% } %><% if (byWords) { %><th class="text-end"><%= t('Words') %></th><% } else { %><th class="text-end"><%= t('Points') %></th><% } %></tr></thead>
+        <table class="table table-vcenter card-table z-lb" data-sortable>
+          <% const th = (label, cls = '') => `<th class="${cls}" aria-sort="none"><button type="button" class="z-sort-th" data-sort-col>${h(label)}<i class="ti ti-selector"></i></button></th>`; %>
+          <thead><tr>
+            <%- th(t('Rank'), 'w-1') %><%- th(t('Participant')) %><%- th(t('Submitted'), 'text-end') %><%- th(t('Accepted'), 'text-end') %>
+            <% if (rows.withWordsBy) { %><%- th(t('Accepted words'), 'text-end text-green') %><%- th(t('Pending words'), 'text-end text-yellow') %><%- th(t('Not accepted words'), 'text-end text-red') %><% } %>
+            <%- th(byWords ? t('Words') : t('Points'), 'text-end') %>
+          </tr></thead>
           <tbody>
             <% rows.forEach((r) => { %>
               <tr>
-                <td><span class="z-rank<%= medal[r.rank] ? ' z-' + medal[r.rank] : '' %>"><%= formatNumber(r.rank) %></span></td>
-                <td><% if (showNames) { %><a href="<%= userPath(r.username) %>"><%= r.username %></a><% } else { %><span class="text-secondary"><%= t('Participant') %></span><% } %></td>
-                <td class="text-end text-secondary"><%= formatNumber(r.submitted ?? r.entries) %></td>
-                <td class="text-end"><%= formatNumber(r.entries) %></td>
-                <% if (rows.withWordsBy) { %><td class="text-end text-green"><%= formatNumber(r.wordsBy.approved) %></td><td class="text-end text-yellow"><%= formatNumber(r.wordsBy.pending) %></td><td class="text-end text-red"><%= formatNumber(r.wordsBy.rejected) %></td><% } %>
-                <% if (!byWords) { %><td class="text-end fw-bold"><%= formatNumber(r.points) %></td><% } %>
-                <% if (byWords) { %><td class="text-end fw-bold"><%= formatNumber(r.words) %></td><% } %>
+                <td class="z-lb-rank" data-v="<%= r.rank %>"><span class="z-rank<%= medal[r.rank] ? ' z-' + medal[r.rank] : '' %>"><%= formatNumber(r.rank) %></span></td>
+                <td class="z-lb-name" data-v="<%= showNames ? r.username : '' %>"><% if (showNames) { %><a href="<%= `${base}/user/${nameInPath(r.username)}` %>"><%= r.username %></a><% } else { %><span class="text-secondary"><%= t('Participant') %></span><% } %></td>
+                <td class="text-end text-secondary z-lb-stat" data-v="<%= r.submitted ?? r.entries %>" data-label="<%= t('Submitted') %>"><%= formatNumber(r.submitted ?? r.entries) %></td>
+                <td class="text-end z-lb-stat" data-v="<%= r.entries %>" data-label="<%= t('Accepted') %>"><%= formatNumber(r.entries) %></td>
+                <% if (rows.withWordsBy) { %><td class="text-end text-green z-lb-stat" data-v="<%= r.wordsBy.approved %>" data-label="<%= t('Accepted words') %>"><%= formatNumber(r.wordsBy.approved) %></td><td class="text-end text-yellow z-lb-stat" data-v="<%= r.wordsBy.pending %>" data-label="<%= t('Pending words') %>"><%= formatNumber(r.wordsBy.pending) %></td><td class="text-end text-red z-lb-stat" data-v="<%= r.wordsBy.rejected %>" data-label="<%= t('Not accepted words') %>"><%= formatNumber(r.wordsBy.rejected) %></td><% } %>
+                <td class="text-end fw-bold z-lb-score" data-v="<%= byWords ? r.words : r.points %>"><%= formatNumber(byWords ? r.words : r.points) %></td>
               </tr>
             <% }) %>
           </tbody>

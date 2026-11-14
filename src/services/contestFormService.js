@@ -35,7 +35,6 @@ const DATE_ORDER = [
 
 const FEATURE_FIELDS = [
   ['appealsEnabled', 'Appeals', 'Participants can appeal decisions.'],
-  ['massSubmissionEnabled', 'Mass submission', 'Participants can submit many entries at once.'],
   ['contributionDiscoveryEnabled', "Track participants' edits", "Participants' edits during the event are found automatically."],
   ['publicStatisticsEnabled', 'Public statistics', 'Anyone can see the statistics page.'],
   ['participantNotificationsEnabled', 'Participant notifications', 'Participants are notified about their entries.'],
@@ -107,7 +106,6 @@ function fromChoices(input, type) {
   if (b.rule_bulk) b.bulkReviewEnabled = b.rule_bulk !== 'off' ? 'on' : '';
   if (b.rule_stats) b.juryStatsEnabled = b.rule_stats === 'anyone' ? 'on' : '';
   if (b.rule_appeals) b.appealsEnabled = b.rule_appeals !== 'off' ? 'on' : '';
-  if (b.rule_mass) b.massSubmissionEnabled = b.rule_mass !== 'off' ? 'on' : '';
   if (b.rule_results) b.publicStatisticsEnabled = b.rule_results !== 'manual' ? 'on' : '';
   if ('participation_who' in b) {
     b.participantNotificationsEnabled = 'on';
