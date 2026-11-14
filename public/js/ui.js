@@ -417,3 +417,20 @@ document.addEventListener('click', (e) => {
   const n = e.target.closest('[data-toggle-open]');
   if (n) n.classList.toggle('is-open');
 });
+// A click anywhere else closes an open note.
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('.z-note-btn.is-open').forEach((b) => { if (!b.contains(e.target)) b.classList.remove('is-open'); });
+});
+// A note's pop-up floats over the page (a scrolling table would clip it), under its icon.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.z-note-btn');
+  if (!b || !b.classList.contains('is-open')) return;
+  const pop = b.querySelector('.z-note-pop');
+  const r = b.getBoundingClientRect();
+  const w = Math.min(352, window.innerWidth - 24);
+  pop.style.position = 'fixed';
+  pop.style.width = `${w}px`;
+  pop.style.left = `${Math.max(12, Math.min(r.left - 8, window.innerWidth - w - 12))}px`;
+  pop.style.top = `${r.bottom + 6}px`;
+});
+window.addEventListener('scroll', () => document.querySelectorAll('.z-note-btn.is-open').forEach((b) => b.classList.remove('is-open')), { passive: true });

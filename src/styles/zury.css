@@ -881,8 +881,6 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-evhead-dates b { font-weight: 600; color: var(--z-brand); }
 
 /* A reviewer's comment under a participant's own entry. */
-.z-review-note { max-width: 32rem; padding: .2rem .5rem; border-radius: 6px; background: var(--z-hover); color: var(--z-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
-.z-review-note.is-open { white-space: normal; }
 
 /* Event header: a bigger logo, as it is (no frame or shadow); the banner fades out slowly. */
 .z-evhead-logo { width: 5rem; height: 5rem; border-radius: 0; box-shadow: none !important; background-color: transparent; }
@@ -2206,3 +2204,8 @@ th.text-end .z-sort-th { flex-direction: row-reverse; }
 .z-group-stats { font-size: .8rem; color: var(--z-fg-muted); white-space: nowrap; }
 @media (max-width: 767.98px) { .z-group-line, .z-wordsby { flex-wrap: wrap; row-gap: .3rem; } .z-wbar-wrap { flex-basis: 100%; } }
 @media (max-width: 767.98px) { .z-subs-table tr.z-group-row > td { display: block; padding: .6rem .75rem !important; border-bottom: 1px solid var(--z-border); } .z-group-line { gap: .5rem; } .z-group-caret { font-size: 1rem; } }
+/* Reviewer's note: an icon by the title; a click opens it in a small pop-up. */
+.z-note-btn { position: relative; display: inline-flex; align-items: center; margin-left: .25rem; color: var(--z-brand); cursor: pointer; vertical-align: middle; }
+.z-note-pop { display: none; position: absolute; z-index: 20; top: calc(100% + .35rem); left: -.5rem; width: min(22rem, 80vw); padding: .55rem .7rem; border: 1px solid var(--z-border); border-radius: 8px; background: var(--z-surface); color: var(--z-fg); box-shadow: var(--z-shadow-lg); white-space: normal; line-height: 1.55; cursor: auto; }
+.z-note-btn.is-open .z-note-pop { display: block; }
+.z-subs-table .z-c-rev .ti { font-family: "tabler-icons" !important; }
