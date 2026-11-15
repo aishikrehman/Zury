@@ -50,7 +50,7 @@
           <% if (typeof edition !== 'undefined' && edition) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="<%= contest.path === `/${series.slug}/${edition.slug}` ? `/series/${series.slug}/${edition.slug}` : `/${series.slug}/${edition.slug}` %>"><%= edition.slug %></a><% } %>
           <% if (wikiScope) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="<%= eventBase %>"><%= contest.title %></a><% } %>
         </nav>
-        <h1 class="z-evhead-title"><a href="<%= base %>"><%= contest.title %></a><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
+        <h1 class="z-evhead-title"><%= contest.title %><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
         <div class="z-evhead-meta">
           <span class="z-evhead-status is-<%= color %>" title="<%= t(st.label) %>"><i></i><span class="z-status-word"><%= t(st.label) %></span></span>
           <% if (contest.startDate && contest.endDate) { const tNow = Date.now(); const tS = new Date(contest.startDate).getTime(); const tE = new Date(contest.endDate).getTime(); if (tE > tS) { const tDone = Math.min(100, Math.max(0, Math.round(((tNow - tS) / (tE - tS)) * 100))); const tLeft = Math.ceil((tE - tNow) / 86400000); %>

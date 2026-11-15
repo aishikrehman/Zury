@@ -1,93 +1,39 @@
-<%# The home page's picture of everything (homeService.overview): this month, wikis, latest accepted articles, recent winners, series, and a call to organize. %>
+<%# The home page after "Running now" (homeService.overview): people of the month and recent winners, the communities, the calendar, a call to organize. %>
 <% const H = home; %>
 
-<section class="z-home-band">
-  <div class="container-xl">
-    <div class="row g-4 align-items-stretch">
-      <div class="col-lg-5">
-        <div class="z-month card h-100"><div class="card-body">
-          <div class="subheader mb-2"><i class="ti ti-calendar-month me-1"></i><%= t('This month') %></div>
-          <div class="z-month-figs">
-            <div><b data-count="<%= H.month.entries %>"><%= formatNumber(H.month.entries) %></b><span><%= t('entries') %></span></div>
-            <% if (H.month.words) { %><div><b data-count="<%= H.month.words %>"><%= formatNumber(H.month.words) %></b><span><%= t('words accepted') %></span></div><% } %>
-            <div><b data-count="<%= H.month.people %>"><%= formatNumber(H.month.people) %></b><span><%= t('contributors') %></span></div>
-          </div>
-          <% const vals = trend.values; const mx = Math.max(1, ...vals); %>
-          <div class="z-spark" aria-label="<%= t('Entries per day, last 30 days') %>" role="img"><% vals.forEach((v) => { %><i style="height:<%= Math.max(4, Math.round((v / mx) * 100)) %>%" title="<%= formatNumber(v) %>"></i><% }) %></div>
-          <div class="small text-secondary mt-1"><%= t('Entries per day, last 30 days') %></div>
-        </div></div>
-      </div>
-      <div class="col-lg-7">
-        <div class="card h-100"><div class="card-body">
-          <div class="subheader mb-2"><i class="ti ti-world me-1"></i><%= t('Wikis taking part') %></div>
-          <% if (!H.wikis.length) { %><p class="text-secondary m-0"><%= t('No entries yet.') %></p><% } else { const wm = Math.max(...H.wikis.map((w) => w.entries)); %>
-            <div class="z-wiki-tiles">
-              <% H.wikis.forEach((w) => { %>
-                <div class="z-wiki-tile" style="--w: <%= Math.max(8, Math.round((w.entries / wm) * 100)) %>%">
-                  <b><%= wikiLocal(w.wiki) %></b>
-                  <span><%= tn('{n} entry', '{n} entries', w.entries) %> · <%= tn('{n} person', '{n} people', w.people) %></span>
-                </div>
-              <% }) %>
-            </div>
-          <% } %>
-        </div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<% if (H.recent.length) { %>
-<section class="page-body">
-  <div class="container-xl">
-    <h2 class="z-home-h"><i class="ti ti-circle-check text-green me-1"></i><%= t('Just accepted') %></h2>
-    <div class="z-recent">
-      <% H.recent.forEach((s) => { %>
-        <a class="z-recent-item card card-sm card-link" href="<%= s.url %>" target="_blank" rel="noopener">
-          <div class="card-body">
-            <div class="fw-medium text-truncate"><%= s.title %></div>
-            <div class="small text-secondary text-truncate"><span class="z-user-name"><%= s.participant.username %></span><% if (s.wordCount) { %> · <%= t('{n} words', { n: formatNumber(s.wordCount) }) %><% } %></div>
-            <div class="small text-secondary text-truncate"><i class="ti ti-trophy me-1"></i><%= s.contest.title %></div>
-          </div>
-        </a>
-      <% }) %>
-    </div>
-  </div>
-</section>
-<% } %>
-
-<% if (H.winners.length || H.series.length) { %>
-<section class="page-body">
+<%# 5. This month's top contributors, and recent winners. %>
+<% if (H.top.length || H.winners.length) { %>
+<section class="z-band">
   <div class="container-xl">
     <div class="row g-4">
-      <% if (H.winners.length) { %>
-        <div class="<%= H.series.length ? 'col-lg-7' : 'col-12' %>">
-          <h2 class="z-home-h"><i class="ti ti-medal text-yellow me-1"></i><%= t('Recent winners') %></h2>
-          <div class="row g-3">
-            <% H.winners.forEach((wn) => { %>
-              <div class="col-md-<%= H.series.length ? 12 : 4 %>">
-                <div class="card h-100"><div class="card-body">
-                  <a class="fw-medium d-block text-truncate mb-2" href="<%= wn.path %>/results"><%= wn.title %></a>
-                  <ol class="z-fame-list">
-                    <% wn.top.forEach((p, i) => { %><li class="is-<%= i + 1 %>"><span class="z-medal"><%= formatNumber(i + 1) %></span><span class="z-user-name"><%= p.username %></span><small class="text-secondary ms-auto"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) : tn('{n} accepted', '{n} accepted', p.entries) %></small></li><% }) %>
-                  </ol>
-                </div></div>
+      <% if (H.top.length) { %>
+        <div class="<%= H.winners.length ? 'col-lg-4' : 'col-12' %>">
+          <%- include('./homeHead', { icon: 'star', title: t('Top contributors this month'), sub: t('By words and articles accepted.') }) %>
+          <div class="z-top">
+            <% H.top.forEach((p, i) => { %>
+              <div class="z-top-item card">
+                <span class="z-top-avatar is-<%= i + 1 %>"><%= p.username.slice(0, 1).toUpperCase() %><span class="z-medal"><%= formatNumber(i + 1) %></span></span>
+                <span class="min-w-0"><span class="d-block fw-bold text-truncate"><%= p.username %></span><span class="small text-secondary"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) + ' · ' : '' %><%= tn('{n} accepted', '{n} accepted', p.accepted) %></span></span>
               </div>
             <% }) %>
           </div>
         </div>
       <% } %>
-      <% if (H.series.length) { %>
-        <div class="<%= H.winners.length ? 'col-lg-5' : 'col-12' %>">
-          <h2 class="z-home-h"><i class="ti ti-stack-2 text-primary me-1"></i><%= t('Series') %></h2>
-          <div class="list-group">
-            <% H.series.forEach((sr) => { %>
-              <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="/<%= sr.slug %>">
-                <% if (sr.logoUrl) { %><img src="<%= sr.logoUrl %>" width="40" height="40" alt="" loading="lazy" style="object-fit: contain"><% } else { %><span class="avatar bg-primary-lt"><i class="ti ti-stack-2"></i></span><% } %>
-                <span class="flex-fill min-w-0"><span class="d-block fw-medium text-truncate"><%= sr.title %></span><span class="small text-secondary text-truncate d-block"><%= sr.shortDescription || tn('{n} edition', '{n} editions', sr._count.editionRecords) %></span></span>
-                <i class="ti ti-chevron-right text-secondary"></i>
-              </a>
-            <% }) %>
+      <% if (H.winners.length) { %>
+        <div class="<%= H.top.length ? 'col-lg-8' : 'col-12' %>">
+          <%- include('./homeHead', { icon: 'medal', title: t('Recent winners'), sub: t('From the latest events with published results.') }) %>
+      <div class="row g-3 mb-4">
+        <% H.winners.forEach((wn) => { %>
+          <div class="col-md-6 col-xl-4">
+            <div class="card h-100"><div class="card-body">
+              <a class="fw-medium d-block text-truncate mb-2" href="<%= wn.path %>/results"><%= wn.title %></a>
+              <ol class="z-fame-list">
+                <% wn.top.forEach((p, i) => { %><li class="is-<%= i + 1 %>"><span class="z-medal"><%= formatNumber(i + 1) %></span><span class="z-user-name"><%= p.username %></span><small class="text-secondary ms-auto"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) : tn('{n} accepted', '{n} accepted', p.entries) %></small></li><% }) %>
+              </ol>
+            </div></div>
           </div>
+        <% }) %>
+      </div>
         </div>
       <% } %>
     </div>
@@ -95,17 +41,39 @@
 </section>
 <% } %>
 
-<section class="page-body mb-5">
+<%# 6. Who runs events on Zury. %>
+<% if (H.communities.length) { %>
+<section class="z-band is-soft">
   <div class="container-xl">
-    <div class="z-cta card">
-      <div class="card-body d-flex flex-wrap align-items-center gap-4">
-        <img src="/images/art/world.webp" width="112" height="112" alt="" loading="lazy" decoding="async" class="z-empty-art">
-        <div class="flex-fill" style="min-width: 16rem">
-          <h2 class="m-0"><%= t('Run an event for your community') %></h2>
-          <p class="text-secondary m-0 mt-1"><%= t('A writing contest, a photo drive or an edit-a-thon: set it up in minutes, with rules checked for you and a review window your reviewers will like.') %></p>
-        </div>
-        <a class="btn btn-primary btn-lg" href="<%= currentUser ? '/events/create' : '/login' %>"><i class="ti ti-plus me-1"></i><%= t('Start an event') %></a>
+    <%- include('./homeHead', { icon: 'users-group', title: t('Who runs events on Zury'), sub: t('Communities and affiliates organizing public events.') }) %>
+    <div class="z-communities">
+      <% H.communities.forEach((c) => { %><span class="z-community"><i class="ti ti-users-group"></i><%= c.name %> <small><%= tn('{n} event', '{n} events', c.events) %></small></span><% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<%# 7. The calendar (bands keep alternating whether or not the communities show). %>
+<% const calSoft = !H.communities.length; %>
+<section class="z-band<%= calSoft ? ' is-soft' : '' %>">
+  <div class="container-xl">
+    <%- include('./homeHead', { icon: 'calendar', title: t('Calendar'), sub: t('What runs when, this month.'), more: '/events' }) %>
+    <%- include('./calendar', { cal: calendar, calLang: lang.code, calExtra: {} }) %>
+  </div>
+</section>
+
+<%# 8. A call to organize. %>
+<section class="z-band<%= calSoft ? '' : ' is-soft' %>">
+  <div class="container-xl">
+    <div class="z-cta">
+      <h2 class="m-0"><%= t('Run an event for your community') %></h2>
+      <p class="text-secondary mt-2 mb-4"><%= t('Every kind of Wikimedia event, set up in minutes, with rules checked for you and a review window your reviewers will like.') %></p>
+      <div class="z-types">
+        <% Object.keys(CONTEST_TYPES).forEach((k) => { %>
+          <div class="z-type"><span class="z-type-ico"><i class="ti ti-<%= TYPE_ICONS[k] || 'calendar-event' %>"></i></span><span><%= t(CONTEST_TYPES[k]) %></span></div>
+        <% }) %>
       </div>
+      <a class="btn btn-primary btn-lg mt-4" href="<%= currentUser ? '/events/create' : '/login' %>"><i class="ti ti-plus me-1"></i><%= t('Start an event') %></a>
     </div>
   </div>
 </section>

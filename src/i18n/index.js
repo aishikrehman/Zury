@@ -93,6 +93,10 @@ function fromAcceptLanguage(header) {
 function languageFor(req) {
   const chosen = req.user?.preferredLanguage || req.session?.lang;
   if (LANGUAGES[chosen]) return chosen;
+  // Where they are (their time zone, sent by the page on a first visit): Bangladesh → Bangla.
+  const tz = decodeURIComponent((String(req.headers.cookie || '').match(/(?:^|;\s*)zury_tz=([^;]*)/) || [])[1] || '');
+  const byPlace = { 'Asia/Dhaka': 'bn' }[tz];
+  if (byPlace && LANGUAGES[byPlace]) return byPlace;
   return fromAcceptLanguage(req.headers['accept-language']) || DEFAULT_LANGUAGE;
 }
 

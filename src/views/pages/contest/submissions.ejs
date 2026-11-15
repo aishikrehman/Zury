@@ -115,7 +115,7 @@
     <% if (result.total && (picked || settings.wordCountEnabled)) { %>
       <div class="card-body border-bottom py-2 d-flex flex-wrap gap-3 align-items-center z-sum-row">
         <% if (picked) { %>
-          <span><i class="ti ti-user me-1"></i><a href="/users/<%= encodeURIComponent(picked.username) %>" class="fw-medium"><%= picked.username %></a></span>
+          <span><i class="ti ti-user me-1"></i><a href="<%= base %>/user/<%= nameInPath(picked.username) %>" class="fw-medium"><%= picked.username %></a></span>
         <% } %>
         <% if (picked) { %><a class="ms-auto" href="<%= qs({ participant: null, page: null }) %>"><i class="ti ti-x me-1"></i><%= t('Show everyone') %></a><% } %>
       </div>

@@ -525,7 +525,11 @@ async function editionTabs(req, res, next) {
     const canRun = await scopeRoles.canRunEdition(req, edition);
     const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));
     let tab = EDITION_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
-    if (!canSee && (edition.visibility === 'private' || edition.status === 'draft')) return next();
+    // A draft edition stays hidden, unless it already holds a public event (whose page links up to it).
+    const hasPublic = !canSee && edition.visibility !== 'private' && edition.status === 'draft'
+      ? await prisma.contest.count({ where: { editionId: edition.id, deletedAt: null, visibility: 'public', status: { not: 'draft' } } })
+      : 0;
+    if (!canSee && (edition.visibility === 'private' || (edition.status === 'draft' && !hasPublic))) return next();
     if (!canRun && RUNNERS_ONLY.includes(tab)) tab = 'overview';
     const events = await prisma.contest.findMany({
       where: { editionId: edition.id, deletedAt: null, ...(canSee ? {} : { visibility: 'public', status: { not: 'draft' } }) },

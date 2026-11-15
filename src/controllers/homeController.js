@@ -13,12 +13,14 @@ async function index(req, res, next) {
       statsService.platformStats(),
       require('../services/homeService').overview(),
     ]);
+    const calendar = await require('../services/calendarService').month(req.query.month, { visibility: 'public' });
     res.render('pages/home', {
       home,
       title: 'Zury — Wikimedia Contests & Events',
       stats: { events: eventCount },
       trend: platform.submissions,
       active,
+      calendar,
     });
   } catch (err) {
     next(err);

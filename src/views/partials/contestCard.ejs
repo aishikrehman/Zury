@@ -1,5 +1,6 @@
 <% const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; const proj = eventProject(c); const stColor = st.badge === 'dark' ? 'secondary' : st.badge; %>
 <div class="card card-link h-100 z-ev2" style="--z-proj: <%= proj.color %>">
+  <% if (typeof photo !== 'undefined' && photo) { %><img class="z-ev2-photo" src="<%= photo %>" alt="" loading="lazy" decoding="async"><% } %>
   <div class="card-body">
     <div class="z-ev2-top">
       <span class="z-ev2-icon" title="<%= proj.label %>"><i class="ti ti-<%= proj.icon %>"></i></span>
@@ -10,6 +11,7 @@
     </div>
     <div class="z-ev2-foot">
       <span class="z-ev2-status is-<%= stColor %>"><i></i><%= t(st.label) %></span>
+      <% const left = c.status === 'active' && c.endDate ? Math.ceil((new Date(c.endDate) - Date.now()) / 86400000) : null; if (left != null && left >= 0 && left <= 7) { %><span class="badge bg-<%= left <= 3 ? 'red' : 'orange' %>-lt"><i class="ti ti-hourglass-low me-1"></i><%= left === 0 ? t('Ends today') : tn('{n} day left', '{n} days left', left) %></span><% } %>
       <% if (c.visibility === 'private') { %><span class="badge bg-yellow-lt"><%= t('Private') %></span><% } %>
       <span class="z-ev2-meta"><i class="ti ti-calendar"></i><% if (c.startDate) { %><%= formatDate(c.startDate, c.timezone) %> – <%= formatDate(c.endDate, c.timezone) %><% } else { %><%= t('Dates not set') %><% } %></span>
       <% if (c._count) { %><span class="z-ev2-meta"><i class="ti ti-users"></i><%= formatNumber(c._count.memberships) %></span><% } %>

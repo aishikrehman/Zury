@@ -2,16 +2,16 @@
 // event cards, the event header and the calendar use them.
 const PROJECTS = {
   wikipedia: { label: 'Wikipedia', icon: 'brand-wikipedia', color: '#3366cc' },
-  commons: { label: 'Commons', icon: 'photo', color: '#2e9c5f' },
+  commons: { label: 'Commons', icon: 'photo', color: '#339966' },
   wikidata: { label: 'Wikidata', icon: 'database', color: '#990000' },
-  wikisource: { label: 'Wikisource', icon: 'books', color: '#6b4ba1' },
-  wiktionary: { label: 'Wiktionary', icon: 'vocabulary', color: '#b36b00' },
-  wikibooks: { label: 'Wikibooks', icon: 'book', color: '#8a5a2b' },
-  wikiquote: { label: 'Wikiquote', icon: 'quote', color: '#0a7f8f' },
-  wikivoyage: { label: 'Wikivoyage', icon: 'map', color: '#0f8a6e' },
-  wikinews: { label: 'Wikinews', icon: 'news', color: '#c2185b' },
-  wikiversity: { label: 'Wikiversity', icon: 'school', color: '#1a6fa3' },
-  wikimedia: { label: 'Wikimedia', icon: 'world', color: '#5b6b7f' },
+  wikisource: { label: 'Wikisource', icon: 'books', color: '#2a4b8d' },
+  wiktionary: { label: 'Wiktionary', icon: 'vocabulary', color: '#ac6600' },
+  wikibooks: { label: 'Wikibooks', icon: 'book', color: '#ac6600' },
+  wikiquote: { label: 'Wikiquote', icon: 'quote', color: '#006699' },
+  wikivoyage: { label: 'Wikivoyage', icon: 'map', color: '#339966' },
+  wikinews: { label: 'Wikinews', icon: 'news', color: '#990000' },
+  wikiversity: { label: 'Wikiversity', icon: 'school', color: '#006699' },
+  wikimedia: { label: 'Wikimedia', icon: 'world', color: '#54595d' },
 };
 
 function projectKey(dbname = '') {

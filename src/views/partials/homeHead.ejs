@@ -1,0 +1,8 @@
+<%# One heading style for every home section: an icon and title, a one-line note under it, and "See all" on the right. %>
+<div class="z-hhead">
+  <div class="min-w-0">
+    <h2><i class="ti ti-<%= icon %>"></i><%= title %><% if (typeof count !== 'undefined' && count != null) { %> <span class="z-hhead-n"><%= formatNumber(count) %></span><% } %></h2>
+    <% if (typeof sub !== 'undefined' && sub) { %><p><%= sub %></p><% } %>
+  </div>
+  <% if (typeof more !== 'undefined' && more) { %><a class="z-hhead-more" href="<%= more %>"><%= t('See all') %> <i class="ti ti-arrow-right"></i></a><% } %>
+</div>

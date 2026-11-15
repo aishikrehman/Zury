@@ -23,7 +23,7 @@
     <div class="list-group list-group-flush">
       <% people.forEach((r) => { %>
         <div class="list-group-item"><div class="row align-items-center">
-          <div class="col"><a href="/users/<%= encodeURIComponent(r.user.username) %>"><%= r.user.username %></a>
+          <div class="col"><span class="fw-medium"><%= r.user.username %></span>
             <span class="badge bg-secondary-lt ms-1"><%= t(EVENT_ROLES[r.role] ? EVENT_ROLES[r.role].label : r.role) %></span>
             <% if (r.appliesToChildren) { %><span class="text-secondary small ms-1"><%= editionId ? t('and its events') : t('and its editions and events') %></span><% } %></div>
           <div class="col-auto"><form method="post" action="/series/<%= seriesSlug %>/people/<%= r.id %>/remove" data-confirm="<%= t('Remove this role?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (editionId) { %><input type="hidden" name="editionId" value="<%= editionId %>"><% } %><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Remove') %>" aria-label="<%= t('Remove') %>"><i class="ti ti-x"></i></button></form></div>

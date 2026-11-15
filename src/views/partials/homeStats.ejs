@@ -1,0 +1,47 @@
+<%# The movement in numbers: all time, this month and the wikis on a map, side by side in one compact panel. %>
+<% const H = home; %>
+<section class="z-band">
+  <div class="container-xl">
+    <div class="z-nums">
+      <div class="z-nums-col">
+        <div class="z-pulse-head"><i class="ti ti-infinity"></i><%= t('All time') %></div>
+        <div class="z-nums-grid">
+          <% [['align-justified', H.totals.words, 'words accepted', '#3366cc'], ['file-text', H.totals.articles, 'articles accepted', '#339966'], ['users', H.totals.people, 'contributors', '#990000'], ['world', H.totals.wikis, 'wikis', '#006699'], ['calendar-event', stats.events, 'public events', '#2a4b8d']].forEach(([icon, value, label, c1]) => { %>
+            <div class="z-num" style="--c1: <%= c1 %>"><span class="z-num-ico"><i class="ti ti-<%= icon %>"></i></span><span><b data-count="<%= value %>"><%= formatNumber(value) %></b><small><%= t(label) %></small></span></div>
+          <% }) %>
+        </div>
+      </div>
+      <div class="z-nums-col">
+        <div class="z-pulse-head"><i class="ti ti-calendar-month"></i><%= t('This month') %></div>
+        <div class="z-nums-grid is-1">
+          <% [['upload', H.month.entries, 'entries', '#3366cc'], ['align-justified', H.month.words, 'words accepted', '#339966'], ['users', H.month.people, 'contributors', '#990000']].forEach(([icon, value, label, c1]) => { %>
+            <div class="z-num" style="--c1: <%= c1 %>"><span class="z-num-ico"><i class="ti ti-<%= icon %>"></i></span><span><b><%= formatNumber(value) %></b><small><%= t(label) %></small></span></div>
+          <% }) %>
+        </div>
+        <% const vals = trend.values; const mx = Math.max(1, ...vals); %>
+        <div class="z-spark" aria-label="<%= t('Entries per day, last 30 days') %>" role="img"><% vals.forEach((v) => { %><i style="height:<%= Math.max(4, Math.round((v / mx) * 100)) %>%" title="<%= formatNumber(v) %>"></i><% }) %></div>
+        <div class="z-pulse-note"><%= t('Entries per day, last 30 days') %></div>
+      </div>
+      <div class="z-nums-col">
+        <div class="z-pulse-head"><i class="ti ti-world"></i><%= t('Wikis taking part') %></div>
+        <% if (!H.wikis.length) { %><p class="text-secondary m-0"><%= t('No entries yet.') %></p><% } else { const wm = Math.max(...H.wikis.map((w) => w.entries)); %>
+          <div class="z-map" role="img" aria-label="<%= t('Wikis taking part, on a map') %>">
+            <img src="/images/art/world-map.webp" width="1000" height="500" alt="" loading="lazy" decoding="async">
+            <% H.wikis.forEach((w) => { const p = w.place; if (!p) return; const size = 8 + Math.round((w.entries / wm) * 14); %>
+              <span class="z-map-dot" style="left: <%= p.x.toFixed(2) %>%; top: <%= (p.y / 0.82).toFixed(2) %>%; --s: <%= size %>px" title="<%= wikiLocal(w.wiki) %> · <%= tn('{n} entry', '{n} entries', w.entries) %>"></span>
+            <% }) %>
+          </div>
+          <div class="z-wiki-bars">
+            <% H.wikis.slice(0, 6).forEach((w) => { %>
+              <a class="z-wkrow" href="/events?wiki=<%= w.wiki %>">
+                <span class="z-wkrow-name"><%= wikiLocal(w.wiki) %></span>
+                <span class="z-wkrow-track"><i style="width: <%= Math.max(4, Math.round((w.entries / wm) * 100)) %>%"></i></span>
+                <span class="z-wkrow-n"><%= formatNumber(w.entries) %></span>
+              </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>

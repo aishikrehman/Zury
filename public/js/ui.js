@@ -537,3 +537,62 @@ document.addEventListener('change', (e) => {
   }, { threshold: 0.4 });
   els.forEach((el) => io.observe(el));
 })();
+
+// Home carousel: cross-fades every 6 seconds (paused on hover, on focus and when the tab is hidden;
+// still for people who prefer less motion). The later pictures load once the page has finished.
+(() => {
+  const box = document.querySelector('[data-carousel]');
+  if (!box) return;
+  const slides = [...box.querySelectorAll('.z-slide')];
+  const dots = [...box.querySelectorAll('[data-slide]')];
+  let at = 0; let timer = null;
+  const load = () => slides.forEach((s) => { const img = s.querySelector('img[data-src]'); if (img) { img.srcset = img.dataset.srcset; img.src = img.dataset.src; img.removeAttribute('data-src'); } });
+  if (document.readyState === 'complete') setTimeout(load, 300); else window.addEventListener('load', () => setTimeout(load, 300));
+  const show = (i) => {
+    at = (i + slides.length) % slides.length;
+    slides.forEach((s, k) => { s.classList.toggle('is-on', k === at); s.setAttribute('aria-hidden', k === at ? 'false' : 'true'); });
+    dots.forEach((d, k) => d.classList.toggle('is-on', k === at));
+    const cap = box.querySelector('.z-hero2-cap');
+    if (cap) { cap.classList.remove('is-in'); void cap.offsetWidth; cap.querySelector('i').className = 'ti ti-' + slides[at].dataset.icon; cap.querySelector('span').textContent = slides[at].dataset.caption; cap.classList.add('is-in'); }
+    const cr = box.querySelector('.z-hero2-credit');
+    if (cr) { cr.href = slides[at].dataset.creditHref; cr.querySelector('span').textContent = slides[at].dataset.credit; }
+  };
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const start = () => { if (!still && !timer) timer = setInterval(() => { load(); show(at + 1); }, 6000); };
+  const stop = () => { clearInterval(timer); timer = null; };
+  dots.forEach((d) => d.addEventListener('click', () => { load(); show(Number(d.dataset.slide)); stop(); start(); }));
+  box.addEventListener('mouseenter', stop); box.addEventListener('mouseleave', start);
+  box.addEventListener('focusin', stop); box.addEventListener('focusout', start);
+  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  let x0 = null;
+  box.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+  box.addEventListener('touchend', (e) => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) { load(); show(at + (dx < 0 ? 1 : -1)); stop(); start(); } x0 = null; });
+  start();
+})();
+// Sections rise in as they come into view.
+(() => {
+  const els = document.querySelectorAll('.z-reveal');
+  if (!els.length) return;
+  if (!('IntersectionObserver' in window)) { els.forEach((el) => el.classList.add('is-in')); return; }
+  const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+  els.forEach((el) => io.observe(el));
+})();
+
+// Home: all time / this month.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-stat-tab]');
+  if (!b) return;
+  const box = b.closest('section');
+  box.querySelectorAll('[data-stat-tab]').forEach((x) => { x.classList.toggle('is-on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+  box.querySelectorAll('[data-stat-pane]').forEach((p) => { p.hidden = p.dataset.statPane !== b.dataset.statTab; });
+});
+// First visit: the site's language from where the visitor is (their time zone), unless they chose one.
+(() => {
+  try {
+    if (document.cookie.includes('zury_tz=')) return;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    document.cookie = 'zury_tz=' + encodeURIComponent(tz) + '; path=/; max-age=31536000; samesite=lax';
+    const want = tz === 'Asia/Dhaka' ? 'bn' : null;
+    if (want && document.documentElement.lang !== want && !document.documentElement.dataset.langChosen) location.reload();
+  } catch (e) { /* stays as it is */ }
+})();

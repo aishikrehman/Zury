@@ -1,101 +1,91 @@
-<%
-  const now = Date.now();
-  const typeIcon = TYPE_ICONS;
-  const typeColor = TYPE_COLORS;
-  const daysLeft = (c) => (c.endDate ? Math.max(0, Math.ceil((new Date(c.endDate) - now) / 86400000)) : null);
-  const elapsed = (c) => {
-    if (!c.startDate || !c.endDate) return 0;
-    const total = new Date(c.endDate) - new Date(c.startDate);
-    return Math.min(100, Math.max(0, Math.round(((now - new Date(c.startDate)) / total) * 100)));
-  };
-  const month = (d) => new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(new Date(d));
-  const day = (d) => new Intl.DateTimeFormat('en', { day: 'numeric', timeZone: 'UTC' }).format(new Date(d));
-  const fmt = formatNumber;
-  const step = currentUser ? 2 : 1;
-%>
+<% const fmt = formatNumber; %>
 
-<!-- Hero -->
-<div class="z-hero">
-  <div class="container-xl">
-    <div class="row align-items-center g-5">
-      <div class="col-lg-6">
-        <h1 class="display-5 lh-sm mb-3 z-gradient-text"><%= t("Run Wikimedia contests from one place.") %></h1>
-        <p class="fs-2 text-secondary mb-4 lh-base">
-          <%= t("Zury handles photo contests, writing contests, Wikidata drives and edit-a-thons: from registration and submissions to reviewers review and results.") %>
-        </p>
-        <div class="btn-list mb-4">
-          <% if (currentUser) { %>
-            <a href="/dashboard" class="btn btn-primary btn-lg"><i class="ti ti-layout-dashboard me-1"></i><%= t("Go to your dashboard") %></a>
-          <% } else { %>
-            <a href="/login" class="btn btn-primary btn-lg"><i class="ti ti-brand-wikipedia me-1"></i><%= t("Log in with Wikipedia") %></a>
-          <% } %>
-          <a href="/events/active" class="btn btn-lg"><i class="ti ti-calendar-event me-1"></i><%= t("Browse events") %></a>
-        </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="position-relative px-lg-4">
-          <figure class="z-hero-art">
-            <img src="/images/art/hero-760.webp" srcset="/images/art/hero-480.webp 480w, /images/art/hero-760.webp 760w" sizes="(max-width: 991px) 92vw, 560px" width="760" height="518" alt="<%= t('A Wikipedia globe painted as a mural among flowers') %>" fetchpriority="high" decoding="async">
-          </figure>
-          <div class="card card-sm shadow position-absolute d-none d-md-block" style="right: -0.25rem; bottom: -1rem; width: 13rem">
-            <div class="card-body d-flex align-items-center">
-              <span class="avatar bg-green text-white me-3"><i class="ti ti-upload"></i></span>
-              <div><div class="h3 m-0"><%= fmt(trend.values.reduce((a, b) => a + b, 0)) %></div><div class="text-secondary small"><%= t("entries this month") %></div></div>
-            </div>
-          </div>
-          <div class="card card-sm shadow position-absolute d-none d-md-block" style="left: -0.25rem; top: -1rem; width: 12rem">
-            <div class="card-body d-flex align-items-center">
-              <span class="avatar bg-primary text-white me-3"><i class="ti ti-player-play"></i></span>
-              <div><div class="h3 m-0"><%= active.length %></div><div class="text-secondary small"><%= t("events running now") %></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- The movement in numbers -->
-    <div class="z-impact">
-      <% [['align-justified', home.totals.words, 'words accepted'], ['file-text', home.totals.articles, 'articles accepted'], ['users', home.totals.people, 'contributors'], ['world', home.totals.wikis, 'wikis'], ['calendar-event', stats.events, 'public events']].forEach(([icon, value, label]) => { %>
-        <div><i class="ti ti-<%= icon %>"></i><b data-count="<%= value %>"><%= fmt(value) %></b><span><%= t(label) %></span></div>
-      <% }) %>
-    </div>
+<%# 1. Hero: full-width pictures behind the welcome, cross-fading. %>
+<section class="z-hero2" data-carousel aria-roledescription="carousel" aria-label="<%= t('What Zury does') %>">
+  <% const ZVD = 'https://commons.wikimedia.org/wiki/Category:Wikipedia_logo_variants_via_Stable_Diffusion_by_Ziko_van_Dijk';
+     const slides = [
+       ['bg-mural', 'A Wikipedia globe painted as a mural among flowers', 'Contests for every Wikimedia project', 'palette', 'Ziko van Dijk', 'Public domain', ZVD],
+       ['bg-octopus', 'An octopus holding the Wikipedia globe, painted on a wall', 'Many events, one place to run them', 'stack-2', 'Ziko van Dijk', 'Public domain', ZVD],
+       ['bg-mandala', 'The Wikimedia logo in a round Gayo-style ornament', 'One event, many wikis and languages', 'world', 'Gunarta (WMID)', 'CC BY-SA 4.0', 'https://commons.wikimedia.org/wiki/File:Roda_Wikimedia_Gaya_Gayo.png'],
+       ['bg-culture', 'Symbols of culture and knowledge on blue', 'Open knowledge, counted fairly', 'scale', 'Matthias Wörle / MOR for Wikimedia Deutschland', 'CC BY 4.0', 'https://commons.wikimedia.org/wiki/File:Offene_Kulturdaten_Visual_(background_symbols_blue).png'],
+       ['bg-batik', 'Wikimedia symbols in a batik pattern', 'Made for the Wikimedia movement', 'heart', 'Gunarta', 'CC BY-SA 4.0', 'https://commons.wikimedia.org/wiki/File:Batik_Sida_Wiki.png'],
+     ]; %>
+  <div class="z-slides">
+    <% slides.forEach(([img, alt, caption, icon, by, lic, src], i) => { const set = `/images/art/${img}-640.webp 640w, /images/art/${img}-1000.webp 1000w, /images/art/${img}-1600.webp 1600w`; %>
+      <figure class="z-slide<%= i === 0 ? ' is-on' : '' %>" role="group" aria-roledescription="slide" aria-label="<%= formatNumber(i + 1) %> / <%= formatNumber(slides.length) %>"<%- i ? ' aria-hidden="true"' : '' %> data-caption="<%= t(caption) %>" data-icon="<%= icon %>" data-credit="<%= by %> · <%= lic === 'Public domain' ? t('Public domain') : lic %>" data-credit-href="<%= src %>">
+        <img <%- i === 0 ? `src="/images/art/${img}-1000.webp" srcset="${set}" fetchpriority="high"` : `data-src="/images/art/${img}-1000.webp" data-srcset="${set}"` %> sizes="100vw" width="1600" height="615" alt="<%= t(alt) %>" decoding="async">
+      </figure>
+    <% }) %>
   </div>
-</div>
-
-
-<section class="z-how">
-  <div class="container-xl">
-    <h2 class="z-how-title"><%= t('How Zury works') %></h2>
-    <div class="row g-4">
-      <% [['world', 'Set up an event for any wiki', 'Photo contests, writing contests, Wikidata drives or edit-a-thons, on one wiki or many, in a few steps.'], ['people', 'People take part', 'Participants log in with their Wikimedia account and submit; entries are checked against the rules as they come in.'], ['results', 'Review and results', 'Reviewers judge in a fast review window, the Patrol room watches for changes, and results publish with one click.']].forEach(([img, title, text], i) => { %>
-        <div class="col-md-4">
-          <div class="z-how-step">
-            <img src="/images/art/<%= img %>.webp" width="160" height="160" alt="" loading="lazy" decoding="async">
-            <div class="z-how-n"><%= formatNumber(i + 1) %></div>
-            <h3><%= t(title) %></h3>
-            <p><%= t(text) %></p>
-          </div>
-        </div>
-      <% }) %>
+  <div class="z-hero2-shade"></div>
+  <div class="container-xl z-hero2-body">
+    <div class="z-hero2-text">
+      <h1 class="display-5 lh-sm mb-3"><%= t("Run Wikimedia contests from one place.") %></h1>
+      <p class="fs-2 mb-4 lh-base"><%= t("Zury handles photo contests, writing contests, Wikidata drives and edit-a-thons: from registration and submissions to reviewers review and results.") %></p>
+      <div class="btn-list mb-4">
+        <% if (currentUser) { %>
+          <a href="/dashboard" class="btn btn-primary btn-lg"><i class="ti ti-layout-dashboard me-1"></i><%= t("Go to your dashboard") %></a>
+        <% } else { %>
+          <a href="/login" class="btn btn-primary btn-lg"><i class="ti ti-brand-wikipedia me-1"></i><%= t("Log in with Wikipedia") %></a>
+        <% } %>
+        <a href="/events/active" class="btn btn-lg"><i class="ti ti-calendar-event me-1"></i><%= t("Browse events") %></a>
+      </div>
     </div>
-    <p class="z-art-credit"><%= t('Illustrations') %>: <a href="https://commons.wikimedia.org/wiki/File:2023-03_AI_images_ZvD_05.png" target="_blank" rel="noopener">Ziko van Dijk</a> (<%= t('public domain') %>); <a href="https://commons.wikimedia.org/wiki/Category:Movement_Strategy_graphics" target="_blank" rel="noopener">Wikimedia Movement Strategy graphics</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>), <%= t('cropped') %>.</p>
+    <a class="z-hero2-credit" href="<%= slides[0][6] %>" target="_blank" rel="noopener"><i class="ti ti-copyright"></i><span><%= slides[0][4] %> · <%= t('Public domain') %></span></a>
+    <div class="z-dots" role="tablist">
+      <% slides.forEach((s, i) => { %><button type="button" class="<%= i === 0 ? 'is-on' : '' %>" data-slide="<%= i %>" aria-label="<%= t('Slide {n}', { n: formatNumber(i + 1) }) %>"></button><% }) %>
+    </div>
   </div>
 </section>
 
-<section class="page-body">
+<%# 3. The movement in numbers (all time / this month), and the wikis on a map. %>
+<%- include('../partials/homeStats') %>
+
+<%# 4. Running now (with events ending soon), beside events by project and the series. %>
+<section class="z-band is-soft">
   <div class="container-xl">
-    <div class="d-flex align-items-center gap-2 mb-3">
-      <h2 class="m-0"><i class="ti ti-player-play text-green me-1"></i><%= t('Running now') %></h2>
-      <span class="badge bg-green-lt"><%= formatNumber(active.length) %></span>
-      <a class="ms-auto" href="/events/active"><%= t('All events') %> <i class="ti ti-arrow-right"></i></a>
-    </div>
-    <% if (!active.length) { %>
-      <div class="card"><%- include('../partials/emptyArt', { title: t('No events are running right now.'), art: 'contest' }) %></div>
-    <% } else { %>
-      <div class="row row-cards">
-        <% active.forEach((c) => { %><div class="col-md-6 col-lg-4"><%- include('../partials/contestCard', { c, roles: [] }) %></div><% }) %>
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <%- include('../partials/homeHead', { icon: 'player-play', title: t('Running now'), count: active.length, sub: t('Events open for entries right now, on every wiki.'), more: '/events/active' }) %>
+        <% if (home.ending.length) { %>
+          <div class="z-ending">
+            <span class="z-ending-label"><i class="ti ti-hourglass-low"></i><%= t('Ending soon') %></span>
+            <% home.ending.forEach((c) => { %><a class="z-ending-item" href="<%= eventPath(c) %>"><span class="text-truncate"><%= c.title %></span><span class="badge bg-<%= c.days <= 3 ? 'red' : 'orange' %>-lt"><%= c.days === 0 ? t('Ends today') : tn('{n} day left', '{n} days left', c.days) %></span></a><% }) %>
+          </div>
+        <% } %>
+        <% if (!active.length) { %>
+          <div class="card"><%- include('../partials/emptyArt', { title: t('No events are running right now.'), art: 'contest' }) %></div>
+        <% } else { %>
+          <div class="row row-cards">
+            <% active.forEach((c) => { %><div class="col-md-6"><%- include('../partials/contestCard', { c, roles: [], photo: home.photos[c.id] }) %></div><% }) %>
+          </div>
+        <% } %>
       </div>
-    <% } %>
+      <div class="col-lg-4">
+        <%- include('../partials/homeHead', { icon: 'category', title: t('Events by project'), sub: t('Wikipedia, Commons, Wikidata and more.'), more: '/events' }) %>
+        <div class="z-projects is-stack">
+          <% home.projects.forEach((p) => { %>
+            <a class="z-project card card-link" href="/events?project=<%= p.key %>" style="--z-proj: <%= p.color %>">
+              <span class="z-project-ico"><i class="ti ti-<%= p.icon %>"></i></span>
+              <span class="z-project-name"><%= t(p.label) %></span>
+              <span class="z-project-n"><%= tn('{n} event', '{n} events', p.total) %><% if (p.running) { %> · <span class="text-green"><%= t('{n} running', { n: formatNumber(p.running) }) %></span><% } %></span>
+            </a>
+          <% }) %>
+        </div>
+        <% if (home.series.length) { %>
+          <div class="mt-4"><%- include('../partials/homeHead', { icon: 'stack-2', title: t('Series'), sub: t('Events that come back every year.') }) %></div>
+          <div class="z-series-grid is-stack">
+            <% home.series.forEach((sr) => { %>
+              <a class="card card-sm card-link d-flex flex-row align-items-center gap-3 p-3" href="/<%= sr.slug %>">
+                <% if (sr.logoUrl) { %><img src="<%= sr.logoUrl %>" width="40" height="40" alt="" loading="lazy" style="object-fit: contain"><% } else { %><span class="avatar bg-primary-lt"><i class="ti ti-stack-2"></i></span><% } %>
+                <span class="flex-fill min-w-0"><span class="d-block fw-medium text-truncate"><%= sr.title %></span><span class="small text-secondary text-truncate d-block"><%= sr.shortDescription || tn('{n} edition', '{n} editions', sr._count.editionRecords) %></span></span>
+                <i class="ti ti-chevron-right text-secondary"></i>
+              </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
   </div>
 </section>
 
