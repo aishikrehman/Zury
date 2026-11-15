@@ -114,7 +114,10 @@ contest.post('/assignments/release/:jurorId(\\d+)', entriesOnly, requirePermissi
 contest.get('/results', reviewController.results);
 contest.post('/results/publish', requireEventWide('publishResults'), reviewController.publish);
 contest.post('/submissions/:submissionId(\\d+)/appeal', entriesOnly, requireAuth, reviewController.appeal);
-contest.get('/appeals', reviewController.appealsList);
+contest.get('/patrol', reviewController.appealsList);
+contest.get('/appeals', (req, res) => res.redirect(301, `${req.base}/patrol`));
+contest.post('/patrol/check', requireAuth, entriesOnly, reviewController.patrolCheck);
+contest.post('/patrol/:submissionId(\\d+)/:action(seen|refresh|reopen|withdraw)', requireAuth, entriesOnly, reviewController.patrolAction);
 contest.post('/appeals/:appealId(\\d+)/delete', requirePermission('deleteAnything'), reviewController.deleteAppeal);
 contest.post('/appeals/:appealId(\\d+)/:action(uphold|dismiss)', requirePermission('manageAppeals'), reviewController.resolve);
 
@@ -176,6 +179,8 @@ router.post(`/series/:series(${SLUG})/:edition(${SLUG})/fountain`, requirePermis
 router.post(`/series/:series(${SLUG})/:action(archive|unarchive)`, requireAuth, eventsController.levelAction);
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/:action(update|copy|archive|unarchive|delete)`, requireAuth, eventsController.levelAction);
 router.post(`/:series(${SLUG})/next-edition`, requireAuth, eventsController.nextEdition);
+router.get(`/:series(${SLUG})/current`, eventsController.currentEdition);
+router.post(`/series/:series(${SLUG})/:edition(${SLUG})/invite`, requireAuth, eventsController.inviteEarlier);
 router.get(`/:series(${SLUG})`, eventsController.series);
 // An edition's own page, when the name under the series is an edition.
 router.get(`/:series(${SLUG})/:edition(${SLUG})`, eventsController.editionPage);

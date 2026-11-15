@@ -1,0 +1,13 @@
+<%# Of the accepted articles, how many still stand on their wikis (shown once some were checked). %>
+<% if (sv && sv.checked) { const pct = Math.round((sv.stand / sv.checked) * 100); %>
+  <div class="card card-sm mb-3 z-survival">
+    <div class="card-body d-flex flex-wrap align-items-center gap-3">
+      <span class="avatar bg-green-lt"><i class="ti ti-building-lighthouse"></i></span>
+      <div class="flex-fill min-w-0">
+        <div class="fw-medium"><%= t('Articles still standing') %> · <%= formatNumber(pct) %>%</div>
+        <div class="small text-secondary"><%= t('{n} of {m} accepted articles still stand', { n: formatNumber(sv.stand), m: formatNumber(sv.checked) }) %><% if (sv.deleted) { %> · <span class="text-red"><%= t('{n} deleted', { n: formatNumber(sv.deleted) }) %></span><% } %><% if (sv.redirect) { %> · <span class="text-orange"><%= t('{n} redirected', { n: formatNumber(sv.redirect) }) %></span><% } %></div>
+        <div class="z-sv-bar" aria-hidden="true"><i class="is-ok" style="width:<%= pct %>%"></i><i class="is-bad" style="width:<%= Math.round((sv.deleted / sv.checked) * 100) %>%"></i><i class="is-wait" style="width:<%= Math.round((sv.redirect / sv.checked) * 100) %>%"></i></div>
+      </div>
+    </div>
+  </div>
+<% } %>

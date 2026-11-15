@@ -1,3 +1,4 @@
+<%- include('./survival', { sv: totals.survival }) %>
 <div class="row row-cards mb-3">
   <% [[t('Participants'), totals.participants, 'users'], [t('Entries'), totals.entries, 'files'], [t('Approved'), totals.approved, 'circle-check'], [t('Words accepted'), totals.approvedWords, 'align-justified'], [t('Wikis'), totals.wikis.length, 'world']].forEach(([label, value, icon]) => { %>
     <div class="col-6 col-lg"><div class="card card-sm"><div class="card-body d-flex align-items-center">

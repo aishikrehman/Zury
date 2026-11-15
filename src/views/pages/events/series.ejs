@@ -13,7 +13,10 @@
   const communities = (series.communities || '').split('\n').filter(Boolean);
   const edName = (e) => e.identifier || e.slug;
   const edHref = (e) => `/${series.slug}/${e.slug}`;
-  const featured = summary.find((e) => e.featured) || summary.find((e) => ['active', 'upcoming', 'published'].includes(e.status)) || summary[0];
+  const featured = current;
+  const DAY = 86400000;
+  const dayLeft = (d) => Math.ceil((new Date(d).getTime() - Date.now()) / DAY);
+  const span = (e) => [e.startDate, e.endDate].filter(Boolean).map((d) => formatDate(d)).join(' – ');
   const SERIES_STATUS = { draft: ['Draft', 'secondary'], active: ['Active', 'success'], paused: ['Paused', 'warning'], archived: ['Archived', 'secondary'] };
   const meta = `<span><i class="ti ti-calendar"></i>${tn('{n} edition', '{n} editions', summary.length)}</span><span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', directEvents.length)}</span>${series.visibility !== 'public' ? `<span><i class="ti ti-eye-off"></i>${t(series.visibility === 'private' ? 'Members only' : 'Link only')}</span>` : ''}`;
   const orderForm = (kind, id, action, icon, label, i, n) => `<form method="post" action="/series/${series.slug}/order" class="d-inline"><input type="hidden" name="_csrf" value="${csrfToken}"><input type="hidden" name="kind" value="${kind}"><input type="hidden" name="id" value="${id}"><input type="hidden" name="action" value="${action}"><button class="btn btn-sm btn-ghost-secondary btn-icon" type="submit" title="${label}" aria-label="${label}"${(action === 'up' && i === 0) || (action === 'down' && i === n - 1) ? ' disabled' : ''}><i class="ti ti-${icon}"></i></button></form>`;
@@ -33,20 +36,36 @@
         </div>
       </div>
       <div class="row row-cards mb-3">
-        <% if (featured) { %>
-          <div class="col-lg-6">
-            <a class="card card-link h-100" href="<%= edHref(featured) %>">
+        <% if (featured) { const fst = CONTEST_STATUSES[featured.status] || { label: featured.status, badge: 'secondary' };
+             const toStart = featured.startDate ? dayLeft(featured.startDate) : null; const toEnd = featured.endDate ? dayLeft(featured.endDate) : null; %>
+          <div class="col-lg-<%= communities.length || langs.length || links.length || series.defaultLanguage ? 8 : 12 %>">
+            <div class="card h-100 z-current">
               <div class="card-body">
-                <div class="subheader mb-1"><i class="ti ti-star me-1"></i><%= featured.featured ? t('Featured edition') : t('Current edition') %></div>
-                <div class="h2 mb-1"><%= edName(featured) %></div>
-                <div class="text-secondary"><%= featured.title %></div>
-                <div class="small text-secondary mt-2"><%= tn('{n} participant', '{n} participants', featured.participants) %> · <%= tn('{n} entry', '{n} entries', featured.entries) %></div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                  <span class="subheader m-0"><i class="ti ti-star me-1"></i><%= featured.featured ? t('Featured edition') : t('Current edition') %></span>
+                  <span class="badge bg-<%= fst.badge === 'dark' || fst.badge === 'light' ? 'secondary' : fst.badge %>-lt"><%= t(fst.label) %></span>
+                  <% if (toStart != null && toStart > 0) { %><span class="z-countdown"><i class="ti ti-hourglass-high"></i><%= tn('Starts in {n} day', 'Starts in {n} days', toStart) %></span>
+                  <% } else if (toEnd != null && toEnd >= 0 && ['active', 'published', 'upcoming'].includes(featured.status)) { %><span class="z-countdown is-live"><i class="ti ti-hourglass-low"></i><%= toEnd === 0 ? t('Ends today') : tn('{n} day left', '{n} days left', toEnd) %></span><% } %>
+                </div>
+                <a class="h2 mb-0 d-block text-reset" href="<%= edHref(featured) %>"><%= edName(featured) %> <span class="text-secondary fw-normal fs-3"><%= featured.title %></span></a>
+                <% if (span(featured)) { %><div class="small text-secondary mt-1"><i class="ti ti-calendar me-1"></i><%= span(featured) %></div><% } %>
+                <div class="z-current-figs">
+                  <div><b><%= formatNumber(featured.participants) %></b><span><%= t('Participants') %></span></div>
+                  <div><b><%= formatNumber(featured.entries) %></b><span><%= t('Entries') %></span></div>
+                  <div><b class="text-green"><%= formatNumber(featured.approved) %></b><span><%= t('Approved') %></span></div>
+                  <% if (featured.approvedWords) { %><div><b><%= formatNumber(featured.approvedWords) %></b><span><%= t('Words accepted') %></span></div><% } %>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <a class="btn btn-primary" href="<%= edHref(featured) %>"><%= ['active', 'published', 'upcoming'].includes(featured.status) ? t('Take part') : t('Open') %> <i class="ti ti-arrow-right ms-1"></i></a>
+                  <% if (canRun && latest) { %><a class="btn" href="/series/<%= series.slug %>/new-edition?method=copy&from=<%= encodeURIComponent(latest.slug) %>"><i class="ti ti-copy me-1"></i><%= t('Prepare the next edition') %></a><% } %>
+                  <button class="btn btn-ghost-secondary" type="button" data-copy="<%= base %>/current" title="<%= t('A link that always opens the current edition') %>"><i class="ti ti-link me-1"></i><%= t('Copy the current-edition link') %></button>
+                </div>
               </div>
-            </a>
+            </div>
           </div>
         <% } %>
         <% if (communities.length || langs.length || links.length || series.defaultLanguage) { %>
-          <div class="col-lg-6">
+          <div class="col-lg-4">
             <div class="card h-100"><div class="card-body small">
               <% if (series.defaultLanguage || langs.length) { %><div class="mb-2"><i class="ti ti-language me-1"></i><%= [series.defaultLanguage, ...langs.filter((l) => l !== series.defaultLanguage)].filter(Boolean).join(', ') %></div><% } %>
               <% if (communities.length) { %><div class="mb-2"><i class="ti ti-users-group me-1"></i><%= communities.join(' · ') %></div><% } %>
@@ -56,6 +75,7 @@
         <% } %>
       </div>
       <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition'), table: false }) %>
+      <%- include('../../partials/seriesInsights', { insights, show: ['trend', 'fame'] }) %>
 
     <% } else if (tab === 'editions') { %>
       <div class="card mb-3">
@@ -73,7 +93,7 @@
                   <div class="col-auto"><a class="h2 m-0 text-reset" href="<%= edHref(e) %>"><%= edName(e) %></a><% if (e.featured) { %> <i class="ti ti-star-filled text-yellow" title="<%= t('Featured') %>"></i><% } %></div>
                   <div class="col min-w-0">
                     <a class="text-truncate d-block text-reset" href="<%= edHref(e) %>"><%= e.title %></a>
-                    <div class="text-secondary small"><%= tn('{n} participant', '{n} participants', e.participants) %> · <%= tn('{n} entry', '{n} entries', e.entries) %> · <%= tn('{n} approved', '{n} approved', e.approved) %><% if (e.visibility && e.visibility !== 'public') { %> · <i class="ti ti-eye-off"></i> <%= t(e.visibility === 'private' ? 'Members only' : 'Link only') %><% } %></div>
+                    <% const fm = insights.fame.find((f) => f.id === e.id); %><div class="text-secondary small"><% if (span(e)) { %><i class="ti ti-calendar"></i> <%= span(e) %> · <% } %><%= tn('{n} participant', '{n} participants', e.participants) %> · <%= tn('{n} entry', '{n} entries', e.entries) %> · <%= tn('{n} approved', '{n} approved', e.approved) %><% if (e.approvedWords) { %> · <%= t('{n} words', { n: formatNumber(e.approvedWords) }) %><% } %><% if (fm) { %> · <i class="ti ti-trophy text-yellow"></i> <%= fm.top[0].username %><% } %><% if (e.visibility && e.visibility !== 'public') { %> · <i class="ti ti-eye-off"></i> <%= t(e.visibility === 'private' ? 'Members only' : 'Link only') %><% } %></div>
                   </div>
                   <div class="col-auto d-none d-md-flex flex-wrap gap-1"><% e.wikis.slice(0, 8).forEach((w) => { %><span class="badge bg-blue-lt" title="<%= wikiLocal(w.wiki) %>"><%= w.code %></span><% }) %></div>
                   <div class="col-auto"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></div>
@@ -102,6 +122,7 @@
     <% } else if (tab === 'statistics') { %>
       <% if (canRun && fountainCount) { %><form method="post" action="/series/<%= series.slug %>/fountain-sync" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Update all from Fountain') %> (<%= formatNumber(fountainCount) %>)</button></form><% } %>
       <%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
+      <%- include('../../partials/seriesInsights', { insights, show: ['trend', 'leaders'] }) %>
 
     <% } else if (tab === 'settings') { %>
       <form method="post" action="/series/<%= series.slug %>/update" class="card mb-3">

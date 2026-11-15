@@ -134,6 +134,7 @@ async function window(req, res, next) {
     res.render('pages/contest/review', {
       title: `Review — ${req.contest.title}`,
       handTo,
+      blocked: entry ? await reviewService.reviewBlock(req.eventSettings, entry, req.user.id) : null,
       entry,
       meta: entry ? JSON.parse(entry.metadata || '{}') : null,
       preview: pagePreview(entry, req.base),
@@ -296,16 +297,31 @@ async function appeal(req, res, next) {
   res.redirect(`${req.base}/submissions`);
 }
 
+const patrolStaff = (req) => req.permissions.has('reviewAppeal') || req.permissions.has('manageAppeals') || req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
 async function appealsList(req, res, next) {
   try {
-    const staff = req.permissions.has('reviewAppeal') || req.permissions.has('manageAppeals') || req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
+    const staff = patrolStaff(req);
     const open = require('../services/participationService').read(req.settings).rules.appealsPublic !== 'no';
-    let list = await reviewService.appeals(req.contest.id);
+    if (!staff && !req.settings.appealsEnabled) return res.status(404).render('pages/404', { title: 'Not Found' });
+    let list = req.settings.appealsEnabled || staff ? await reviewService.appeals(req.contest.id) : [];
     if (!staff && !open) {
       if (!req.user) return res.redirect('/login');
       list = list.filter((a) => a.userId === req.user.id);
     }
-    res.render('pages/contest/appeals', { title: `Appeals — ${req.contest.title}`, appeals: list });
+    // The Patrol room's watch list: articles deleted, redirected, moved, or much shorter since their decision.
+    let flagged = [];
+    if (staff) {
+      const watch = require('../services/articleWatchService');
+      const wikis = judgedWikis(req);
+      const rows = await prisma.submission.findMany({
+        where: { contestId: req.contest.id, status: { not: 'withdrawn' }, metadata: { contains: '"watch"' }, ...(wikis && { wiki: { in: wikis } }) },
+        select: { id: true, title: true, wiki: true, url: true, status: true, revId: true, wordCount: true, metadata: true, participant: { select: { username: true } } },
+        orderBy: { id: 'desc' }, take: 5000,
+      });
+      flagged = rows.map((r) => ({ ...r, flags: watch.flagsOf(r), watch: (JSON.parse(r.metadata || '{}').watch) || {} })).filter((r) => r.flags.length);
+    }
+    const show = ['all', 'deleted', 'redirect', 'moved', 'shrunk', 'appeals'].includes(req.query.show) ? req.query.show : 'all';
+    res.render('pages/contest/appeals', { title: `${req.t('Patrol room')} — ${req.contest.title}`, appeals: list, flagged, staff, show });
   } catch (err) {
     next(err);
   }
@@ -319,7 +335,7 @@ async function resolve(req, res, next) {
     if (!(err instanceof ReviewError)) return next(err);
     req.flash('danger', err.message);
   }
-  res.redirect(`${req.base}/appeals`);
+  res.redirect(`${req.base}/patrol?show=appeals`);
 }
 
 // /review: every event where this person is on the jury, with what's waiting.
@@ -459,7 +475,57 @@ const releaseJuror = assignmentAction(async (req) => {
   return req.t('{n} unreviewed entries taken back.', { n });
 });
 
-module.exports = { juryEventsFor, entries, bulkSave, assignments, distribute, reassignInactive, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+// Patrol room actions on one entry: looked at, back to the reviewers, out of the event, or brought up to date from the wiki.
+async function patrolAction(req, res, next) {
+  const back = `${req.base}/patrol${req.body.show ? `?show=${encodeURIComponent(req.body.show)}` : ''}`;
+  try {
+    if (!patrolStaff(req)) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
+    const s1 = await prisma.submission.findFirst({ where: { id: Number(req.params.submissionId), contestId: req.contest.id } });
+    if (!s1) return next();
+    const watch = require('../services/articleWatchService');
+    const action = req.params.action;
+    if (action === 'seen') {
+      await watch.markSeen(s1, req.body.flag === 'shrunk' ? 'shrunk' : 'state');
+      req.flash('success', req.t('Marked as looked at.'));
+    } else if (action === 'refresh') {
+      if (reviewService.resultsFinal(req.effective.contest)) throw new ReviewError('The event is archived, so the revision can no longer change.');
+      await watch.checkEvent(req.contest, req.eventSettings, { force: true, ids: [s1.id] });
+      req.flash('success', req.t('Brought up to date from the wiki.'));
+    } else if (action === 'reopen') {
+      if (!(req.permissions.has('manageEvent') || req.permissions.has('manageAppeals'))) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
+      await prisma.$transaction(async (tx) => {
+        await tx.review.deleteMany({ where: { submissionId: s1.id } });
+        await tx.submission.update({ where: { id: s1.id }, data: { status: 'under_review', score: null, history: { create: { actorId: req.user.id, action: 'patrol_reopened', previousValue: s1.status, newValue: 'under_review' } } } });
+      });
+      await watch.markSeen(s1, 'shrunk').catch(() => null);
+      await require('../services/auditService').record({ actorId: req.user.id, contestId: req.contest.id, action: 'patrol.reopened', entityType: 'Submission', entityId: s1.id, details: { title: s1.title } });
+      req.flash('success', req.t('Sent back to the reviewers.'));
+    } else if (action === 'withdraw') {
+      if (!req.permissions.has('manageEvent')) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
+      await require('../services/submissionService').changeStatus({ actor: req.user, submission: s1, contestId: req.contest.id, status: 'withdrawn', note: 'Removed from the Patrol room' });
+      req.flash('success', req.t('Removed from the event.'));
+    }
+  } catch (err) {
+    if (!(err instanceof ReviewError)) return next(err);
+    req.flash('danger', req.t(err.message));
+  }
+  res.redirect(back);
+}
+
+// The whole event checked against the wikis now (in the background).
+async function patrolCheck(req, res, next) {
+  try {
+    if (!patrolStaff(req)) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
+    const contest = req.contest; const settings = req.eventSettings;
+    setImmediate(() => require('../services/articleWatchService').checkEvent(contest, settings).catch((err) => console.error('Patrol check:', err.message)));
+    req.flash('success', req.t('Checking the articles against the wikis; reload in a minute.'));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(`${req.base}/patrol`);
+}
+
+module.exports = { patrolAction, patrolCheck, juryEventsFor, entries, bulkSave, assignments, distribute, reassignInactive, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
 
 // Higher levels clear an appeal from the log.
 async function deleteAppeal(req, res, next) {
@@ -469,7 +535,7 @@ async function deleteAppeal(req, res, next) {
   } catch (err) {
     return next(err);
   }
-  res.redirect(`${req.base}/appeals`);
+  res.redirect(`${req.base}/patrol?show=appeals`);
 }
 module.exports.deleteAppeal = deleteAppeal;
 

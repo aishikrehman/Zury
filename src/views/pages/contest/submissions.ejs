@@ -187,7 +187,7 @@
                       <span class="avatar avatar-sm me-2" style="background-image: url('<%= meta.file.thumbUrl %>')"></span>
                     <% } %>
                     <div>
-                      <a href="<%= entryUrl(s) %>" target="_blank" rel="noopener"><%= s.title %></a>
+                      <a href="<%= entryUrl(s) %>" target="_blank" rel="noopener"><%= s.title %></a><% { const wst = (meta && meta.watch) || {}; const WB = { deleted: ['Deleted', 'trash', 'red'], redirect: ['Now a redirect', 'arrow-forward-up', 'orange'], moved: ['Moved', 'arrows-right-left', 'blue'] }[wst.state]; if (WB) { %><span class="badge bg-<%= WB[2] %>-lt ms-1 z-watch-badge" title="<%= wst.movedFrom ? wst.movedFrom + ' →' : '' %>"><i class="ti ti-<%= WB[1] %> me-1"></i><%= t(WB[0]) %></span><% } if (wst.shrunk) { %><span class="badge bg-yellow-lt ms-1 z-watch-badge"><i class="ti ti-trending-down me-1"></i><%= formatNumber(wst.shrunk.from) %> → <%= formatNumber(wst.shrunk.to) %></span><% } } %>
                       <% if (showWiki) { %><div class="text-secondary small z-entry-wiki"><%= wikiLocal(s.wiki) %></div><% } %>
                       <% if (meta && (!meta.entryType || meta.entryType === 'article') && (meta.createdAt || meta.creator)) { const expanded = meta.creator && s.participant && meta.creator !== s.participant.username; %>
                         <div class="z-entry-facts">

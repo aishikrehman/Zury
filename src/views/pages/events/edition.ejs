@@ -33,6 +33,25 @@
       <% if (canRun) { %><div class="mb-3"><%- include('../../partials/inlineEdit', { action: `/series/${sr.slug}/${edition.slug}/update`, name: 'description', value: edition.description, label: t('Description'), multiline: true, maxlength: 2000, hidden: { title: edition.title, startDate: day(edition.startDate), endDate: day(edition.endDate), back: 'overview' }, viewTag: 'p', viewClass: 'text-secondary m-0', emptyText: t('Add a description') }) %></div>
       <% } else if (edition.description) { %><p class="text-secondary" style="white-space: pre-line"><%= edition.description %></p><% } %>
       <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event'), table: false }) %><% } %>
+      <% if (nav.prev || nav.next || carry) { %>
+        <div class="z-ed-strip mb-3">
+          <% if (nav.prev) { %><a class="card card-sm card-link z-ed-nav" href="/<%= sr.slug %>/<%= nav.prev.slug %>"><div class="card-body"><i class="ti ti-chevron-left"></i><div><small class="text-secondary"><%= t('Previous edition') %></small><b><%= nav.prev.identifier || nav.prev.slug %></b><small class="text-secondary"><%= tn('{n} participant', '{n} participants', nav.prev.participants) %> · <%= tn('{n} entry', '{n} entries', nav.prev.entries) %></small></div></div></a><% } %>
+          <% if (carry && carry.before) { const pct = Math.round((carry.back / carry.before) * 100); %>
+            <div class="card card-sm z-ed-carry"><div class="card-body">
+              <div class="d-flex align-items-center gap-2"><i class="ti ti-repeat text-primary fs-2"></i><div><b><%= formatNumber(carry.back) %></b> <span class="text-secondary"><%= t('of {n} from the previous edition came back', { n: formatNumber(carry.before) }) %></span></div></div>
+              <div class="z-ks-bar"><i style="width: <%= pct %>%; background: var(--z-brand)"></i></div>
+              <% if (canRun && !['completed', 'archived', 'cancelled'].includes(edition.status)) { %>
+                <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/invite" class="d-flex flex-wrap gap-2 mt-2" data-confirm="<%= t('Send a bell notification to the people from the previous edition?') %>">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <select class="form-select form-select-sm w-auto" name="who" aria-label="<%= t('Who') %>"><option value="participants"><%= t('Participants') %></option><option value="reviewers"><%= t('Reviewers') %></option><option value="both"><%= t('Participants and reviewers') %></option></select>
+                  <button class="btn btn-sm" type="submit"><i class="ti ti-bell me-1"></i><%= t('Invite them back') %></button>
+                </form>
+              <% } %>
+            </div></div>
+          <% } %>
+          <% if (nav.next) { %><a class="card card-sm card-link z-ed-nav is-next" href="/<%= sr.slug %>/<%= nav.next.slug %>"><div class="card-body"><div><small class="text-secondary"><%= t('Next edition') %></small><b><%= nav.next.identifier || nav.next.slug %></b><small class="text-secondary"><%= tn('{n} participant', '{n} participants', nav.next.participants) %> · <%= tn('{n} entry', '{n} entries', nav.next.entries) %></small></div><i class="ti ti-chevron-right"></i></div></a><% } %>
+        </div>
+      <% } %>
       <% if (!events.length) { %>
         <div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div>
       <% } else { %>

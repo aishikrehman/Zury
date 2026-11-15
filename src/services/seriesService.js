@@ -160,6 +160,69 @@ async function remove({ actorId, series }) {
   await audit.record({ actorId, action: 'series.deleted', entityType: 'EventSeries', entityId: series.id, details: { slug: series.slug } });
 }
 
+// Across a series' editions (from summary(), any order): per edition, oldest first, how many
+// took part and how many of them were new to the series; everyone's totals over all editions
+// with the number of editions they took part in; and each finished edition's top three.
+const FINISHED = ['completed', 'archived', 'under_review', 'submission_closed'];
+const when = (e) => (e.startDate ? new Date(e.startDate).getTime() : 0) || (e.year ? Date.UTC(e.year, 0, 1) : 0) || Number.parseInt(e.slug, 10) || 0;
+async function insights(editions, { leaders = 50 } = {}) {
+  const chrono = [...editions].sort((a, b) => when(a) - when(b));
+  const edOf = new Map();
+  chrono.forEach((e) => e.events.forEach((ev) => edOf.set(ev.id, e.id)));
+  const empty = { trend: [], leaders: [], fame: [] };
+  if (!edOf.size) return empty;
+  const { Prisma } = require('@prisma/client');
+  const rows = await prisma.$queryRaw`
+    SELECT s.participantId AS uid, s.contestId AS cid, COUNT(DISTINCT s.pageKey) AS entries,
+           COUNT(DISTINCT CASE WHEN s.status = 'approved' THEN s.pageKey END) AS accepted,
+           COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.wordCount ELSE 0 END), 0) AS words
+    FROM Submission s WHERE s.contestId IN (${Prisma.join([...edOf.keys()])}) AND s.status <> 'withdrawn'
+    GROUP BY s.participantId, s.contestId`;
+  // person → edition → totals
+  const per = new Map();
+  for (const r of rows) {
+    const uid = Number(r.uid);
+    const ed = edOf.get(Number(r.cid));
+    if (!per.has(uid)) per.set(uid, new Map());
+    const m = per.get(uid);
+    const t = m.get(ed) || { entries: 0, accepted: 0, words: 0 };
+    t.entries += Number(r.entries); t.accepted += Number(r.accepted); t.words += Number(r.words);
+    m.set(ed, t);
+  }
+  const seen = new Set();
+  const trend = chrono.map((e) => {
+    let total = 0;
+    let fresh = 0;
+    for (const [uid, m] of per) if (m.has(e.id)) { total += 1; if (!seen.has(uid)) fresh += 1; }
+    for (const [uid, m] of per) if (m.has(e.id)) seen.add(uid);
+    return { id: e.id, label: e.identifier || e.slug, total, fresh, returning: total - fresh, words: e.approvedWords || 0, entries: e.entries || 0 };
+  });
+  const names = new Map((await prisma.user.findMany({ where: { id: { in: [...per.keys()] } }, select: { id: true, username: true } })).map((u) => [u.id, u.username]));
+  const all = [...per].map(([uid, m]) => {
+    const sum = { username: names.get(uid) || '?', editions: m.size, entries: 0, accepted: 0, words: 0 };
+    for (const t of m.values()) { sum.entries += t.entries; sum.accepted += t.accepted; sum.words += t.words; }
+    return sum;
+  });
+  const byWords = all.some((p) => p.words) ? (a, b) => b.words - a.words || b.accepted - a.accepted : (a, b) => b.accepted - a.accepted || b.entries - a.entries;
+  const fame = chrono.filter((e) => FINISHED.includes(e.status)).reverse().map((e) => {
+    const top = [...per].filter(([, m]) => m.has(e.id)).map(([uid, m]) => ({ username: names.get(uid) || '?', ...m.get(e.id) }))
+      .filter((p) => p.accepted > 0).sort(byWords).slice(0, 3);
+    return { id: e.id, label: e.identifier || e.slug, title: e.title, slug: e.slug, top };
+  }).filter((f) => f.top.length);
+  return { trend, leaders: all.sort(byWords).slice(0, leaders), fame };
+}
+
+// The edition to open for "/<series>/current": the featured one, else one that is running,
+// else the next one coming, else the newest.
+function currentOf(editions) {
+  const chrono = [...editions].sort((a, b) => when(b) - when(a));
+  return editions.find((e) => e.featured)
+    || chrono.find((e) => e.status === 'active')
+    || [...chrono].reverse().find((e) => ['upcoming', 'published'].includes(e.status))
+    || chrono[0] || null;
+}
+
 module.exports = {
+  insights, currentOf, when,
   SERIES_STATUSES,
   VISIBILITIES, SeriesError, create, summary, nextEdition, createEdition, listAll, update, remove };

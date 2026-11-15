@@ -142,6 +142,7 @@ async function eventStats(contest, { wiki, now = new Date() } = {}) {
   const wordGrowth = { labels: wordSeries.labels, values: wordSeries.values.map((v) => (run += v)), accepted: wordSeries.accepted.map((v) => (runAcc += v)), entries: series.values.map((v) => (runN += v)) };
 
   return {
+    survival: await survival([contest.id], wiki),
     wordStats,
     total,
     active,
@@ -256,9 +257,28 @@ async function rollup(contestIds) {
     approvedWords: num(totals.approvedWords),
     participants: num(people.n),
     wikis: [...new Map(wikis.map((w) => [w.wiki, w])).values()],
+    survival: await survival(ids),
   };
 }
 
+// Of the accepted articles, how many still stand on their wikis (as last checked by the article watch).
+async function survival(contestIds, wiki = null) {
+  const ids = [...new Set(contestIds)].map(Number).filter(Number.isInteger);
+  if (!ids.length) return { accepted: 0, checked: 0, deleted: 0, redirect: 0, stand: 0 };
+  const { Prisma } = require('@prisma/client');
+  const [r] = await prisma.$queryRaw`
+    SELECT COUNT(*) AS accepted,
+           COALESCE(SUM(metadata LIKE '%"watch"%checkedAt%'), 0) AS checked,
+           COALESCE(SUM(metadata LIKE '%"state":"deleted"%'), 0) AS deleted,
+           COALESCE(SUM(metadata LIKE '%"state":"redirect"%'), 0) AS redirect
+    FROM Submission WHERE contestId IN (${Prisma.join(ids)}) AND status = 'approved' AND entryType = 'article' ${wiki ? Prisma.sql`AND wiki = ${wiki}` : Prisma.empty}`;
+  const n = (v) => Number(v || 0);
+  const out = { accepted: n(r.accepted), checked: n(r.checked), deleted: n(r.deleted), redirect: n(r.redirect) };
+  out.stand = Math.max(0, out.checked - out.deleted - out.redirect);
+  return out;
+}
+
 module.exports = {
+  survival,
   topPeople,
   byWiki, eventStats, userStats, platformStats, dailySeries, rollup };

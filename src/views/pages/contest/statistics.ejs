@@ -76,6 +76,7 @@
   <div class="row row-cards">
     <div class="<%= hasSide ? 'col-lg-8' : 'col-12' %>">
       <% if (stats) { %>
+        <%- include('../../partials/survival', { sv: stats.survival }) %>
         <%- include('../../partials/eventStats', { stats }) %>
         <%- include('../../partials/reviewStats', { stats }) %>
       <% } %>

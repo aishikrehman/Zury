@@ -144,13 +144,19 @@ async function queue({ contestId, settings, jurorId, wikis = null, after = 0, fi
   const candidates = await prisma.submission.findMany({ where, orderBy: [...order, { id: 'asc' }], select: { id: true } });
   // Entries that already have all their reviews are waiting to be decided, not for this person.
   // Counted apart (counting inside the query above is slow on big events).
+  // Entries at the event's most reviews are closed to anyone who hasn't reviewed them.
   let list = candidates;
-  if (mode === 'waiting' && candidates.length) {
+  const maxReviews = require('./participationService').read(settings).rules.maxReviews;
+  if ((mode === 'waiting' || (mode === 'open' && maxReviews)) && candidates.length) {
     const full = new Set();
     for (let i = 0; i < candidates.length; i += 5000) {
       const ids = candidates.slice(i, i + 5000).map((c) => c.id);
       const counts = await prisma.review.groupBy({ by: ['submissionId'], where: { submissionId: { in: ids } }, _count: { _all: true } });
-      for (const r of counts) if (r._count._all >= required) full.add(r.submissionId);
+      const mine = mode === 'open' ? new Set((await prisma.review.findMany({ where: { submissionId: { in: ids }, jurorId }, select: { submissionId: true } })).map((r) => r.submissionId)) : new Set();
+      for (const r of counts) {
+        const n = r._count._all;
+        if ((mode === 'waiting' && n >= required) || (maxReviews && n >= maxReviews && !mine.has(r.submissionId))) full.add(r.submissionId);
+      }
     }
     list = candidates.filter((c) => !full.has(c.id));
   }
@@ -229,22 +235,28 @@ async function entryForReview(contestId, submissionId) {
  * Saves (or updates) one jury member's review, then decides the entry once it
  * has enough reviews. Returns { status, decided }.
  */
+// Why this person can't review this entry (null when they can): already decided, their own,
+// not assigned to them (assigned modes), or it already has the most reviews the event allows.
+// Someone who already reviewed it can always correct their review.
+async function reviewBlock(settings, submission, actorId) {
+  if (submission.reviews.some((r) => r.jurorId === actorId)) return null;
+  if (!REVIEWABLE.includes(submission.status)) return 'This entry has already been decided.';
+  if (submission.participantId === actorId && !settings.selfReview) return "You can't review your own entry.";
+  if (assignedMode(settings)) {
+    const assigned = await prisma.reviewAssignment.count({ where: { submissionId: submission.id, jurorId: actorId } });
+    if (!assigned) return 'This entry is not assigned to you.';
+  }
+  const maxReviews = require('./participationService').read(settings).rules.maxReviews;
+  if (maxReviews && submission.reviews.length >= maxReviews) return 'This entry already has all the reviews it takes.';
+  return null;
+}
+
 async function saveReview({ actor, contest, settings, submission, decision, marks, score, comment, notify = 'auto', note = '' }) {
   const given = verdict(settings, { decision, marks, score });
   decision = given.decision;
   if (decision === 'reject' && !String(comment || '').trim()) throw new ReviewError('Give a reason to reject.');
-  if (!REVIEWABLE.includes(submission.status) && !submission.reviews.some((r) => r.jurorId === actor.id)) {
-    throw new ReviewError('This entry has already been decided.');
-  }
-  if (submission.participantId === actor.id && !settings.selfReview) throw new ReviewError("You can't review your own entry.", 403);
-  if (assignedMode(settings) && !submission.reviews.some((r) => r.jurorId === actor.id)) {
-    const assigned = await prisma.reviewAssignment.count({ where: { submissionId: submission.id, jurorId: actor.id } });
-    if (!assigned) throw new ReviewError('This entry is not assigned to you.', 403);
-  }
-  const maxReviews = require('./participationService').read(settings).rules.maxReviews;
-  if (maxReviews && !submission.reviews.some((r) => r.jurorId === actor.id) && submission.reviews.length >= maxReviews) {
-    throw new ReviewError('This entry already has all the reviews it takes.');
-  }
+  const blocked = await reviewBlock(settings, submission, actor.id);
+  if (blocked) throw new ReviewError(blocked, 403);
   const scored = given;
   const required = Math.max(1, settings.requiredReviews || 1);
 
@@ -610,7 +622,7 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
     await audit.record({ actorId: user.id, contestId: contest.id, action: 'appeal.created', entityType: 'Submission', entityId: submission.id, details: { title: submission.title } }, tx);
     const judges = await tx.review.findMany({ where: { submissionId: submission.id }, select: { jurorId: true } });
     for (const id of new Set(judges.map((j) => j.jurorId))) {
-      await notifications.notify(id, { kind: 'appeal.created', message: 'An entry you reviewed, “{title}” in {event}, was appealed.', params: { title: submission.title, event: contest.title }, link: `${pathOf(contest)}/appeals`, contestId: contest.id }, tx);
+      await notifications.notify(id, { kind: 'appeal.created', message: 'An entry you reviewed, “{title}” in {event}, was appealed.', params: { title: submission.title, event: contest.title }, link: `${pathOf(contest)}/patrol?show=appeals`, contestId: contest.id }, tx);
     }
     return appeal;
   });
@@ -684,6 +696,7 @@ module.exports = {
   verdict, decide, DECISION_RULES, juryActivity, queuePage, QUEUE_SORTS,
   REVIEWABLE,
   assignedMode,
+  reviewBlock,
   jurorsFor,
   distribute,
   assign,

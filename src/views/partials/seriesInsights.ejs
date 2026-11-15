@@ -1,0 +1,46 @@
+<%# Across a series' editions: newcomers and returning people per edition, the all-time leaderboard, the hall of fame. %>
+<% const tr = insights.trend.filter((x) => x.total); %>
+<% if (show.includes('trend') && tr.length > 1) { const max = Math.max(...tr.map((x) => x.total)); %>
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-users-plus me-2"></i><%= t('New and returning participants') %></h3>
+      <div class="card-actions z-legend"><span><i class="is-new"></i><%= t('New') %></span><span><i class="is-back"></i><%= t('Came back') %></span></div>
+    </div>
+    <div class="card-body">
+      <div class="z-trend">
+        <% tr.forEach((x) => { const pct = x.total ? Math.round((x.returning / x.total) * 100) : 0; %>
+          <div class="z-trend-row">
+            <span class="z-trend-label" title="<%= x.label %>"><%= x.label %></span>
+            <span class="z-trend-bar" style="width: <%= Math.max(4, Math.round((x.total / max) * 100)) %>%"><i class="is-back" style="flex: <%= x.returning %>"></i><i class="is-new" style="flex: <%= x.fresh %>"></i></span>
+            <span class="z-trend-num"><b><%= formatNumber(x.total) %></b> <small class="text-secondary"><%= t('{n}% came back', { n: formatNumber(pct) }) %></small></span>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<% if (show.includes('fame') && insights.fame.length) { %>
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-trophy me-2"></i><%= t('Hall of fame') %></h3></div>
+    <div class="z-fame">
+      <% insights.fame.forEach((f) => { %>
+        <div class="z-fame-ed">
+          <a class="z-fame-title" href="/<%= series.slug %>/<%= f.slug %>"><%= f.label %></a>
+          <ol class="z-fame-list">
+            <% f.top.forEach((p, i) => { %><li class="is-<%= i + 1 %>"><span class="z-medal"><%= formatNumber(i + 1) %></span><span class="z-user-name"><%= p.username %></span><small class="text-secondary ms-auto"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) : tn('{n} accepted', '{n} accepted', p.accepted) %></small></li><% }) %>
+          </ol>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<% if (show.includes('leaders') && insights.leaders.length) { %>
+  <div class="card mb-3">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-medal me-2"></i><%= t('All editions together') %></h3></div>
+    <div class="table-responsive"><table class="table table-vcenter card-table z-sortable">
+      <thead><tr><th class="w-1">#</th><th><%= t('Participant') %></th><th class="text-end"><%= t('Editions') %></th><th class="text-end"><%= t('Entries') %></th><th class="text-end"><%= t('Accepted') %></th><th class="text-end"><%= t('Words') %></th></tr></thead>
+      <tbody><% insights.leaders.forEach((p, i) => { %><tr><td class="text-secondary"><%= formatNumber(i + 1) %></td><td class="z-user-name"><%= p.username %></td><td class="text-end"><%= formatNumber(p.editions) %></td><td class="text-end"><%= formatNumber(p.entries) %></td><td class="text-end text-green"><%= formatNumber(p.accepted) %></td><td class="text-end"><%= formatNumber(p.words) %></td></tr><% }) %></tbody>
+    </table></div>
+  </div>
+<% } %>

@@ -2586,3 +2586,57 @@ body:has(.z-review-layout) .z-navbar { position: relative; }
   .z-subs-table.is-people tr[data-group] { background-image: none !important; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--z-brand) 45%, transparent) !important; padding-left: 1rem !important; }
   .z-subs-table.is-people tr[data-group] > td:first-child { box-shadow: none !important; padding-left: 0 !important; }
 }
+/* Series: the current edition, newcomers and returning people, hall of fame. Edition: neighbours and who came back. */
+.z-current .h2 { line-height: 1.25; }
+.z-countdown { display: inline-flex; align-items: center; gap: .25rem; font-size: .8125rem; font-weight: 600; color: var(--z-fg-muted); background: var(--z-hover); border-radius: 999px; padding: .05rem .55rem; }
+.z-countdown.is-live { color: var(--z-green); }
+.z-current-figs { display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; margin-top: .9rem; }
+.z-current-figs > div { display: flex; flex-direction: column; }
+.z-current-figs b { font-size: 1.35rem; line-height: 1.2; }
+.z-current-figs span { font-size: .8125rem; color: var(--z-fg-muted); }
+.z-legend { display: flex; gap: .9rem; font-size: .8125rem; color: var(--z-fg-muted); }
+.z-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.z-legend i { width: .7rem; height: .7rem; border-radius: 3px; display: inline-block; }
+.z-legend .is-new, .z-trend-bar .is-new { background: var(--z-brand); }
+.z-legend .is-back, .z-trend-bar .is-back { background: var(--z-green); }
+.z-trend { display: flex; flex-direction: column; gap: .55rem; }
+.z-trend-row { display: grid; grid-template-columns: 5.5rem 1fr auto; align-items: center; gap: .75rem; min-width: 0; }
+.z-trend-label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-trend-bar { display: flex; height: .85rem; border-radius: 999px; overflow: hidden; gap: 2px; background: var(--z-hover); }
+.z-trend-bar i { display: block; height: 100%; min-width: 0; }
+.z-trend-num { white-space: nowrap; font-size: .875rem; }
+.z-fame { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.z-fame-ed { padding: .85rem 1rem; border-top: 1px solid var(--z-border); }
+.z-fame-title { font-weight: 700; color: var(--z-fg); }
+.z-fame-list { list-style: none; margin: .4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+.z-fame-list li { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.z-fame-list .z-user-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-medal { flex: none; width: 1.4rem; height: 1.4rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; background: var(--z-hover); color: var(--z-fg-muted); }
+.z-fame-list .is-1 .z-medal { background: #f5c518; color: #5a4500; }
+.z-fame-list .is-2 .z-medal { background: #c9ced6; color: #3a3f47; }
+.z-fame-list .is-3 .z-medal { background: #d9a066; color: #4a2c0e; }
+.z-ed-strip { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: .75rem; align-items: stretch; }
+.z-ed-strip > :only-child { grid-column: 1 / -1; }
+.z-ed-nav .card-body { display: flex; align-items: center; gap: .6rem; height: 100%; }
+.z-ed-nav .card-body > div { display: flex; flex-direction: column; min-width: 0; }
+.z-ed-nav.is-next .card-body { justify-content: flex-end; text-align: right; }
+.z-ed-nav .ti { font-size: 1.4rem; color: var(--z-fg-muted); }
+@media (max-width: 767.98px) {
+  .z-ed-strip { grid-template-columns: 1fr 1fr; }
+  .z-ed-carry { grid-column: 1 / -1; order: -1; }
+  .z-trend-row { grid-template-columns: 4rem 1fr; }
+  .z-trend-num { grid-column: 2; }
+}
+/* Patrol room: filter chips and the watch list; marks on entries whose article changed on the wiki. */
+.z-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.z-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .7rem; border: 1px solid var(--z-border); border-radius: 999px; color: var(--z-fg); font-size: .875rem; text-decoration: none; }
+.z-chip b { font-weight: 600; color: var(--z-fg-muted); }
+.z-chip:hover { background: var(--z-hover); text-decoration: none; }
+.z-chip.is-on { background: var(--z-brand); border-color: var(--z-brand); color: #fff; }
+.z-chip.is-on b { color: #fff; }
+.z-patrol .btn-list form { display: inline; margin: 0; }
+.z-patrol .btn-list { flex-wrap: wrap; justify-content: flex-end; }
+.z-watch-badge { font-size: .75rem; vertical-align: middle; }
+.z-sv-bar { display: flex; height: 6px; border-radius: 999px; overflow: hidden; background: var(--z-hover); margin-top: .4rem; }
+.z-sv-bar i { display: block; height: 100%; } .z-sv-bar .is-ok { background: var(--z-green); } .z-sv-bar .is-bad { background: var(--z-red); } .z-sv-bar .is-wait { background: #e8a317; }
+@media (max-width: 767.98px) { .z-patrol .btn-list { justify-content: flex-start; width: 100%; } }

@@ -1,6 +1,57 @@
 <% const statusColor = { open: 'yellow', upheld: 'green', dismissed: 'secondary' }; const statusLabel = { open: t('Open'), upheld: t('Upheld'), dismissed: t('Dismissed') }; %>
 <%- include('../../partials/contestHeader', { active: 'appeals' }) %>
 <div class="page-body"><div class="container-xl">
+  <%
+    const FLAGS = { deleted: ['Deleted', 'trash', 'red'], redirect: ['Now a redirect', 'arrow-forward-up', 'orange'], moved: ['Moved', 'arrows-right-left', 'blue'], shrunk: ['Much shorter since the decision', 'trending-down', 'yellow'] };
+    const openAppeals = appeals.filter((a) => a.status === 'open').length;
+    const countOf = (k) => flagged.filter((r) => r.flags.includes(k)).length;
+    const chips = staff ? [['all', t('All'), flagged.length + openAppeals], ...Object.keys(FLAGS).map((k) => [k, t(FLAGS[k][0]), countOf(k)]), ['appeals', t('Appeals'), openAppeals]] : [];
+    const shown = show === 'all' ? flagged : show === 'appeals' ? [] : flagged.filter((r) => r.flags.includes(show));
+  %>
+  <% if (staff) { %>
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+      <div class="h3 m-0 me-auto"><i class="ti ti-shield-search me-1"></i><%= t('Patrol room') %></div>
+      <form method="post" action="<%= base %>/patrol/check"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Check all articles now') %></button></form>
+    </div>
+    <div class="z-chips mb-3" role="tablist">
+      <% chips.forEach(([k, label, n]) => { %><a class="z-chip<%= show === k ? ' is-on' : '' %>" href="<%= base %>/patrol<%= k === 'all' ? '' : '?show=' + k %>"><%= label %> <b><%= formatNumber(n) %></b></a><% }) %>
+    </div>
+    <% if (show !== 'appeals') { %>
+      <% if (!shown.length) { %>
+        <div class="card mb-3"><div class="card-body text-secondary"><i class="ti ti-circle-check text-green me-1"></i><%= t('Nothing to look at: no entered article was deleted, redirected, moved or cut down.') %></div></div>
+      <% } else { %>
+        <div class="card mb-3"><div class="list-group list-group-flush z-patrol">
+          <% shown.forEach((r) => { const w = r.watch; const st = SUBMISSION_STATUSES[r.status] || { label: r.status, badge: 'secondary' }; %>
+            <div class="list-group-item">
+              <div class="d-flex flex-wrap align-items-start gap-2">
+                <div class="min-w-0 flex-fill">
+                  <a class="fw-medium" href="<%= base %>/review?entry=<%= r.id %>"><%= r.title %></a>
+                  <span class="badge bg-<%= st.badge %>-lt ms-1"><%= t(st.label) %></span>
+                  <div class="small text-secondary"><span class="z-user-name"><%= r.participant.username %></span> · <%= wikiLocal(r.wiki) %><% if (r.wordCount != null) { %> · <%= t('{n} words', { n: formatNumber(r.wordCount) }) %><% } %></div>
+                  <div class="d-flex flex-wrap gap-1 mt-1">
+                    <% r.flags.forEach((k) => { const [label, icon, color] = FLAGS[k]; %>
+                      <span class="badge bg-<%= color %>-lt"><i class="ti ti-<%= icon %> me-1"></i><%= t(label) %><% if (k === 'moved' && w.movedFrom) { %>: <%= w.movedFrom %> → <%= r.title %><% } %><% if (k === 'shrunk' && w.shrunk) { %>: <%= formatNumber(w.shrunk.from) %> → <%= formatNumber(w.shrunk.to) %><% } %></span>
+                    <% }) %>
+                  </div>
+                </div>
+                <div class="btn-list flex-nowrap">
+                  <a class="btn btn-sm btn-icon" href="<%= entryUrl(r) %>" target="_blank" rel="noopener" title="<%= t('Open on the wiki') %>" aria-label="<%= t('Open on the wiki') %>"><i class="ti ti-external-link"></i></a>
+                  <% if (r.flags.includes('shrunk') && r.revId) { %><a class="btn btn-sm btn-icon" href="<%= entryUrl(r).replace(/\/wiki\/.*$/, '') %>/w/index.php?diff=cur&oldid=<%= r.revId %>" target="_blank" rel="noopener" title="<%= t('Changes since the reviewed revision') %>" aria-label="<%= t('Changes since the reviewed revision') %>"><i class="ti ti-file-diff"></i></a><% } %>
+                  <% if (r.flags.includes('deleted')) { %><a class="btn btn-sm btn-icon" href="<%= entryUrl(r).replace(/\/wiki\/.*$/, '') %>/w/index.php?title=Special:Log&type=delete&page=<%= encodeURIComponent(r.title) %>" target="_blank" rel="noopener" title="<%= t('Deletion log') %>" aria-label="<%= t('Deletion log') %>"><i class="ti ti-list-search"></i></a><% } %>
+                  <% const act = (a, icon, label, cls, confirm, flag) => `<form method="post" action="${base}/patrol/${r.id}/${a}"${confirm ? ` data-confirm="${h(confirm)}"` : ''}><input type="hidden" name="_csrf" value="${csrfToken}"><input type="hidden" name="show" value="${show}">${flag ? `<input type="hidden" name="flag" value="${flag}">` : ''}<button class="btn btn-sm ${cls}" type="submit" title="${h(label)}"><i class="ti ti-${icon} me-1"></i>${h(label)}</button></form>`; %>
+                  <% if (!r.flags.includes('deleted')) { %><%- act('refresh', 'refresh', t('Update'), '', '') %><% } %>
+                  <% if ((can('manageEvent') || can('manageAppeals')) && ['approved', 'rejected', 'disqualified'].includes(r.status)) { %><%- act('reopen', 'arrow-back-up', t('Review again'), '', t('Clear its reviews and send it back to the reviewers?')) %><% } %>
+                  <% if (can('manageEvent')) { %><%- act('withdraw', 'circle-minus', t('Remove'), 'btn-ghost-danger', t('Remove this entry from the event?')) %><% } %>
+                  <%- act('seen', 'eye-check', t('Looked at'), 'btn-ghost-secondary', '', r.flags.includes('shrunk') && r.flags.length === 1 ? 'shrunk' : 'state') %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div></div>
+      <% } %>
+    <% } %>
+  <% } %>
+  <% if (!staff || show === 'appeals' || show === 'all') { %>
   <div class="d-flex flex-wrap gap-2 align-items-center mb-3"><div class="h3 m-0 me-auto"><%= t('Appeals') %></div><% ['open', 'upheld', 'dismissed'].forEach((k) => { const n = appeals.filter((a) => a.status === k).length; %><span class="badge bg-<%= statusColor[k] %>-lt"><%= statusLabel[k] %> <%= formatNumber(n) %></span><% }) %></div>
   <% if (!appeals.length) { %>
     <div class="card"><%- include('../../partials/emptyArt', { title: t('No appeals'), text: t('Participants can appeal a rejected entry until the appeal deadline.') }) %></div>
@@ -40,5 +91,6 @@
       </div>
     <% }) %>
   </div>
+  <% } %>
 </div>
 </div>

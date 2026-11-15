@@ -109,7 +109,7 @@
     <div class="z-review-layout">
       <section class="card z-review-entry" aria-label="<%= entry.title %>">
         <div class="z-entry-head">
-          <h2 class="z-entry-title" title="<%= entry.title %>"><%= entry.title %></h2>
+          <h2 class="z-entry-title" title="<%= entry.title %>"><%= entry.title %></h2><% { const wst = (meta && meta.watch) || {}; const WB = { deleted: ['Deleted', 'trash', 'red'], redirect: ['Now a redirect', 'arrow-forward-up', 'orange'], moved: ['Moved', 'arrows-right-left', 'blue'] }[wst.state]; if (WB) { %><span class="badge bg-<%= WB[2] %>-lt ms-1 z-watch-badge" title="<%= wst.movedFrom ? wst.movedFrom + ' →' : '' %>"><i class="ti ti-<%= WB[1] %> me-1"></i><%= t(WB[0]) %></span><% } if (wst.shrunk) { %><span class="badge bg-yellow-lt ms-1 z-watch-badge"><i class="ti ti-trending-down me-1"></i><%= formatNumber(wst.shrunk.from) %> → <%= formatNumber(wst.shrunk.to) %></span><% } } %>
           <% const eBase = entry.url.split('/wiki/')[0]; const eTitle = encodeURIComponent(entry.title.replace(/ /g, '_')); %>
           <span class="z-entry-links">
             <a class="btn btn-sm btn-icon btn-ghost-secondary" href="<%= entry.url %>" target="_blank" rel="noopener" title="<%= t('Open on wiki') %>" aria-label="<%= t('Open on wiki') %>"><i class="ti ti-external-link"></i><span class="z-link-label"><%= t('Open on wiki') %></span></a>
@@ -139,6 +139,12 @@
       <div class="z-side-backdrop" data-side-toggle></div>
       <aside class="z-review-side">
         <button type="button" class="btn-close z-sheet-close" data-side-close aria-label="<%= t('Close') %>"></button>
+        <% if (blocked) { %>
+        <div class="card z-review-panel"><div class="card-body">
+          <div class="d-flex gap-2 text-secondary"><i class="ti ti-lock mt-1"></i><div><%= t(blocked) %> <%= t('It cannot be reviewed from here.') %></div></div>
+          <a class="btn w-100 mt-3" href="<%= base %>/review?<%= fq({ after: entry.id }) %>"><i class="ti ti-player-skip-forward me-1"></i><%= t('Next entry') %></a>
+        </div></div>
+        <% } else { %>
         <form method="post" action="<%= base %>/review/<%= entry.id %>" class="card z-review-panel" data-review-form>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="hidden" name="filters" value="<%= fq() %>">
@@ -222,6 +228,7 @@
         <% } %>
           </div>
         </form>
+        <% } %>
         <form method="post" action="<%= base %>/review/<%= entry.id %>/handover" id="handover-form" hidden><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form>
 
         <div class="card z-facts-card<%= problems.length ? '' : ' d-none d-md-block' %>">

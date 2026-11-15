@@ -49,7 +49,7 @@
             <div class="d-flex flex-wrap gap-2 mt-auto">
               <a class="btn btn-sm <%= e.remaining ? 'btn-primary' : '' %>" href="<%= e.path %>/review"><i class="ti ti-gavel me-1"></i><%= e.remaining ? t('Start reviewing') : t('Open review') %></a>
               <a class="btn btn-sm" href="<%= e.path %>/submissions"><i class="ti ti-list me-1"></i><%= t('Submissions') %></a>
-              <% if (e.appeals) { %><a class="btn btn-sm btn-outline-warning" href="<%= e.path %>/appeals"><i class="ti ti-message-exclamation me-1"></i><%= tn('{n} appeal', '{n} appeals', e.appeals) %></a><% } %>
+              <% if (e.appeals) { %><a class="btn btn-sm btn-outline-warning" href="<%= e.path %>/patrol?show=appeals"><i class="ti ti-message-exclamation me-1"></i><%= tn('{n} appeal', '{n} appeals', e.appeals) %></a><% } %>
             </div>
           </div>
         </div>

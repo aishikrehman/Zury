@@ -496,10 +496,14 @@ async function seriesPage(req, res, next) {
     for (const c of directEvents) rows.push({ label: c.title, sub: req.t('Event of the series'), href: eventPath(c), status: c.status, stats: await stats.rollup([c.id]) });
     const levelIds = [...summary.flatMap((e) => e.events.map((ev) => ev.id)), ...directEvents.map((ev) => ev.id)];
     const wikiRows = tab === 'statistics' ? await stats.byWiki(levelIds) : [];
-    const people = tab === 'statistics' ? await stats.topPeople(levelIds) : [];
-    res.locals.topPeople = people;
+    // The all-time leaderboard (insights) takes the place of the plain participant table here.
+    res.locals.topPeople = [];
     res.locals.fountainCount = canRun ? await prisma.contestWiki.count({ where: { contestId: { in: levelIds }, fountainCode: { not: '' } } }) : 0;
-    res.render('pages/events/series', { wikiRows, title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, rows, canRun, tab, ...(await levelExtras({ seriesId: found.id }, tab)) });
+    const seriesService = require('../services/seriesService');
+    const insights = ['overview', 'statistics', 'editions'].includes(tab) ? await seriesService.insights(summary) : { trend: [], leaders: [], fame: [] };
+    const current = seriesService.currentOf(summary);
+    const latest = [...summary].sort((a, b) => seriesService.when(b) - seriesService.when(a))[0] || null;
+    res.render('pages/events/series', { insights, current, latest, wikiRows, title: `${found.title} — Zury`, series: found, editions: summary, directEvents, summary, totals, rows, canRun, tab, ...(await levelExtras({ seriesId: found.id }, tab)) });
   } catch (err) {
     next(err);
   }
@@ -542,6 +546,20 @@ async function editionTabs(req, res, next) {
     res.locals.topPeople = tab === 'statistics' ? await stats.topPeople(events.map((ev) => ev.id)) : [];
     res.locals.fountainCount = canRun ? await prisma.contestWiki.count({ where: { contestId: { in: events.map((ev) => ev.id) }, fountainCode: { not: '' } } }) : 0;
     const seriesType = await require('../services/editionService').seriesType(sr.id);
+    // Its neighbours in the series (oldest to newest) and who came back from the one before.
+    const seriesService = require('../services/seriesService');
+    const siblings = (await seriesService.summary(sr.id, { drafts: canRun })).sort((a, b) => seriesService.when(a) - seriesService.when(b));
+    const at = siblings.findIndex((e) => e.id === edition.id);
+    const nav = { prev: at > 0 ? siblings[at - 1] : null, next: at >= 0 && at < siblings.length - 1 ? siblings[at + 1] : null };
+    let carry = null;
+    if (tab === 'overview' && nav.prev && events.length) {
+      const prevIds = nav.prev.events.map((ev) => ev.id);
+      const nowSet = new Set((await prisma.submission.findMany({ where: { contestId: { in: events.map((ev) => ev.id) }, status: { not: 'withdrawn' } }, distinct: ['participantId'], select: { participantId: true } })).map((r) => r.participantId));
+      const before = prevIds.length ? (await prisma.submission.findMany({ where: { contestId: { in: prevIds }, status: { not: 'withdrawn' } }, distinct: ['participantId'], select: { participantId: true } })).map((r) => r.participantId) : [];
+      carry = { before: before.length, back: before.filter((u) => nowSet.has(u)).length, now: nowSet.size };
+    }
+    res.locals.nav = nav;
+    res.locals.carry = carry;
     res.render('pages/events/edition', { seriesType, wikiRows, title: `${edition.title} — Zury`, sr, edition: shown, ownStatus: edition.status, events, canRun, canRunSeries: canRunSeriesHere, tab, totals, rows, ...(await levelExtras({ editionId: edition.id }, tab)) });
   } catch (err) {
     next(err);
@@ -685,3 +703,48 @@ async function syncLevelFountain(req, res, next) {
   res.redirect(req.params.edition ? `/series/${req.params.series}/${req.params.edition}?tab=statistics` : `/${req.params.series}?tab=statistics`);
 }
 module.exports.syncLevelFountain = syncLevelFountain;
+
+// /<series>/current: always the edition people should be looking at now.
+async function currentEdition(req, res, next) {
+  try {
+    const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!found || found.deletedAt) return next();
+    const seriesService = require('../services/seriesService');
+    const cur = seriesService.currentOf(await seriesService.summary(found.id, { drafts: false }));
+    res.redirect(cur ? `/${found.slug}/${cur.slug}` : `/${found.slug}`);
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports.currentEdition = currentEdition;
+
+// Tells the previous edition's participants (and reviewers) that this edition is open, by bell.
+async function inviteEarlier(req, res, next) {
+  const back = `/series/${req.params.series}/${req.params.edition}`;
+  try {
+    const sr = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
+    if (!sr) return next();
+    const edition = await prisma.edition.findFirst({ where: { seriesId: sr.id, slug: req.params.edition, deletedAt: null } });
+    if (!edition) return next();
+    if (!(await scopeRoles.canRunEdition(req, edition))) return forbiddenPage(next);
+    const seriesService = require('../services/seriesService');
+    const all = await seriesService.summary(sr.id, { drafts: true });
+    const chrono = [...all].sort((a, b) => seriesService.when(a) - seriesService.when(b));
+    const i = chrono.findIndex((e) => e.id === edition.id);
+    const prev = i > 0 ? chrono[i - 1] : null;
+    if (!prev) { req.flash('warning', req.t('There is no earlier edition.')); return res.redirect(back); }
+    const prevIds = prev.events.map((ev) => ev.id);
+    const roles = req.body.who === 'reviewers' ? ['jury'] : req.body.who === 'both' ? ['participant', 'jury'] : ['participant'];
+    const fromEntries = roles.includes('participant') && prevIds.length ? (await prisma.submission.findMany({ where: { contestId: { in: prevIds }, status: { not: 'withdrawn' } }, distinct: ['participantId'], select: { participantId: true } })).map((r) => r.participantId) : [];
+    const fromRoles = prevIds.length ? (await prisma.contestMembership.findMany({ where: { contestId: { in: prevIds }, role: { in: roles }, status: 'active' }, select: { userId: true } })).map((r) => r.userId) : [];
+    const ids = [...new Set([...fromEntries, ...fromRoles])].filter((id) => id !== req.user.id);
+    const target = await prisma.contest.findFirst({ where: { editionId: edition.id, deletedAt: null }, orderBy: { startDate: 'asc' }, select: { id: true, path: true } });
+    await require('../services/notificationService').notify(ids, { kind: 'edition.invite', message: '{edition} has started. You took part in the last edition; join again!', params: { edition: edition.title }, link: target?.path || `/${sr.slug}/${edition.slug}`, contestId: target?.id || null });
+    await require('../services/auditService').record({ actorId: req.user.id, action: 'edition.invited', entityType: 'Edition', entityId: edition.id, details: { from: prev.id, people: ids.length, who: req.body.who || 'participants' } });
+    req.flash('success', req.t('{n} people from {edition} were told.', { n: ids.length, edition: prev.identifier || prev.slug }));
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(back);
+}
+module.exports.inviteEarlier = inviteEarlier;
