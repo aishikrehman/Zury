@@ -1,7 +1,8 @@
 // Keeps entered articles in step with their wikis.
-// - While an event runs (revision rule "live", the default), each article's revision and word
-//   count follow the wiki; after the event's end they stay as they were (reviewers and organizers
-//   can still bring one up to date by hand).
+// - Revision rule "live" (the default): once the event ends, each article is pinned to the
+//   revision it had at the end time (asked of the wiki by time, so a late check gives the same
+//   answer), and its words are counted from that revision. Reviewers and organizers can still
+//   bring one up to date by hand.
 // - Always (also for some time after the end): a deleted article, one turned into a redirect, or
 //   one moved to a new title is marked; a move brings the new title along.
 // - A decided entry whose article shrank a lot afterwards is marked for a second look.
@@ -41,7 +42,7 @@ async function pageInfo(wiki, ids) {
 async function checkEvent(contest, settings, { force = false, ids = null } = {}) {
   const live = running(contest);
   const { revision, ownWords } = ruleOf(settings);
-  const follow = live && revision === 'live';
+  const pinEnd = !live && revision === 'live' && contest.endDate;
   const entries = await prisma.submission.findMany({
     where: { contestId: contest.id, entryType: 'article', status: { not: 'withdrawn' }, ...(ids && { id: { in: ids } }) },
     select: { id: true, wiki: true, title: true, pageKey: true, revId: true, wordCount: true, status: true, metadata: true, participantId: true, url: true },
@@ -85,8 +86,22 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
             watch.state = 'restored';
           }
           meta.currentRevId = p.lastrevid;
-          // While the event runs, the entry is its latest revision, words and all.
-          if ((follow || force) && p.lastrevid && p.lastrevid !== s.revId) {
+          // After the end: the revision as it stood at the end time, once.
+          if (pinEnd && !force && !m.pinnedAtEnd) {
+            const at = await revisionAt(wiki, pid, contest.endDate).catch(() => null);
+            if (at) {
+              data.revId = at.revid;
+              let words = require('../wiki/wordCount').countZtools(at.text, wiki);
+              if (ownWords && contest.startDate) {
+                const own = await ownWordsDuring({ wiki, pageId: pid, contest, participantId: s.participantId }).catch(() => null);
+                if (own != null) { meta.ownWords = own; words = own; }
+              }
+              data.wordCount = words;
+              meta = { ...meta, sizeBytes: at.size, pinnedAtEnd: at.timestamp, wordCount: words };
+            }
+          }
+          // By hand (reviewers, organizers): the latest revision, words and all.
+          if (force && p.lastrevid && p.lastrevid !== s.revId) {
             const fresh = await require('../wiki/entryMetadata').fetchEntryMetadata({ wiki, pageId: pid }, { language: contest.language, wordCountMethod: settings.wordCountMethod || 'auto' }).catch(() => null);
             if (fresh && fresh.exists) {
               data.revId = fresh.revId ?? p.lastrevid;
@@ -116,6 +131,14 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
     }
   }
   return changed;
+}
+
+// The page's last revision at or before a time, with its text.
+async function revisionAt(wiki, pageId, when) {
+  const data = await wikiApi.get(wiki, { action: 'query', prop: 'revisions', pageids: String(pageId), rvstart: new Date(when).toISOString(), rvdir: 'older', rvlimit: '1', rvprop: 'ids|size|timestamp|content', rvslots: 'main' });
+  const r = data.query?.pages?.[0]?.revisions?.[0];
+  if (!r) return null;
+  return { revid: r.revid, size: r.size, timestamp: r.timestamp, text: r.slots?.main?.content || '' };
 }
 
 // Words the participant added to the page between the event's start and end, their own edits
@@ -194,4 +217,4 @@ async function survival(contestIds) {
   return { accepted: rows.length, checked, stand, deleted, redirect };
 }
 
-module.exports = { checkEvent, sweep, markSeen, flagsOf, survival, running, ruleOf, ownWordsDuring };
+module.exports = { revisionAt, checkEvent, sweep, markSeen, flagsOf, survival, running, ruleOf, ownWordsDuring };

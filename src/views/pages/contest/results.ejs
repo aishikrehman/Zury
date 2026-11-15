@@ -13,6 +13,14 @@
         <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and reviewers see this page.') %><% } %>
       </div>
     </div>
+    <% if (can('manageEvent') || can('exportData')) { %>
+      <div class="dropdown ms-auto">
+        <button class="btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-report me-1"></i><%= t('Summary report') %></button>
+        <div class="dropdown-menu dropdown-menu-end">
+          <% [['wiki', 'Wikitext (for a wiki page)', 'brand-wikipedia'], ['md', 'Markdown', 'markdown'], ['csv', 'CSV', 'file-spreadsheet'], ['xls', 'Excel', 'file-spreadsheet']].forEach(([fmt, label, icon]) => { %><a class="dropdown-item" href="<%= base %>/export/summary.<%= fmt %>"><i class="ti ti-<%= icon %> me-2"></i><%= t(label) %></a><% }) %>
+        </div>
+      </div>
+    <% } %>
     <% if (can('publishResults')) { %>
       <form method="post" action="<%= base %>/results/publish" class="ms-auto">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">

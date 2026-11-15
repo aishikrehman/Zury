@@ -31,7 +31,32 @@ async function dashboard(req, res, next) {
       // Events on a wiki in the person's language first; the event's own language field isn't reliable.
       .sort((x, y) => Number((y.primaryWiki || '').startsWith(lang)) - Number((x.primaryWiki || '').startsWith(lang)))
       .slice(0, 6);
+    // Deadlines coming up in the running events they're in.
+    const now = Date.now();
+    const deadlines = myEvents.filter((e) => e.contest.status === 'active' && e.contest.endDate && new Date(e.contest.endDate).getTime() > now)
+      .sort((x, y) => new Date(x.contest.endDate) - new Date(y.contest.endDate)).slice(0, 5)
+      .map((e) => ({ contest: e.contest, days: Math.ceil((new Date(e.contest.endDate).getTime() - now) / 86400000) }));
+    // Reviewers: entries waiting for them in each event they review (running or under review).
+    const reviewService = require('../services/reviewService');
+    const juryOpen = myEvents.filter((e) => e.roles.includes('jury') && ['active', 'submission_closed', 'under_review'].includes(e.contest.status)).slice(0, 8);
+    const waiting = (await Promise.all(juryOpen.map(async (e) => {
+      const settings = await prisma.contestSettings.findUnique({ where: { contestId: e.contest.id } });
+      if (!settings || !settings.juryReviewEnabled) return null;
+      const q = await reviewService.queue({ contestId: e.contest.id, settings, jurorId: req.user.id }).catch(() => null);
+      return q && q.remaining ? { contest: e.contest, n: q.remaining } : null;
+    }))).filter(Boolean);
+    // Organizers: Patrol room marks (deleted, redirected, moved, much shorter articles).
+    const watch = require('../services/articleWatchService');
+    const orgIds = myEvents.filter((e) => e.roles.includes('organizer')).map((e) => e.contest.id).slice(0, 30);
+    const flaggedRows = orgIds.length ? await prisma.submission.findMany({ where: { contestId: { in: orgIds }, status: { not: 'withdrawn' }, metadata: { contains: '"watch"' } }, select: { contestId: true, metadata: true } }) : [];
+    const patrolBy = new Map();
+    for (const r of flaggedRows) if (watch.flagsOf(r).length) patrolBy.set(r.contestId, (patrolBy.get(r.contestId) || 0) + 1);
+    const patrol = myEvents.filter((e) => patrolBy.has(e.contest.id)).map((e) => ({ contest: e.contest, n: patrolBy.get(e.contest.id) }));
+    // Their own contribution, over all events.
+    const [mine1] = await prisma.$queryRaw`SELECT COUNT(*) AS entries, COALESCE(SUM(status = 'approved'), 0) AS accepted, COALESCE(SUM(CASE WHEN status = 'approved' THEN wordCount ELSE 0 END), 0) AS words, COUNT(DISTINCT contestId) AS events FROM Submission WHERE participantId = ${req.user.id} AND status <> 'withdrawn'`;
+    const contribution = { entries: Number(mine1.entries || 0), accepted: Number(mine1.accepted || 0), words: Number(mine1.words || 0), events: Number(mine1.events || 0) };
     res.render('pages/account/dashboard', {
+      deadlines, waiting, patrol, contribution,
       approvals,
       suggested,
       title: 'Dashboard — Zury',

@@ -9,6 +9,7 @@ const DATASETS = {
   results: 'Results',
   people: 'People',
   reviews: 'Reviews',
+  summary: 'Summary report',
 };
 const FORMATS = { csv: 'CSV', xls: 'Excel', wiki: 'Wikitext', md: 'Markdown' };
 
@@ -70,4 +71,52 @@ function render({ columns, rows }, format, title) {
   throw new Error('Unknown format.');
 }
 
-module.exports = { DATASETS, FORMATS, table, render };
+// The event's report once it's over: key figures, the winners and the longest accepted articles,
+// ready to paste on a wiki page (wikitext), or as Markdown, CSV or Excel.
+async function summary(contest, settings, format, { wiki, t = (x) => x } = {}) {
+  const stats = require('./statsService');
+  const where = { contestId: contest.id, ...(wiki && { wiki }) };
+  const [roll, board, longest] = await Promise.all([
+    stats.rollup([contest.id]),
+    reviewService.leaderboard({ contest, settings, wiki }),
+    prisma.submission.findMany({ where: { ...where, status: 'approved' }, orderBy: [{ wordCount: 'desc' }, { id: 'asc' }], take: 10, select: { title: true, wiki: true, url: true, wordCount: true, participant: { select: { username: true } } } }),
+  ]);
+  const sv = roll.survival || {};
+  const dates = [contest.startDate, contest.endDate].filter(Boolean).map((d) => new Date(d).toISOString().slice(0, 10)).join(' – ');
+  const figures = [
+    [t('Dates'), dates || '—'],
+    [t('Participants'), roll.participants],
+    [t('Entries'), roll.entries],
+    [t('Accepted'), roll.approved],
+    ...(settings.wordCountEnabled ? [[t('Words accepted'), roll.approvedWords]] : []),
+    [t('Wikis'), roll.wikis.map((w) => w.code || w.wiki).join(', ') || '—'],
+    ...(sv.checked ? [[t('Articles still standing'), `${sv.stand} / ${sv.checked}`]] : []),
+  ];
+  const winners = board.slice(0, 10).map((r) => [r.rank, r.username, r.entries, ...(settings.wordCountEnabled ? [r.words] : [r.points])]);
+  const winCols = [t('Rank'), t('Participant'), t('Accepted'), settings.wordCountEnabled ? t('Words') : t('Points')];
+  const longCols = [t('Article'), t('Participant'), t('Words')];
+  const title = `${contest.title} — ${t('Summary report')}`;
+  if (format === 'wiki') {
+    const host = (w) => require('../wiki/wikiUrls').dbnameToHost(w) || '';
+    const link = (x) => (wiki || !x.wiki || x.wiki === contest.primaryWiki ? `[[${x.title}]]` : `[https://${host(x.wiki)}/wiki/${encodeURIComponent(x.title.replace(/ /g, '_'))} ${x.title}]`);
+    const tbl = (cols, rows) => `{| class="wikitable sortable"\n! ${cols.map(esc.wiki).join(' !! ')}\n` + rows.map((r) => `|-\n| ${r.join(' || ')}`).join('\n') + '\n|}\n';
+    const body = `== ${esc.wiki(title)} ==\n`
+      + `{| class="wikitable"\n` + figures.map(([k, v]) => `|-\n! ${esc.wiki(k)}\n| ${esc.wiki(v)}`).join('\n') + '\n|}\n\n'
+      + (winners.length ? `=== ${t('Winners')} ===\n` + tbl(winCols, winners.map(([rk, u, n, w]) => [rk, `[[User:${esc.wiki(u)}|${esc.wiki(u)}]]`, n, w])) + '\n' : '')
+      + (longest.length ? `=== ${t('Longest accepted articles')} ===\n` + tbl(longCols, longest.map((x) => [link(x), `[[User:${esc.wiki(x.participant.username)}|${esc.wiki(x.participant.username)}]]`, x.wordCount ?? ''])) : '')
+      + `\n<small>${t('Made with Zury')}</small>\n`;
+    return { body, type: 'text/plain; charset=utf-8', ext: 'wiki.txt' };
+  }
+  if (format === 'md') {
+    const tbl = (cols, rows) => `| ${cols.map(esc.md).join(' | ')} |\n|${cols.map(() => ' --- ').join('|')}|\n` + rows.map((r) => `| ${r.map(esc.md).join(' | ')} |`).join('\n') + '\n';
+    const body = `# ${title}\n\n` + figures.map(([k, v]) => `- **${k}:** ${v}`).join('\n') + '\n\n'
+      + (winners.length ? `## ${t('Winners')}\n\n` + tbl(winCols, winners) + '\n' : '')
+      + (longest.length ? `## ${t('Longest accepted articles')}\n\n` + tbl(longCols, longest.map((x) => [x.title, x.participant.username, x.wordCount ?? ''])) : '');
+    return { body, type: 'text/markdown; charset=utf-8', ext: 'md' };
+  }
+  // CSV and Excel: one sheet, the sections one under another.
+  const rows = [...figures, [], [t('Winners')], winCols, ...winners, [], [t('Longest accepted articles')], longCols, ...longest.map((x) => [x.title, x.participant.username, x.wordCount ?? ''])];
+  return render({ columns: [t('Summary report'), contest.title], rows }, format, title);
+}
+
+module.exports = { DATASETS, FORMATS, table, render, summary };

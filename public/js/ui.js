@@ -517,3 +517,23 @@ document.addEventListener('change', (e) => {
   if (sel.value === '0' || sel.value === '1') btn.setAttribute('aria-sort', 'descending');
   btn.click();
 });
+
+// Big figures count up once when they come into view (skipped for people who prefer less motion).
+(() => {
+  const els = document.querySelectorAll('[data-count]');
+  if (!els.length || !('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const fmt = (n, el) => { const shown = el.textContent; const bn = /[০-৯]/.test(shown); const s = Math.round(n).toLocaleString(bn ? 'bn-BD' : 'en-US'); return s; };
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      io.unobserve(e.target);
+      const el = e.target; const end = Number(el.dataset.count) || 0; const final = el.textContent;
+      if (end < 10) return;
+      const t0 = performance.now();
+      const step = (now) => { const p = Math.min(1, (now - t0) / 900); el.textContent = fmt(end * (1 - Math.pow(1 - p, 3)), el); if (p < 1) requestAnimationFrame(step); else el.textContent = final; };
+      el.textContent = fmt(0, el);
+      requestAnimationFrame(step);
+    });
+  }, { threshold: 0.4 });
+  els.forEach((el) => io.observe(el));
+})();

@@ -512,7 +512,9 @@ async function exportData(req, res, next) {
     const { dataset, format } = req.params;
     if (!eventData.DATASETS[dataset] || !eventData.FORMATS[format]) return res.status(404).render('pages/404', { title: 'Not Found' });
     const title = `${req.contest.title} — ${eventData.DATASETS[dataset]}`;
-    const file = eventData.render(await eventData.table(req.contest, req.eventSettings, dataset, { wiki: req.wikiScope?.wiki }), format, title);
+    const file = dataset === 'summary'
+      ? await eventData.summary(req.contest, req.eventSettings, format, { wiki: req.wikiScope?.wiki, t: req.t })
+      : eventData.render(await eventData.table(req.contest, req.eventSettings, dataset, { wiki: req.wikiScope?.wiki }), format, title);
     const name = `${req.contest.slug}${req.wikiScope ? '-' + req.wikiScope.code : ''}-${dataset}.${file.ext}`;
     res.setHeader('Content-Type', file.type);
     res.setHeader('Content-Disposition', `attachment; filename="${name}"`);

@@ -52,7 +52,7 @@ const server = app.listen(env.port, () => {
   const fountainNow = () => require('./services/fountainService').syncAll().catch((err) => console.error('Fountain sync failed:', err.message));
   setTimeout(fountainNow, 5 * 60 * 1000).unref();
   setInterval(fountainNow, 60 * 60 * 1000).unref();
-  // Entered articles: words and revision while events run; deletions, redirects and moves (every 3 hours).
+  // Entered articles: deletions, redirects and moves; the revision at the end time once an event ends (every 3 hours).
   const watchNow = () => require('./services/articleWatchService').sweep().then((n) => n && console.log('Article watch: ' + n + ' entries changed.')).catch((err) => console.error('Article watch failed:', err.message));
   setTimeout(watchNow, 10 * 60 * 1000).unref();
   setInterval(watchNow, 3 * 60 * 60 * 1000).unref();

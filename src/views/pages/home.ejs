@@ -12,7 +12,6 @@
   const day = (d) => new Intl.DateTimeFormat('en', { day: 'numeric', timeZone: 'UTC' }).format(new Date(d));
   const fmt = formatNumber;
   const step = currentUser ? 2 : 1;
-  const calendarMonthParam = '';
 %>
 
 <!-- Hero -->
@@ -35,18 +34,16 @@
       </div>
       <div class="col-lg-6">
         <div class="position-relative px-lg-4">
-          <div class="card card-lg shadow-sm">
-            <div class="card-body text-center py-5">
-              <img src="/images/illustrations/contest.svg" alt="" class="img-fluid" style="max-height: 260px">
-            </div>
-          </div>
-          <div class="card card-sm shadow position-absolute d-none d-md-block" style="right: -0.5rem; bottom: 1.5rem; width: 13rem">
+          <figure class="z-hero-art">
+            <img src="/images/art/hero-760.webp" srcset="/images/art/hero-480.webp 480w, /images/art/hero-760.webp 760w" sizes="(max-width: 991px) 92vw, 560px" width="760" height="518" alt="<%= t('A Wikipedia globe painted as a mural among flowers') %>" fetchpriority="high" decoding="async">
+          </figure>
+          <div class="card card-sm shadow position-absolute d-none d-md-block" style="right: -0.25rem; bottom: -1rem; width: 13rem">
             <div class="card-body d-flex align-items-center">
               <span class="avatar bg-green text-white me-3"><i class="ti ti-upload"></i></span>
               <div><div class="h3 m-0"><%= fmt(trend.values.reduce((a, b) => a + b, 0)) %></div><div class="text-secondary small"><%= t("entries this month") %></div></div>
             </div>
           </div>
-          <div class="card card-sm shadow position-absolute d-none d-md-block" style="left: -0.5rem; top: 1.5rem; width: 12rem">
+          <div class="card card-sm shadow position-absolute d-none d-md-block" style="left: -0.25rem; top: -1rem; width: 12rem">
             <div class="card-body d-flex align-items-center">
               <span class="avatar bg-primary text-white me-3"><i class="ti ti-player-play"></i></span>
               <div><div class="h3 m-0"><%= active.length %></div><div class="text-secondary small"><%= t("events running now") %></div></div>
@@ -56,60 +53,50 @@
       </div>
     </div>
 
-    <!-- Numbers -->
-    <div class="card mt-5">
-      <div class="row g-0 text-center">
-        <% [['calendar-event', 'blue', stats.events, 'Public events'], ['files', 'green', stats.submissions, 'Submissions'], ['users', 'orange', stats.users, 'Contributors'], ['world', 'purple', stats.wikis, 'Wikis']].forEach(([icon, color, value, label], i) => { %>
-          <div class="col-6 col-md-3 py-4<%= i < 3 ? ' border-end' : '' %><%= i < 2 ? ' border-bottom border-md-bottom-0' : '' %>">
-            <span class="avatar avatar-sm bg-<%= color %>-lt mb-2"><i class="ti ti-<%= icon %>"></i></span>
-            <div class="h1 mb-0"><%= fmt(value) %></div>
-            <div class="text-secondary"><%= t(label) %></div>
-          </div>
-        <% }) %>
-      </div>
+    <!-- The movement in numbers -->
+    <div class="z-impact">
+      <% [['align-justified', home.totals.words, 'words accepted'], ['file-text', home.totals.articles, 'articles accepted'], ['users', home.totals.people, 'contributors'], ['world', home.totals.wikis, 'wikis'], ['calendar-event', stats.events, 'public events']].forEach(([icon, value, label]) => { %>
+        <div><i class="ti ti-<%= icon %>"></i><b data-count="<%= value %>"><%= fmt(value) %></b><span><%= t(label) %></span></div>
+      <% }) %>
     </div>
   </div>
 </div>
 
-<%
-  const groups = [['active', t('Running'), 'player-play', 'green'], ['upcoming', t('Upcoming'), 'clock', 'azure'], ['completed', t('Completed'), 'flag', 'secondary']];
-  const firstTab = groups.find(([k]) => shown[k].length)?.[0] || 'active';
-  const allHref = (on) => `?${new URLSearchParams({ ...(on ? { all: '1' } : {}), ...(calendarMonthParam ? { month: calendarMonthParam } : {}) }).toString()}`;
-%>
-<section class="page-body">
+
+<section class="z-how">
   <div class="container-xl">
-    <div class="card">
-      <div class="card-header flex-wrap gap-2">
-        <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
-          <% groups.forEach(([key, label, icon, color]) => { %>
-            <li class="nav-item" role="presentation"><a href="#home-<%= key %>" class="nav-link<%= key === firstTab ? ' active' : '' %>" data-bs-toggle="tab" role="tab"><i class="ti ti-<%= icon %> me-1 text-<%= color %>"></i><%= label %> <span class="badge bg-<%= color %>-lt ms-1"><%= shown[key].length %></span></a></li>
-          <% }) %>
-        </ul>
-        <div class="ms-auto small">
-          <% if (all) { %><a href="<%= allHref(false) %>"><i class="ti ti-language me-1"></i><%= t('Only {lang} and multi-wiki events', { lang: langLocal(homeLang) }) %></a>
-          <% } else { %><span class="text-secondary me-2"><%= t('{lang} and multi-wiki events', { lang: langLocal(homeLang) }) %></span><a href="<%= allHref(true) %>"><%= t('Show all') %></a><% } %>
-        </div>
-      </div>
-      <div class="tab-content">
-        <% groups.forEach(([key]) => { %>
-          <div class="tab-pane<%= key === firstTab ? ' active show' : '' %>" id="home-<%= key %>" role="tabpanel">
-            <div class="card-body">
-              <% if (!shown[key].length) { %>
-                <p class="text-secondary m-0"><%= t('No events here.') %> <a href="<%= allHref(true) %>"><%= t('Show all') %></a></p>
-              <% } else { %>
-                <div class="row row-cards">
-                  <% shown[key].slice(0, 9).forEach((c) => { %>
-                    <div class="col-md-6 col-lg-4"><%- include('../partials/contestCard', { c, roles: [] }) %></div>
-                  <% }) %>
-                </div>
-                <% if (shown[key].length > 9) { %><div class="text-center mt-3"><a class="btn" href="/events/<%= key %>"><%= t('See all') %> (<%= shown[key].length %>)</a></div><% } %>
-              <% } %>
-            </div>
+    <h2 class="z-how-title"><%= t('How Zury works') %></h2>
+    <div class="row g-4">
+      <% [['world', 'Set up an event for any wiki', 'Photo contests, writing contests, Wikidata drives or edit-a-thons, on one wiki or many, in a few steps.'], ['people', 'People take part', 'Participants log in with their Wikimedia account and submit; entries are checked against the rules as they come in.'], ['results', 'Review and results', 'Reviewers judge in a fast review window, the Patrol room watches for changes, and results publish with one click.']].forEach(([img, title, text], i) => { %>
+        <div class="col-md-4">
+          <div class="z-how-step">
+            <img src="/images/art/<%= img %>.webp" width="160" height="160" alt="" loading="lazy" decoding="async">
+            <div class="z-how-n"><%= formatNumber(i + 1) %></div>
+            <h3><%= t(title) %></h3>
+            <p><%= t(text) %></p>
           </div>
-        <% }) %>
-      </div>
+        </div>
+      <% }) %>
     </div>
+    <p class="z-art-credit"><%= t('Illustrations') %>: <a href="https://commons.wikimedia.org/wiki/File:2023-03_AI_images_ZvD_05.png" target="_blank" rel="noopener">Ziko van Dijk</a> (<%= t('public domain') %>); <a href="https://commons.wikimedia.org/wiki/Category:Movement_Strategy_graphics" target="_blank" rel="noopener">Wikimedia Movement Strategy graphics</a> (<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>), <%= t('cropped') %>.</p>
   </div>
 </section>
 
-<section class="page-body mb-5"><div class="container-xl"><%- include('../partials/calendar', { cal: calendar, calLang: homeLang, calExtra: all ? { all: '1' } : {} }) %></div></section>
+<section class="page-body">
+  <div class="container-xl">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <h2 class="m-0"><i class="ti ti-player-play text-green me-1"></i><%= t('Running now') %></h2>
+      <span class="badge bg-green-lt"><%= formatNumber(active.length) %></span>
+      <a class="ms-auto" href="/events/active"><%= t('All events') %> <i class="ti ti-arrow-right"></i></a>
+    </div>
+    <% if (!active.length) { %>
+      <div class="card"><%- include('../partials/emptyArt', { title: t('No events are running right now.'), art: 'contest' }) %></div>
+    <% } else { %>
+      <div class="row row-cards">
+        <% active.forEach((c) => { %><div class="col-md-6 col-lg-4"><%- include('../partials/contestCard', { c, roles: [] }) %></div><% }) %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/homeSections') %>

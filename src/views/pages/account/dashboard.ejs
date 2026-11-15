@@ -13,13 +13,54 @@
   <div class="z-dash-hello">
     <div>
       <h2 class="m-0"><%= t('Welcome back, {name}', { name: currentUser.username }) %></h2>
-      <p class="text-secondary m-0"><%= tn("You're part of {n} event.", "You're part of {n} events.", myEvents.length) %><% if (running) { %> <%= tn('{n} is running now.', '{n} are running now.', running) %><% } %></p>
+      <p class="text-secondary m-0"><%= tn("You're part of {n} event.", "You're part of {n} events.", myEvents.length) %><% if (running) { %> <%= tn('{n} is running now.', '{n} are running now.', running) %><% } %> <a href="/?home=1" class="ms-1"><i class="ti ti-home me-1"></i><%= t('Zury home page') %></a></p>
     </div>
     <div class="z-dash-numbers">
       <% numbers.forEach(([icon, value, label, href]) => { %><a href="<%= href %>"><i class="ti ti-<%= icon %>"></i><b><%= formatNumber(value) %></b><span><%= label %></span></a><% }) %>
     </div>
   </div>
 
+  <% if (waiting.length || deadlines.length || patrol.length || contribution.entries) { %>
+    <div class="z-dash-cards mb-4">
+      <% if (waiting.length) { %>
+        <div class="card"><div class="card-body">
+          <div class="subheader mb-2"><i class="ti ti-gavel me-1 text-primary"></i><%= t('Waiting for your review') %></div>
+          <% waiting.forEach((w) => { %>
+            <div class="d-flex align-items-center gap-2 mb-2"><span class="flex-fill min-w-0 text-truncate"><%= w.contest.title %></span><a class="btn btn-sm btn-primary" href="<%= eventPath(w.contest) %>/review"><%= t('Review') %> <span class="badge bg-white text-primary ms-1"><%= formatNumber(w.n) %></span></a></div>
+          <% }) %>
+        </div></div>
+      <% } %>
+      <% if (deadlines.length) { %>
+        <div class="card"><div class="card-body">
+          <div class="subheader mb-2"><i class="ti ti-hourglass-low me-1 text-orange"></i><%= t('Coming deadlines') %></div>
+          <% deadlines.forEach((d) => { %>
+            <a class="d-flex align-items-center gap-2 mb-2 text-reset" href="<%= eventPath(d.contest) %>"><span class="flex-fill min-w-0 text-truncate"><%= d.contest.title %></span><span class="badge bg-<%= d.days <= 3 ? 'red' : 'orange' %>-lt"><%= tn('{n} day left', '{n} days left', d.days) %></span></a>
+          <% }) %>
+        </div></div>
+      <% } %>
+      <% if (patrol.length) { %>
+        <div class="card"><div class="card-body">
+          <div class="subheader mb-2"><i class="ti ti-shield-search me-1 text-red"></i><%= t('Patrol room') %></div>
+          <% patrol.forEach((p) => { %>
+            <a class="d-flex align-items-center gap-2 mb-2 text-reset" href="<%= eventPath(p.contest) %>/patrol"><span class="flex-fill min-w-0 text-truncate"><%= p.contest.title %></span><span class="badge bg-red-lt"><%= tn('{n} to look at', '{n} to look at', p.n) %></span></a>
+          <% }) %>
+        </div></div>
+      <% } %>
+      <% if (contribution.entries) { %>
+        <div class="card"><div class="card-body">
+          <div class="subheader mb-2"><i class="ti ti-chart-arcs me-1 text-green"></i><%= t('Your contribution') %></div>
+          <div class="z-month-figs">
+            <div><b><%= formatNumber(contribution.accepted) %></b><span><%= t('accepted') %></span></div>
+            <% if (contribution.words) { %><div><b><%= formatNumber(contribution.words) %></b><span><%= t('words accepted') %></span></div><% } %>
+            <div><b><%= formatNumber(contribution.events) %></b><span><%= t('events') %></span></div>
+          </div>
+          <% const pct = Math.round((contribution.accepted / contribution.entries) * 100); %>
+          <div class="z-ks-bar"><i style="width: <%= pct %>%; background: var(--z-green)"></i></div>
+          <div class="small text-secondary mt-1"><%= t('{n}% of your entries accepted', { n: formatNumber(pct) }) %></div>
+        </div></div>
+      <% } %>
+    </div>
+  <% } %>
   <% if (approvals && approvals.total) { const csrf = `<input type="hidden" name="_csrf" value="${csrfToken}">`; %>
     <div class="card mb-4">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-shield-check me-2 text-warning"></i><%= t('Waiting for approval') %> <span class="badge bg-yellow-lt ms-1"><%= formatNumber(approvals.total) %></span></h3></div>
