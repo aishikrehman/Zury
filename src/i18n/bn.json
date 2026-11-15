@@ -1878,5 +1878,10 @@
   "No statistics yet": "এখনো কোনো পরিসংখ্যান নেই",
   "The charts fill in as entries arrive.": "জমা আসার সাথে সাথে চার্টগুলো পূর্ণ হবে।",
   "Statistics and analysis": "পরিসংখ্যান ও বিশ্লেষণ",
-  "Add your name to the event page on the wiki.": "উইকিতে ইভেন্ট পাতায় আপনার নাম যোগ করুন।"
+  "Add your name to the event page on the wiki.": "উইকিতে ইভেন্ট পাতায় আপনার নাম যোগ করুন।",
+  "Reviewed": "পর্যালোচিত",
+  "Sort by": "সাজানোর ভিত্তি",
+  "words": "শব্দ",
+  "articles": "নিবন্ধ",
+  "Charts, reviewers and more": "চার্ট, পর্যালোচক ও আরও"
 }

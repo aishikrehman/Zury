@@ -83,7 +83,7 @@ contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume)', requireEventW
 contest.post('/wikis/:wikiId(\\d+)/:action(remove)', requireEventWide('deleteAnything'), wikiController.change);
 
 // Per-role permission checks happen in the controller/service.
-contest.get('/participants', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.people);
+contest.get('/participants', contestController.people);
 contest.post('/participants/import', requirePermission('manageParticipants'), contestController.importParticipants);
 contest.post('/members', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.addMember);
 contest.post('/members/:membershipId(\\d+)/remove', requirePermission('manageParticipants', 'manageJury', 'manageEvent'), contestController.removeMember);

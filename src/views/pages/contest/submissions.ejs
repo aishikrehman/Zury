@@ -31,8 +31,25 @@
   <% if (typeof intro !== 'undefined') { %>
     <% if (intro.signUp && intro.signUp.url) { %><div class="alert alert-info d-flex align-items-center gap-2"><i class="ti ti-list-check"></i><div class="flex-fill"><%= intro.signUp.onwiki ? t('Sign up on the event page on the wiki, then join here.') : t('Add your name to the event page on the wiki.') %></div><a class="btn btn-sm btn-primary" href="<%= intro.signUp.url %>" target="_blank" rel="noopener"><%= t('Open') %></a></div><% } %>
     <% if (contest.description) { %><details class="z-intro mb-3"><summary><span class="z-intro-text"><%= contest.description %></span><span class="z-intro-more"><%= t('More') %></span></summary><div class="z-intro-full"><%= contest.description %></div></details><% } %>
-    <% if (typeof keyStats !== 'undefined' && keyStats && keyStats.total) { const k = keyStats; const ks = [[t('Entries'), k.total, ''], [t('Participants'), k.roles.participant || 0, ''], [t('Accepted'), k.status.approved || 0, 'is-ok'], [t('Pending'), (k.status.pending || 0) + (k.status.validated || 0) + (k.status.under_review || 0), 'is-wait']]; if (settings.wordCountEnabled) ks.push([t('Accepted words'), k.approvedWords || 0, 'is-ok']); ks.push([t('Review progress'), formatNumber(k.reviewProgress) + '%', '']); %>
-      <div class="z-keystats mb-3"><% ks.forEach(([label, n, cls]) => { %><div class="z-ks <%= cls %>"><b><%= typeof n === 'number' ? formatNumber(n) : n %></b><span><%= label %></span></div><% }) %><a class="z-ks-more" href="<%= base %>/statistics"><%= t('Statistics and analysis') %> <i class="ti ti-arrow-right"></i></a></div>
+    <% if (typeof keyStats !== 'undefined' && keyStats && keyStats.total) { const k = keyStats; const st = k.status || {}; const pendN = (st.pending || 0) + (st.validated || 0) + (st.under_review || 0) + (st.appealed || 0); const rejN = (st.rejected || 0) + (st.disqualified || 0) + (st.invalid || 0); const w = k.wordStats; %>
+      <div class="z-keystats z-ks2 mb-3">
+        <% const wOn = settings.wordCountEnabled && w; const totW = wOn ? (w.all.words || 0) : 0; const totN = k.total || 0;
+           const boxes = [['All', '', totN, wOn ? w.all.words : null], ['Accepted', 'is-ok', st.approved || 0, wOn ? w.accepted.words : null], ['Not accepted', 'is-bad', rejN, wOn ? w.rejected.words : null], ['Pending', 'is-wait', pendN, wOn ? w.pending.words : null]]; %>
+        <% boxes.forEach(([label, cls, n, words], i) => { const share = i === 0 ? 100 : (wOn ? (totW ? Math.round((words / totW) * 100) : 0) : (totN ? Math.round((n / totN) * 100) : 0)); %>
+          <div class="z-ks z-ks-pair <%= cls %>">
+            <div class="z-ks-top"><span class="z-ks-label"><%= t(label) %></span><% if (i) { %><span class="z-ks-pct"><%= formatNumber(share) %>%</span><% } %></div>
+            <% if (words != null) { %><b class="z-ks-line"><%= formatNumber(words) %><small> <%= t('words') %></small></b><% } %>
+            <b class="z-ks-line z-ks-sub"><%= formatNumber(n) %><small> <%= t('articles') %></small></b>
+            <div class="z-ks-bar"><i style="width: <%= share %>%"></i></div>
+          </div>
+        <% }) %>
+        <% const pr = Math.max(0, Math.min(100, k.reviewProgress || 0)); const C = 2 * Math.PI * 16; %>
+        <div class="z-ks z-ks-ring">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" class="z-ring-bg"/><circle cx="20" cy="20" r="16" class="z-ring-fg" stroke-dasharray="<%= (C * pr / 100).toFixed(1) %> <%= C.toFixed(1) %>"/></svg>
+          <div><b><%= formatNumber(pr) %>%</b><span><%= t('Reviewed') %></span><span class="z-ks-people"><i class="ti ti-users"></i><%= t('{n} participants', { n: formatNumber(k.roles.participant || 0) }) %></span></div>
+        </div>
+        <a class="z-ks z-ks-link" href="<%= base %>/statistics"><i class="ti ti-chart-bar z-ks-link-icon"></i><span><b><%= t('Statistics and analysis') %></b><span><%= t('Charts, reviewers and more') %></span></span><i class="ti ti-arrow-right z-ks-link-go"></i></a>
+      </div>
     <% } %>
     <% if (intro.myEntries && intro.myEntries.entries.length) { %><%- include('../../partials/myEntries', { my: intro.myEntries }) %><% } %>
   <% } %>
@@ -135,9 +152,16 @@
             <% let lastPerson = null; const personOf = Object.fromEntries(result.participants.map((pp) => [pp.id, pp])); %>
             <% let rows = result.items.map((s) => ({ s, group: null })); %>
             <% if (filters.view === 'reviewers') { const by = new Map(); result.items.forEach((s) => { const names = (s.reviews || []).map((rv) => rv.juror && rv.juror.username).filter(Boolean); (names.length ? [...new Set(names)] : ['']).forEach((n) => { if (!by.has(n)) by.set(n, []); by.get(n).push(s); }); }); rows = [...by.entries()].sort((x, y) => (x[0] === '') - (y[0] === '') || x[0].localeCompare(y[0])).flatMap(([n, list]) => list.map((s, i) => ({ s, group: n, first: i === 0, count: list.length }))); } %>
-            <% const wc = settings.wordCountEnabled; %>
+            <% const wc = settings.wordCountEnabled; const allowExp = (() => { try { return !!JSON.parse(settings.typeConfig || '{}').allowExpansions; } catch (e) { return false; } })(); %>
             <% if (filters.view === 'people' && rows.length) { %>
-              <tr class="z-group-head"><td colspan="20"><div class="z-pgrid<%= wc ? ' has-words' : '' %>"><% [['Participant', 'text'], ['Rank', 'num'], ['Entries', 'num'], ['Accepted', 'num'], ['Pending', 'num'], ['Not accepted', 'num']].concat(wc ? [['Words', 'num'], ['Accepted words', 'num'], ['Accepted share', 'num']] : []).forEach(([label, kind], i) => { %><button type="button" class="z-psort" data-psort="<%= i %>" data-kind="<%= kind %>"><%= t(label) %><i class="ti ti-selector"></i></button><% }) %></div></td></tr>
+              <% if (true) { %><tr class="z-group-tools"><td colspan="20"><label class="z-measure z-psort-pick"><span><%= t('Order') %></span><select class="form-select form-select-sm" data-psort-pick><option value=""><%= t('Default') %></option><option value="1"><%= t('Rank') %></option><option value="3"><%= t('Accepted') %></option><option value="4"><%= t('Not accepted') %></option><option value="5"><%= t('Pending') %></option><option value="2"><%= t('All') %></option><option value="0"><%= t('Name') %></option></select></label><label class="z-measure<%= wc ? '' : ' d-none' %>"><span><%= t('Sort by') %></span><select class="form-select form-select-sm" data-measure><option value="w"><%= t('Words') %></option><option value="n"><%= t('Articles') %></option></select></label></td></tr><% } %>
+              <tr class="z-group-head"><td colspan="20"><div class="z-pgrid z-pgrid2<%= wc ? ' has-words' : '' %>">
+                <button type="button" class="z-psort" data-psort="0" data-kind="text"><%= t('Participant') %><i class="ti ti-selector"></i></button>
+                <button type="button" class="z-psort" data-psort="1" data-kind="num"><%= t('Rank') %><i class="ti ti-selector"></i></button>
+                <% [['All', ''], ['Accepted', 'is-ok'], ['Not accepted', 'is-bad'], ['Pending', 'is-wait']].forEach(([label, cls], j) => { %>
+                  <button type="button" class="z-psort z-pcol <%= cls %>" data-psort="<%= j + 2 %>" data-key="<%= wc ? 'w' : 'n' %>" data-kind="num"><%= t(label) %><i class="ti ti-selector"></i></button>
+                <% }) %>
+              </div></td></tr>
             <% } %>
             <% rows.forEach(({ s, group, first, count }) => { const meta = JSON.parse(s.metadata); %>
               <% if (filters.view === 'reviewers' && first) { %>
@@ -145,14 +169,14 @@
               <% } %>
               <% if (filters.view === 'people' && s.participantId !== lastPerson) { lastPerson = s.participantId; const pp = personOf[s.participantId] || { entries: 0, words: 0 }; %>
                 <% const cb = pp.countsBy || {}; const wbp = pp.wordsBy || {}; %>
-                <tr class="z-group-row is-folded" data-group-toggle="<%= s.participantId %>"><td colspan="20"><div class="z-pgrid<%= wc ? ' has-words' : '' %>">
-                  <span class="z-pg-name"><i class="ti ti-chevron-down z-group-caret"></i><% if (showNames || (currentUser && currentUser.id === s.participantId)) { %><a href="<%= base %>/user/<%= nameInPath(s.participant.username) %>" onclick="event.stopPropagation()"><%= s.participant.username %></a><% } else { %><span><%= t('Anonymous') %></span><% } %></span>
+                <tr class="z-group-row is-folded" data-group-toggle="<%= s.participantId %>"><td colspan="20"><div class="z-pgrid z-pgrid2<%= wc ? ' has-words' : '' %>">
+                  <span class="z-pg-name" data-rank="<%= pp.rank ? formatNumber(pp.rank) : '' %>"><i class="ti ti-chevron-down z-group-caret"></i><% if (showNames || (currentUser && currentUser.id === s.participantId)) { %><a href="<%= base %>/user/<%= nameInPath(s.participant.username) %>" onclick="event.stopPropagation()"><%= s.participant.username %></a><% } else { %><span><%= t('Anonymous') %></span><% } %></span>
                   <span class="text-secondary" data-v="<%= pp.rank || 99999 %>"><%= pp.rank ? '#' + formatNumber(pp.rank) : '—' %></span>
-                  <span data-v="<%= pp.entries || 0 %>"><%= formatNumber(pp.entries || 0) %></span>
-                  <span class="is-ok" data-v="<%= cb.approved || 0 %>"><%= formatNumber(cb.approved || 0) %></span>
-                  <span class="is-wait" data-v="<%= cb.pending || 0 %>"><%= formatNumber(cb.pending || 0) %></span>
-                  <span class="is-bad" data-v="<%= cb.rejected || 0 %>"><%= formatNumber(cb.rejected || 0) %></span>
-                  <% if (wc) { const share = pp.words ? Math.round(((wbp.approved || 0) / pp.words) * 100) : 0; %><span data-v="<%= pp.words || 0 %>"><%= formatNumber(pp.words || 0) %></span><span class="is-ok" data-v="<%= wbp.approved || 0 %>"><%= formatNumber(wbp.approved || 0) %></span><span data-v="<%= share %>"><%= share %>%</span><% } %>
+                  <% const barTot = wc ? (pp.words || 0) : (pp.entries || 0); const barPart = (n, w) => (barTot ? Math.round(((wc ? w : n) / barTot) * 100) : 0); %>
+                  <span class="z-pbar" aria-hidden="true"><i class="is-ok" style="width:<%= barPart(cb.approved || 0, wbp.approved || 0) %>%"></i><i class="is-bad" style="width:<%= barPart(cb.rejected || 0, wbp.rejected || 0) %>%"></i><i class="is-wait" style="width:<%= barPart(cb.pending || 0, wbp.pending || 0) %>%"></i></span>
+                  <% [['', pp.entries || 0, pp.words || 0], ['is-ok', cb.approved || 0, wbp.approved || 0], ['is-bad', cb.rejected || 0, wbp.rejected || 0], ['is-wait', cb.pending || 0, wbp.pending || 0]].forEach(([cls, n, w]) => { %>
+                    <span class="z-pcell <%= cls %>" data-n="<%= n %>" data-w="<%= w %>" data-label="<%= [t('All'), t('Accepted'), t('Not accepted'), t('Pending')][['', 'is-ok', 'is-bad', 'is-wait'].indexOf(cls)] %>"><b><%= formatNumber(n) %></b><% if (wc) { %><small><%= t('{n} words', { n: formatNumber(w) }) %></small><% } %></span>
+                  <% }) %>
                 </div></td></tr>
               <% } %>
               <tr<%- filters.view === 'people' ? ` data-group="${s.participantId}" hidden` : filters.view === 'reviewers' ? ` data-group="r-${group || 'none'}"` : '' %>>
@@ -163,17 +187,25 @@
                       <span class="avatar avatar-sm me-2" style="background-image: url('<%= meta.file.thumbUrl %>')"></span>
                     <% } %>
                     <div>
-                      <a href="<%= entryUrl(s) %>" target="_blank" rel="noopener"><%= s.title %></a></td>
+                      <a href="<%= entryUrl(s) %>" target="_blank" rel="noopener"><%= s.title %></a>
                       <% if (showWiki) { %><div class="text-secondary small z-entry-wiki"><%= wikiLocal(s.wiki) %></div><% } %>
+                      <% if (meta && (!meta.entryType || meta.entryType === 'article') && (meta.createdAt || meta.creator)) { const expanded = meta.creator && s.participant && meta.creator !== s.participant.username; %>
+                        <div class="z-entry-facts">
+                          <% if (allowExp) { %><span class="<%= expanded ? 'is-exp' : '' %>"><%= expanded ? t('Expansion') : t('New article') %></span><% } %>
+                          <% if (meta.createdAt) { %><span title="<%= t('Created') %>"><i class="ti ti-calendar-plus"></i><%= formatDate(meta.createdAt, contest.timezone) %></span><% } %>
+                          <% if (expanded) { %><span title="<%= t('Created by') %>"><i class="ti ti-user-edit"></i><%= meta.creator %></span><% } %>
+                        </div>
+                      <% } %>
                     </div>
                   </div>
+                </td>
                 <td class="z-c-who"><i class="ti ti-user d-md-none me-1" aria-hidden="true"></i>                  <% if (showNames || (currentUser && currentUser.id === s.participantId)) { %>
                     <a href="<%= base %>/user/<%= nameInPath(s.participant.username) %>" class="z-user-name"><%= s.participant.username %></a>
                   <% } else { %><span class="text-secondary"><%= t('Anonymous') %></span><% } %>
                 </td>
                 <td class="z-c-status"><%- include('../../partials/submissionStatus', { s: s.status }) %></td>
                 <% if (showReviewers) { %><td class="small z-c-rev<%= (s.reviews || []).length > 1 ? ' z-multi' : '' %>"><span class="d-md-none z-rev-status"><%- include('../../partials/submissionStatus', { s: s.status }) %></span><% if ((s.reviews || []).length) { %><span class="d-md-none text-secondary"><i class="ti ti-gavel me-1" aria-hidden="true"></i><%= t('Reviewer') %>: </span><% } %><% (s.reviews || []).forEach((rv, i) => { %><%= i ? ', ' : '' %><span class="text-<%= rv.decision === 'accept' ? 'green' : rv.decision === 'reject' ? 'red' : 'secondary' %><%= rv.juror && /[ঀ-৿]/.test(rv.juror.username) ? ' z-bn' : '' %>"><% if (rv.juror) { const open = rv.decision !== 'accept' && rv.decision !== 'reject'; %><a class="z-rev-link<%= open ? ' is-open' : '' %>" href="<%= base %>/user/<%= nameInPath(rv.juror.username) %>"<% if (open) { %> title="<%= t('Assigned; not decided yet') %>"<% } %>><% if (open) { %><i class="ti ti-clock me-1" aria-hidden="true"></i><% } %><%= rv.juror.username %></a><% } %><% if (rv.comment && currentUser && (s.participantId === currentUser.id || canManage) && ['approved', 'rejected', 'disqualified'].includes(s.status)) { %><span class="z-note-btn" role="button" tabindex="0" data-toggle-open aria-label="<%= t('Reviewer note') %>" title="<%= t('Reviewer note') %>"><i class="ti ti-message-2"></i><span class="z-note-pop small"><%= rv.comment %></span></span><% } %></span><% }) %><% if (!(s.reviews || []).length) { %><span class="text-secondary">—</span><% } %></td><% } %>
-                <% if (settings.wordCountEnabled) { %><td class="text-end z-c-words"><%= s.wordCount != null ? formatNumber(s.wordCount) : '—' %></td><% } %>
+                <% if (settings.wordCountEnabled) { %><td class="text-end z-c-words <%= s.status === 'approved' ? 'is-ok' : ['rejected', 'disqualified', 'invalid'].includes(s.status) ? 'is-bad' : s.status === 'withdrawn' ? '' : 'is-wait' %>"><%= s.wordCount != null ? formatNumber(s.wordCount) : '—' %></td><% } %>
                 <td class="z-c-act">
                   <div class="z-row-actions">
                     <% if (currentUser && canReview(s)) { %><a class="btn btn-sm btn-ghost-primary btn-icon d-none d-md-inline-flex" href="<%= base %>/review?entry=<%= s.id %>" title="<%= t('Review') %>" aria-label="<%= t('Review') %>"><i class="ti ti-gavel"></i></a><% } %>

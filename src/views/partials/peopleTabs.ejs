@@ -1,5 +1,5 @@
 <% const showAssign = settings.juryReviewEnabled && EVENT_TYPES[contest.type].entries !== false && (can('assignJury') || can('manageAssignments')); %>
-<% const showPeople = can('manageParticipants') || can('manageJury') || can('manageEvent'); %>
+<% const showPeople = true; %>
 <% if (showAssign && showPeople) { %>
   <ul class="nav nav-pills mb-3">
     <li class="nav-item"><a class="nav-link<%= tab === 'people' ? ' active' : '' %>" href="<%= base %>/participants"><i class="ti ti-users me-1"></i><%= t('People') %></a></li>

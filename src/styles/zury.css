@@ -58,7 +58,7 @@
   --z-shadow-lg: 0 12px 32px -12px rgba(16, 24, 40, 0.18), 0 4px 8px -4px rgba(16, 24, 40, 0.06);
   --z-ring: 0 0 0 3px rgba(51, 102, 204, 0.2);
 
-  --z-font: "Inter Variable", "Noto Serif Bengali Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --z-font: Arial, "Noto Serif Bengali Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --z-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
@@ -431,7 +431,7 @@ html[lang="bn"] .datagrid-title { text-transform: none; letter-spacing: 0; font-
 .badge[class*="bg-purple"], .badge[class*="bg-indigo"] { background: var(--z-purple-soft) !important; color: var(--z-purple) !important; }
 .badge[class*="bg-pink"] { background: var(--z-pink-soft) !important; color: var(--z-pink) !important; }
 .badge[class*="bg-orange"] { background: var(--z-orange-soft) !important; color: var(--z-orange) !important; }
-.badge[class*="bg-green"]::before, .badge[class*="bg-success"]::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge[class*="bg-green"]::before, .badge[class*="bg-success"]::before, .badge[class*="bg-red"]::before, .badge[class*="bg-danger"]::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* ── Tabs: underline with the brand colour ───────────────────────────────── */
 .nav-tabs, .card-header-tabs {
@@ -894,7 +894,7 @@ form[data-wizard="page"] .wizard-pane + .wizard-pane { margin-top: 2rem; padding
 .z-user-name { font-size: .95rem; font-weight: 500; }
 
 /* Bengali pages: Latin digits (2026) drawn in the Bengali font, matching the text around them. */
-html[lang="bn"] { --z-font: "Noto Serif Bengali Variable", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; }
+html[lang="bn"] { --z-font: Arial, "Noto Serif Bengali Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; }
 
 /* The quick-look popup over the submissions list. */
 
@@ -1940,7 +1940,7 @@ th.text-end .z-sort-th { flex-direction: row-reverse; }
 .z-review-panel .card-header { padding: .5rem .85rem; min-height: 0; }
 .z-review-panel .z-review-more { position: relative; margin-bottom: .6rem !important; padding: .35rem .6rem; }
 .z-review-panel .z-review-more:not(.z-review-handover)[open] > div { position: absolute; left: -1px; right: -1px; top: calc(100% + 4px); z-index: 30; background: var(--tblr-bg-surface); border: 1px solid var(--tblr-border-color); border-radius: 10px; padding: .6rem .7rem !important; box-shadow: 0 14px 34px rgba(0,0,0,.16); }
-.z-review-entry { overflow: hidden; }
+.z-review-entry { overflow: clip; }
 .z-review-entry > .z-review-frame { border-top: 0; }
 @media (max-width: 767.98px) { html:has(.z-review-wrap) .z-review-panel { border: 0; box-shadow: none; background: transparent; } }
 @media (max-width: 767.98px) { html:has(.z-review-wrap) .z-review-panel .card-body { padding: .25rem 0 !important; } }
@@ -2388,3 +2388,201 @@ h5, .h5, h6, .h6, .btn-sm, .input-group-sm > .btn, .btn-group-sm > .btn, .dropdo
 .table-mobile td[data-label]::before, .ts-dropdown .optgroup-header, .ts-dropdown .no-results { font-size: .8125rem !important; }
 .btn-sm { font-size: .875rem !important; }
 .apexcharts-text, .apexcharts-legend-text, .apexcharts-tooltip, .apexcharts-xaxis-label, .apexcharts-yaxis-label { font-size: 13px !important; }
+/* Phones: leaderboards stay a plain table that scrolls sideways (no cards, no frames). */
+@media (max-width: 767.98px) {
+  .z-lb { display: table !important; width: 100%; }
+  .z-lb > thead { display: table-header-group !important; }
+  .z-lb > tbody { display: table-row-group !important; }
+  .z-lb thead tr, .z-lb tbody tr { display: table-row !important; padding: 0 !important; border: 0 !important; }
+  .z-lb tbody tr::after { content: none !important; }
+  .z-lb th, .z-lb td { display: table-cell !important; padding: .5rem .65rem !important; white-space: nowrap; border-bottom: 1px solid var(--z-border) !important; text-align: inherit; }
+  .z-lb th.text-end, .z-lb td.text-end { text-align: right !important; }
+  .z-lb thead th { font-size: .8125rem !important; }
+  .z-lb .z-lb-stat::before { content: none !important; }
+  .z-lb .z-lb-stat, .z-lb .z-lb-rank, .z-lb .z-lb-name, .z-lb .z-lb-score { order: 0 !important; margin: 0 !important; width: auto !important; flex: none !important; font-size: inherit !important; overflow: visible !important; text-overflow: clip !important; }
+  .z-lb tbody tr > .z-lb-stat:nth-child(3) { margin-left: 0 !important; }
+  .table-responsive:has(> .z-lb) { overflow-x: auto !important; }
+  .z-lb .z-sort-th { white-space: nowrap; }
+}
+/* The open note, placed on the page under its icon. */
+.z-note-btn .z-note-pop { display: none !important; }
+.z-note-float { position: absolute; z-index: 1060; padding: .6rem .75rem; border: 1px solid var(--z-border); border-radius: 8px; background: var(--z-surface); color: var(--z-fg); box-shadow: var(--z-shadow-lg); white-space: normal; line-height: 1.6; font-size: .875rem; }
+@media (max-width: 767.98px) {
+  .card .table.z-lb > thead > tr > th, .card .table.z-lb > tbody > tr > td { padding: .55rem .75rem !important; border-bottom: 1px solid var(--z-border) !important; vertical-align: middle; }
+  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > tbody > tr > td:first-child { padding-left: 1rem !important; }
+  .card .table.z-lb > thead > tr > th { background: var(--z-surface-2); }
+}
+/* Review page: the entry's own bar (title, tools, entry picker, progress) stays on top while scrolling, not the site navigation. */
+body:has(.z-review-layout) .z-navbar { position: relative; }
+.z-review-layout .z-entry-head { position: sticky; top: 0; z-index: 30; background: var(--z-bg); padding-top: .5rem; padding-bottom: .5rem; border-bottom: 1px solid var(--z-border); }
+/* Review: the comment box with even padding and one clear border. */
+@media (min-width: 768px) {
+  .z-review-side details.z-review-comment { padding: .75rem .85rem !important; border: 1px solid var(--z-border) !important; border-radius: 10px !important; background: var(--z-surface); box-sizing: border-box; max-width: 100%; }
+  .z-review-side details.z-review-comment > summary { margin-bottom: .1rem; }
+  .z-review-side .z-review-comment > .pt-2 { padding-top: .5rem !important; }
+  .z-review-side .z-review-comment .z-reason-row { display: flex; gap: .5rem; align-items: flex-start; }
+  .z-review-side .z-review-comment .z-comment-box { display: flex; flex-direction: column; gap: .5rem; }
+  .z-review-side .z-review-comment .z-comment-box textarea { width: 100%; box-sizing: border-box; }
+}
+/* Settings: the section tabs as a plain underlined row on the left, not spread across a grey band. */
+.card-header:has(> .z-config-tabs) { background: transparent !important; padding: 0 1rem !important; border-bottom: 1px solid var(--z-border); }
+.z-config-tabs { justify-content: flex-start !important; gap: .25rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; border: 0 !important; margin: 0 !important; }
+.z-config-tabs::-webkit-scrollbar { display: none; }
+.z-config-tabs > .nav-item { flex: none !important; width: auto !important; }
+.z-config-tabs > .nav-item::before, .z-config-tabs > .nav-item::after { display: none !important; }
+.z-config-tabs .nav-link { display: inline-flex; align-items: center; gap: .4rem; padding: .85rem .75rem !important; margin: 0 !important; border: 0 !important; border-bottom: 2px solid transparent !important; border-radius: 0 !important; background: none !important; color: var(--z-fg-muted); font-size: .9375rem; }
+.z-config-tabs .nav-link:hover { color: var(--z-fg); }
+.z-config-tabs .step-item.active .nav-link { color: var(--z-brand); border-bottom-color: var(--z-brand) !important; font-weight: 600; }
+.z-config-tabs .z-step-num { display: inline-flex; width: auto; height: auto; background: none !important; border: 0 !important; color: inherit; }
+.z-people-filter { flex: 0 0 auto; }
+.z-people-filter .form-select { min-width: 12rem; }
+@media (max-width: 575.98px) { .z-people-filter { flex: 1 1 100%; } .z-people-filter .form-select { width: 100%; } }
+/* Phones: leaderboard — rank and name stay pinned on the left while the figures slide; tighter columns. */
+@media (max-width: 767.98px) {
+  .card .table.z-lb { font-size: .875rem; }
+  .card .table.z-lb > thead > tr > th, .card .table.z-lb > tbody > tr > td { padding: .5rem .6rem !important; }
+  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > tbody > tr > td:first-child { padding-left: .75rem !important; width: 2.5rem; position: sticky; left: 0; z-index: 2; background: var(--z-surface); }
+  .card .table.z-lb > thead > tr > th:nth-child(2), .card .table.z-lb > tbody > tr > td:nth-child(2) { position: sticky; left: 2.5rem; z-index: 2; background: var(--z-surface); max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; box-shadow: 6px 0 6px -6px rgba(16, 24, 40, .25); }
+  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > thead > tr > th:nth-child(2) { background: var(--z-surface-2); }
+  .card .table.z-lb .z-lb-name a { font-weight: 600; font-size: .875rem; }
+  .card .table.z-lb .z-lb-rank span, .card .table.z-lb .z-lb-rank { font-size: .8125rem; }
+  .card:has(> .table-responsive > .z-lb) > .card-header { padding: .6rem .75rem; }
+  .card:has(> .table-responsive > .z-lb) > .card-header .btn { padding: .3rem .6rem; font-size: .8125rem; }
+}
+@media (max-width: 767.98px) {
+  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > tbody > tr > td:first-child { width: 4.25rem; min-width: 4.25rem; max-width: 4.25rem; }
+  .card .table.z-lb > thead > tr > th:nth-child(2), .card .table.z-lb > tbody > tr > td:nth-child(2) { left: 4.25rem; }
+}
+@media (max-width: 767.98px) {
+  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > tbody > tr > td:first-child { width: 2.25rem; min-width: 2.25rem; max-width: 2.25rem; padding-left: .6rem !important; padding-right: .2rem !important; text-align: center; }
+  .card .table.z-lb > thead > tr > th:nth-child(2), .card .table.z-lb > tbody > tr > td:nth-child(2) { left: 2.25rem; }
+  .card .table.z-lb > thead > tr > th:first-child > * { font-size: 0 !important; }
+  .card .table.z-lb > thead > tr > th:first-child > *::before { content: "#"; font-size: .8125rem; }
+  .card .table.z-lb > thead > tr > th:first-child .ti { display: none; }
+}
+/* Phones: names may wrap onto two lines instead of being cut; the rank column is as narrow as a number. */
+@media (max-width: 767.98px) {
+  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > tbody > tr > td:first-child { width: 1.75rem; min-width: 1.75rem; max-width: 1.75rem; padding-left: .45rem !important; padding-right: 0 !important; }
+  .card .table.z-lb > thead > tr > th:nth-child(2), .card .table.z-lb > tbody > tr > td:nth-child(2) { left: 1.75rem; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; min-width: 7.5rem; max-width: 9rem; line-height: 1.35; overflow-wrap: anywhere; }
+  .card .table.z-lb .z-lb-rank > span { width: 1.4rem; height: 1.4rem; font-size: .75rem; }
+}
+/* Submissions: the article's facts under its title. */
+.z-entry-facts { display: flex; flex-wrap: wrap; gap: .15rem .75rem; margin-top: .2rem; font-size: .8125rem; color: var(--z-fg-muted); }
+.z-entry-facts span { display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+.z-entry-facts .ti { font-size: .9rem; opacity: .8; }
+.z-entry-facts .is-new { color: var(--z-green); }
+.z-entry-facts .is-exp { color: #b7791f; }
+.z-kind { font-size: .8125rem; font-weight: 600; white-space: nowrap; }
+.z-kind.is-new { color: var(--z-green); }
+.z-kind.is-exp { color: #b7791f; }
+
+/* Key numbers in groups: articles, words, people. */
+.z-keystats { gap: .75rem 1rem; align-items: flex-end; }
+.z-ks-group { display: flex; flex-direction: column; gap: .3rem; }
+.z-ks-title { font-size: .8125rem; font-weight: 600; color: var(--z-fg-muted); }
+.z-ks-row { display: flex; gap: .4rem; flex-wrap: wrap; }
+.z-ks-row .z-ks { min-width: 5.25rem; }
+@media (max-width: 575.98px) { .z-ks-group { width: 100%; } .z-ks-row .z-ks { flex: 1 1 calc(25% - .3rem); min-width: 0; } }
+/* By participant: all / accepted / not accepted / pending, each with articles and words. */
+.z-pgrid.z-pgrid2 { grid-template-columns: minmax(9rem, 1fr) 3.5rem repeat(4, 6.5rem); }
+.z-pgrid.z-pgrid2.has-words { grid-template-columns: minmax(9rem, 1fr) 3.5rem repeat(4, 8rem); }
+.z-pcol { display: flex; flex-direction: column; align-items: flex-end; gap: .1rem; }
+.z-pcol-l { font-weight: 700; }
+.z-pcol.is-ok .z-pcol-l { color: var(--z-green); } .z-pcol.is-bad .z-pcol-l { color: var(--z-red); } .z-pcol.is-wait .z-pcol-l { color: #b7791f; }
+.z-pcol-s { display: flex; gap: .5rem; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.z-pcol-s .z-psort { padding: 0 !important; }
+.z-pcell { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+.z-pcell b { font-size: .9375rem; font-weight: 650; }
+.z-pcell small { font-size: .8125rem; color: var(--z-fg-muted); white-space: nowrap; }
+.z-pcell.is-ok b { color: var(--z-green); } .z-pcell.is-bad b { color: var(--z-red); } .z-pcell.is-wait b { color: #b7791f; }
+.table-responsive:has(.z-subs-table.is-people) .z-pgrid.z-pgrid2 { min-width: 38rem; }
+.table-responsive:has(.z-subs-table.is-people) .z-pgrid.z-pgrid2.has-words { min-width: 44rem; }
+/* Plain list: the entry's words under its own status (accepted / not accepted / pending). */
+.z-subs-table td.z-c-sg { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.z-subs-table td.z-c-sg.is-ok { color: var(--z-green); } .z-subs-table td.z-c-sg.is-bad { color: var(--z-red); } .z-subs-table td.z-c-sg.is-wait { color: #b7791f; }
+@media (max-width: 767.98px) { .z-subs-table .z-c-sg { display: none !important; } }
+.z-pgrid > button.z-pcol { justify-self: end; font-weight: 700; flex-direction: row; }
+.z-group-tools > td { padding: .45rem .75rem !important; border-bottom: 0 !important; }
+.z-measure { display: inline-flex; align-items: center; gap: .5rem; font-size: .875rem; color: var(--z-fg-muted); }
+.z-measure .form-select { width: auto; }
+@media (max-width: 767.98px) { .z-subs-table tr.z-group-tools { display: block !important; } .z-subs-table tr.z-group-tools > td { display: block; } }
+/* The words column in the status's colour. */
+.z-subs-table td.z-c-words { font-weight: 600; font-variant-numeric: tabular-nums; }
+.z-subs-table td.z-c-words.is-ok { color: var(--z-green); } .z-subs-table td.z-c-words.is-bad { color: var(--z-red); } .z-subs-table td.z-c-words.is-wait { color: #b7791f; }
+.z-ks-pair b { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 .15rem; font-size: 1.1rem; }
+.z-ks-pair b small { font-size: .75rem; font-weight: 500; color: var(--z-fg-muted); }
+.z-ks-sep { margin: 0 .3rem; color: var(--z-border-strong); font-weight: 400; }
+.z-ks-row .z-ks.z-ks-pair { min-width: 9rem; }
+@media (max-width: 575.98px) { .z-ks-row .z-ks.z-ks-pair { flex: 1 1 calc(50% - .3rem); } }
+@media (max-width: 575.98px) { .z-ks-pair b { flex-wrap: nowrap; white-space: nowrap; font-size: .95rem; } .z-ks-pair b small { font-size: .7rem; } .z-ks-sep { margin: 0 .2rem; } }
+/* Key numbers: words on one line, articles on the next. */
+.z-ks-pair b.z-ks-line { display: block; font-size: 1.05rem; line-height: 1.3; white-space: nowrap; }
+.z-ks-pair b.z-ks-line + b.z-ks-line { font-size: .95rem; }
+.z-ks-pair b.z-ks-line small { font-size: .75rem; font-weight: 500; color: var(--z-fg-muted); }
+.z-ks-pair > span { margin-top: .15rem; }
+/* Key numbers with a share bar each, and a review ring. */
+.z-ks2 { align-items: stretch; }
+.z-ks2 .z-ks-pair { min-width: 9.5rem; gap: .1rem; padding: .6rem .85rem .55rem; }
+.z-ks-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .15rem; }
+.z-ks-label { font-size: .8125rem; font-weight: 600; color: var(--z-fg-muted); }
+.z-ks-pair.is-ok .z-ks-label { color: var(--z-green); } .z-ks-pair.is-bad .z-ks-label { color: var(--z-red); } .z-ks-pair.is-wait .z-ks-label { color: #b7791f; }
+.z-ks-pct { font-size: .75rem; font-weight: 600; color: var(--z-fg-muted); background: var(--z-hover); border-radius: 999px; padding: 0 .4rem; }
+.z-ks2 .z-ks-pair b.z-ks-line { color: var(--z-fg); }
+.z-ks2 .z-ks-pair b.z-ks-sub { font-size: .875rem; font-weight: 600; color: var(--z-fg-muted); }
+.z-ks-bar { height: 4px; border-radius: 999px; background: var(--z-hover); margin-top: .45rem; overflow: hidden; }
+.z-ks-bar i { display: block; height: 100%; border-radius: 999px; background: var(--z-fg-muted); }
+.z-ks-pair.is-ok .z-ks-bar i { background: var(--z-green); } .z-ks-pair.is-bad .z-ks-bar i { background: var(--z-red); } .z-ks-pair.is-wait .z-ks-bar i { background: #e8a317; }
+.z-ks-ring { flex-direction: row !important; align-items: center; gap: .65rem; min-width: 11rem; }
+.z-ks-ring svg { width: 3rem; height: 3rem; flex: none; transform: rotate(-90deg); }
+.z-ring-bg { fill: none; stroke: var(--z-hover); stroke-width: 5; }
+.z-ring-fg { fill: none; stroke: var(--z-brand); stroke-width: 5; stroke-linecap: round; }
+.z-ks-ring > div { display: flex; flex-direction: column; }
+.z-ks-ring b { font-size: 1.15rem; }
+.z-ks-people { display: inline-flex; align-items: center; gap: .25rem; margin-top: .1rem; }
+@media (max-width: 575.98px) { .z-ks2 .z-ks-pair { flex: 1 1 calc(50% - .3rem); min-width: 0; } .z-ks-ring { flex: 1 1 100%; } }
+@media (max-width: 575.98px) { .z-ks2 { gap: .5rem; } .z-ks2 .z-ks-pair { flex: 1 1 calc(50% - .25rem) !important; } }
+@media (max-width: 767.98px) { .z-subs-table .z-entry-facts { display: none !important; } }
+/* By participant on phones: one card per person — rank and name with the total, a three-colour bar, then the three figures. */
+.z-pbar { display: none; }
+.z-psort-pick { display: none; }
+@media (max-width: 767.98px) {
+  .z-subs-table.is-people tr.z-group-head { display: none !important; }
+  .z-psort-pick { display: inline-flex; }
+  .z-group-tools .z-measure + .z-measure { margin-left: .75rem; }
+  .table-responsive:has(.z-subs-table.is-people) .z-pgrid.z-pgrid2 { min-width: 0 !important; }
+  .z-subs-table.is-people .z-pgrid.z-pgrid2 { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-areas: "name name all" "bar bar bar" "acc rej pend"; column-gap: .5rem; row-gap: .45rem; }
+  .z-subs-table.is-people .z-pgrid.z-pgrid2 > .z-pg-name { grid-area: name; }
+  .z-subs-table.is-people .z-pgrid.z-pgrid2 > span[data-v] { display: none; }
+  .z-subs-table.is-people .z-pgrid.z-pgrid2 > .z-pcell:nth-of-type(n) { align-items: flex-start; }
+  .z-subs-table.is-people .z-pgrid.z-pgrid2 > .z-pcell[data-label] { grid-area: auto; }
+  .z-subs-table.is-people .z-pgrid.z-pgrid2 > .z-pbar { grid-area: bar; display: flex; height: 6px; border-radius: 999px; overflow: hidden; background: var(--z-hover); }
+  .z-pbar i { display: block; height: 100%; } .z-pbar i + i { margin-left: 2px; }
+  .z-pbar .is-ok { background: var(--z-green); } .z-pbar .is-bad { background: var(--z-red); } .z-pbar .is-wait { background: #e8a317; }
+  .z-subs-table.is-people .z-pcell::before { content: attr(data-label); font-size: .75rem; color: var(--z-fg-muted); font-weight: 500; }
+  .z-subs-table.is-people .z-pcell:not(.is-ok):not(.is-bad):not(.is-wait) { grid-area: all; align-items: flex-end; }
+  .z-subs-table.is-people .z-pcell:not(.is-ok):not(.is-bad):not(.is-wait)::before { content: none; }
+  .z-subs-table.is-people .z-pcell.is-ok { grid-area: acc; } .z-subs-table.is-people .z-pcell.is-bad { grid-area: rej; } .z-subs-table.is-people .z-pcell.is-wait { grid-area: pend; }
+  .z-subs-table.is-people tr.z-group-row > td { padding: .75rem .85rem !important; }
+}
+@media (max-width: 767.98px) { .z-subs-table.is-people .z-pg-name[data-rank]:not([data-rank=""])::after { content: "#" attr(data-rank); order: -1; font-size: .75rem; font-weight: 600; color: var(--z-fg-muted); background: var(--z-hover); border-radius: 999px; padding: .05rem .4rem; } }
+/* Link to statistics as its own box. */
+.z-ks.z-ks-link { flex-direction: row !important; align-items: center; gap: .7rem; min-width: 13rem; text-decoration: none !important; color: var(--z-fg); background: color-mix(in srgb, var(--z-brand) 6%, var(--z-surface)); border-color: color-mix(in srgb, var(--z-brand) 25%, var(--z-border)); transition: border-color .15s, background .15s; }
+.z-ks.z-ks-link:hover { border-color: var(--z-brand); background: color-mix(in srgb, var(--z-brand) 10%, var(--z-surface)); }
+.z-ks-link-icon { font-size: 1.6rem; color: var(--z-brand); flex: none; }
+.z-ks-link > span { display: flex; flex-direction: column; flex: 1; }
+.z-ks-link b { font-size: .9375rem; color: var(--z-brand); }
+.z-ks-link-go { color: var(--z-brand); flex: none; }
+@media (max-width: 575.98px) { .z-ks.z-ks-link { flex: 1 1 100%; } }
+/* By participant: the tree lines belong to the article title, not to the checkbox column. */
+@media (min-width: 768px) {
+  .z-subs-table.is-people tr[data-group] > td:first-child { background-image: none !important; padding-left: .75rem !important; }
+  .z-subs-table.is-people tr[data-group] > td.z-c-title { padding-left: 2rem !important; background-image: linear-gradient(var(--z-border-strong), var(--z-border-strong)), linear-gradient(var(--z-border-strong), var(--z-border-strong)); background-size: 1px 100%, .65rem 1px; background-position: .9rem 0, .9rem 50%; background-repeat: no-repeat; }
+}
+/* By participant: a person's entries carry one thin coloured rail on the left (no tree), titles slightly indented. */
+.z-subs-table.is-people tr[data-group] > td { background-image: none !important; }
+.z-subs-table.is-people tr[data-group] > td:first-child { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--z-brand) 45%, transparent) !important; padding-left: .9rem !important; }
+.z-subs-table.is-people tr[data-group] > td.z-c-title { padding-left: 1rem !important; }
+@media (max-width: 767.98px) {
+  .z-subs-table.is-people tr[data-group] { background-image: none !important; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--z-brand) 45%, transparent) !important; padding-left: 1rem !important; }
+  .z-subs-table.is-people tr[data-group] > td:first-child { box-shadow: none !important; padding-left: 0 !important; }
+}

@@ -440,28 +440,40 @@ document.addEventListener('change', (e) => {
   }
 });
 
-// Long notes show one line; a click opens the rest.
-document.addEventListener('click', (e) => {
-  const n = e.target.closest('[data-toggle-open]');
-  if (n) n.classList.toggle('is-open');
-});
-// A click anywhere else closes an open note.
-document.addEventListener('click', (e) => {
-  document.querySelectorAll('.z-note-btn.is-open').forEach((b) => { if (!b.contains(e.target)) b.classList.remove('is-open'); });
-});
-// A note's pop-up floats over the page (a scrolling table would clip it), under its icon.
-document.addEventListener('click', (e) => {
-  const b = e.target.closest('.z-note-btn');
-  if (!b || !b.classList.contains('is-open')) return;
-  const pop = b.querySelector('.z-note-pop');
-  const r = b.getBoundingClientRect();
-  const w = Math.min(352, window.innerWidth - 24);
-  pop.style.position = 'fixed';
-  pop.style.width = `${w}px`;
-  pop.style.left = `${Math.max(12, Math.min(r.left - 8, window.innerWidth - w - 12))}px`;
-  pop.style.top = `${r.bottom + 6}px`;
-});
-window.addEventListener('scroll', () => document.querySelectorAll('.z-note-btn.is-open').forEach((b) => b.classList.remove('is-open')), { passive: true });
+// A reviewer's note: a click on its icon shows it under the icon, where it stays as the page
+// scrolls (it is placed on the page, so a scrolling table can't clip it). A click anywhere else,
+// or on the icon again, closes it.
+(() => {
+  let open = null;
+  const close = () => { if (open) { open.float.remove(); open.btn.classList.remove('is-open'); open = null; } };
+  const place = () => {
+    if (!open) return;
+    const r = open.btn.getBoundingClientRect();
+    const w = Math.min(352, document.documentElement.clientWidth - 24);
+    open.float.style.width = `${w}px`;
+    open.float.style.left = `${Math.max(12, Math.min(r.left - 8, document.documentElement.clientWidth - w - 12)) + window.scrollX}px`;
+    open.float.style.top = `${r.bottom + 6 + window.scrollY}px`;
+  };
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-toggle-open]');
+    if (open && open.float.contains(e.target)) return;
+    if (btn && open && open.btn === btn) return close();
+    close();
+    if (!btn) return;
+    const pop = btn.querySelector('.z-note-pop');
+    if (!pop) return;
+    const float = document.createElement('div');
+    float.className = 'z-note-float small';
+    float.textContent = pop.textContent;
+    document.body.append(float);
+    btn.classList.add('is-open');
+    open = { btn, float };
+    place();
+  });
+  window.addEventListener('resize', place);
+  // Sliding a table sideways moves the icon: the note follows it.
+  document.addEventListener('scroll', (e) => { if (open && e.target !== document && e.target.contains && e.target.contains(open.btn)) place(); }, { capture: true, passive: true });
+})();
 
 // By participant: a click on a heading sorts the people (each keeps their entries under them).
 document.addEventListener('click', (e) => {
@@ -474,7 +486,34 @@ document.addEventListener('click', (e) => {
   head.querySelectorAll('.z-psort').forEach((b) => b.removeAttribute('aria-sort'));
   btn.setAttribute('aria-sort', desc ? 'descending' : 'ascending');
   const groups = [...body.querySelectorAll('tr.z-group-row')].map((row) => ({ row, rows: [...body.querySelectorAll(`tr[data-group="${row.dataset.groupToggle}"]`)] }));
-  const val = (g) => { const cell = g.row.querySelector('.z-pgrid').children[i]; return btn.dataset.kind === 'num' ? Number(cell.dataset.v || 0) : cell.textContent.trim().toLowerCase(); };
+  const key = btn.dataset.key;
+  const val = (g) => { const cell = [...g.row.querySelector('.z-pgrid').children].filter((c) => !c.classList.contains('z-pbar'))[i]; if (btn.dataset.kind !== 'num') return cell.textContent.trim().toLowerCase(); return Number((key ? cell.dataset[key] : cell.dataset.v) || 0); };
   groups.sort((a, b) => { const x = val(a), y = val(b); const c = typeof x === 'number' ? x - y : x.localeCompare(y); return desc ? -c : c; });
   groups.forEach((g) => { body.appendChild(g.row); g.rows.forEach((r) => body.appendChild(r)); });
+});
+
+
+// A dropdown marked data-submit-on-change sends its form as soon as it changes.
+document.addEventListener('change', (e) => { if (e.target.matches && e.target.matches('select[data-submit-on-change]')) e.target.form.submit(); });
+
+// By participant: words or articles — the column headings sort by the chosen measure.
+document.addEventListener('change', (e) => {
+  const sel = e.target.closest && e.target.closest('[data-measure]');
+  if (!sel) return;
+  const table = sel.closest('table');
+  let active = null;
+  table.querySelectorAll('.z-psort[data-key]').forEach((b) => { b.dataset.key = sel.value; if (b.hasAttribute('aria-sort')) active = b; });
+  if (active) { const dir = active.getAttribute('aria-sort'); active.setAttribute('aria-sort', dir === 'descending' ? 'ascending' : 'descending'); active.click(); }
+});
+
+// By participant on phones: the order picker sorts like a click on that column's heading (largest first).
+document.addEventListener('change', (e) => {
+  const sel = e.target.closest && e.target.closest('[data-psort-pick]');
+  if (!sel || sel.value === '') return;
+  const btn = sel.closest('table').querySelector(`.z-group-head .z-psort[data-psort="${sel.value}"]`);
+  if (!btn) return;
+  btn.removeAttribute('aria-sort');
+  btn.closest('tr').querySelectorAll('.z-psort').forEach((b) => b.removeAttribute('aria-sort'));
+  if (sel.value === '0' || sel.value === '1') btn.setAttribute('aria-sort', 'descending');
+  btn.click();
 });

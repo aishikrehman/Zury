@@ -413,7 +413,36 @@ async function pinRevision(submission, revId) {
   return prisma.submission.update({ where: { id: submission.id }, data: { revId: rev.revid, metadata: JSON.stringify({ ...meta, sizeBytes: rev.size, pinnedAt: rev.timestamp }) } });
 }
 
-module.exports = {
+// Entries brought in with little data (Fountain, imports): the article's details (created, creator, size)
+// are fetched from the wiki once, in the background, a few at a time, and kept.
+const filling = new Set();
+function fillMissingDetails(items, contest) {
+  const todo = items.filter((s) => {
+    if (filling.has(s.id)) return false;
+    let m = {}; try { m = JSON.parse(s.metadata || '{}'); } catch { m = {}; }
+    return (!m.entryType || m.entryType === 'article') && !m.createdAt && m.exists !== false;
+  }).slice(0, 25);
+  if (!todo.length) return;
+  todo.forEach((s) => filling.add(s.id));
+  setImmediate(async () => {
+    for (const s of todo) {
+      try {
+        const fresh = await fetchEntryMetadata({ wiki: s.wiki, title: s.title }, { language: contest.language });
+        let m = {}; try { m = JSON.parse(s.metadata || '{}'); } catch { m = {}; }
+        const merged = fresh && fresh.exists
+          ? { ...fresh, ...m, entryType: m.entryType || fresh.entryType, createdAt: fresh.createdAt, creator: fresh.creator, sizeBytes: m.sizeBytes ?? fresh.sizeBytes, currentRevId: fresh.revId }
+          : { ...m, exists: false };
+        await prisma.submission.update({ where: { id: s.id }, data: { metadata: JSON.stringify(merged) } });
+      } catch (e) {
+        // tried again on a later visit
+      } finally {
+        filling.delete(s.id);
+      }
+    }
+  });
+}
+
+module.exports = { fillMissingDetails,
   pinRevision,
   repin,
   myEntries,

@@ -299,7 +299,9 @@ async function people(req, res, next) {
   try {
     const [members, overrides] = await Promise.all([contestService.members(req.contest.id), contestService.overrides(req.contest.id)]);
     const wiki = req.wikiScope?.wiki;
-    const blocks = await membershipService.activeBlocks(req.contest.id);
+    // Everyone may see who runs, reviews and takes part; blocks and (in anonymous events) participants only for those who manage people.
+    const staff = ['manageParticipants', 'manageJury', 'manageEvent'].some((p) => req.permissions.has(p));
+    const blocks = staff ? await membershipService.activeBlocks(req.contest.id) : [];
     const pp = require('../services/participationService').read(req.settings);
     // On the all-wikis page: the wikis each person submitted from.
     const fromWikis = {};
@@ -313,7 +315,7 @@ async function people(req, res, next) {
       blocks,
       canBlock: (req.wikiScope || req.eventWikis.length > 1 ? req.scope.global : req.permissions).has('manageParticipants'),
       title: `People — ${req.contest.title}`,
-      members: wiki ? members.filter((m) => !m.wiki || m.wiki === wiki) : members,
+      members: (wiki ? members.filter((m) => !m.wiki || m.wiki === wiki) : members).filter((m) => staff || !(req.settings.anonymousParticipants && m.role === 'participant')),
       memberWikis: !req.wikiScope && req.eventWikis.length > 1 ? req.eventWikis : [],
       overrides,
       roleOptions: Object.entries(EVENT_ROLES).filter(([role]) => req.permissions.has(ROLE_MANAGEMENT_PERMISSION[role])),

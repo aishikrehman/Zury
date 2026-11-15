@@ -207,6 +207,7 @@ async function index(req, res, next) {
     const pp = ps.read(req.settings);
     const joinedNow = req.user ? (await membershipService.activeRoles(req.contest.id, req.user.id)).includes('participant') : false;
     const showSignUp = req.user && pp.page && (pp.mode === 'onwiki' ? !joinedNow : joinedNow);
+    if (result.items && result.items.length) submissionService.fillMissingDetails(result.items, req.contest);
     res.render('pages/contest/submissions', {
       keyStats: (req.settings.publicStatisticsEnabled || req.permissions.has('viewStatistics')) ? await require('../services/statsService').eventStats(req.contest, { wiki: req.wikiScope?.wiki }).catch(() => null) : null,
       intro: {
