@@ -50,29 +50,42 @@
       </div>
       <% } %>
       <div class="<%= isOwnProfile ? 'col-12' : 'col-lg-8' %>">
-        <% groups.forEach((g) => { %>
-          <details class="card mb-3 z-fold-card"<%= g.items.length ? ' open' : '' %>>
-            <summary class="card-header"><h3 class="card-title"><span class="avatar avatar-xs bg-<%= g.color %>-lt me-2"><i class="ti ti-<%= g.icon %>"></i></span><%= g.heading %></h3><span class="ms-auto badge bg-secondary-lt"><%= formatNumber(g.items.length) %></span><i class="ti ti-chevron-down z-fold-icon"></i></summary>
-            <% if (!g.items.length) { %>
-              <div class="card-body text-secondary"><%= t(g.empty) %></div>
-            <% } else { %>
-              <div class="list-group list-group-flush">
-                <% g.items.forEach(({ contest: c }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-                  <a href="<%= eventPath(c) %>" class="list-group-item list-group-item-action d-flex align-items-center gap-3">
-                    <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
-                    <div class="flex-fill min-w-0">
-                      <div class="text-truncate"><%= c.title %></div>
-                      <div class="text-secondary small"><%= t(CONTEST_TYPES[c.type]) %> · <%= (c.primaryWiki === 'metawiki' && c.wikis && !c.wikis.length ? t('No wikis yet') : wikiLocal(c.primaryWiki)) %></div>
-                    </div>
-                  </a>
-                <% }) %>
+        <% const firstTab = Math.max(0, groups.findIndex((g) => g.items.length)); %>
+        <div class="card z-prof-events">
+          <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+              <% groups.forEach((g, i) => { %>
+                <li class="nav-item" role="presentation"><a class="nav-link<%= i === firstTab ? ' active' : '' %>" href="#prof-ev-<%= i %>" data-bs-toggle="tab" role="tab"><i class="ti ti-<%= g.icon %> me-1 text-<%= g.color %>"></i><%= g.heading %> <span class="badge bg-<%= g.color %>-lt ms-1"><%= formatNumber(g.items.length) %></span></a></li>
+              <% }) %>
+            </ul>
+          </div>
+          <div class="tab-content">
+            <% groups.forEach((g, i) => { %>
+              <div class="tab-pane<%= i === firstTab ? ' active show' : '' %>" id="prof-ev-<%= i %>" role="tabpanel">
+                <% if (!g.items.length) { %>
+                  <div class="card-body text-secondary"><%= t(g.empty) %></div>
+                <% } else { %>
+                  <div class="list-group list-group-flush">
+                    <% g.items.forEach(({ contest: c }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
+                      <a href="<%= eventPath(c) %>" class="list-group-item list-group-item-action d-flex align-items-center gap-3">
+                        <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
+                        <div class="flex-fill min-w-0">
+                          <div class="text-truncate fw-medium"><%= c.title %></div>
+                          <div class="text-secondary small"><%= t(CONTEST_TYPES[c.type]) %> · <%= wikiLocal(c.primaryWiki) %></div>
+                        </div>
+                        <span class="text-secondary small text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) : '' %></span>
+                      </a>
+                    <% }) %>
+                  </div>
+                <% } %>
               </div>
-            <% } %>
-          </details>
-        <% }) %>
+            <% }) %>
+          </div>
+        </div>
       </div>
     </div>
-<% if (isOwnProfile) { %><%- include('../../partials/accountEnd') %><% } else { %>
+<% if (isOwnProfile) { %>
+<%- include('../../partials/accountEnd') %><% } else { %>
   </div>
 </div>
 <% } %>

@@ -29,7 +29,8 @@ const RUNTIME = ['show', 'showing', 'hiding', 'collapsing', 'collapse', 'fade', 
   'modal', 'modal-open', 'modal-backdrop', 'modal-static', 'offcanvas', 'offcanvas-backdrop', 'tooltip', 'tooltip-inner', 'tooltip-arrow', 'bs-tooltip-auto', 'popover', 'is-invalid', 'is-valid', 'was-validated',
   'focus', 'input-active', 'has-items', 'single', 'multi', 'ts-wrapper', 'ts-control', 'ts-dropdown', 'form-select', 'form-control', 'plugin-remove_button', 'tab-pane', 'nav-link'];
 const runtimePrefixes = ['bs-', 'apexcharts', 'ts-', 'tooltip', 'popover', 'offcanvas', 'modal'];
-const used = (cls) => words.has(cls) || RUNTIME.includes(cls) || dynamicPrefixes.some((p) => cls.startsWith(p)) || runtimePrefixes.some((p) => cls.startsWith(p));
+const used = (cls) => (/^bg-(pattern|gradient)/.test(cls) ? words.has(cls) : true) && usedAny(cls);
+const usedAny = (cls) => words.has(cls) || RUNTIME.includes(cls) || dynamicPrefixes.some((p) => cls.startsWith(p)) || runtimePrefixes.some((p) => cls.startsWith(p));
 
 // ── A small CSS reader: rules and at-rules, nested as written ──
 function parse(css) {
@@ -150,7 +151,8 @@ function build(file, label) {
 // Self-hosted fonts; their files are served from /vendor/<name>/files.
 function fonts() {
   return [['inter', 'inter', 'index.css'], ['noto-bengali', 'noto-serif-bengali', 'wght.css']]
-    .map(([at, pkg, file]) => squeeze(read(`node_modules/@fontsource-variable/${pkg}/${file}`).replace(/url\(\.\/files\//g, `url(/vendor/${at}/files/`)))
+    .map(([at, pkg, file]) => squeeze(read(`node_modules/@fontsource-variable/${pkg}/${file}`).replace(/url\(\.\/files\//g, `url(/vendor/${at}/files/`))
+      .replace(/\/\* (cyrillic|greek|vietnamese)[^*]*\*\/\s*@font-face\s*\{[^}]*\}/g, ''))
     .join('');
 }
 
@@ -176,8 +178,18 @@ async function main() {
   const style = banner + fonts() + build('node_modules/@tabler/core/dist/css/tabler.css', 'tabler') + build('src/styles/zury.css', 'zury');
   // Icons keep a stylesheet of their own next to their font.
   fs.writeFileSync(path.join(ROOT, 'public/icons/icons.css'), `/*! Tabler Icons, MIT licence. Built by scripts/build-assets.js. */\n${await icons()}`);
-  fs.writeFileSync(path.join(ROOT, 'public/css/style.css'), style);
+  fs.writeFileSync(path.join(ROOT, 'public/css/style.css'), dropUnusedVars(style));
   console.log(`style.css: ${Math.round(style.length / 1024)} KB`);
+}
+
+// Custom properties no rule (and no code) reads are left out; repeated until nothing more goes.
+function dropUnusedVars(css) {
+  for (;;) {
+    const read = new Set([...css.matchAll(/var\(\s*(--[\w-]+)/g), ...text.matchAll(/(--[\w-]+)/g)].map((m) => m[1]));
+    const next = css.replace(/(?<=[{;])\s*(--[\w-]+)\s*:[^;{}]*(?:;|(?=}))/g, (d, name) => (read.has(name) ? d : '')).replace(/[^{}@]+\{\s*\}/g, '');
+    if (next === css) return css;
+    css = next;
+  }
 }
 
 module.exports = { words, used };

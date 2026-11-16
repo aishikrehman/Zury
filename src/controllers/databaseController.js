@@ -4,6 +4,8 @@ const { Prisma } = require('@prisma/client');
 const prisma = require('../config/prisma');
 
 const HIDDEN = new Set(['Session']);
+// Never removed here: accounts, roles and permissions, and the logs that record who did what.
+const PROTECTED = new Set(['User', 'UserGlobalRole', 'UserWikiRole', 'ScopeRole', 'ContestPermission', 'RolePermissionChange', 'AuditLog']);
 const PER_PAGE = 50;
 
 const models = () => Prisma.dmmf.datamodel.models.filter((m) => !HIDDEN.has(m.name));
@@ -39,10 +41,30 @@ async function index(req, res, next) {
       });
       view = { name, columns, rows: rows.map((r) => columns.map((c) => cell(r[c]))), total, page, pages };
     }
-    res.render('pages/admin/database', { title: 'Database — Zury', tables, view });
+    const canRemove = req.permissions.has('maintainSite') && model && !PROTECTED.has(model.name) && model.fields.some((f) => f.isId);
+    const status = req.permissions.has('maintainSite') ? await require('../services/maintenanceService').status() : null;
+    res.render('pages/admin/database', { title: 'Database — Zury', tables, view, canRemove, idField: model ? (model.fields.find((f) => f.isId) || {}).name : null, status });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { index };
+// One row out of a table (not the protected ones). What depends on it goes with it, as the database is set up.
+async function removeRow(req, res, next) {
+  const name = String(req.params.table || '');
+  const back = `/admin/database?table=${encodeURIComponent(name)}&page=${Number.parseInt(req.body.page, 10) || 1}`;
+  try {
+    const model = models().find((m) => m.name === name);
+    const id = model && model.fields.find((f) => f.isId);
+    if (!model || !id || PROTECTED.has(name)) { req.flash('danger', req.t('This table cannot be changed here.')); return res.redirect(back); }
+    const value = id.type === 'Int' ? Number(req.params.id) : String(req.params.id);
+    await delegate(name).delete({ where: { [id.name]: value } });
+    await require('../services/auditService').record({ actorId: req.user.id, action: 'database.row_removed', entityType: name, entityId: Number.isInteger(value) ? value : null, details: { table: name, id: String(value) } });
+    req.flash('success', req.t('Row removed.'));
+  } catch (err) {
+    req.flash('danger', req.t('That row could not be removed: other records still need it.'));
+  }
+  res.redirect(back);
+}
+
+module.exports = { index, removeRow, PROTECTED };

@@ -5,7 +5,7 @@
   const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
   const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
 %>
-<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events'], [sr.title, `/${sr.slug}`]], heading: edition.title, inline: canRun ? { action: `/series/${sr.slug}/${edition.slug}/update`, name: 'title', label: t('Title'), maxlength: 200, hidden: { description: edition.description, startDate: day(edition.startDate), endDate: day(edition.endDate), back: 'overview' } } : null, status: edition.status, meta: `<span class="badge bg-primary-lt fs-4">${h(edition.identifier || edition.slug)}</span>${edition.cycleType ? `<span>${t(CYCLES[edition.cycleType] || edition.cycleType)}</span>` : ''}${dates}<span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', events.length)}</span>`, base, tab, tabs }) %>
+<%- include('../../partials/levelHeader', { crumbs: [[t('Events'), '/events'], [sr.title, `/${sr.slug}`]], heading: edition.title, inline: canRun ? { action: `/series/${sr.slug}/${edition.slug}/update`, name: 'title', label: t('Title'), maxlength: 200, hidden: { description: edition.description, startDate: day(edition.startDate), endDate: day(edition.endDate), back: 'overview' } } : null, status: edition.status, meta: `<span class="badge bg-primary-lt fs-4">${h(digits(edition.identifier || edition.slug))}</span>${edition.cycleType ? `<span>${t(CYCLES[edition.cycleType] || edition.cycleType)}</span>` : ''}${dates}<span><i class="ti ti-calendar-event"></i>${tn('{n} event', '{n} events', events.length)}</span>`, base, tab, tabs }) %>
 <div class="page-body">
   <div class="container-xl">
 
@@ -14,7 +14,7 @@
         <div class="d-flex justify-content-end mb-3"><div class="dropdown">
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-plus me-1"></i><%= t('Add event') %></button>
           <div class="dropdown-menu dropdown-menu-end">
-            <a class="dropdown-item" href="/events/create?series=<%= sr.slug %>&edition=<%= edition.slug %>"><i class="ti ti-file-plus me-2"></i><%= t('New event') %></a>
+            <a class="dropdown-item" href="/create/event?series=<%= sr.slug %>&edition=<%= edition.slug %>"><i class="ti ti-file-plus me-2"></i><%= t('New event') %></a>
             <% if (can('importEvents')) { %><button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#add-fountain"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></button><% } %>
           </div>
         </div></div>
@@ -35,7 +35,7 @@
       <% if (events.length) { %><%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Event'), chartTitle: t('Entries per event'), table: false }) %><% } %>
       <% if (nav.prev || nav.next || carry) { %>
         <div class="z-ed-strip mb-3">
-          <% if (nav.prev) { %><a class="card card-sm card-link z-ed-nav" href="/<%= sr.slug %>/<%= nav.prev.slug %>"><div class="card-body"><i class="ti ti-chevron-left"></i><div><small class="text-secondary"><%= t('Previous edition') %></small><b><%= nav.prev.identifier || nav.prev.slug %></b><small class="text-secondary"><%= tn('{n} participant', '{n} participants', nav.prev.participants) %> · <%= tn('{n} entry', '{n} entries', nav.prev.entries) %></small></div></div></a><% } %>
+          <% if (nav.prev) { %><a class="card card-sm card-link z-ed-nav" href="/<%= sr.slug %>/<%= nav.prev.slug %>"><div class="card-body"><i class="ti ti-chevron-left"></i><div><small class="text-secondary"><%= t('Previous edition') %></small><b><%= digits(nav.prev.identifier || nav.prev.slug) %></b><small class="text-secondary"><%= tn('{n} participant', '{n} participants', nav.prev.participants) %> · <%= tn('{n} entry', '{n} entries', nav.prev.entries) %></small></div></div></a><% } %>
           <% if (carry && carry.before) { const pct = Math.round((carry.back / carry.before) * 100); %>
             <div class="card card-sm z-ed-carry"><div class="card-body">
               <div class="d-flex align-items-center gap-2"><i class="ti ti-repeat text-primary fs-2"></i><div><b><%= formatNumber(carry.back) %></b> <span class="text-secondary"><%= t('of {n} from the previous edition came back', { n: formatNumber(carry.before) }) %></span></div></div>
@@ -49,7 +49,7 @@
               <% } %>
             </div></div>
           <% } %>
-          <% if (nav.next) { %><a class="card card-sm card-link z-ed-nav is-next" href="/<%= sr.slug %>/<%= nav.next.slug %>"><div class="card-body"><div><small class="text-secondary"><%= t('Next edition') %></small><b><%= nav.next.identifier || nav.next.slug %></b><small class="text-secondary"><%= tn('{n} participant', '{n} participants', nav.next.participants) %> · <%= tn('{n} entry', '{n} entries', nav.next.entries) %></small></div><i class="ti ti-chevron-right"></i></div></a><% } %>
+          <% if (nav.next) { %><a class="card card-sm card-link z-ed-nav is-next" href="/<%= sr.slug %>/<%= nav.next.slug %>"><div class="card-body"><div><small class="text-secondary"><%= t('Next edition') %></small><b><%= digits(nav.next.identifier || nav.next.slug) %></b><small class="text-secondary"><%= tn('{n} participant', '{n} participants', nav.next.participants) %> · <%= tn('{n} entry', '{n} entries', nav.next.entries) %></small></div><i class="ti ti-chevron-right"></i></div></a><% } %>
         </div>
       <% } %>
       <% if (!events.length) { %>
@@ -70,7 +70,7 @@
           <div class="col-6 col-md-3"><label class="form-label" for="ed-start"><%= t('Starts') %></label><input class="form-control" type="date" id="ed-start" name="startDate" value="<%= day(edition.startDate) %>"></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-end"><%= t('Ends') %></label><input class="form-control" type="date" id="ed-end" name="endDate" value="<%= day(edition.endDate) %>"></div>
           <div class="col-12 col-md-6"><label class="form-label" for="ed-slug"><%= t('Address') %></label><div class="input-group"><span class="input-group-text"><%= siteHost %>/<%= sr.slug %>/</span><input class="form-control" id="ed-slug" name="slug" value="<%= edition.slug %>" maxlength="20"></div></div>
-          <div class="col-6 col-md-3"><label class="form-label" for="ed-id"><%= t('Edition name') %></label><input class="form-control" id="ed-id" name="identifier" value="<%= edition.identifier || edition.slug %>" maxlength="100" placeholder="2026, Season 2…"></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="ed-id"><%= t('Edition name') %></label><input class="form-control" id="ed-id" name="identifier" value="<%= edition.identifier || edition.slug %>" maxlength="100" placeholder="<%= t('2026, Season 2…') %>"></div>
           <div class="col-6 col-md-3"><label class="form-label" for="ed-cycle"><%= t('Kind') %></label><select class="form-select" id="ed-cycle" name="cycleType"><option value="">—</option><% Object.entries(CYCLES).forEach(([k, l]) => { %><option value="<%= k %>"<%= edition.cycleType === k ? ' selected' : '' %>><%= t(l) %></option><% }) %></select></div>
           <div class="col-6 col-md-2"><label class="form-label" for="ed-year"><%= t('Year') %></label><input class="form-control" type="number" id="ed-year" name="year" min="1900" max="2200" value="<%= edition.year || '' %>"></div>
           <div class="col-6 col-md-2"><label class="form-label" for="ed-status"><%= t('Status') %></label><% if (edition.status === 'archived') { %><div class="form-control-plaintext"><%= t('Archived') %></div><% } else { %><select class="form-select" id="ed-status" name="status"><% [['draft', 'Draft'], ['planned', 'Planned'], ['upcoming', 'Upcoming'], ['active', 'Active'], ['completed', 'Completed'], ['cancelled', 'Cancelled']].forEach(([k, l]) => { %><option value="<%= k %>"<%= ownStatus === k ? ' selected' : '' %>><%= t(l) %></option><% }) %></select><% } %></div>

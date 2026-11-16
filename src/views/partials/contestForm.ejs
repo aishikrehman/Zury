@@ -24,8 +24,10 @@
     ['participation', t('Participation'), t('Who takes part and how')],
     ['submission', t('Submissions'), t('What can be submitted')],
     ...(judged ? [['judging', t('Review and results'), t('How entries are reviewed and results counted')]] : []),
+    ...(creating ? [] : [['aboutpage', t('About page'), t('Prizes, topics and questions')]]),
     ['access', t('Other'), wikiMode ? t('Contact, images and more') : t('Contact, images, visibility, organizers and reviewers')],
     ...(extra ? [['database', t('Database'), t('Where it sits, wikis, downloads and clearing data')]] : []),
+    ...(creating ? [['review', t('Review'), t('Check everything before creating')]] : []),
   ];
   const dateInput = (key) => `
     <label class="form-label" for="${key}">${esc(dateLabel[key])}${mark('contest.' + key)}</label>
@@ -44,13 +46,13 @@
 
   <div class="row g-4">
     <div class="col-12">
-      <div class="card z-config<%= sideTabs ? ' z-side-tabs' : '' %>" data-wizard="<%= pageMode ? 'page' : 'tabs' %>"<% if (creating && !can('deleteAnything')) { %> data-guard<% } %>>
+      <div class="card z-config<%= sideTabs ? ' z-side-tabs' : '' %>" data-wizard="<%= pageMode ? 'page' : creating ? 'steps' : 'tabs' %>"<% if (creating && !can('deleteAnything')) { %> data-guard<% } %>>
         <% if (!pageMode) { %>
         <div class="card-header">
           <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
             <% steps.forEach(([key, label, hint], i) => { %>
               <li class="nav-item step-item<%= i === 0 ? ' active' : '' %>" role="presentation">
-                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><span class="z-step-num"><i class="ti ti-<%= ({ basics: 'info-circle', participation: 'users', submission: 'upload', judging: 'gavel', access: 'lock', database: 'database' })[key] || 'point' %>"></i></span><span class="z-step-label"><%= label %></span></a>
+                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><span class="z-step-num"><i class="ti ti-<%= ({ basics: 'info-circle', participation: 'users', submission: 'upload', judging: 'gavel', aboutpage: 'info-circle', access: 'lock', database: 'database' })[key] || 'point' %>"></i></span><span class="z-step-label"><%= label %></span></a>
               </li>
             <% }) %>
           </ul>
@@ -72,7 +74,7 @@
                   <div class="col-12">
                     <span class="form-label"><%= t("Type of event") %></span>
                     <input type="hidden" name="type" value="<%= type %>">
-                    <div class="d-flex align-items-center gap-2"><strong><%= t(typeDef.label) %></strong><% if (!locals.typeFixed) { %><a class="small" href="/events/create<%= form.seriesSlug ? `?series=${encodeURIComponent(form.seriesSlug)}${form.edition ? `&edition=${encodeURIComponent(form.edition)}` : ''}` : '' %>"><%= t('Change') %></a><% } %></div>
+                    <div class="d-flex align-items-center gap-2"><strong><%= t(typeDef.label) %></strong><% if (!locals.typeFixed) { %><a class="small" href="/create/event<%= form.seriesSlug ? `?series=${encodeURIComponent(form.seriesSlug)}${form.edition ? `&edition=${encodeURIComponent(form.edition)}` : ''}` : '' %>"><%= t('Change') %></a><% } %></div>
                     <div class="form-hint"><%= t(typeDef.description) %></div>
                   </div>
                 <% } else { const draftType = typeof contest !== 'undefined' && contest && contest.status === 'draft' && !contest.seriesId && !contest.editionId; %>
@@ -133,7 +135,7 @@
                   </select>
                   <input type="hidden" name="language" id="language" value="<%= v('language') %>">
                   <% if (wikiScope) { %>
-                    <div class="form-hint">You can use: <%= wikiScope.length ? wikiScope.map(wikiLocal).join(', ') : 'none' %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? ' (or keep the current one)' : '' %>.</div>
+                    <div class="form-hint"><%= t('You can use: {list}', { list: wikiScope.length ? wikiScope.map(wikiLocal).join(', ') : t('none') }) %><%= form.primaryWiki && !wikiScope.includes(form.primaryWiki) ? t(' (or keep the current one)') : '' %></div>
                   <% } %>
                   <%- err('primaryWiki') %><%- err('language') %>
                 </div>
@@ -207,6 +209,29 @@
 
           <%- include('./eventPanes', { v, on, inv, err, listVal, esc, dateInput, judged, type, pageMode, form, typeDef }) %>
 
+          <% if (!creating) { %>
+          <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-aboutpage" data-step="<%= steps.findIndex(([k]) => k === 'aboutpage') %>">
+            <input type="hidden" name="extras_present" value="1">
+            <div class="row g-3">
+              <div class="col-lg-6">
+                <label class="form-label" for="extras_prizes"><%= t('Prizes') %></label>
+                <textarea class="form-control" id="extras_prizes" name="extras_prizes" rows="5" placeholder="<%= t('1st | A book voucher') %>"><%= form.extras_prizes || '' %></textarea>
+                <div class="form-hint"><%= t('One per line: place | prize') %></div>
+              </div>
+              <div class="col-lg-6">
+                <label class="form-label" for="extras_topicsPage"><%= t('Suggested topics') %></label>
+                <input class="form-control mb-2" id="extras_topicsPage" name="extras_topicsPage" value="<%= form.extras_topicsPage || '' %>" placeholder="<%= t('An on-wiki page with the list (optional)') %>">
+                <textarea class="form-control" id="extras_topics" name="extras_topics" rows="3" placeholder="<%= t('Or a few titles, one per line') %>"><%= form.extras_topics || '' %></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="extras_faq"><%= t('Questions and answers') %></label>
+                <textarea class="form-control" id="extras_faq" name="extras_faq" rows="6" placeholder="<%= t('Who can take part?') %>&#10;<%= t('Anyone with a Wikimedia account.') %>"><%= form.extras_faq || '' %></textarea>
+                <div class="form-hint"><%= t('A question on one line, its answer below; a blank line before the next.') %></div>
+              </div>
+            </div>
+          </section>
+          <% } %>
+
           <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-access" data-step="<%= steps.findIndex(([k]) => k === 'access') %>">
             <div class="z-form-group">
               <h3 class="z-form-group-title"><%= t('More details') %> <span class="text-secondary fw-normal small"><%= t('optional') %></span></h3>
@@ -262,13 +287,21 @@
               </div>
           <% } %>
           </section>
+          <% if (creating) { %>
+            <section class="wizard-pane d-none" id="step-review" data-step="<%= steps.length - 1 %>">
+              <h3 class="mb-3"><i class="ti ti-checklist me-2"></i><%= t('Review') %></h3>
+              <div data-review></div>
+            </section>
+          <% } %>
 
         </div>
 
         <div class="card-footer d-flex align-items-center" data-form-footer>
           <% if (creating) { %>
-            <span class="text-secondary small me-auto"><%= t('It is made as a draft: nothing is public until you publish it.') %></span>
-            <button type="submit" class="btn btn-primary btn-lg"><i class="ti ti-check me-1"></i><%= t(submitLabel) %></button>
+            <button type="button" class="btn" data-wizard-back><i class="ti ti-arrow-left me-1"></i><%= t('Back') %></button>
+            <span class="text-secondary small mx-auto" data-wizard-count></span>
+            <button type="button" class="btn btn-primary" data-wizard-next><%= t('Next') %><i class="ti ti-arrow-right ms-1"></i></button>
+            <button type="submit" class="btn btn-primary d-none" data-wizard-submit><i class="ti ti-check me-1"></i><%= t(submitLabel) %></button>
           <% } else { %>
             <button type="submit" class="btn btn-primary ms-auto"><i class="ti ti-device-floppy me-1"></i><%= t(submitLabel) %></button>
           <% } %>

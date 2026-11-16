@@ -3,16 +3,15 @@
   // The navigation bar under the header.
   // Personal pages (profile, preferences) are in the account menu.
   const navItems = [
-    currentUser
-      ? { href: '/dashboard', icon: 'layout-dashboard', label: t('Dashboard'), active: isActive('/dashboard') }
-      : { href: '/', icon: 'home', label: t('Home'), active: isActive('/', true) },
+    // Home for everyone (people who are logged in reach it at /?home=1), then their dashboard.
+    { href: currentUser ? '/?home=1' : '/', icon: 'home', label: t('Home'), active: isActive('/', true) },
+    ...(currentUser ? [{ href: '/dashboard', icon: 'layout-dashboard', label: t('Dashboard'), active: isActive('/dashboard') }] : []),
     {
-      icon: 'calendar-event', label: t('Events'), active: isActive('/events') && !isActive('/events/create'),
+      icon: 'calendar-event', label: t('Events'), active: isActive('/events') || currentPath === '/series',
       children: [
         { href: '/events', icon: 'list', label: t('All events'), active: currentPath === '/events' },
         { href: '/events/active', icon: 'player-play', label: t('Active'), active: isActive('/events/active') },
-        { href: '/events/upcoming', icon: 'clock', label: t('Upcoming'), active: isActive('/events/upcoming') },
-        { href: '/events/completed', icon: 'flag', label: t('Completed'), active: isActive('/events/completed') },
+        { href: '/series', icon: 'stack-2', label: t('Series'), active: currentPath === '/series' },
       ],
     },
   ];
@@ -20,16 +19,7 @@
     navItems.push({ href: '/review', icon: 'gavel', label: t('Review'), active: isActive('/review') });
   }
   if (can('createEvent')) {
-    navItems.push({
-      icon: 'calendar-cog', label: t('Event management'), active: isActive('/events/create') || isActive('/events/import') || isActive('/series'),
-      children: [
-        { href: '/events/create', icon: 'calendar-plus', label: t('Create event'), active: isActive('/events/create') },
-        ...(can('importEvents') ? [
-          { href: '/events/import', icon: 'download', label: t('Import from Fountain'), active: isActive('/events/import') },
-          { href: '/series', icon: 'stack-2', label: t('Series and editions'), active: isActive('/series') },
-        ] : []),
-      ],
-    });
+    navItems.push({ href: '/create/event', icon: 'plus', label: t('Organize'), active: isActive('/create/event') || isActive('/create/import') || isActive('/create/series') });
   }
   if (can('accessAdmin')) {
     navItems.push({ href: '/admin', icon: 'shield-lock', label: t('Administration'), active: isActive('/admin') });

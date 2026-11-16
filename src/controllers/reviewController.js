@@ -320,8 +320,9 @@ async function appealsList(req, res, next) {
       });
       flagged = rows.map((r) => ({ ...r, flags: watch.flagsOf(r), watch: (JSON.parse(r.metadata || '{}').watch) || {} })).filter((r) => r.flags.length);
     }
-    const show = ['all', 'deleted', 'redirect', 'moved', 'shrunk', 'appeals'].includes(req.query.show) ? req.query.show : 'all';
-    res.render('pages/contest/appeals', { title: `${req.t('Patrol room')} — ${req.contest.title}`, appeals: list, flagged, staff, show });
+    const show = ['all', 'deleted', 'redirect', 'moved', 'shrunk', 'grew', 'appeals'].includes(req.query.show) ? req.query.show : 'all';
+    const jury = staff && req.settings.juryReviewEnabled ? await Promise.all([reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }), reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki })]).then(([progress, activity]) => ({ progress, activity })).catch(() => null) : null;
+    res.render('pages/contest/appeals', { title: `${req.t('Patrol room')} — ${req.contest.title}`, appeals: list, flagged, staff, show, jury });
   } catch (err) {
     next(err);
   }
@@ -374,7 +375,9 @@ async function myQueue(req, res, next) {
       prisma.review.groupBy({ by: ['contestId', 'decision'], where: { jurorId: userId, contestId: { in: ids } }, _count: { _all: true } }),
       prisma.submission.groupBy({ by: ['contestId', 'status'], where: { contestId: { in: ids }, status: { not: 'withdrawn' } }, _count: { _all: true } }),
       prisma.appeal.groupBy({ by: ['contestId'], where: { contestId: { in: ids }, status: 'open' }, _count: { _all: true } }),
-      prisma.review.findMany({ where: { jurorId: userId }, orderBy: { updatedAt: 'desc' }, take: 8, select: { decision: true, updatedAt: true, comment: true, submission: { select: { id: true, title: true, wiki: true } }, contest: { select: { id: true, title: true, slug: true, path: true, series: { select: { slug: true } } } } } }),
+      // The Patrol room across their events (still running, not archived): articles deleted, redirected,
+      // moved, much shorter or much improved since the decision, and open appeals.
+      prisma.submission.findMany({ where: { contestId: { in: events.filter((e) => !['archived', 'cancelled', 'completed'].includes(e.contest.status)).map((e) => e.contest.id) }, status: { not: 'withdrawn' }, metadata: { contains: '"watch"' } }, orderBy: { updatedAt: 'desc' }, take: 300, select: { id: true, title: true, status: true, metadata: true, contestId: true } }),
     ]);
     // My reviews per day, last 30 days.
     const perDay = Array.from({ length: 30 }, (_, i) => ({ at: new Date(since30.getTime() + i * day), n: 0 }));
@@ -403,7 +406,12 @@ async function myQueue(req, res, next) {
       e.daysLeft = end && end > now ? Math.ceil((end - now) / day) : null;
       e.finished = ['completed', 'archived', 'cancelled'].includes(e.contest.status);
     }
-    res.render('pages/review/index', { title: 'Review — Zury', events, stats, recent: recent.map((r) => ({ ...r, path: eventPath(r.contest) })) });
+    const watch = require('../services/articleWatchService');
+    const byId = new Map(events.map((e) => [e.contest.id, e]));
+    const patrol = recent.map((s) => ({ s, flags: watch.flagsOf(s), ev: byId.get(s.contestId) })).filter((x) => x.flags.length && x.ev).slice(0, 20)
+      .map((x) => ({ id: x.s.id, title: x.s.title, flags: x.flags, event: x.ev.contest, path: x.ev.path || eventPath(x.ev.contest) }));
+    const appealList = events.filter((e) => e.appeals && !e.finished).map((e) => ({ event: e.contest, n: e.appeals, path: e.path || eventPath(e.contest) }));
+    res.render('pages/review/index', { title: 'Review — Zury', events, stats, patrol, appealList });
   } catch (err) {
     next(err);
   }
@@ -485,7 +493,7 @@ async function patrolAction(req, res, next) {
     const watch = require('../services/articleWatchService');
     const action = req.params.action;
     if (action === 'seen') {
-      await watch.markSeen(s1, req.body.flag === 'shrunk' ? 'shrunk' : 'state');
+      await watch.markSeen(s1, ['shrunk', 'grew'].includes(req.body.flag) ? req.body.flag : 'state');
       req.flash('success', req.t('Marked as looked at.'));
     } else if (action === 'refresh') {
       if (reviewService.resultsFinal(req.effective.contest)) throw new ReviewError('The event is archived, so the revision can no longer change.');

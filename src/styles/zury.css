@@ -2975,3 +2975,254 @@ body:has(.z-band) .gh-footer .container-xl { border-top: 0; }
 .z-top-item > .min-w-0 { width: 100%; }
 .z-top-avatar { width: 3.75rem; height: 3.75rem; font-size: 1.5rem; }
 .z-top-avatar .z-medal { width: 1.5rem; height: 1.5rem; font-size: .75rem; }
+/* Event landing: the description folded behind one small line. */
+.z-intro2 > summary { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; list-style: none; color: var(--z-fg-muted); font-size: .875rem; font-weight: 600; }
+.z-intro2 > summary::-webkit-details-marker { display: none; }
+.z-intro2 > summary:hover { color: var(--z-brand); }
+.z-intro2[open] .z-intro2-caret { transform: rotate(180deg); }
+.z-intro2 .z-intro-full { margin-top: .5rem; padding: .85rem 1rem; border-left: 3px solid var(--z-brand); background: var(--z-hover); border-radius: 0 .5rem .5rem 0; white-space: pre-line; }
+/* Event About page. */
+.z-about-text { white-space: pre-line; line-height: 1.7; }
+.z-tl { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; position: relative; }
+.z-tl li { display: flex; flex-direction: column; gap: .2rem; padding-top: 1.1rem; position: relative; }
+.z-tl-dot { position: absolute; top: 0; left: 0; width: .8rem; height: .8rem; border-radius: 50%; background: var(--z-border-strong); }
+.z-tl li.is-done .z-tl-dot { background: #339966; } .z-tl li.is-now .z-tl-dot { background: #3366cc; box-shadow: 0 0 0 4px rgba(51,102,204,.2); }
+.z-tl-day { font-weight: 700; font-size: .875rem; }
+.z-tl-what { color: var(--z-fg-muted); font-size: .875rem; }
+.z-tl-bar { height: 4px; border-radius: 4px; background: var(--z-hover); margin-top: 1rem; overflow: hidden; } .z-tl-bar i { display: block; height: 100%; background: #3366cc; }
+.z-steps { margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: .6rem; }
+.z-steps li b { display: block; } .z-steps li span { color: var(--z-fg-muted); font-size: .875rem; }
+/* How to take part: a stepper — across on wide screens, down on narrow ones; done steps turn green. */
+.z-join { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 1rem; counter-reset: none; }
+.z-join li { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: .65rem; }
+.z-join li + li::before { content: ''; position: absolute; top: 1.6rem; right: calc(50% + 2rem); width: calc(100% - 4rem + 1rem); height: 2px; background: repeating-linear-gradient(90deg, var(--z-border-strong) 0 6px, transparent 6px 11px); }
+.z-join li.is-done + li::before { background: #339966; }
+.z-join-ico { position: relative; width: 3.2rem; height: 3.2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.45rem; color: #3366cc; background: #eaf3ff; box-shadow: 0 0 0 5px var(--z-surface); transition: transform .3s ease; }
+.z-join li:hover .z-join-ico { transform: translateY(-3px); }
+.z-join li.is-done .z-join-ico { color: #fff; background: #339966; }
+.z-join-n { position: absolute; right: -.25rem; top: -.25rem; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: #3366cc; color: #fff; font-size: .6875rem; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--z-surface); }
+.z-join li.is-done .z-join-n { background: #2a6e4c; }
+.z-join-text { display: flex; flex-direction: column; gap: .2rem; }
+.z-join-text b { font-size: .9375rem; line-height: 1.35; }
+.z-join-text small { color: var(--z-fg-muted); font-size: .8125rem; line-height: 1.4; }
+@media (max-width: 767.98px) {
+  .z-join { grid-auto-flow: row; grid-auto-columns: auto; gap: 0; }
+  .z-join li { flex-direction: row; align-items: flex-start; text-align: left; gap: .9rem; padding-bottom: 1.25rem; }
+  .z-join li + li::before { top: auto; bottom: calc(100% - .2rem); left: 1.55rem; right: auto; width: 2px; height: calc(1.25rem + .2rem); background: repeating-linear-gradient(180deg, var(--z-border-strong) 0 5px, transparent 5px 9px); }
+  .z-join li.is-done + li::before { background: #339966; }
+  .z-join-ico { flex: none; }
+  .z-join-text { padding-top: .35rem; }
+}
+/* Event header: dates, kind and wiki one under another, not in one long line; no small time bar. */
+.z-time-bar { display: none !important; }
+.z-evhead-facts { display: flex; flex-direction: column; gap: .2rem; margin-top: .45rem; font-size: .875rem; color: var(--z-fg-muted); }
+.z-evhead-facts > span { display: inline-flex; align-items: center; gap: .4rem; }
+.z-evhead-facts .ti { color: var(--z-brand); }
+/* Event header facts: one line on wide screens, stacked on small ones. */
+.z-evhead-facts { flex-direction: row; flex-wrap: wrap; gap: .3rem 1.25rem; }
+@media (max-width: 575.98px) { .z-evhead-facts { flex-direction: column; gap: .2rem; } }
+/* Event tabs: the team's tabs after a thin divider. */
+.z-tabs-divider { align-self: center; width: 1px; height: 1.25rem; margin: 0 .5rem; background: var(--z-border-strong); flex: none; }
+.z-evhead-tabs a.is-team { color: var(--z-fg-muted); }
+.z-evhead-tabs a.is-team.active { color: var(--z-fg); }
+/* About: the rules in plain words. */
+.z-rule-scale { display: flex; align-items: stretch; margin-bottom: 1.1rem; border-radius: .6rem; overflow: hidden; border: 1px solid var(--z-border); }
+.z-rule-scale span { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .5rem .3rem; font-size: .75rem; text-align: center; color: var(--z-fg-muted); }
+.z-rule-scale span + span { border-left: 1px solid var(--z-border); }
+.z-rule-scale .ti { font-size: 1.1rem; }
+.z-rule-scale span.is-on { background: #3366cc; color: #fff; font-weight: 700; }
+.z-rule-group + .z-rule-group { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--z-border); }
+.z-rule-head { display: flex; align-items: center; gap: .4rem; font-size: .8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--z-fg-muted); margin-bottom: .5rem; }
+.z-rule-head .ti { color: #3366cc; }
+.z-rule-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .45rem; }
+.z-rule-group li { display: flex; align-items: flex-start; gap: .55rem; font-size: .9375rem; line-height: 1.4; }
+.z-rule-group li .ti { flex: none; margin-top: .15rem; color: #3366cc; }
+/* Event header: menus open over the page instead of being cut off. */
+.z-evhead.has-proj { overflow: visible; }
+/* Create: one page to start anything. */
+.z-create-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 1rem; }
+.z-create-card { display: flex; flex-direction: column; gap: .4rem; padding: 1.5rem; }
+.z-create-card b { font-size: 1.1rem; } .z-create-card span:last-child { color: var(--z-fg-muted); }
+.z-create-ico { width: 3rem; height: 3rem; border-radius: .8rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #3366cc; background: #eaf3ff; margin-bottom: .4rem; }
+.z-series-card { position: relative; }
+.z-series-card .card-link-cover { position: absolute; inset: 0; z-index: 1; }
+.z-series-card .card-footer { position: relative; z-index: 2; }
+/* Create pages: the form beside a short explanation. */
+.z-create-side { background: var(--z-hover); border: 0; }
+.z-side-steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .6rem; color: var(--z-fg-muted); }
+.z-side-steps li::marker { color: #3366cc; font-weight: 700; }
+/* The one Create page: its three tabs. */
+.z-create-tabs { display: flex; gap: .25rem; margin-top: 1rem; border-bottom: 1px solid var(--z-border); overflow-x: auto; }
+.z-create-tabs a { display: inline-flex; align-items: center; padding: .6rem .9rem; color: var(--z-fg-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-weight: 500; }
+.z-create-tabs a:hover { color: var(--z-fg); }
+.z-create-tabs a.active { color: #3366cc; border-bottom-color: #3366cc; font-weight: 600; }
+.z-dash-h { display: flex; align-items: center; font-size: 1.25rem; font-weight: 700; margin: 1.5rem 0 1rem; }
+/* Configuration: Save always in view in the open section; the checklist for drafts. */
+.z-side-tabs [data-form-footer] { position: sticky; bottom: 0; z-index: 5; background: var(--z-surface); border-top: 1px solid var(--z-border); }
+.z-todo { border-left: 4px solid #edab00; }
+.z-todo-list { margin: .4rem 0 0; padding-left: 1.2rem; display: flex; flex-wrap: wrap; gap: .2rem 1.5rem; }
+.z-todo-list a { font-weight: 500; }
+/* About: announcements, my progress, prizes, FAQ. */
+.z-announce { display: flex; flex-direction: column; gap: .5rem; }
+.z-announce-item { display: flex; gap: .6rem; padding: .7rem .9rem; border-radius: .6rem; background: #fef6e7; border-left: 4px solid #edab00; }
+.z-announce-item > .ti { color: #ac6600; font-size: 1.2rem; margin-top: .1rem; }
+.z-announce-form { display: flex; gap: .5rem; }
+.z-myprog .card-body > div { display: flex; flex-direction: column; }
+.z-myprog b { font-size: 1.4rem; line-height: 1.2; } .z-myprog span { font-size: .8125rem; color: var(--z-fg-muted); }
+.z-prizes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.z-prizes li { display: flex; align-items: center; gap: .6rem; }
+.z-prizes .z-medal { width: auto; min-width: 1.6rem; padding: 0 .4rem; border-radius: 999px; }
+.z-prizes .is-1 .z-medal { background: #f5c518; color: #5a4500; } .z-prizes .is-2 .z-medal { background: #c9ced6; color: #3a3f47; } .z-prizes .is-3 .z-medal { background: #d9a066; color: #4a2c0e; }
+.z-faq summary { cursor: pointer; font-weight: 600; }
+/* Create tabs: no scrollbar showing beside them. */
+.z-create-tabs { overflow-y: hidden; scrollbar-width: none; }
+.z-create-tabs::-webkit-scrollbar { display: none; }
+/* About: the event's facts under its description. */
+.z-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .75rem 1.5rem; margin: 1.1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--z-border); }
+.z-facts dt { display: flex; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--z-fg-muted); margin: 0 0 .15rem; }
+.z-facts dt .ti { color: #3366cc; font-size: .95rem; }
+.z-facts dd { margin: 0; word-break: break-word; }
+/* Dashboard: My submissions in a narrower column — figures in a tidy grid. */
+#mine .card-sm .card-body { padding: .6rem .75rem; }
+#mine .card-sm .avatar { width: 2rem; height: 2rem; margin-right: .6rem !important; }
+#mine .card-sm .h3 { font-size: 1.1rem; }
+/* Dashboard: my events grouped by role. */
+.z-ev-group { border-top: 1px solid var(--z-border); }
+.card > .z-ev-group:first-child { border-top: 0; }
+a.z-user-btn { text-decoration: none; color: inherit; }
+/* Profile, full width: the person's card laid out across. */
+@media (min-width: 768px) {
+  .z-profile-top .z-account-nav { display: grid; grid-template-columns: auto 1fr; align-items: start; }
+  .z-profile-top .z-account-nav > .card-body:first-child { text-align: left !important; display: flex; align-items: center; gap: 1rem; border-right: 1px solid var(--z-border); min-width: 16rem; }
+  .z-profile-top .z-account-nav > .card-body + .card-body { grid-column: 2; }
+  .z-profile-top .z-account-facts { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+}
+/* Dashboard: long event lists show five; the rest open on demand. */
+.z-ev-more > summary { list-style: none; cursor: pointer; color: var(--z-brand); font-weight: 600; font-size: .875rem; text-align: center; }
+.z-ev-more > summary::-webkit-details-marker { display: none; }
+.z-ev-more[open] > summary { display: none; }
+/* Profile: one header card across, then roles and preferences side by side. */
+.z-prof-head .card-body { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.z-prof-avatar { flex: none; }
+.z-prof-avatar form { position: absolute; z-index: 5; width: 18rem; background: var(--z-surface); padding: .75rem; border: 1px solid var(--z-border); border-radius: .6rem; box-shadow: 0 .5rem 1.5rem -.5rem rgba(0,0,0,.2); }
+.z-prof-main { flex: 1; min-width: 14rem; }
+.z-prof-name { font-size: 1.35rem; font-weight: 700; }
+.z-prof-name span { font-size: .875rem; font-weight: 400; color: var(--z-fg-muted); margin-left: .4rem; }
+.z-prof-facts { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; margin-top: .4rem; font-size: .875rem; padding: 0 !important; }
+.z-prof-facts > * { display: inline-flex; align-items: center; gap: .35rem; }
+#preferences .form-select { margin-bottom: .75rem; }
+#preferences button[type=submit] { width: auto !important; padding-left: 1.5rem; padding-right: 1.5rem; }
+.z-prof-events { margin-top: 1rem; }
+/* Tabs, everywhere: plain text on one thin line; the open tab is bold with a thick blue line under it. No boxes, no extra padding. */
+.card-header:has(> .card-header-tabs), .card-header:has(> .nav-tabs) { background: transparent !important; padding: 0 1rem !important; border-bottom: 1px solid var(--z-border); }
+.nav-tabs, .card-header-tabs { margin: 0 !important; border: 0 !important; gap: .25rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tabs .nav-link, .card-header-tabs .nav-link { border: 0 !important; border-bottom: 3px solid transparent !important; border-radius: 0 !important; background: transparent !important; margin: 0 !important; padding: .8rem .75rem .65rem !important; color: var(--z-fg-muted); font-weight: 500; white-space: nowrap; }
+.nav-tabs .nav-link:hover, .card-header-tabs .nav-link:hover { color: var(--z-fg); }
+.nav-tabs .nav-link.active, .card-header-tabs .nav-link.active, .nav-tabs .nav-item.active > .nav-link { color: var(--z-fg) !important; font-weight: 700 !important; border-bottom-color: #3366cc !important; }
+.z-evhead-tabs a, .z-create-tabs a { border-bottom-width: 3px !important; }
+.z-evhead-tabs a.active, .z-create-tabs a.active { font-weight: 700 !important; color: var(--z-fg) !important; border-bottom-color: #3366cc !important; }
+.z-evhead-tabs a { border-bottom-width: 0 !important; }
+.z-evhead-tabs a.active { box-shadow: inset 0 -3px 0 #3366cc !important; }
+.z-settings-tabs a.active, .z-seg a.active { font-weight: 700; }
+/* Tabs: one underline only (no second line drawn by ::after), no tinted header or hover box. */
+.nav-tabs .nav-link.active::after { display: none !important; }
+.nav-tabs .nav-link:hover { background: transparent !important; }
+.card > .card-header:has(.nav-tabs), .card > .card-header:has(.card-header-tabs) { background: transparent !important; padding: 0 1rem !important; min-height: 0 !important; }
+.nav-tabs, .card-header-tabs { border-bottom: 0 !important; }
+/* Profile: roles as a row in the header card; preferences as a full-width grid. */
+.z-prof-roles { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--z-border); font-size: .875rem; }
+.z-prof-roles-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--z-fg-muted); }
+.z-prof-roles .z-role-list { display: flex; flex-wrap: wrap; gap: .4rem; }
+.z-prof-roles .z-role-list li { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; background: var(--z-hover); border: 0 !important; margin: 0 !important; }
+.z-pref-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end; }
+.z-pref-grid .form-label { font-size: .875rem; font-weight: 600; margin-bottom: .35rem !important; }
+.z-pref-grid .form-select { margin: 0 !important; }
+@media (max-width: 767.98px) { .z-pref-grid { grid-template-columns: 1fr; } }
+/* Tabs sit right on the card's top edge: no padding around the tab row at all. */
+.card > .card-header:has(.nav-tabs), .card > .card-header:has(.card-header-tabs), .z-prof-events > .card-header { padding: 0 !important; margin: 0 !important; min-height: 0 !important; background: transparent !important; }
+.card-header > .nav-tabs, .card-header > .card-header-tabs { padding: 0 .5rem !important; margin: 0 !important; }
+@media (min-width: 992px) { .card.z-side-tabs > .card-header { padding: 1rem .75rem !important; } }
+/* Dashboard: one compact line on top, small tiles for today, a main and a side column. */
+.z-dash-top { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-bottom: 1rem; }
+.z-dash-top h2 { font-size: 1.25rem; font-weight: 700; }
+.z-dash-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-left: auto; }
+.z-dash-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
+.z-dash-tile { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: .65rem; align-items: center; padding: .65rem .8rem; border: 1px solid var(--z-border); border-radius: .75rem; background: var(--z-surface); color: var(--z-fg); text-decoration: none; transition: border-color .2s, transform .2s; }
+.z-dash-tile:hover { border-color: #3366cc; transform: translateY(-2px); text-decoration: none; }
+.z-dash-tile-ico { grid-row: 1 / 3; width: 2.2rem; height: 2.2rem; border-radius: .6rem; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.z-dash-tile b { font-size: 1.2rem; line-height: 1.1; }
+.z-dash-tile span:last-child { font-size: .8125rem; color: var(--z-fg-muted); line-height: 1.25; }
+.z-dash-todo .list-group-item { display: flex; align-items: center; gap: .6rem; }
+.z-note-row { display: flex; flex-direction: column; gap: .1rem; font-size: .875rem; }
+.z-note-row.is-new { border-left: 3px solid #3366cc; }
+.text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#mine .z-dash-h { margin-top: 0; }
+.z-mine-stats .col-6.col-sm-4 { flex: 1 1 0; max-width: none; min-width: 9rem; }
+.z-notable { display: flex; align-items: center; gap: .6rem; }
+/* Configuration (and new event) tabs: the same as every other tab row. */
+.z-config > .card-header { padding: 0 .5rem !important; background: transparent !important; border-bottom: 1px solid var(--z-border) !important; }
+.z-config-tabs { gap: .25rem !important; margin: 0 !important; border: 0 !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+.z-config-tabs > .nav-item, .z-config-tabs .step-item { flex: 0 0 auto !important; min-width: 0 !important; margin: 0 !important; padding: 0 !important; height: auto !important; background: transparent !important; }
+.z-config-tabs .nav-item::before, .z-config-tabs .nav-item::after, .z-config-tabs .step-item::before, .z-config-tabs .step-item::after { display: none !important; }
+.z-config-tabs .nav-link { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: .4rem; padding: .8rem .75rem .65rem !important; border: 0 !important; border-bottom: 3px solid transparent !important; border-radius: 0 !important; background: transparent !important; color: var(--z-fg-muted) !important; font-weight: 500 !important; font-size: .9375rem !important; white-space: nowrap; box-shadow: none !important; }
+.z-config-tabs .step-item.active .nav-link, .z-config-tabs .nav-link.active { color: var(--z-fg) !important; font-weight: 700 !important; border-bottom-color: #3366cc !important; background: transparent !important; }
+.z-config-tabs .z-step-num { width: auto !important; height: auto !important; background: transparent !important; border: 0 !important; color: inherit !important; box-shadow: none !important; }
+.z-config-tabs .nav-link small, .z-config-tabs .z-step-hint { display: none !important; }
+/* Database page: the side list scrolls on its own when long. */
+@media (min-width: 992px) { .z-db-side .list-group { max-height: 70vh; overflow-y: auto; } }
+/* Event settings: rows in a clean card, the label on the left and the control on the right. */
+.z-set-list { border: 1px solid var(--z-border); border-radius: .75rem; background: var(--z-surface); overflow: hidden; }
+.z-set-row { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(0, 1.4fr); gap: .5rem 1.25rem; align-items: center; padding: .75rem 1rem; border-top: 1px solid var(--z-border); }
+.z-set-row:first-child { border-top: 0; }
+.z-set-row:hover { background: var(--z-hover); }
+.z-set-label { font-weight: 600; font-size: .9375rem; }
+.z-set-control { min-width: 0; }
+.z-set-control .form-select { max-width: 26rem; }
+@media (max-width: 767.98px) { .z-set-row { grid-template-columns: 1fr; } }
+/* Segmented buttons for two or three short choices. */
+.z-segctl { display: inline-flex; flex-wrap: wrap; padding: .2rem; gap: .2rem; border-radius: .6rem; background: var(--z-hover); }
+.z-segctl label { margin: 0; cursor: pointer; }
+.z-segctl input { position: absolute; opacity: 0; pointer-events: none; }
+.z-segctl span { display: inline-block; padding: .35rem .85rem; border-radius: .45rem; font-size: .875rem; font-weight: 500; color: var(--z-fg-muted); transition: background .15s, color .15s; }
+.z-segctl input:checked + span { background: var(--z-surface); color: #3366cc; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.z-segctl input:focus-visible + span { outline: 2px solid #3366cc; outline-offset: 1px; }
+.z-switch .form-check-input { width: 2.4rem; height: 1.3rem; cursor: pointer; }
+.z-switch .form-check-label { font-size: .875rem; color: var(--z-fg-muted); }
+.z-need { flex: none; white-space: nowrap; }
+/* Submission rules: off / on / warning only, coloured by state. */
+.z-rule3 { flex: none; width: auto; min-width: 9rem; font-weight: 600; }
+.z-rule3.is-on { color: #14866d; border-color: #339966; background-color: #e6f4ec; }
+.z-rule3.is-warn { color: #ac6600; border-color: #edab00; background-color: #fef6e7; }
+.z-rule3.is-off { color: var(--z-fg-muted); }
+/* Event settings, tidy: every control in the same column, the same width, starting at the same place.
+   Section names as clear headings; switches, numbers and paired choices line up with the dropdowns. */
+.z-set-list { border: 1px solid var(--z-border) !important; border-radius: .75rem !important; background: var(--z-surface); }
+.z-set-row { grid-template-columns: minmax(0, 1fr) 24rem !important; gap: .5rem 1.5rem !important; padding: .7rem 1.1rem !important; min-height: 3.4rem; }
+.z-set-row:hover { background: transparent; }
+.z-set-label { font-weight: 600 !important; font-size: .9375rem; line-height: 1.35; }
+.z-set-control { justify-self: stretch !important; justify-content: flex-start !important; align-items: center; gap: .5rem; width: 24rem !important; max-width: 100%; }
+.z-set-control > .form-select, .z-set-control > .form-control, .z-set-control > select, .z-set-control > input:not([type=checkbox]):not([type=hidden]) { flex: 1 1 0; width: 100% !important; max-width: none !important; min-width: 0; }
+.z-set-control > .z-rule3 { flex: 0 0 9.5rem; }
+.z-set-control > .z-switch, .z-set-control > .form-switch { flex: 1; display: flex; align-items: center; gap: .6rem; margin: 0; padding-left: 0; }
+.z-set-control > .z-switch .form-check-input, .z-set-control > .form-switch .form-check-input { margin: 0 !important; float: none; flex: none; }
+.z-set-control > .z-switch .form-check-label { color: var(--z-fg); font-size: .9375rem; }
+.z-set-head { padding: 1rem 1.1rem .5rem !important; background: transparent !important; font-size: .8125rem !important; font-weight: 700 !important; letter-spacing: .05em; text-transform: uppercase; color: #3366cc !important; border-top: 1px solid var(--z-border); }
+.z-set-list > .z-set-head:first-child { border-top: 0; }
+.z-set-inline { grid-template-columns: minmax(0, 1fr) 24rem !important; }
+@media (max-width: 767.98px) { .z-set-row, .z-set-inline { grid-template-columns: 1fr !important; } .z-set-control { width: 100% !important; } }
+/* Flat look: no shadows anywhere; one light outline per card at most; no lines between rows. */
+:root { --z-shadow: none; --z-shadow-sm: none; --tblr-box-shadow: none; --tblr-box-shadow-card: none; }
+.card, .btn, .form-control, .form-select, .ts-control, .avatar, .z-header, .navbar { box-shadow: none !important; }
+.btn-primary { box-shadow: none; }
+.card-link:hover, .card-link-pop:hover { box-shadow: none; transform: none; border-color: var(--z-border-strong); }
+.card .card, .card .z-set-list, .tab-pane > .card { border: 0; background: transparent; }
+.card-header, .card-footer { border-color: transparent; background: transparent; }
+.z-set-list { border: 0; border-radius: 0; background: transparent; }
+.z-set-row, .z-set-row:first-child { border: 0; padding: .45rem 0; }
+.z-set-row:hover { background: transparent; }
+.z-set-head { border: 0; padding: 1.25rem 0 .25rem; }
+.list-group-flush > .list-group-item { border-color: transparent; }
+.table > :not(caption) > * > * { border-bottom-color: color-mix(in srgb, var(--z-border) 60%, transparent); }
+.z-person { display: inline-flex; align-items: center; gap: .4rem; padding: .15rem .6rem .15rem .15rem; border-radius: 999px; background: var(--z-hover); color: var(--z-fg); font-size: .875rem; text-decoration: none; }
+.z-person:hover { color: #3366cc; text-decoration: none; }

@@ -22,7 +22,7 @@
         <h1 class="page-title m-0"><%= t(heading) %></h1>
         <div class="text-secondary small"><%= tn('{n} event', '{n} events', result.total) %></div>
       </div>
-      <% if (can('createEvent')) { %><a class="btn btn-primary" href="/events/create"><i class="ti ti-plus me-1"></i><%= t('Create event') %></a><% } %>
+      <% if (can('createEvent')) { %><a class="btn btn-primary" href="/create/event"><i class="ti ti-plus me-1"></i><%= t('Create event') %></a><% } %>
     </div>
     <div class="z-events-toolbar">
       <nav class="z-seg" aria-label="<%= t('Events') %>">

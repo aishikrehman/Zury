@@ -9,7 +9,7 @@
       <div class="z-trend">
         <% tr.forEach((x) => { const pct = x.total ? Math.round((x.returning / x.total) * 100) : 0; %>
           <div class="z-trend-row">
-            <span class="z-trend-label" title="<%= x.label %>"><%= x.label %></span>
+            <span class="z-trend-label" title="<%= x.label %>"><%= digits(x.label) %></span>
             <span class="z-trend-bar" style="width: <%= Math.max(4, Math.round((x.total / max) * 100)) %>%"><i class="is-back" style="flex: <%= x.returning %>"></i><i class="is-new" style="flex: <%= x.fresh %>"></i></span>
             <span class="z-trend-num"><b><%= formatNumber(x.total) %></b> <small class="text-secondary"><%= t('{n}% came back', { n: formatNumber(pct) }) %></small></span>
           </div>
@@ -25,7 +25,7 @@
     <div class="z-fame">
       <% insights.fame.forEach((f) => { %>
         <div class="z-fame-ed">
-          <a class="z-fame-title" href="/<%= series.slug %>/<%= f.slug %>"><%= f.label %></a>
+          <a class="z-fame-title" href="/<%= series.slug %>/<%= f.slug %>"><%= digits(f.label) %></a>
           <ol class="z-fame-list">
             <% f.top.forEach((p, i) => { %><li class="is-<%= i + 1 %>"><span class="z-medal"><%= formatNumber(i + 1) %></span><span class="z-user-name"><%= p.username %></span><small class="text-secondary ms-auto"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) : tn('{n} accepted', '{n} accepted', p.accepted) %></small></li><% }) %>
           </ol>

@@ -143,13 +143,6 @@ async function logs(req, res, next) {
 
 const maintenance = require('../services/maintenanceService');
 
-async function maintenancePage(req, res, next) {
-  try {
-    res.render('pages/admin/maintenance', { title: 'Maintenance — Zury', status: await maintenance.status() });
-  } catch (err) {
-    next(err);
-  }
-}
 
 async function downloadBackup(req, res, next) {
   try {
@@ -164,13 +157,13 @@ async function cleanUp(req, res, next) {
   try {
     const removed = await maintenance.cleanUp({ actorId: req.user.id, task: req.params.task });
     req.flash('success', req.t('{n} rows removed.', { n: removed }));
-    res.redirect('/admin/maintenance');
+    res.redirect('/admin/database');
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { setRolePermission, resetRolePermissions, maintenancePage, downloadBackup, cleanUp, index, users, grantRole, revokeRole, permissions, logs };
+module.exports = { setRolePermission, resetRolePermissions, downloadBackup, cleanUp, index, users, grantRole, revokeRole, permissions, logs };
 
 // Superusers: remove an account from Zury, with its entries, reviews and roles (not one's own).
 async function deleteUser(req, res, next) {

@@ -86,6 +86,7 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
             watch.state = 'restored';
           }
           meta.currentRevId = p.lastrevid;
+          meta.currentSize = p.length;
           // After the end: the revision as it stood at the end time, once.
           if (pinEnd && !force && !m.pinnedAtEnd) {
             const at = await revisionAt(wiki, pid, contest.endDate).catch(() => null);
@@ -116,6 +117,11 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
           }
         }
         // A decided entry: remember its words at the decision; a big fall afterwards is marked.
+        // Rejected, then much improved (a fifth more and at least 1,000 bytes): worth another look.
+        if (s.status === 'rejected' && m.sizeBytes && p.length && !p.missing) {
+          if (p.length >= m.sizeBytes * 1.2 && p.length - m.sizeBytes >= 1000) watch.grew = { from: m.sizeBytes, to: p.length };
+          else delete watch.grew;
+        }
         if (DECIDED.includes(s.status)) {
           if (watch.decidedWords == null) watch.decidedWords = s.wordCount ?? null;
           const nowWords = data.wordCount ?? s.wordCount;
@@ -189,7 +195,7 @@ async function sweep() {
 async function markSeen(submission, kind) {
   const m = parse(submission.metadata);
   const watch = { ...(m.watch || {}) };
-  if (kind === 'shrunk') { watch.shrinkSeen = true; delete watch.shrunk; } else { watch.seen = { ...(watch.seen || {}), [watch.state]: new Date().toISOString() }; }
+  if (kind === 'shrunk') { watch.shrinkSeen = true; delete watch.shrunk; } else if (kind === 'grew') { watch.seen = { ...(watch.seen || {}), grew: new Date().toISOString() }; } else { watch.seen = { ...(watch.seen || {}), [watch.state]: new Date().toISOString() }; }
   await prisma.submission.update({ where: { id: submission.id }, data: { metadata: JSON.stringify({ ...m, watch }) } });
 }
 
@@ -199,6 +205,7 @@ function flagsOf(s) {
   const out = [];
   if (['deleted', 'redirect', 'moved'].includes(w.state) && !(w.seen && w.seen[w.state])) out.push(w.state);
   if (w.shrunk) out.push('shrunk');
+  if (w.grew && !(w.seen && w.seen.grew)) out.push('grew');
   return out;
 }
 

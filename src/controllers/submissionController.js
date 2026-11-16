@@ -184,6 +184,8 @@ const submit = (req, res, next) => handleSubmit(req, res, next, { confirm: true 
 
 async function index(req, res, next) {
   try {
+    // Entries by participant are the leaderboard on Results now.
+    if (req.query.view === 'people') return res.redirect(`${req.base}/results`);
     const filters = {
       status: submissionService.STATUSES.includes(req.query.status) ? req.query.status : '',
       q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
@@ -191,7 +193,7 @@ async function index(req, res, next) {
       sort: Object.keys(submissionService.SORTS).includes(req.query.sort) && (req.query.sort !== 'words' || req.settings.wordCountEnabled) ? req.query.sort : 'submitted',
       dir: req.query.dir === 'asc' ? 'asc' : 'desc',
       participant: Number.parseInt(req.query.participant, 10) || null,
-      view: ['people', 'reviewers'].includes(req.query.view) ? req.query.view : '',
+      view: req.query.view === 'reviewers' ? 'reviewers' : '',
     };
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
     // Anonymous events don't let visitors pick out one person's entries.
@@ -318,27 +320,8 @@ const revalidate = action(
   'Entry checked again.',
 );
 
-async function mine(req, res, next) {
-  try {
-    const filters = {
-      status: submissionService.STATUSES.includes(req.query.status) ? req.query.status : '',
-      contestId: Number.parseInt(req.query.event, 10) || null,
-      q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
-      sort: Object.keys(submissionService.MINE_SORTS).includes(req.query.sort) ? req.query.sort : 'newest',
-    };
-    res.render('pages/submissions/mine', {
-      title: 'My submissions — Zury',
-      mine: await submissionService.listMine(req.user.id, filters),
-      filters,
-      statuses: submissionService.STATUSES,
-      withdrawable: submissionService.WITHDRAWABLE,
-    });
-  } catch (err) {
-    next(err);
-  }
-}
 
-module.exports = { submitForm, preview, submit, index, show, withdraw, setStatus, revalidate, mine };
+module.exports = { submitForm, preview, submit, index, show, withdraw, setStatus, revalidate };
 
 // Superusers: delete one entry for good (its reviews, assignments and history go with it).
 async function destroy(req, res, next) {

@@ -1,0 +1,10 @@
+<%# The three things one can create, as tabs on the one Create page. %>
+<% const kindNow = typeof kind !== 'undefined' ? kind : typeof createKind !== 'undefined' ? createKind : 'event'; %>
+<div class="page-header d-print-none"><div class="container-xl">
+  <h2 class="page-title"><i class="ti ti-plus me-2"></i><%= t('Organize') %></h2>
+  <nav class="z-create-tabs" aria-label="<%= t('Organize') %>">
+    <% [['event', 'calendar-plus', 'New event', true], ['import', 'download', 'Import from Fountain', can('importEvents')], ['series', 'stack-push', 'New series', can('importEvents')]].filter((x) => x[3]).forEach(([k, icon, label]) => { %>
+      <a class="<%= kindNow === k ? 'active' : '' %>" href="/create/<%= k %>"<%- kindNow === k ? ' aria-current="page"' : '' %>><i class="ti ti-<%= icon %> me-1"></i><%= t(label) %></a>
+    <% }) %>
+  </nav>
+</div></div>

@@ -107,6 +107,8 @@ function i18n(req, res, next) {
     formatDate: dateFormat({ dateStyle: 'medium' }),
     formatDateTime: dateFormat({ dateStyle: 'medium', timeStyle: 'short' }),
     formatNumber: (n) => numbers.format(Number(n) || 0),
+    // Digits inside names (an edition called 2026) in the page's digits.
+    digits: (s) => { const zero = numbers.format(0).charCodeAt(0) - 48; return zero ? String(s == null ? '' : s).replace(/[0-9]/g, (d) => String.fromCharCode(d.charCodeAt(0) + zero)) : String(s == null ? '' : s); },
     clientStrings: (clientCache[code] ||= clientDictionary(t)),
   });
   next();

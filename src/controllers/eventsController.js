@@ -61,7 +61,7 @@ async function createForm(req, res, next) {
     const fixed = sr ? await require('../services/editionService').seriesType(sr.id) : null;
     if (fixed && req.query.type !== fixed) {
       const q = new URLSearchParams({ ...req.query, type: fixed });
-      return res.redirect(`/events/create?${q}`);
+      return res.redirect(`/create/event?${q}`);
     }
     res.locals.typeFixed = !!fixed;
   }
@@ -182,16 +182,6 @@ async function nextEdition(req, res, next) {
 }
 
 // /series: every series and its editions, to edit or extend.
-async function manageSeries(req, res, next) {
-  try {
-    const all = await require('../services/seriesService').listAll();
-    const allowed = [];
-    for (const sr of all) if (await canRunSeries(req, sr.id)) allowed.push(sr);
-    res.render('pages/events/seriesManage', { title: 'Series and editions — Zury', seriesList: allowed });
-  } catch (err) {
-    next(err);
-  }
-}
 
 
 
@@ -230,7 +220,7 @@ async function seriesAction(req, res, next) {
 }
 
 
-module.exports = { index, createForm, create, seriesForm, createSeries, nextEdition, manageSeries, seriesAction };
+module.exports = { index, createForm, create, seriesForm, createSeries, nextEdition, seriesAction };
 
 // A series' first edition from a few fields: edition, type, wiki and dates. The rest has
 // sensible defaults; the organizer fine-tunes it in the edition's settings afterwards.
@@ -752,3 +742,18 @@ async function inviteEarlier(req, res, next) {
   res.redirect(back);
 }
 module.exports.inviteEarlier = inviteEarlier;
+
+// Every public series, for the Events menu.
+async function seriesList(req, res, next) {
+  try {
+    const all = await require('../services/seriesService').listAll();
+    // Everyone sees the public series; those who may make series also see the rest, with their tools.
+    const manager = req.permissions.has('importEvents');
+    const list = all.filter((sr) => manager || (sr.visibility === 'public' && sr.status !== 'draft'));
+    res.render('pages/events/seriesList', { title: `${req.t('Series')} — Zury`, list, manager });
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports.seriesList = seriesList;
+

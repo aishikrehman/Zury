@@ -19,7 +19,7 @@ router.get('/admin/permissions', adminController.permissions);
 router.post('/admin/permissions', requirePermission('maintainSite'), adminController.setRolePermission);
 router.post('/admin/permissions/reset', requirePermission('maintainSite'), adminController.resetRolePermissions);
 router.get('/admin/database', requirePermission('viewDatabase'), require('../controllers/databaseController').index);
-router.get('/admin/maintenance', requirePermission('maintainSite'), adminController.maintenancePage);
+router.post('/admin/database/:table([A-Za-z]+)/:id/remove', requirePermission('maintainSite'), require('../controllers/databaseController').removeRow);
 router.post('/admin/maintenance/backup', requirePermission('maintainSite'), adminController.downloadBackup);
 router.post('/admin/maintenance/clean/:task(sessions|activity)', requirePermission('maintainSite'), adminController.cleanUp);
 

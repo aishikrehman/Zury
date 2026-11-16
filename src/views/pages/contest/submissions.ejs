@@ -30,14 +30,14 @@
 <div class="page-body"><div class="container-xl">
   <% if (typeof intro !== 'undefined') { %>
     <% if (intro.signUp && intro.signUp.url) { %><div class="alert alert-info d-flex align-items-center gap-2"><i class="ti ti-list-check"></i><div class="flex-fill"><%= intro.signUp.onwiki ? t('Sign up on the event page on the wiki, then join here.') : t('Add your name to the event page on the wiki.') %></div><a class="btn btn-sm btn-primary" href="<%= intro.signUp.url %>" target="_blank" rel="noopener"><%= t('Open') %></a></div><% } %>
-    <% if (contest.description) { %><details class="z-intro mb-3"><summary><span class="z-intro-text"><%= contest.description %></span><span class="z-intro-more"><%= t('More') %></span></summary><div class="z-intro-full"><%= contest.description %></div></details><% } %>
+    <% if (contest.description) { %><details class="z-intro2 mb-3"><summary><i class="ti ti-info-circle"></i><%= t('About this event') %><i class="ti ti-chevron-down z-intro2-caret"></i></summary><div class="z-intro-full"><%= contest.description %></div></details><% } %>
     <% if (typeof keyStats !== 'undefined' && keyStats && keyStats.total) { const k = keyStats; const st = k.status || {}; const pendN = (st.pending || 0) + (st.validated || 0) + (st.under_review || 0) + (st.appealed || 0); const rejN = (st.rejected || 0) + (st.disqualified || 0) + (st.invalid || 0); const w = k.wordStats; %>
       <div class="z-keystats z-ks2 mb-3">
         <% const wOn = settings.wordCountEnabled && w; const totW = wOn ? (w.all.words || 0) : 0; const totN = k.total || 0;
            const boxes = [['All', '', totN, wOn ? w.all.words : null], ['Accepted', 'is-ok', st.approved || 0, wOn ? w.accepted.words : null], ['Not accepted', 'is-bad', rejN, wOn ? w.rejected.words : null], ['Pending', 'is-wait', pendN, wOn ? w.pending.words : null]]; %>
         <% boxes.forEach(([label, cls, n, words], i) => { const share = i === 0 ? 100 : (wOn ? (totW ? Math.round((words / totW) * 100) : 0) : (totN ? Math.round((n / totN) * 100) : 0)); %>
           <div class="z-ks z-ks-pair <%= cls %>">
-            <div class="z-ks-top"><span class="z-ks-label"><%= t(label) %></span><% if (i) { %><span class="z-ks-pct"><%= formatNumber(share) %>%</span><% } %></div>
+            <div class="z-ks-top"><span class="z-ks-label"><%= t(label) %></span></div>
             <% if (words != null) { %><b class="z-ks-line"><%= formatNumber(words) %><small> <%= t('words') %></small></b><% } %>
             <b class="z-ks-line z-ks-sub"><%= formatNumber(n) %><small> <%= t('articles') %></small></b>
             <div class="z-ks-bar"><i style="width: <%= share %>%"></i></div>
@@ -48,7 +48,6 @@
           <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" class="z-ring-bg"/><circle cx="20" cy="20" r="16" class="z-ring-fg" stroke-dasharray="<%= (C * pr / 100).toFixed(1) %> <%= C.toFixed(1) %>"/></svg>
           <div><b><%= formatNumber(pr) %>%</b><span><%= t('Reviewed') %></span><span class="z-ks-people"><i class="ti ti-users"></i><%= t('{n} participants', { n: formatNumber(k.roles.participant || 0) }) %></span></div>
         </div>
-        <a class="z-ks z-ks-link" href="<%= base %>/statistics"><i class="ti ti-chart-bar z-ks-link-icon"></i><span><b><%= t('Statistics and analysis') %></b><span><%= t('Charts, reviewers and more') %></span></span><i class="ti ti-arrow-right z-ks-link-go"></i></a>
       </div>
     <% } %>
     <% if (intro.myEntries && intro.myEntries.entries.length) { %><%- include('../../partials/myEntries', { my: intro.myEntries }) %><% } %>
@@ -90,9 +89,10 @@
           <button class="btn btn-sm btn-icon<%= filters.view ? ' btn-primary' : '' %>" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('Show') %>" aria-label="<%= t('Show') %>"><i class="ti ti-<%= { people: 'users', reviewers: 'gavel' }[filters.view] || 'layout-list' %>"></i></button>
           <div class="dropdown-menu dropdown-menu-end">
             <h6 class="dropdown-header"><%= t('Show') %></h6>
-            <% [['', 'Plain list', 'list'], ['people', 'By participant', 'users'], ['reviewers', 'By reviewer', 'gavel']].forEach(([key, label, icon]) => { %>
+            <% [['', 'Plain list', 'list'], ['reviewers', 'By reviewer', 'gavel']].forEach(([key, label, icon]) => { %>
               <a class="dropdown-item<%= (filters.view || '') === key ? ' active' : '' %>" href="<%= qs({ view: key || null, page: null }) %>"><i class="ti ti-<%= icon %> me-2"></i><%= t(label) %></a>
             <% }) %>
+            <a class="dropdown-item" href="<%= base %>/results"><i class="ti ti-users me-2"></i><%= t('By participant') %> <i class="ti ti-arrow-right ms-auto small"></i></a>
           </div>
         </div>
         <div class="dropdown">

@@ -5,7 +5,8 @@
   const landing = typeDef.entries !== false && !typeDef.activity;
   const tabs = landing ? [] : [['overview', t('Overview'), '', 'info-circle']];
   if (typeDef.activity) tabs.push(['sessions', t('Sessions'), '/sessions', 'calendar-event']);
-  if (typeDef.entries !== false) tabs.push(['submissions', typeDef.activity ? t('Uploads') : t('Submissions'), landing ? '' : '/submissions', 'files']);
+  if (landing) tabs.push(['about', t('About'), '', 'info-circle']);
+  if (typeDef.entries !== false) tabs.push(['submissions', typeDef.activity ? t('Uploads') : t('Submissions'), '/submissions', 'files']);
   const tracked = settings.contributionDiscoveryEnabled || settings.trackHashtags !== '[]' || settings.trackCategories !== '[]';
   if (tracked && (settings.publicStatisticsEnabled || can('viewStatistics'))) tabs.push(['tracking', t('Contributions'), '/tracking', 'activity']);
   // The jury's way in is a button in the header, not a tab.
@@ -15,11 +16,13 @@
   let appealsOpen = true; try { appealsOpen = ((JSON.parse(settings.participation || '{}').rules) || {}).appealsPublic !== 'no'; } catch (e) {}
   // The Patrol room: appeals, and articles that were deleted, redirected, moved or shrank. Staff always; others for appeals.
   const patrolStaff = typeDef.entries !== false && (can('reviewAppeal') || can('manageAppeals') || can('manageEvent') || canReview);
-  if (patrolStaff || (settings.appealsEnabled && (appealsOpen || currentUser))) tabs.push(['appeals', t('Patrol room'), '/patrol', 'shield-search']);
+  if (patrolStaff || (settings.appealsEnabled && (appealsOpen || currentUser))) tabs.push(['appeals', t('Patrol room'), '/patrol', 'shield-search', patrolStaff ? 'team' : '']);
   // People and the jury's assignments share one tab.
   const canAssign = typeDef.entries !== false && settings.juryReviewEnabled && (can('assignJury') || can('manageAssignments'));
-  tabs.push(['people', t('People'), '/participants', 'users']);
-  if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'settings']);
+  // The team's tabs, apart from the rest: People is for those who run the event (everyone else sees the people on About).
+  const team = can('editEvent') || can('manageEvent') || can('manageParticipants');
+  if (team) tabs.push(['people', t('People'), '/participants', 'users', 'team']);
+  if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'settings', 'team']);
   const canSubmit = contest.status === 'active' && active !== 'submit' && typeDef.entries !== false;
 %>
 <% const headProj = eventProject({ wikis: eventWikis, primaryWiki: contest.primaryWiki }); %>
@@ -47,14 +50,14 @@
         <nav class="z-evhead-path" aria-label="<%= t('Breadcrumb') %>">
           <a href="/events"><i class="ti ti-calendar-event" aria-hidden="true"></i><%= t('Events') %></a>
           <% if (series) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="/<%= series.slug %>"><%= series.title %></a><% } %>
-          <% if (typeof edition !== 'undefined' && edition) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="<%= contest.path === `/${series.slug}/${edition.slug}` ? `/series/${series.slug}/${edition.slug}` : `/${series.slug}/${edition.slug}` %>"><%= edition.slug %></a><% } %>
+          <% if (typeof edition !== 'undefined' && edition) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="<%= contest.path === `/${series.slug}/${edition.slug}` ? `/series/${series.slug}/${edition.slug}` : `/${series.slug}/${edition.slug}` %>"><%= digits(edition.identifier || edition.slug) %></a><% } %>
           <% if (wikiScope) { %><i class="ti ti-chevron-right" aria-hidden="true"></i><a href="<%= eventBase %>"><%= contest.title %></a><% } %>
         </nav>
         <h1 class="z-evhead-title"><%= contest.title %><% if (wikiScope) { %> <span class="z-evhead-wiki">/<%= wikiScope.code %></span><% } %></h1>
         <div class="z-evhead-meta">
           <span class="z-evhead-status is-<%= color %>" title="<%= t(st.label) %>"><i></i><span class="z-status-word"><%= t(st.label) %></span></span>
           <% if (contest.startDate && contest.endDate) { const tNow = Date.now(); const tS = new Date(contest.startDate).getTime(); const tE = new Date(contest.endDate).getTime(); if (tE > tS) { const tDone = Math.min(100, Math.max(0, Math.round(((tNow - tS) / (tE - tS)) * 100))); const tLeft = Math.ceil((tE - tNow) / 86400000); %>
-            <span class="z-time-pill" title="<%= formatDate(contest.startDate, contest.timezone) %> – <%= formatDate(contest.endDate, contest.timezone) %>"><i class="z-pill-dot is-<%= color %>"></i><span class="z-pill-status"><%= t(st.label) %></span><span class="z-pill-sep">·</span><%= tNow < tS ? tn('Starts in {n} day', 'Starts in {n} days', Math.ceil((tS - tNow) / 86400000)) : tNow <= tE ? tn('{n} day left', '{n} days left', tLeft) : tn('Ended {n} day ago', 'Ended {n} days ago', Math.max(1, Math.floor((tNow - tE) / 86400000))) %><% if (tNow >= tS && tNow <= tE) { %><span class="z-time-bar"><b style="width: <%= tDone %>%"></b></span><% } %></span>
+            <span class="z-time-pill" title="<%= formatDate(contest.startDate, contest.timezone) %> – <%= formatDate(contest.endDate, contest.timezone) %>"><i class="z-pill-dot is-<%= color %>"></i><span class="z-pill-status"><%= t(st.label) %></span><span class="z-pill-sep">·</span><%= tNow < tS ? tn('Starts in {n} day', 'Starts in {n} days', Math.ceil((tS - tNow) / 86400000)) : tNow <= tE ? tn('{n} day left', '{n} days left', tLeft) : tn('Ended {n} day ago', 'Ended {n} days ago', Math.max(1, Math.floor((tNow - tE) / 86400000))) %></span>
           <% } } %>
           <% if (contest.visibility === 'private') { %><span><i class="ti ti-lock"></i><%= t('Private') %></span><% } %>
           <% if (contest.startDate) { %>
@@ -66,12 +69,13 @@
               const hDays = (at) => Math.ceil((at - hNow) / 86400000);
               const hNext = DATE_FIELDS.map(([k, label]) => ({ label, at: contest[k] ? new Date(contest[k]).getTime() : null })).filter((x) => x.at && x.at > hNow).sort((a, b) => a.at - b.at)[0];
             %>
-            <span class="z-evhead-dates" title="<%= formatDateTime(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDateTime(contest.endDate, contest.timezone) : '' %>">
-              <i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %><%= hEnd ? ' – ' + formatDate(contest.endDate, contest.timezone) : '' %>
-            </span>
+
           <% } %>
         </div>
-        <div class="z-evhead-meta">
+        <div class="z-evhead-facts">
+          <% if (contest.startDate) { const hEnd2 = contest.endDate; %><span class="z-evhead-dates" title="<%= formatDateTime(contest.startDate, contest.timezone) %><%= hEnd2 ? ' – ' + formatDateTime(contest.endDate, contest.timezone) : '' %>">
+              <i class="ti ti-calendar"></i><%= formatDate(contest.startDate, contest.timezone) %><%= hEnd2 ? ' – ' + formatDate(contest.endDate, contest.timezone) : '' %>
+            </span><% } %>
           <span><i class="ti ti-<%= typeDef.icon || 'calendar-event' %>"></i><%= t(typeDef.label) %></span>
           <% if (shownWikis.length === 1) { %><span><i class="ti ti-world"></i><%= wikiLocal(shownWikis[0].wiki) %></span><% } else if (shownWikis.length > 1) { %><span><i class="ti ti-world"></i><%= tn('{n} wiki', '{n} wikis', shownWikis.length) %></span><% } %>
         </div>
@@ -134,21 +138,31 @@
         <% const organizerSubmit = !eventOver && currentUser && can('manageEvent') && typeDef.entries !== false && active !== 'submit'; %>
         <% if (organizerSubmit) { %>
           <%# Organizers: Submit, with Import beside it in a small menu (works after the event too). %>
-          <div class="btn-group z-submit-split">
-            <a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
-            <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('More ways to add entries') %>" title="<%= t('More ways to add entries') %>"></button>
-            <div class="dropdown-menu dropdown-menu-end">
-              <a class="dropdown-item" href="<%= base %>/import"><i class="ti ti-file-import me-2"></i><%= t('Import entries') %><div class="small text-secondary"><%= t('From a wiki page, CSV or Fountain') %></div></a>
-            </div>
-          </div>
+          <a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
         <% } else if (!eventOver && canSubmit && !(currentUser && !(scope.eventRoles || []).length && joinable)) { %>
           <a href="<%= currentUser ? base + '/submit' : '/login' %>" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
+        <% } %>
+
+        <% const moreItems = [
+             ...(can('sendNotifications') ? [['/message', 'mail', 'Send a message']] : []),
+             ...(typeDef.entries !== false && (can('manageEvent') || can('importEntries')) ? [['/import', 'file-import', 'Import entries']] : []),
+             ...(can('manageEvent') || can('exportData') ? [['/export/entries.csv', 'download', 'Download the entries (CSV)'], ['/export/summary.wiki', 'report', 'Summary report']] : []),
+             ...(can('deleteAnything') ? [['/config#move', 'arrows-move', 'Move or delete']] : []),
+           ]; %>
+        <% if (moreItems.length) { %>
+          <div class="dropdown">
+            <button class="btn btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('More') %>" aria-label="<%= t('More') %>"><i class="ti ti-dots"></i></button>
+            <div class="dropdown-menu dropdown-menu-end">
+              <% moreItems.forEach(([path, icon, label]) => { %><a class="dropdown-item" href="<%= base %><%= path %>"><i class="ti ti-<%= icon %> me-2"></i><%= t(label) %></a><% }) %>
+            </div>
+          </div>
         <% } %>
       </div>
     </div>
     <nav class="z-evhead-tabs" aria-label="<%= t('Event') %>">
-      <% tabs.forEach(([key, label, suffix, icon]) => { %>
-        <a class="<%= active === key ? 'active' : '' %>" href="<%= base %><%= suffix %>"<%- active === key ? ' aria-current="page"' : '' %>><%= label %></a>
+      <% let teamStarted = false; tabs.forEach(([key, label, suffix, icon, group]) => { %>
+        <% if (group === 'team' && !teamStarted) { teamStarted = true; %><span class="z-tabs-divider" aria-hidden="true"></span><% } %>
+        <a class="<%= active === key ? 'active' : '' %><%= group === 'team' ? ' is-team' : '' %>" href="<%= base %><%= suffix %>"<%- active === key ? ' aria-current="page"' : '' %>><% if (group === 'team') { %><i class="ti ti-<%= icon %> me-1"></i><% } %><%= label %></a>
       <% }) %>
     </nav>
   </div>

@@ -13,21 +13,25 @@
         <% } else { %><i class="ti ti-lock me-1"></i><%= t('Not published: only organizers and reviewers see this page.') %><% } %>
       </div>
     </div>
-    <% if (can('manageEvent') || can('exportData')) { %>
-      <div class="dropdown ms-auto">
-        <button class="btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-report me-1"></i><%= t('Summary report') %></button>
-        <div class="dropdown-menu dropdown-menu-end">
+    <div class="dropdown">
+      <button class="btn btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('More') %>" aria-label="<%= t('More') %>"><i class="ti ti-dots"></i></button>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" href="<%= base %>/submissions"><i class="ti ti-files me-2"></i><%= t('All entries') %></a>
+        <% if (can('manageEvent') || can('exportData')) { %>
+          <div class="dropdown-divider"></div>
+          <h6 class="dropdown-header"><%= t('Summary report') %></h6>
           <% [['wiki', 'Wikitext (for a wiki page)', 'brand-wikipedia'], ['md', 'Markdown', 'markdown'], ['csv', 'CSV', 'file-spreadsheet'], ['xls', 'Excel', 'file-spreadsheet']].forEach(([fmt, label, icon]) => { %><a class="dropdown-item" href="<%= base %>/export/summary.<%= fmt %>"><i class="ti ti-<%= icon %> me-2"></i><%= t(label) %></a><% }) %>
-        </div>
+        <% } %>
+        <% if (can('publishResults')) { %>
+          <div class="dropdown-divider"></div>
+          <form method="post" action="<%= base %>/results/publish" class="m-0">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="published" value="<%= published ? 0 : 1 %>">
+            <button class="dropdown-item" type="submit"><i class="ti ti-<%= published ? 'eye-off' : 'speakerphone' %> me-2"></i><%= published ? t('Hide results') : t('Publish results') %></button>
+          </form>
+        <% } %>
       </div>
-    <% } %>
-    <% if (can('publishResults')) { %>
-      <form method="post" action="<%= base %>/results/publish" class="ms-auto">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="published" value="<%= published ? 0 : 1 %>">
-        <button class="btn <%= published ? '' : 'btn-primary' %>" type="submit"><i class="ti ti-<%= published ? 'eye-off' : 'speakerphone' %> me-1"></i><%= published ? t('Hide results') : t('Publish results') %></button>
-      </form>
-    <% } %>
+    </div>
   </div>
 
   <% if (progress) { %>
@@ -71,6 +75,5 @@
   <% } %>
 
   <% if (stats && stats.wordStats) { %><div class="mt-3"><%- include('../../partials/eventStats', { stats, part: 'breakdown' }) %></div><% } %>
-  <% if (typeof stats !== 'undefined' && stats && stats.survival) { %><%- include('../../partials/survival', { sv: stats.survival }) %><% } %>
 </div>
 </div>

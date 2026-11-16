@@ -16,6 +16,22 @@
 <%- include('../../partials/contestHeader', { active: 'configuration' }) %>
 <div class="page-body"><div class="container-xl">
 
+  <% if (can('editEvent') && !wikiMode && contest.status === 'draft') {
+       const todo = [
+         [!contest.startDate || !contest.endDate, 'Set the start and end dates', 'basics'],
+         [!eventWikis.length, 'Add at least one wiki', 'database'],
+         [!contest.description, 'Write a short description', 'basics'],
+         [settings.juryReviewEnabled && !(form.jury || []).filter(Boolean).length, 'Add reviewers', 'access'],
+       ].filter((x) => x[0]); %>
+    <div class="card mb-3 z-todo">
+      <div class="card-body d-flex flex-wrap align-items-center gap-3">
+        <div class="me-auto">
+          <div class="fw-bold"><i class="ti ti-<%= todo.length ? 'list-check' : 'circle-check' %> me-1 text-<%= todo.length ? 'orange' : 'green' %>"></i><%= todo.length ? t('Before publishing') : t('Ready to publish') %></div>
+          <% if (todo.length) { %><ul class="z-todo-list"><% todo.forEach(([, label, pane]) => { %><li><a href="#step-<%= pane %>" data-open-step="<%= pane %>"><%= t(label) %></a></li><% }) %></ul><% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
   <% if (can('manageEvent') && !wikiMode && contest.status === 'draft') { %>
     <form method="post" action="<%= base %>/status" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="action" value="publish"><button class="btn btn-primary" type="submit"><i class="ti ti-rocket me-1"></i><%= t('Publish') %></button></form>
   <% } %>

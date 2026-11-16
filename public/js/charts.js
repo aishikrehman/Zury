@@ -7,6 +7,11 @@
   // Numbers in the page's language (Bangla digits on the Bangla interface).
   const NUM = new Intl.NumberFormat(document.documentElement.dataset.locale || document.documentElement.lang || undefined);
   const num = (v) => (typeof v === 'number' ? NUM.format(v) : v);
+  // Digits inside labels (years, dates) in the page's digits too.
+  const LOCALE = document.documentElement.dataset.locale || document.documentElement.lang || undefined;
+  const ZERO = NUM.format(0).charCodeAt(0) - 48;
+  const digits = (s) => (ZERO ? String(s).replace(/[0-9]/g, (d) => String.fromCharCode(d.charCodeAt(0) + ZERO)) : String(s));
+  const DAY = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', timeZone: 'UTC' });
   const color = (name) => (name.startsWith('#') || name.startsWith('var(') ? name : `var(--tblr-${name})`);
 
   function build(spec) {
@@ -32,7 +37,8 @@
     if (spec.type === 'area' || spec.type === 'line') {
       config.stroke = { width: 2, lineCap: 'round', curve: 'smooth' };
       if (spec.type === 'area') config.fill = { opacity: 0.16, type: 'solid' };
-      config.xaxis = { type: 'datetime', categories: spec.labels, labels: { padding: 0 }, tooltip: { enabled: false }, axisBorder: { show: false } };
+      config.xaxis = { type: 'datetime', categories: spec.labels, labels: { padding: 0, formatter: (v, ts) => DAY.format(new Date(ts || v)) }, tooltip: { enabled: false }, axisBorder: { show: false } };
+      config.tooltip = { ...config.tooltip, x: { formatter: (v) => DAY.format(new Date(v)) } };
       config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? num(v) : '') } };
       if (spec.dualAxis && spec.series.length > 1) {
         const fmt = (v) => (Number.isInteger(v) ? num(v) : '');
@@ -50,16 +56,16 @@
     if (spec.type === 'bar') {
       config.plotOptions = { bar: { columnWidth: (spec.labels || []).length < 4 ? '22%' : '50%', barHeight: '62%', borderRadius: 4, horizontal: Boolean(spec.horizontal), distributed: Boolean(spec.distributed) } };
       if (spec.stacked) { config.chart.stacked = true; config.plotOptions.bar.borderRadius = 2; }
-      config.xaxis = { categories: spec.labels, labels: { padding: 0 }, tooltip: { enabled: false }, axisBorder: { show: false } };
+      config.xaxis = { categories: spec.labels, labels: { padding: 0, formatter: (v) => digits(v) }, tooltip: { enabled: false }, axisBorder: { show: false } };
       config.yaxis = { min: 0, forceNiceScale: true, labels: { padding: 4, formatter: (v) => (Number.isInteger(v) ? num(v) : '') } };
       if (spec.distributed) config.legend.show = false;
       // Horizontal bars: the names on the left axis as they are; numbers along the bottom.
-      if (spec.horizontal) { config.yaxis = { labels: { maxWidth: 150, style: { fontSize: '13px' }, formatter: (v) => { const s = String(v); return s.length > 14 ? s.slice(0, 13) + '…' : s; } } }; config.grid = { ...(config.grid || {}), padding: { left: 8, right: 8 } }; config.xaxis.labels = { padding: 0, formatter: (v) => (Number.isInteger(Number(v)) ? v : '') }; }
+      if (spec.horizontal) { config.yaxis = { labels: { maxWidth: 150, style: { fontSize: '13px' }, formatter: (v) => { const s = digits(v); return s.length > 14 ? s.slice(0, 13) + '…' : s; } } }; config.grid = { ...(config.grid || {}), padding: { left: 8, right: 8 } }; config.xaxis.labels = { padding: 0, formatter: (v) => (Number.isInteger(Number(v)) ? num(Number(v)) : '') }; }
     }
     if (spec.type === 'donut' || spec.type === 'pie') {
-      config.labels = spec.labels;
+      config.labels = (spec.labels || []).map(digits);
       config.stroke = { width: 0 };
-      config.plotOptions = { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: spec.totalLabel || 'Total', fontWeight: 500 } } } } };
+      config.plotOptions = { pie: { donut: { size: '72%', labels: { show: true, total: { show: true, label: spec.totalLabel || 'Total', fontWeight: 500, formatter: (w) => num(w.globals.seriesTotals.reduce((a, b) => a + b, 0)) }, value: { formatter: (v) => num(Number(v)) } } } } };
       config.legend.show = spec.legend !== false;
     }
     if (spec.type === 'radialBar') {
@@ -82,7 +88,7 @@
         const chart = new window.ApexCharts(el, build(JSON.parse(el.dataset.chart)));
         chart.render();
       } catch (err) {
-        el.textContent = 'Chart could not be displayed.';
+        el.textContent = 'চার্ট দেখানো গেল না।';
         console.error(err);
       }
     });

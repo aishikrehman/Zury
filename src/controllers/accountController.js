@@ -19,17 +19,20 @@ async function dashboard(req, res, next) {
     ]);
     const approvals = await require('../services/approvalService').pendingFor(req);
     // Suggested: public running or upcoming events they are not in yet, their language's wikis first.
-    const lang = req.user.preferredLanguage || req.locale || 'bn';
-    const mine = new Set(myEvents.map((e) => e.contest.id));
+    const inEvents = new Set(myEvents.map((e) => e.contest.id));
+    // Suggested: running or coming events the person isn't in, on wikis in their language
+    // (Bangla: every Bangla wiki — Wikipedia, Wikisource, Wiktionary…), plus events spanning several wikis.
+    const langCode = req.user.preferredLanguage || req.lang || 'bn';
+    const inLang = (w) => (w || '').startsWith(langCode) && ['wiki', 'wikisource', 'wiktionary', 'wikibooks', 'wikiquote', 'wikivoyage', 'wikinews', 'wikiversity'].includes((w || '').slice(langCode.length));
     const suggested = (await prisma.contest.findMany({
       where: { deletedAt: null, visibility: 'public', status: { in: ['active', 'upcoming', 'published'] } },
-      include: { series: true },
-      orderBy: { startDate: 'desc' },
-      take: 40,
+      include: { series: true, wikis: { select: { wiki: true } } },
+      orderBy: [{ endDate: 'asc' }],
+      take: 60,
     }).catch(() => []))
-      .filter((c) => !mine.has(c.id) && (!c.approval || c.approval === 'approved'))
-      // Events on a wiki in the person's language first; the event's own language field isn't reliable.
-      .sort((x, y) => Number((y.primaryWiki || '').startsWith(lang)) - Number((x.primaryWiki || '').startsWith(lang)))
+      .filter((ev) => !inEvents.has(ev.id) && (!ev.approval || ev.approval === 'approved'))
+      .filter((ev) => inLang(ev.primaryWiki) || (ev.wikis || []).some((w) => inLang(w.wiki)) || (ev.wikis || []).length > 1)
+      .sort((x, y) => Number(y.status === 'active') - Number(x.status === 'active'))
       .slice(0, 6);
     // Deadlines coming up in the running events they're in.
     const now = Date.now();
@@ -55,7 +58,45 @@ async function dashboard(req, res, next) {
     // Their own contribution, over all events.
     const [mine1] = await prisma.$queryRaw`SELECT COUNT(*) AS entries, COALESCE(SUM(status = 'approved'), 0) AS accepted, COALESCE(SUM(CASE WHEN status = 'approved' THEN wordCount ELSE 0 END), 0) AS words, COUNT(DISTINCT contestId) AS events FROM Submission WHERE participantId = ${req.user.id} AND status <> 'withdrawn'`;
     const contribution = { entries: Number(mine1.entries || 0), accepted: Number(mine1.accepted || 0), words: Number(mine1.words || 0), events: Number(mine1.events || 0) };
+    // Your entries (with filters), shown on the dashboard.
+    const submissionService = require('../services/submissionService');
+    const mineFilters = {
+      status: submissionService.STATUSES.includes(req.query.status) ? req.query.status : '',
+      contestId: Number.parseInt(req.query.event, 10) || null,
+      q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
+      sort: Object.keys(submissionService.MINE_SORTS).includes(req.query.sort) ? req.query.sort : 'newest',
+    };
+    const mine = await submissionService.listMine(req.user.id, mineFilters);
+    // Organizers: each running event they run, with today's entries, those waiting for review and participants.
+    const day = new Date(Date.now() - 86400000);
+    const runIds = myEvents.filter((e) => e.roles.includes('organizer') && ['active', 'submission_closed', 'under_review'].includes(e.contest.status)).map((e) => e.contest.id).slice(0, 8);
+    const [todayRows, waitRows, peopleRows] = runIds.length ? await Promise.all([
+      prisma.submission.groupBy({ by: ['contestId'], where: { contestId: { in: runIds }, submittedAt: { gte: day } }, _count: { _all: true } }),
+      prisma.submission.groupBy({ by: ['contestId'], where: { contestId: { in: runIds }, status: { in: ['pending', 'validated', 'under_review'] } }, _count: { _all: true } }),
+      prisma.contestMembership.groupBy({ by: ['contestId'], where: { contestId: { in: runIds }, role: 'participant', status: 'active' }, _count: { _all: true } }),
+    ]) : [[], [], []];
+    const countOf = (rows, id) => (rows.find((r) => r.contestId === id) || { _count: { _all: 0 } })._count._all;
+    const running = myEvents.filter((e) => runIds.includes(e.contest.id)).map((e) => ({ contest: e.contest, today: countOf(todayRows, e.contest.id), waiting: countOf(waitRows, e.contest.id), people: countOf(peopleRows, e.contest.id) }));
     res.render('pages/account/dashboard', {
+      running,
+      reviewerPatrol: await (async () => {
+        const live = { deletedAt: null, status: { notIn: ['archived', 'cancelled', 'draft'] } };
+        const [appeals, grown] = await Promise.all([
+          prisma.appeal.findMany({ where: { status: 'open', submission: { reviews: { some: { jurorId: req.user.id } } }, contest: live }, orderBy: { createdAt: 'desc' }, take: 8, select: { createdAt: true, submission: { select: { title: true } }, contest: { select: { title: true, path: true, id: true } } } }),
+          prisma.submission.findMany({ where: { status: 'rejected', reviews: { some: { jurorId: req.user.id } }, metadata: { contains: '"grew"' }, contest: live }, orderBy: { updatedAt: 'desc' }, take: 8, select: { id: true, title: true, metadata: true, contest: { select: { title: true, path: true, id: true } } } }),
+        ]);
+        return [
+          ...appeals.map((a) => ({ kind: 'appeal', title: a.submission.title, contest: a.contest, href: (a.contest.path || '') + '/patrol?show=appeals' })),
+          ...grown.map((s) => { let g = null; try { g = JSON.parse(s.metadata || '{}').watch.grew; } catch { g = null; } return { kind: 'grew', title: s.title, contest: s.contest, grew: g, href: (s.contest.path || '') + '/review?entry=' + s.id }; }),
+        ];
+      })(),
+      notable: (await prisma.submission.findMany({
+        where: { participantId: req.user.id, contest: { deletedAt: null, status: 'active' }, OR: [{ status: 'rejected' }, { status: 'approved', reviews: { some: { comment: { not: '' } } } }] },
+        orderBy: { updatedAt: 'desc' }, take: 8,
+        select: { title: true, status: true, contest: { select: { title: true, path: true, id: true } }, reviews: { where: { comment: { not: '' } }, select: { comment: true }, orderBy: { updatedAt: 'desc' }, take: 1 } },
+      })).map((s) => ({ ...s, comment: s.reviews[0] ? s.reviews[0].comment : '' })),
+      notes: (await require('../services/notificationService').latest(req.user.id, 5)).map((n) => ({ ...n, text: require('../services/notificationService').text(req.t, n) })),
+      mine, filters: mineFilters, statuses: submissionService.STATUSES, withdrawable: submissionService.WITHDRAWABLE,
       deadlines, waiting, patrol, contribution,
       approvals,
       suggested,

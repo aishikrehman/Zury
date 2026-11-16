@@ -3,7 +3,7 @@
   const ORDER = ['writing', 'editathon', 'photo', 'photowalk', 'data', 'proofread', 'digitization', 'glam', 'workshop', 'training'];
   const keep = new URLSearchParams({ ...(form.seriesSlug && { series: form.seriesSlug }), ...(form.edition && { edition: form.edition }) });
 %>
-<%- include('../../partials/pageHeader', { pretitle: t('Events'), heading: typeDef ? t('Create: {type}', { type: t(typeDef.label) }) : t('Create an event') }) %>
+<%- include('../../partials/createTabs', { kind: 'event' }) %>
 <div class="page-body">
   <div class="container-xl">
     <% if (!typeDef) { %>
@@ -25,7 +25,7 @@
           { key: 'glam', icon: 'building-bank', name: 'Commons collections', desc: 'GLAM and scanning', soon: true },
           { key: 'training', icon: 'school', name: 'Training course', desc: 'Topics and levels', soon: true },
         ];
-        const link = (c) => { keep.set('type', c.key); if (c.project) keep.set('project', c.project); else keep.delete('project'); return `/events/create?${keep.toString()}`; };
+        const link = (c) => { keep.set('type', c.key); if (c.project) keep.set('project', c.project); else keep.delete('project'); return `/create/event?${keep.toString()}`; };
       %>
       <div class="z-type-grid">
         <% CARDS.filter((c) => EVENT_TYPES[c.key]).forEach((c) => { %>

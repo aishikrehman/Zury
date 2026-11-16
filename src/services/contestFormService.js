@@ -117,8 +117,32 @@ function fromChoices(input, type) {
   return b;
 }
 
+// Submission rules come as rule3_<key> = off | on | warn: off clears the rule, warn adds it to warnOnly.
+function applyRule3(raw) {
+  const body = { ...raw };
+  const keys = Object.keys(body).filter((k) => k.startsWith('rule3_'));
+  if (!keys.length) return body;
+  const warn = new Set([].concat(body.type_warnOnly || []).filter(Boolean));
+  for (const k of keys) {
+    const key = k.slice(6);
+    const state = body[k];
+    warn.delete(key);
+    if (state === 'warn') warn.add(key);
+    if (key === 'created') { if (state === 'off') delete body.type_createdDuringEventOnly; else body.type_createdDuringEventOnly = 'on'; }
+    if (state === 'off') {
+      if (key === 'size') body.type_minBytes = '0';
+      if (key === 'words') body.type_minWordCount = '0';
+      if (key === 'eligible') body.eligible_source = 'none';
+      if (key === 'namespace') body.eligibleNamespaces = '';
+    }
+    delete body[k];
+  }
+  body.type_warnOnly = [...warn];
+  return body;
+}
+
 function parse(rawBody, { type, wikiAllowed, catalog = PERMISSIVE }) {
-  const body = fromChoices(rawBody, type);
+  const body = fromChoices(applyRule3(rawBody), type);
   const errors = {};
   const typeDef = EVENT_TYPES[type];
 
@@ -219,6 +243,8 @@ function parse(rawBody, { type, wikiAllowed, catalog = PERMISSIVE }) {
     anonymousParticipants: bool(body.anonymousParticipants),
   };
   Object.assign(settings, require('./participationService').parse(body, errors));
+  // About page extras (prizes, topics, questions); announcements are kept as they are.
+  if ('extras_present' in body) settings.extras = require('./extrasService').parse(body, body.extras_previous);
   const namespaces = listOf(body.eligibleNamespaces).map(Number);
   if (namespaces.some((n) => !Number.isInteger(n) || n < 0 || n > 9999)) errors.eligibleNamespaces = 'Use namespace numbers such as 0 or 6.';
   settings.eligibleNamespaces = JSON.stringify(namespaces.filter(Number.isInteger));
@@ -372,6 +398,7 @@ function toForm(contest, settings) {
   });
   for (const [key] of FEATURE_FIELDS) form[key] = s[key];
   const pp = require('./participationService').read(s);
+  Object.assign(form, require('./extrasService').toForm(settings));
   Object.assign(form, { participation_who: pp.who, participation_reg: pp.reg, participation_regWindow: pp.regWindow, participation_createdAfter: pp.createdAfter, participation_createdBefore: pp.createdBefore, participation_group: pp.group, ...Object.fromEntries(Object.entries(pp.rules).map(([k, x]) => ['rule_' + k, x == null ? '' : String(x)])), participation_mode: pp.mode, participation_ask: pp.ask, participation_page: pp.page, participation_users: pp.users.join(String.fromCharCode(10)), participation_outsiders: pp.outsiders, eligible_source: pp.eligible.source, eligible_value: pp.eligible.value, eligible_depth: String(pp.eligible.depth) });
   const typeConfig = readTypeConfig(contest.type, s.typeConfig);
   for (const [key, value] of Object.entries(typeConfig)) form[`type_${key}`] = Array.isArray(value) ? value : value;

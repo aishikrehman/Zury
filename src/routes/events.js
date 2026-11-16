@@ -29,20 +29,25 @@ const entriesOnly = (req, res, next) => (takesEntries(req.contest.type) ? next()
 const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity ? next() : notFound(res));
 
 router.get('/events', eventsController.index);
-router.get('/events/create', requirePermission('createEvent'), eventsController.createForm);
+router.get('/create/event', requirePermission('createEvent'), eventsController.createForm);
+router.get('/create/import', requirePermission('importEvents'), fountainController.importForm);
+router.get('/create/series', requirePermission('importEvents'), eventsController.seriesForm);
 router.post('/events/create', requirePermission('createEvent'), eventsController.create);
 // Fountain imports, series and editions: stewards, global sysops, local admins and superusers.
-router.get('/events/import', requirePermission('importEvents'), fountainController.importForm);
 router.post('/events/import', requirePermission('importEvents'), fountainController.importEvent);
 router.get('/events/:group(active|upcoming|completed)', eventsController.index);
-router.get('/submissions', requireAuth, submissionController.mine);
 router.get('/review', requireAuth, reviewController.myQueue);
 
 // Event pages. The same routes serve the whole event (/wam/2026, /contest/12)
 // and one wiki's part of it (/wam/2026/bn); permissions follow the context.
 const contest = express.Router({ mergeParams: true });
 
-contest.get('/', (req, res, next) => (EVENT_TYPES[req.contest.type]?.entries !== false && !EVENT_TYPES[req.contest.type]?.activity ? submissionController.index(req, res, next) : contestController.show(req, res, next)));
+// An event's landing page is its About page (activity events and events without entries keep their overview).
+contest.get('/', (req, res, next) => {
+  const def = EVENT_TYPES[req.contest.type];
+  if (def?.entries === false || def?.activity) return contestController.show(req, res, next);
+  return contestController.about(req, res, next);
+});
 // Joining is a form button; opening /join directly goes to the event page with that button.
 contest.get('/join', requireAuth, contestController.joinForm);
 contest.post('/join', requireAuth, contestController.join);
@@ -95,6 +100,9 @@ contest.post('/overrides', requireEventWide('manageEvent'), contestController.se
 contest.post('/overrides/:overrideId(\\d+)/remove', requireEventWide('manageEvent'), contestController.removeOverride);
 
 contest.get('/statistics', contestController.statistics);
+contest.post('/announce', requirePermission('editEvent'), contestController.announce);
+contest.get('/certificate', requireAuth, contestController.certificate);
+contest.get('/about', (req, res) => res.redirect(301, req.base || '/'));
 contest.get('/tracking', trackingController.show);
 contest.post('/tracking/refresh', requirePermission('manageEvent'), trackingController.refresh);
 
@@ -153,8 +161,7 @@ router.use('/contest/:contestId(\\d+)', loadContest, contest);
 const SLUG = '[a-z0-9][a-z0-9-]{0,79}';
 // Making series: stewards, global sysops, local admins and superusers. One series is run by its
 // organizers (a role on the series; the controller checks it); deleting one: superusers and Zury administrators.
-router.get('/series', requirePermission('importEvents'), eventsController.manageSeries);
-router.get('/series/new', requirePermission('importEvents'), eventsController.seriesForm);
+router.get('/series', eventsController.seriesList);
 router.post(`/series/:series(${SLUG})/:action(update)`, requireAuth, eventsController.seriesAction);
 router.post(`/series/:series(${SLUG})/:action(delete)`, requirePermission('deleteAnything'), eventsController.seriesAction);
 // One person across a series or an edition.

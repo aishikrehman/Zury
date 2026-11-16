@@ -1,0 +1,31 @@
+<div class="page-header d-print-none"><div class="container-xl">
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <div class="me-auto"><h2 class="page-title"><i class="ti ti-stack-2 me-2"></i><%= t('Series') %></h2><div class="text-secondary mt-1"><%= t('Events that come back every year.') %></div></div>
+    <% if (manager) { %><a class="btn btn-primary" href="/create/series"><i class="ti ti-plus me-1"></i><%= t('New series') %></a><% } %>
+  </div>
+</div></div>
+<div class="page-body"><div class="container-xl">
+  <% if (!list.length) { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No series yet.') }) %></div><% } else { %>
+    <div class="row row-cards">
+      <% list.forEach((sr) => { const latest = sr.editions[0]; %>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 z-series-card">
+          <a class="card-link-cover" href="/<%= sr.slug %>" aria-label="<%= sr.title %>"></a>
+            <div class="card-body d-flex gap-3">
+              <% if (sr.logoUrl) { %><img src="<%= sr.logoUrl %>" width="48" height="48" alt="" loading="lazy" style="object-fit: contain"><% } else { %><span class="avatar avatar-md bg-primary-lt"><i class="ti ti-stack-2"></i></span><% } %>
+              <div class="min-w-0">
+                <div class="fw-bold text-truncate"><%= sr.title %></div>
+                <div class="small text-secondary"><%= sr.shortDescription || tn('{n} edition', '{n} editions', sr.editions.length) %></div>
+                <div class="small mt-1 d-flex flex-wrap gap-1">
+                  <% if (latest) { %><span class="badge bg-blue-lt"><%= digits(latest.identifier || latest.slug) %></span><% } %>
+                  <% if (manager && (sr.status === 'draft' || sr.visibility !== 'public')) { %><span class="badge bg-secondary-lt"><%= t(sr.status === 'draft' ? 'Draft' : sr.visibility === 'private' ? 'Members only' : 'Link only') %></span><% } %>
+                </div>
+              </div>
+            </div>
+            <% if (manager) { %><div class="card-footer py-2 d-flex gap-3 small"><a href="/<%= sr.slug %>?tab=settings"><i class="ti ti-settings me-1"></i><%= t('Manage') %></a><a href="/series/<%= sr.slug %>/new-edition"><i class="ti ti-calendar-plus me-1"></i><%= t('New edition') %></a></div><% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div></div>

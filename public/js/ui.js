@@ -596,3 +596,11 @@ document.addEventListener('click', (e) => {
     if (want && document.documentElement.lang !== want && !document.documentElement.dataset.langChosen) location.reload();
   } catch (e) { /* stays as it is */ }
 })();
+
+// Configuration checklist: a link opens that section's tab.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest && e.target.closest('[data-open-step]');
+  if (!a) return;
+  const link = document.querySelector('[data-step-link][href="#step-' + a.dataset.openStep + '"]');
+  if (link) { e.preventDefault(); link.click(); }
+});

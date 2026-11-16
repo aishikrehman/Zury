@@ -3,8 +3,7 @@
     ['overview', '/admin', t('Overview')],
     ['users', '/admin/users', t('Users')],
     ['permissions', '/admin/permissions', t('Permissions')],
-    ...(can('maintainSite') ? [['maintenance', '/admin/maintenance', t('Maintenance')]] : []),
-    ...(can('viewDatabase') ? [['database', '/admin/database', t('Database')]] : []),
+    ...(can('viewDatabase') ? [['database', '/admin/database', t('Database and maintenance')]] : []),
   ];
 %>
 <header class="z-evhead d-print-none" style="--z-proj: var(--z-brand)">

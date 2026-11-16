@@ -70,6 +70,7 @@ async function show(req, res, next, view = 'pages/contest/show') {
       title: `${req.contest.title} — Zury`,
       organizers: byRole('organizer'),
       jury: byRole('jury'),
+      reviewers: byRole('jury'),
       participants: byRole('participant'),
       participantCount: participants,
       myEntries: req.user && EVENT_TYPES[req.contest.type]?.entries !== false ? await require('../services/submissionService').myEntries(req.user.id, req.contest.id) : null,
@@ -233,7 +234,8 @@ async function updateConfig(req, res, next) {
   }
   // An event may keep its primary wiki even if that wiki has since closed.
   const catalog = { ...loaded, open: (w) => w === req.contest.primaryWiki || loaded.open(w) };
-  const parsed = contestForm.parse({ ...req.body, type }, { type, wikiAllowed: wikiAllowedForEdit(req), catalog });
+  // Announcements are kept from the saved settings, never from the form.
+  const parsed = contestForm.parse({ ...req.body, type, extras_previous: req.settings.extras || '{}' }, { type, wikiAllowed: wikiAllowedForEdit(req), catalog });
   if (Object.keys(parsed.errors).length) return renderConfig(req, res, { form: parsed.form, errors: parsed.errors, status: 422 });
   if (!(await require('../services/scopeRoleService').mayPlace(req, parsed.series, { seriesId: req.contest.seriesId, editionId: req.contest.editionId }))) {
     return renderConfig(req, res, { form: parsed.form, errors: { seriesSlug: 'Only the organizers of that series or edition can add events to it.' }, status: 403 });
@@ -524,7 +526,65 @@ async function exportData(req, res, next) {
   }
 }
 
-module.exports = { exportData,
+// About an event: intro, timeline, rules, how to take part, wikis and people.
+async function about(req, res, next) {
+  try {
+    res.locals.participation = require('../services/participationService').read(req.settings);
+    res.locals.extras = require('../services/extrasService').read(req.settings);
+    res.locals.myProgress = req.user ? await myProgress(req) : null;
+  } catch (err) {
+    return next(err);
+  }
+  return show(req, res, next, 'pages/contest/about');
+}
+
+// A participant's own figures in an event, and their place on the leaderboard.
+async function myProgress(req) {
+  const rows = await prisma.submission.groupBy({ by: ['status'], where: { contestId: req.contest.id, participantId: req.user.id, status: { not: 'withdrawn' } }, _count: { _all: true }, _sum: { wordCount: true } });
+  if (!rows.length) return null;
+  const entries = rows.reduce((a, r) => a + r._count._all, 0);
+  const ok = rows.find((r) => r.status === 'approved');
+  let rank = null;
+  try {
+    const board = await require('../services/reviewService').leaderboard({ contest: req.contest, settings: req.eventSettings, wiki: null });
+    const me = board.find((r) => r.username === req.user.username);
+    rank = me ? me.rank : null;
+  } catch { rank = null; }
+  const accepted = ok ? ok._count._all : 0;
+  return { entries, accepted, words: ok ? ok._sum.wordCount || 0 : 0, rank, certificate: accepted > 0 && !!req.contest.resultsPublishedAt };
+}
+
+// Organizers post a short announcement on the About page; participants get a bell notification.
+async function announce(req, res, next) {
+  try {
+    const text = String(req.body.text || '').trim().slice(0, 500);
+    if (text) {
+      const extrasService = require('../services/extrasService');
+      const x = extrasService.read(req.settings);
+      x.announcements.push({ at: new Date().toISOString(), text, by: req.user.username });
+      await prisma.contestSettings.update({ where: { contestId: req.contest.id }, data: { extras: JSON.stringify(x) } });
+      const people = await prisma.contestMembership.findMany({ where: { contestId: req.contest.id, role: 'participant', status: 'active' }, select: { userId: true } });
+      await require('../services/notificationService').notify(people.map((p) => p.userId).filter((id) => id !== req.user.id), { kind: 'event.announcement', message: '{event}: {text}', params: { event: req.contest.title, text }, link: req.base || '/', contestId: req.contest.id });
+      req.flash('success', req.t('Announcement posted.'));
+    }
+  } catch (err) {
+    return next(err);
+  }
+  res.redirect(req.base || '/');
+}
+
+// A certificate for someone with accepted entries, once the results are out.
+async function certificate(req, res, next) {
+  try {
+    const p = await myProgress(req);
+    if (!p || !p.certificate) { req.flash('warning', req.t('The certificate is ready once you have an accepted entry and the results are out.')); return res.redirect(req.base || '/'); }
+    res.render('pages/contest/certificate', { title: `Certificate — ${req.contest.title}`, layout: false, person: req.user, attended: null, progress: p });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { about, announce, certificate, exportData,
   show,
   config,
   updateConfig,

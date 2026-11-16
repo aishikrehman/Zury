@@ -1,0 +1,64 @@
+<%# The event's rules in plain words, in three groups: who can take part, what to submit, how it is judged. %>
+<%
+  const pp = participation; const rules = pp.rules || {}; const tc = typeConfig || {};
+  const D = (k) => (contest[k] ? formatDate(contest[k], contest.timezone) : null);
+  const n = (v) => formatNumber(v);
+  const who = [];
+  const what = [];
+  const judge = [];
+  // Who
+  if (settings.minAccountAgeDays) who.push(['calendar-user', t('Wikimedia account at least {n} days old', { n: n(settings.minAccountAgeDays) })]);
+  if (settings.minEditCount) who.push(['edit', t('At least {n} edits across Wikimedia projects', { n: n(settings.minEditCount) })]);
+  if (settings.participantLimit) who.push(['users', t('Up to {n} participants', { n: n(settings.participantLimit) })]);
+  if (settings.participationMode && settings.participationMode !== 'individual') who.push(['users-group', PARTICIPATION_MODES[settings.participationMode]]);
+  if (pp.mode === 'onwiki' && pp.outsiders) who.push(['door-enter', t('Others may join too')]);
+  if (D('registrationClosesAt')) who.push(['calendar-x', t('Joining closes on {d}', { d: D('registrationClosesAt') })]);
+  who.push([settings.anonymousParticipants ? 'eye-off' : 'eye', settings.anonymousParticipants ? t('Participants stay anonymous until the results') : t('Participants are shown by name')]);
+  // What
+  if (tc.minWordCount) what.push(['align-justified', t('At least {n} words', { n: n(tc.minWordCount) })]);
+  if (tc.minBytes) what.push(['ruler', t('At least {n} bytes', { n: n(tc.minBytes) })]);
+  if (tc.createdDuringEventOnly) what.push(['calendar-plus', t('Created during the event')]);
+  if ('allowExpansions' in tc) what.push([tc.allowExpansions ? 'arrow-up-right' : 'file-plus', tc.allowExpansions ? t('New articles and expansions both count') : t('New articles only')]);
+  if (tc.maxEntriesPerParticipant) what.push(['photo', t('Up to {n} entries each', { n: n(tc.maxEntriesPerParticipant) })]);
+  if (tc.minResolutionMegapixels) what.push(['dimensions', t('At least {n} megapixels', { n: n(tc.minResolutionMegapixels) })]);
+  if (tc.uploadedDuringEventOnly) what.push(['upload', t('Uploaded during the event')]);
+  if (tc.requiredCategory) what.push(['category', t('In the category {c}', { c: tc.requiredCategory })]);
+  if (tc.minStatements) what.push(['list-details', t('At least {n} statements', { n: n(tc.minStatements) })]);
+  if (pp.eligible && pp.eligible.source && pp.eligible.source !== 'none') what.push(['list-check', t({ page: 'Only articles listed on the event page', list: 'Only articles from the event list', category: 'Only articles in the event category', wikidata: 'Only articles from the event query' }[pp.eligible.source] || 'Only listed articles')]);
+  if (D('submissionDeadline')) what.push(['clock', t('Submit by {d}', { d: D('submissionDeadline') })]);
+  if (settings.wordCountEnabled) what.push(['git-commit', rules.revision === 'latest' ? t('The latest version of the article counts') : rules.revision === 'pinned' ? t('The article as it was when submitted counts') : t('The article as it was when the event ended counts')]);
+  if (settings.wordCountEnabled && rules.ownWords === 'on') what.push(['user-edit', t('Only the words you added during the event count')]);
+  what.push(['users-plus', { staff: t('Organizers may submit for others'), anyone: t('Anyone may submit an article for its author'), off: t('Only you can submit your articles') }[rules.onBehalf] || t('Organizers may submit for others')]);
+  what.push(['circle-minus', { participant: t('You can withdraw your own entries'), reviewers: t('Reviewers can remove entries'), both: t('You and the reviewers can remove entries'), off: t('Entries cannot be withdrawn') }[rules.withdraw] || t('You can withdraw your own entries')]);
+  // How it is judged
+  if (settings.juryReviewEnabled) {
+    judge.push(['gavel', t('Reviewers judge each entry: {m}', { m: t({ yesno: 'accept or reject', marks: 'accept or reject', stars: 'stars', number: 'a score' }[settings.reviewMethod] || 'accept or reject') })]);
+    if ((settings.requiredReviews || 1) > 1) judge.push(['users', t('{n} reviewers look at each entry', { n: n(settings.requiredReviews) })]);
+    if (rules.maxReviews) judge.push(['lock', t('At most {n} reviews per entry', { n: n(rules.maxReviews) })]);
+    judge.push([rules.reviewerNames === 'no' ? 'user-off' : 'user-check', rules.reviewerNames === 'no' ? t("Reviewers' names are not shown") : t("Reviewers' names are shown")]);
+  } else judge.push(['circle-check', t('No review: entries that meet the rules count')]);
+  judge.push(['trophy', settings.wordCountEnabled ? t('Results count accepted words') : settings.reviewMethod === 'stars' || settings.reviewMethod === 'number' ? t('Results count the reviewers\' scores') : t('Results count accepted articles')]);
+  judge.push(['speakerphone', D('resultsAnnouncedAt') ? t('Results on {d}', { d: D('resultsAnnouncedAt') }) : { always: t('Results show as reviews come in'), afterReview: t('Results show once reviewing is done'), manual: t('Results show when the organizers publish them') }[rules.results] || t('Results show as reviews come in')]);
+  if (rules.appeals && rules.appeals !== 'off') judge.push(['scale', t('Appeals: {what}, up to {n} each', { what: rules.appeals === 'any' ? t('any decision') : t('rejected entries'), n: n(rules.maxAppeals || 1) }) + (D('appealDeadline') ? ' · ' + t('until {d}', { d: D('appealDeadline') }) : '')]);
+  else judge.push(['scale-outline', t('No appeals')]);
+  // How people take part, as a scale: anyone → listed → registered.
+  const level = { submit: 0, list: 1, onwiki: 2, register: 2 }[pp.mode] ?? 0;
+%>
+<div class="card mb-3 z-rules">
+  <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t('Rules') %></h3></div>
+  <div class="card-body">
+    <div class="z-rule-scale" aria-label="<%= t('Who can take part') %>">
+      <% [['users', 'Anyone'], ['list', 'People on the list'], ['user-check', pp.mode === 'onwiki' ? 'Signed up on the wiki page' : 'Joined the event']].forEach(([icon, label], i) => { %>
+        <span class="<%= i === level ? 'is-on' : i < level ? 'is-past' : '' %>"><i class="ti ti-<%= icon %>"></i><%= t(label) %></span>
+      <% }) %>
+    </div>
+    <% [['Who can take part', 'user-question', who], ['What to submit', 'file-description', what], ['How it is judged', 'gavel', judge]].forEach(([title, icon, list]) => { if (!list.length) return; %>
+      <div class="z-rule-group">
+        <div class="z-rule-head"><i class="ti ti-<%= icon %>"></i><%= t(title) %></div>
+        <ul>
+          <% list.forEach(([ic, text]) => { %><li><i class="ti ti-<%= ic %>"></i><span><%= text %></span></li><% }) %>
+        </ul>
+      </div>
+    <% }) %>
+  </div>
+</div>

@@ -11,7 +11,7 @@
   const links = json(series.externalLinks, []);
   const langs = json(series.supportedLanguages, []);
   const communities = (series.communities || '').split('\n').filter(Boolean);
-  const edName = (e) => e.identifier || e.slug;
+  const edName = (e) => digits(e.identifier || e.slug);
   const edHref = (e) => `/${series.slug}/${e.slug}`;
   const featured = current;
   const DAY = 86400000;
@@ -106,7 +106,7 @@
       </div>
 
     <% } else if (tab === 'events') { %>
-      <% if (canRun) { %><div class="d-flex justify-content-end mb-3"><a class="btn btn-primary" href="/events/create?series=<%= series.slug %>"><i class="ti ti-plus me-1"></i><%= t('New event') %></a></div><% } %>
+      <% if (canRun) { %><div class="d-flex justify-content-end mb-3"><a class="btn btn-primary" href="/create/event?series=<%= series.slug %>"><i class="ti ti-plus me-1"></i><%= t('New event') %></a></div><% } %>
       <% if (!directEvents.length) { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events directly under this series') }) %></div><% } else { %>
         <div class="card"><div class="list-group list-group-flush">
           <% directEvents.forEach((c, i) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>

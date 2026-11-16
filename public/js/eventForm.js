@@ -222,3 +222,11 @@
     });
   }
 })();
+
+
+
+// Submission rules: the three-way choice takes the colour of its state.
+document.addEventListener('change', (e) => {
+  const el = e.target.closest && e.target.closest('[data-rule3]');
+  if (el) el.className = el.className.replace(/is-(off|on|warn)/, 'is-' + el.value);
+});

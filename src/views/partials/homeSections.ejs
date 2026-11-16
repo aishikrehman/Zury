@@ -73,7 +73,7 @@
           <div class="z-type"><span class="z-type-ico"><i class="ti ti-<%= TYPE_ICONS[k] || 'calendar-event' %>"></i></span><span><%= t(CONTEST_TYPES[k]) %></span></div>
         <% }) %>
       </div>
-      <a class="btn btn-primary btn-lg mt-4" href="<%= currentUser ? '/events/create' : '/login' %>"><i class="ti ti-plus me-1"></i><%= t('Start an event') %></a>
+      <a class="btn btn-primary btn-lg mt-4" href="<%= currentUser ? '/create/event' : '/login' %>"><i class="ti ti-plus me-1"></i><%= t('Start an event') %></a>
     </div>
   </div>
 </section>

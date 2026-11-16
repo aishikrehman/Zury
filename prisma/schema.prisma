@@ -357,6 +357,8 @@ model ContestSettings {
   // How people take part, JSON (see src/services/participationService.js): mode, asked
   // details, the on-wiki page, a fixed list, outsiders, eligible articles.
   participation               String    @default("{}") @db.Text
+  // About page extras (JSON): prizes, topics, questions and answers, announcements.
+  extras                      String    @default("{}") @db.Text
   // The articles that may be submitted, resolved from participation.eligible; empty: any.
   eligibleTitles              String    @default("[]") @db.MediumText
   // Contribution tracking. Participant tracking uses contributionDiscoveryEnabled.

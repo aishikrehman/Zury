@@ -5,64 +5,30 @@
     ['calendar-event', myEvents.length, t('My events'), '/dashboard'],
     ['briefcase', organizing, t('Organizing'), '/dashboard'],
     ['gavel', juryEvents.length, t('Reviewing'), '/review'],
-    ['files', submissionCount, t('Submissions'), '/submissions'],
+    ['files', submissionCount, t('Submissions'), '#mine'],
   ];
 %>
 <%- include('../../partials/accountHeader', { tab: 'dashboard' }) %>
 
-  <div class="z-dash-hello">
-    <div>
-      <h2 class="m-0"><%= t('Welcome back, {name}', { name: currentUser.username }) %></h2>
-      <p class="text-secondary m-0"><%= tn("You're part of {n} event.", "You're part of {n} events.", myEvents.length) %><% if (running) { %> <%= tn('{n} is running now.', '{n} are running now.', running) %><% } %> <a href="/?home=1" class="ms-1"><i class="ti ti-home me-1"></i><%= t('Zury home page') %></a></p>
-    </div>
-    <div class="z-dash-numbers">
-      <% numbers.forEach(([icon, value, label, href]) => { %><a href="<%= href %>"><i class="ti ti-<%= icon %>"></i><b><%= formatNumber(value) %></b><span><%= label %></span></a><% }) %>
+  <%# A short line: hello, and the things one does most. %>
+  <div class="z-dash-top">
+    <h2 class="m-0"><%= t('Welcome back, {name}', { name: currentUser.username }) %></h2>
+    <div class="z-dash-actions">
+      <% if (waiting.length) { %><a class="btn btn-primary" href="<%= eventPath(waiting[0].contest) %>/review"><i class="ti ti-gavel me-1"></i><%= t('Continue reviewing') %> <span class="badge bg-white text-primary ms-1"><%= formatNumber(waiting.reduce((a, w) => a + w.n, 0)) %></span></a><% } %>
+      <% if (can('createEvent')) { %><a class="btn" href="/create/event"><i class="ti ti-plus me-1"></i><%= t('New event') %></a><% } %>
+      <a class="btn" href="/events/active"><i class="ti ti-search me-1"></i><%= t('Find an event') %></a>
     </div>
   </div>
 
-  <% if (waiting.length || deadlines.length || patrol.length || contribution.entries) { %>
-    <div class="z-dash-cards mb-4">
-      <% if (waiting.length) { %>
-        <div class="card"><div class="card-body">
-          <div class="subheader mb-2"><i class="ti ti-gavel me-1 text-primary"></i><%= t('Waiting for your review') %></div>
-          <% waiting.forEach((w) => { %>
-            <div class="d-flex align-items-center gap-2 mb-2"><span class="flex-fill min-w-0 text-truncate"><%= w.contest.title %></span><a class="btn btn-sm btn-primary" href="<%= eventPath(w.contest) %>/review"><%= t('Review') %> <span class="badge bg-white text-primary ms-1"><%= formatNumber(w.n) %></span></a></div>
-          <% }) %>
-        </div></div>
-      <% } %>
-      <% if (deadlines.length) { %>
-        <div class="card"><div class="card-body">
-          <div class="subheader mb-2"><i class="ti ti-hourglass-low me-1 text-orange"></i><%= t('Coming deadlines') %></div>
-          <% deadlines.forEach((d) => { %>
-            <a class="d-flex align-items-center gap-2 mb-2 text-reset" href="<%= eventPath(d.contest) %>"><span class="flex-fill min-w-0 text-truncate"><%= d.contest.title %></span><span class="badge bg-<%= d.days <= 3 ? 'red' : 'orange' %>-lt"><%= tn('{n} day left', '{n} days left', d.days) %></span></a>
-          <% }) %>
-        </div></div>
-      <% } %>
-      <% if (patrol.length) { %>
-        <div class="card"><div class="card-body">
-          <div class="subheader mb-2"><i class="ti ti-shield-search me-1 text-red"></i><%= t('Patrol room') %></div>
-          <% patrol.forEach((p) => { %>
-            <a class="d-flex align-items-center gap-2 mb-2 text-reset" href="<%= eventPath(p.contest) %>/patrol"><span class="flex-fill min-w-0 text-truncate"><%= p.contest.title %></span><span class="badge bg-red-lt"><%= tn('{n} to look at', '{n} to look at', p.n) %></span></a>
-          <% }) %>
-        </div></div>
-      <% } %>
-      <% if (contribution.entries) { %>
-        <div class="card"><div class="card-body">
-          <div class="subheader mb-2"><i class="ti ti-chart-arcs me-1 text-green"></i><%= t('Your contribution') %></div>
-          <div class="z-month-figs">
-            <div><b><%= formatNumber(contribution.accepted) %></b><span><%= t('accepted') %></span></div>
-            <% if (contribution.words) { %><div><b><%= formatNumber(contribution.words) %></b><span><%= t('words accepted') %></span></div><% } %>
-            <div><b><%= formatNumber(contribution.events) %></b><span><%= t('events') %></span></div>
-          </div>
-          <% const pct = Math.round((contribution.accepted / contribution.entries) * 100); %>
-          <div class="z-ks-bar"><i style="width: <%= pct %>%; background: var(--z-green)"></i></div>
-          <div class="small text-secondary mt-1"><%= t('{n}% of your entries accepted', { n: formatNumber(pct) }) %></div>
-        </div></div>
-      <% } %>
-    </div>
-  <% } %>
+  <%# Your entries' figures first. %>
+  <%- include('../../partials/dashMine', { part: 'stats' }) %>
+
+  <div class="row row-cards">
+    <%# Main column: what needs doing, the events one runs, one's entries. %>
+    <div class="col-lg-8">
+      <% if (approvals && approvals.total) { %><div id="approvals">
   <% if (approvals && approvals.total) { const csrf = `<input type="hidden" name="_csrf" value="${csrfToken}">`; %>
-    <div class="card mb-4">
+    <div class="card mb-3">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-shield-check me-2 text-warning"></i><%= t('Waiting for approval') %> <span class="badge bg-yellow-lt ms-1"><%= formatNumber(approvals.total) %></span></h3></div>
       <div class="list-group list-group-flush">
         <% [...approvals.events.map((x) => ['event', x, x.path, x.title, (x.createdBy ? x.createdBy.username + ' · ' : '') + wikiLocal(x.primaryWiki)]), ...approvals.series.map((x) => ['series', x, '/' + x.slug, x.title, t('Series')]), ...approvals.editions.map((x) => ['edition', x, '/series/' + x.series.slug + '/' + x.slug, x.series.title + ' · ' + x.title, t('Edition')])].forEach(([kind, x, href, title, sub]) => { %>
@@ -77,45 +43,89 @@
       </div>
     </div>
   <% } %>
-  <div class="row row-cards mb-4">
-    <div class="<%= pendingWikis.length ? 'col-lg-7' : 'col-12' %>">
-      <div class="card h-100">
-        <div class="card-header"><h3 class="card-title"><%= t('My events') %></h3></div>
-        <% if (!myEvents.length) { %>
-          <%- include('../../partials/emptyArt', { art: 'contest', title: t('No events yet'), text: t('Join an event to see it here.'), action: '<a href="/events" class="btn btn-primary">' + h(t('Browse events')) + '</a>' }) %>
-        <% } else { %>
-          <div class="list-group list-group-flush">
-            <% myEvents.slice(0, 10).forEach(({ contest: c, roles }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-              <a class="list-group-item list-group-item-action d-flex align-items-center gap-3 z-myev" href="<%= eventPath(c) %>">
-                <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
-                <span class="flex-fill min-w-0"><span class="d-block text-truncate fw-medium"><%= c.title %></span><span class="text-secondary small"><%= roles.map((r) => t(EVENT_ROLES[r].label)).join(' · ') %></span></span>
-                <% const mc = myCounts.get(c.id); if (mc) { %><span class="d-flex gap-1 text-nowrap small"><span class="badge bg-green-lt" title="<%= t('Accepted') %>"><%= formatNumber(mc.accepted) %></span><span class="badge bg-yellow-lt" title="<%= t('Pending') %>"><%= formatNumber(mc.pending) %></span><span class="badge bg-red-lt" title="<%= t('Not accepted') %>"><%= formatNumber(mc.rejected) %></span></span><% } %>
-                <span class="text-secondary small text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) : '' %></span>
-              </a>
-            <% }) %>
-          </div>
-        <% } %>
-      </div>
-    </div>
-    <% if (suggested.length) { %>
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-sparkles me-2"></i><%= t('Suggested events') %></h3><div class="card-actions text-secondary small"><%= t('In your language') %></div></div>
-          <div class="list-group list-group-flush">
-            <% suggested.forEach((c) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-              <a class="list-group-item list-group-item-action d-flex align-items-center gap-3" href="<%= eventPath(c) %>">
-                <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
-                <span class="flex-fill min-w-0 text-truncate fw-medium"><%= c.title %></span>
-                <span class="text-secondary small text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) : '' %></span>
+      </div><% } %>
+      <% const noteCount = waiting.length + deadlines.length + patrol.length + notable.length; %>
+      <% if (noteCount) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-pin me-2 text-orange"></i><%= t('Noteworthy') %></h3><span class="badge bg-orange-lt ms-auto"><%= formatNumber(noteCount) %></span></div>
+          <div class="list-group list-group-flush z-dash-todo">
+            <% waiting.forEach((w) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(w.contest) %>/review"><i class="ti ti-gavel text-primary"></i><span class="text-truncate"><%= w.contest.title %></span><span class="badge bg-blue-lt ms-auto"><%= tn('{n} to review', '{n} to review', w.n) %></span></a><% }) %>
+            <% deadlines.forEach((x) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(x.contest) %>"><i class="ti ti-hourglass-low text-orange"></i><span class="text-truncate"><%= x.contest.title %></span><span class="badge bg-<%= x.days <= 3 ? 'red' : 'orange' %>-lt ms-auto"><%= tn('{n} day left', '{n} days left', x.days) %></span></a><% }) %>
+            <% patrol.forEach((p) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(p.contest) %>/patrol"><i class="ti ti-shield-search text-red"></i><span class="text-truncate"><%= p.contest.title %></span><span class="badge bg-red-lt ms-auto"><%= tn('{n} to look at', '{n} to look at', p.n) %></span></a><% }) %>
+            <% notable.forEach((s) => { %>
+              <a class="list-group-item list-group-item-action z-notable" href="<%= eventPath(s.contest) %>/submissions?q=<%= encodeURIComponent(s.title) %>">
+                <i class="ti ti-<%= s.status === 'approved' ? 'message-circle text-green' : 'circle-x text-red' %>"></i>
+                <span class="min-w-0 flex-fill"><span class="d-block text-truncate fw-medium"><%= s.title %></span><span class="small text-secondary d-block text-truncate"><%= s.status === 'approved' ? t('Accepted, with a comment') : t('Not accepted') %><% if (s.comment) { %>: <%= s.comment %><% } %></span></span>
+                <span class="small text-secondary text-nowrap ms-2"><%= s.contest.title %></span>
               </a>
             <% }) %>
           </div>
         </div>
+      <% } %>
+      <% if (running.length) { %><div class="mb-3">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-briefcase me-2 text-primary"></i><%= t('Events you run') %></h3></div>
+          <div class="table-responsive"><table class="table table-vcenter card-table">
+            <thead><tr><th><%= t('Event') %></th><th class="text-end"><%= t('New today') %></th><th class="text-end"><%= t('Waiting for review') %></th><th class="text-end"><%= t('Participants') %></th></tr></thead>
+            <tbody><% running.forEach((r) => { %><tr>
+              <td class="text-truncate" style="max-width: 16rem"><a href="<%= eventPath(r.contest) %>/submissions"><%= r.contest.title %></a></td>
+              <td class="text-end"><%= r.today ? '+' + formatNumber(r.today) : formatNumber(0) %></td>
+              <td class="text-end"><% if (r.waiting) { %><a class="badge bg-yellow-lt" href="<%= eventPath(r.contest) %>/review"><%= formatNumber(r.waiting) %></a><% } else { %><%= formatNumber(0) %><% } %></td>
+              <td class="text-end"><%= formatNumber(r.people) %></td>
+            </tr><% }) %></tbody>
+          </table></div>
+        </div>
+      </div><% } %>
+      <section id="mine">
+        <%- include('../../partials/dashMine', { part: 'list' }) %>
+      </section>
+    </div>
+
+    <%# Side column: notifications, one's activity, latest reviews, wikis waiting. %>
+    <div class="col-lg-4">
+      <% if (suggested.length) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-sparkles me-2 text-primary"></i><%= t('Suggested events') %></h3><div class="card-actions"><a class="small" href="/events/active"><%= t('See all') %></a></div></div>
+          <div class="list-group list-group-flush">
+            <% suggested.forEach((c) => { const pj = eventProject(c); const left = c.endDate ? Math.ceil((new Date(c.endDate) - Date.now()) / 86400000) : null; %>
+              <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<%= eventPath(c) %>">
+                <span class="avatar avatar-sm" style="background: color-mix(in srgb, <%= pj.color %> 12%, transparent); color: <%= pj.color %>"><i class="ti ti-<%= pj.icon %>"></i></span>
+                <span class="flex-fill min-w-0"><span class="d-block text-truncate fw-medium"><%= c.title %></span><span class="small text-secondary d-block text-truncate"><%= wikiLocal(c.primaryWiki) %><% if (c.status === 'active' && left != null && left >= 0) { %> · <%= tn('{n} day left', '{n} days left', left) %><% } else if (c.startDate) { %> · <%= formatDate(c.startDate, c.timezone) %><% } %></span></span>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+      <div class="card mb-3">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-bell me-2 text-primary"></i><%= t('Notifications') %></h3><div class="card-actions"><a href="/notifications" class="small"><%= t('See all') %></a></div></div>
+        <% if (!notes.length) { %><div class="card-body text-secondary small"><%= t('Nothing new.') %></div><% } else { %>
+          <div class="list-group list-group-flush">
+            <% notes.forEach((n) => { %><a class="list-group-item list-group-item-action z-note-row<%= n.readAt ? '' : ' is-new' %>" href="<%= n.link || '/notifications' %>"><span class="text-truncate-2"><%= n.text %></span><small class="text-secondary"><%= formatDateTime(n.createdAt) %></small></a><% }) %>
+          </div>
+        <% } %>
       </div>
-    <% } %>
-    <% if (pendingWikis.length) { %>
-      <div class="col-lg-5">
-        <div class="card h-100">
+      <% if (activity && activity.series && activity.series.values.some((v) => v)) { const vals = activity.series.values; const mx = Math.max(1, ...vals); %>
+        <div class="card mb-3"><div class="card-body">
+          <div class="subheader mb-2"><i class="ti ti-chart-bar me-1 text-primary"></i><%= t('Your entries, last 30 days') %></div>
+          <div class="z-spark"><% vals.forEach((v) => { %><i style="height:<%= Math.max(4, Math.round((v / mx) * 100)) %>%" title="<%= formatNumber(v) %>"></i><% }) %></div>
+          <div class="small text-secondary mt-1"><%= tn('{n} entry', '{n} entries', vals.reduce((a, b) => a + b, 0)) %></div>
+        </div></div>
+      <% } %>
+      <% if (reviewerPatrol.length) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-shield-search me-2 text-primary"></i><%= t('To look at again') %></h3><span class="badge bg-blue-lt ms-auto"><%= formatNumber(reviewerPatrol.length) %></span></div>
+          <div class="list-group list-group-flush">
+            <% reviewerPatrol.forEach((x) => { %>
+              <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<%= x.href %>">
+                <i class="ti ti-<%= x.kind === 'appeal' ? 'scale text-orange' : 'trending-up text-green' %>"></i>
+                <span class="flex-fill min-w-0"><span class="d-block text-truncate"><%= x.title %></span><span class="small text-secondary d-block text-truncate"><%= x.kind === 'appeal' ? t('Appealed') : t('Improved since you rejected it') %><% if (x.grew) { %> · <%= t('{a} → {b} bytes', { a: formatNumber(x.grew.from), b: formatNumber(x.grew.to) }) %><% } %> · <%= x.contest.title %></span></span>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+      <% if (pendingWikis.length) { %>
+        <div class="card mb-3">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-clock-hour-4 me-2 text-warning"></i><%= t('Waiting for approval') %></h3><span class="badge bg-yellow-lt ms-auto"><%= formatNumber(pendingWikis.length) %></span></div>
           <div class="list-group list-group-flush">
             <% pendingWikis.forEach((w) => { %>
@@ -126,9 +136,7 @@
             <% }) %>
           </div>
         </div>
-      </div>
-    <% } %>
+      <% } %>
+    </div>
   </div>
-
-  <%- include('../../partials/calendar', { cal: calendar, calLang: lang.code }) %>
 <%- include('../../partials/accountEnd') %>
