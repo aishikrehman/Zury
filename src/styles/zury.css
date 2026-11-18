@@ -3226,3 +3226,89 @@ a.z-user-btn { text-decoration: none; color: inherit; }
 .table > :not(caption) > * > * { border-bottom-color: color-mix(in srgb, var(--z-border) 60%, transparent); }
 .z-person { display: inline-flex; align-items: center; gap: .4rem; padding: .15rem .6rem .15rem .15rem; border-radius: 999px; background: var(--z-hover); color: var(--z-fg); font-size: .875rem; text-decoration: none; }
 .z-person:hover { color: #3366cc; text-decoration: none; }
+/* Chat, in the manner of Tabler's chat: a card, bubbles (mine on the right in blue), the box to write at the foot. */
+.z-chat { overflow: hidden; }
+.z-chat-list { height: var(--z-chat-h, 62vh); overflow-y: auto; display: flex; flex-direction: column; gap: .15rem; padding: 1rem 1.25rem; scroll-behavior: smooth; }
+.z-chat-older { align-self: center; font-size: .8rem; margin-bottom: .5rem; }
+.z-chat-empty { margin: auto; display: flex; flex-direction: column; align-items: center; gap: .4rem; color: var(--z-fg-muted); }
+.z-chat-empty .ti { font-size: 2.5rem; opacity: .4; }
+.z-chat-msg { display: flex; gap: .65rem; align-items: flex-end; max-width: 80%; margin-top: .65rem; }
+.z-chat-msg.is-cont { margin-top: .1rem; }
+.z-chat-msg.is-cont .z-chat-meta, .z-chat-msg.is-cont .z-chat-ava { visibility: hidden; height: 0; }
+.z-chat-msg.is-cont .z-chat-ava .avatar { height: 0; }
+.z-chat-msg.is-mine { align-self: flex-end; flex-direction: row-reverse; }
+.z-chat-ava { flex: none; width: 2rem; }
+.z-chat-item { min-width: 0; display: flex; flex-direction: column; }
+.z-chat-msg.is-mine .z-chat-item { align-items: flex-end; }
+.z-chat-meta { display: flex; gap: .5rem; align-items: baseline; font-size: .75rem; color: var(--z-fg-muted); margin: 0 .5rem .2rem; }
+.z-chat-meta a { font-weight: 600; color: var(--z-fg); text-decoration: none; }
+.z-chat-msg.is-mine .z-chat-meta a { display: none; }
+.z-chat-bubble { position: relative; padding: .5rem .85rem; border-radius: 1rem 1rem 1rem .25rem; background: var(--z-hover); color: var(--z-fg); line-height: 1.45; }
+.z-chat-msg.is-mine .z-chat-bubble { background: #3366cc; color: #fff; border-radius: 1rem 1rem .25rem 1rem; }
+.z-chat-msg.is-mine .z-chat-bubble a { color: #fff; text-decoration: underline; }
+.z-chat-msg.is-cont .z-chat-bubble { border-radius: 1rem; }
+.z-chat-text { overflow-wrap: anywhere; }
+.z-chat-hide { position: absolute; top: 50%; transform: translateY(-50%); right: -1.75rem; }
+.z-chat-msg.is-mine .z-chat-hide { right: auto; left: -1.75rem; }
+.z-chat-x { border: 0; background: none; padding: .2rem; color: var(--z-fg-muted); opacity: 0; transition: opacity .15s; }
+.z-chat-msg:hover .z-chat-x, .z-chat-x:focus { opacity: 1; }
+.z-chat-foot { padding: .75rem 1rem; }
+.z-chat-form .form-control { resize: none; border: 0; box-shadow: none; padding: .55rem .85rem; max-height: 10rem; }
+.z-chat-form .input-group { border: 1px solid var(--z-border-strong); border-radius: 1.5rem; background: var(--z-surface); padding-right: .25rem; }
+.z-chat-form .input-group:focus-within { border-color: #3366cc; }
+.z-chat-form .input-group-text { border: 0; background: transparent; padding: 0; }
+.z-chat-send { border-radius: 50% !important; width: 2.25rem; height: 2.25rem; }
+.z-chat-rules { font-size: .75rem; color: var(--z-fg-muted); margin: .4rem .5rem 0; }
+.z-chat-side { display: flex; flex-direction: column; gap: .15rem; }
+.z-chat-side a { display: flex; align-items: center; gap: .5rem; padding: .4rem .6rem; border-radius: .5rem; color: var(--z-fg); text-decoration: none; min-width: 0; }
+.z-chat-side a:hover { background: var(--z-hover); }
+.z-chat-side a.active { background: #eaf3ff; color: #3366cc; font-weight: 600; }
+.z-chat-side-h { font-size: .75rem; font-weight: 700; color: #3366cc; text-transform: uppercase; margin: .9rem .6rem .25rem; }
+.z-chat-new { display: flex; gap: .35rem; margin-top: .5rem; }
+.z-chat-title { display: flex; align-items: center; gap: .5rem; font-size: 1.1rem; }
+.z-subtabs { display: flex; gap: 1.25rem; border-bottom: 1px solid var(--z-border); }
+.z-subtabs a { padding: .5rem 0; color: var(--z-fg-muted); text-decoration: none; }
+.z-subtabs a.active { color: var(--z-fg); font-weight: 700; box-shadow: inset 0 -3px 0 #3366cc; }
+/* Patrol room: appeals as a plain list; the reviewers' chat at the side. */
+.z-appeals { display: flex; flex-direction: column; }
+.z-appeal { padding: .85rem 0; border-top: 1px solid var(--z-border); }
+.z-appeal:first-child { border-top: 0; }
+.z-appeal.is-done { padding: .6rem 0; }
+.z-appeal-act { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+.z-appeal-act .form-control { flex: 1 1 14rem; }
+@media (min-width: 1200px) { .z-side-chat { position: sticky; top: 1rem; } }
+.z-chat-float { position: fixed; right: 1rem; bottom: 1rem; z-index: 1030; }
+.z-chat-float > summary { list-style: none; }
+.z-chat-float > summary::-webkit-details-marker { display: none; }
+.z-chat-float[open] > summary { float: right; }
+.z-chat-float-box { clear: both; width: min(26rem, calc(100vw - 2rem)); margin-top: .5rem; }
+.z-chat-float-box .z-chat { box-shadow: 0 8px 24px rgba(0,0,0,.15) !important; }
+.z-cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; }
+.z-cmp-n { font-size: 1.5rem; font-weight: 700; }
+.z-cmp-people { display: flex; flex-wrap: wrap; gap: .4rem; }
+/* Patrol room with its chat */
+.z-chat-head { display: flex; align-items: center; padding-right: 1rem; }
+.z-chat-head .card-header-tabs { flex: 1; }
+.z-chat-live { width: .5rem; height: .5rem; border-radius: 50%; background: #339966; box-shadow: 0 0 0 3px rgba(51, 153, 102, .2); }
+.z-chat-head .nav-link { font-weight: 500; }
+.z-chat-head .nav-link.active { font-weight: 700; }
+@media (min-width: 1200px) { .z-patrol-room .z-side-chat { position: sticky; top: 1rem; } }
+/* The event's one card: chats, patrol and appeals as tabs */
+.z-room-head { display: flex; align-items: center; gap: .75rem; padding-right: 1rem; }
+.z-room-head .card-header-tabs { flex: 1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.z-room-head .nav-link { white-space: nowrap; }
+.z-room .z-chat .z-chat-list { border-top: 0; }
+.z-chat-warn { display: flex; align-items: center; gap: .5rem; padding: .5rem 1.25rem; font-size: .8125rem; color: #ac6600; background: #fef6e7; }
+.z-chat-warn a { color: #ac6600; font-weight: 600; white-space: nowrap; }
+.z-chat-warn { flex-wrap: wrap; }
+.z-chat-tools { margin-left: auto; display: flex; gap: .4rem; }
+.z-chat-tools form { margin: 0; }
+.z-chat-warn .btn { color: inherit; }
+/* Patrol room: sections one under another; the lower ones fold */
+.z-patrol-stack { display: flex; flex-direction: column; gap: 1rem; }
+details.z-sec > summary { list-style: none; cursor: pointer; display: flex; align-items: center; }
+details.z-sec > summary::-webkit-details-marker { display: none; }
+details.z-sec > summary .card-title { flex: 1; }
+.z-sec-caret { transition: transform .2s; color: var(--z-fg-muted); }
+details.z-sec[open] .z-sec-caret { transform: rotate(180deg); }
+details.z-sec:not([open]) > summary { border-bottom: 0; }

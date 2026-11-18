@@ -238,9 +238,12 @@ async function entryForReview(contestId, submissionId) {
 // Why this person can't review this entry (null when they can): already decided, their own,
 // not assigned to them (assigned modes), or it already has the most reviews the event allows.
 // Someone who already reviewed it can always correct their review.
-async function reviewBlock(settings, submission, actorId) {
+// Organizers may change any decision; reviewers may change their own at any time.
+async function reviewBlock(settings, submission, actorId, { contest = null, permissions = null } = {}) {
+  if (contest && archivedFor(contest, permissions)) return 'This event is archived.';
   if (submission.reviews.some((r) => r.jurorId === actorId)) return null;
-  if (!REVIEWABLE.includes(submission.status)) return 'This entry has already been decided.';
+  const organizer = permissions && (permissions.has('manageEvent') || permissions.has('manageAppeals'));
+  if (!REVIEWABLE.includes(submission.status) && !organizer) return 'This entry has already been decided.';
   if (submission.participantId === actorId && !settings.selfReview) return "You can't review your own entry.";
   if (assignedMode(settings)) {
     const assigned = await prisma.reviewAssignment.count({ where: { submissionId: submission.id, jurorId: actorId } });
@@ -251,17 +254,22 @@ async function reviewBlock(settings, submission, actorId) {
   return null;
 }
 
-async function saveReview({ actor, contest, settings, submission, decision, marks, score, comment, notify = 'auto', note = '' }) {
+async function saveReview({ actor, contest, settings, submission, decision, marks, score, comment, notify = 'auto', note = '', permissions = null }) {
   const given = verdict(settings, { decision, marks, score });
   decision = given.decision;
   if (decision === 'reject' && !String(comment || '').trim()) throw new ReviewError('Give a reason to reject.');
-  const blocked = await reviewBlock(settings, submission, actor.id);
+  const blocked = await reviewBlock(settings, submission, actor.id, { contest, permissions });
   if (blocked) throw new ReviewError(blocked, 403);
   const scored = given;
   const required = Math.max(1, settings.requiredReviews || 1);
 
   return prisma.$transaction(async (tx) => {
     const data = { decision, marks: JSON.stringify(scored.marks), points: scored.points, comment: String(comment || '').trim().slice(0, 2000) };
+    // A changed decision keeps the earlier one in the entry's history.
+    const earlier = submission.reviews.find((r) => r.jurorId === actor.id);
+    if (earlier && earlier.decision !== decision) {
+      await tx.submissionHistory.create({ data: { submissionId: submission.id, actorId: actor.id, action: 'review_changed', previousValue: earlier.decision, newValue: decision, note: data.comment.slice(0, 500) || null } });
+    }
     await tx.review.upsert({
       where: { submissionId_jurorId: { submissionId: submission.id, jurorId: actor.id } },
       update: data,
@@ -393,9 +401,14 @@ async function leaderboard({ contest, settings, wiki }) {
   return ranked;
 }
 
-// Revisions are locked only once the event is archived.
+// Words and revisions stop changing once results are locked (published) or the event is archived.
 function resultsFinal(contest) {
-  return contest.status === 'archived';
+  return contest.status === 'archived' || !!contest.resultsPublishedAt;
+}
+
+// An archived event cannot change any more, except by a superuser.
+function archivedFor(contest, permissions) {
+  return contest.status === 'archived' && !(permissions && permissions.has('deleteAnything'));
 }
 
 async function setResultsPublished({ actor, contest, published }) {
@@ -611,8 +624,8 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
   if (reason.length < 10 || reason.length > 2000) throw new ReviewError('Explain the appeal in 10 to 2000 characters.');
   const maxAppeals = require('./participationService').read(settings).rules.maxAppeals || 1;
   if ((await prisma.appeal.count({ where: { submissionId: submission.id } })) >= maxAppeals) throw new ReviewError('This entry cannot be appealed again.');
-  // The page as it is now replaces the submitted revision.
-  await require('./submissionService').repin(submission).catch(() => null);
+  // While the event runs, the page as it is now replaces the entry's revision; after the end the end-time revision stays.
+  if (require('./articleWatchService').running(contest) && !resultsFinal(contest)) await require('./submissionService').repin(submission).catch(() => null);
   return prisma.$transaction(async (tx) => {
     const appeal = await tx.appeal.create({ data: { contestId: contest.id, submissionId: submission.id, userId: user.id, reason } });
     await tx.submission.update({
@@ -629,8 +642,25 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
 }
 
 // upheld: the entry goes back to the jury; dismissed: the earlier decision stands.
-async function resolveAppeal({ actor, contest, appealId, action, response }) {
-  if (!['uphold', 'dismiss'].includes(action)) throw new ReviewError('Unknown action.');
+// Who may settle an appeal: organizers (manageAppeals) any way; a reviewer of the entry may accept
+// it or send it back to the reviewers, but dismissing is for someone who did not review it.
+async function appealRights({ actor, permissions, appeal }) {
+  const reviewed = await prisma.review.count({ where: { submissionId: appeal.submissionId, jurorId: actor.id } });
+  const superuser = !!(permissions && permissions.has('deleteAnything'));
+  const manager = !!(permissions && permissions.has('manageAppeals'));
+  return { accept: !!reviewed || manager, uphold: !!reviewed || manager, dismiss: superuser || (manager && !reviewed) };
+}
+
+// accept: the entry is accepted; uphold: back to the reviewers; dismiss: the decision stands.
+async function resolveAppeal({ actor, contest, appealId, action, response, permissions = null, settings = null }) {
+  if (!['uphold', 'dismiss', 'accept'].includes(action)) throw new ReviewError('Unknown action.');
+  if (archivedFor(contest, permissions)) throw new ReviewError('This event is archived.');
+  const found = await prisma.appeal.findFirst({ where: { id: appealId, contestId: contest.id } });
+  if (found && permissions) {
+    const rights = await appealRights({ actor, permissions, appeal: found });
+    if (!rights[action]) throw new ReviewError(action === 'dismiss' ? 'Someone who did not review this entry decides to dismiss.' : "You don't have permission to do that.", 403);
+  }
+  if (action === 'accept') return acceptOnAppeal({ actor, contest, appealId, response, settings });
   return prisma.$transaction(async (tx) => {
     const appeal = await tx.appeal.findFirst({ where: { id: appealId, contestId: contest.id, status: 'open' }, include: { submission: true } });
     if (!appeal) throw new ReviewError('That appeal is already closed.');
@@ -655,11 +685,30 @@ async function resolveAppeal({ actor, contest, appealId, action, response }) {
   });
 }
 
+// The reviewer (or an organizer) accepts the entry: its reviews become "accept" and it is decided as accepted.
+async function acceptOnAppeal({ actor, contest, appealId, response, settings }) {
+  settings = settings || await prisma.contestSettings.findUnique({ where: { contestId: contest.id } });
+  return prisma.$transaction(async (tx) => {
+    const appeal = await tx.appeal.findFirst({ where: { id: appealId, contestId: contest.id, status: 'open' }, include: { submission: true } });
+    if (!appeal) throw new ReviewError('That appeal is already closed.');
+    const sid = appeal.submissionId;
+    const mine = await tx.review.findUnique({ where: { submissionId_jurorId: { submissionId: sid, jurorId: actor.id } } });
+    if (!mine) await tx.review.create({ data: { contestId: contest.id, submissionId: sid, jurorId: actor.id, decision: 'accept', comment: '' } });
+    await tx.review.updateMany({ where: { submissionId: sid, decision: 'reject' }, data: { decision: 'accept' } });
+    const reviews = await tx.review.findMany({ where: { submissionId: sid } });
+    const { score } = decide(reviews, settings);
+    await tx.appeal.update({ where: { id: appeal.id }, data: { status: 'upheld', response: String(response || '').trim().slice(0, 2000), resolvedById: actor.id, resolvedAt: new Date() } });
+    await tx.submission.update({ where: { id: sid }, data: { status: 'approved', score, history: { create: { actorId: actor.id, action: 'appeal_accepted', previousValue: 'appealed', newValue: 'approved' } } } });
+    await notifications.notify(appeal.submission.participantId, { kind: 'appeal.resolved', message: 'Your appeal for “{title}” was accepted: the entry is now accepted.', params: { title: appeal.submission.title }, link: `${pathOf(contest)}/submissions/${sid}`, contestId: contest.id }, tx);
+    await audit.record({ actorId: actor.id, contestId: contest.id, action: 'appeal.accepted', entityType: 'Submission', entityId: sid, details: { title: appeal.submission.title } }, tx);
+  });
+}
+
 function appeals(contestId) {
   return prisma.appeal.findMany({
     where: { contestId },
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
-    include: { submission: { select: { id: true, title: true, url: true, wiki: true, status: true, wordCount: true, reviews: { select: { decision: true, comment: true, juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } } } }, user: { select: { username: true } }, resolvedBy: { select: { username: true } } },
+    include: { submission: { select: { id: true, title: true, url: true, wiki: true, status: true, wordCount: true, reviews: { select: { jurorId: true, decision: true, comment: true, juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } } } }, user: { select: { username: true } }, resolvedBy: { select: { username: true } } },
   });
 }
 
@@ -713,6 +762,8 @@ module.exports = {
   leaderboard,
   setResultsPublished,
   resultsFinal,
+  archivedFor,
+  appealRights,
   canAppeal,
   createAppeal,
   resolveAppeal,

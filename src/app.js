@@ -192,6 +192,7 @@ app.use('/', require('./routes/users'));
 app.use('/', require('./routes/account'));
 app.use('/', require('./routes/api'));
 app.use('/', require('./routes/admin'));
+app.use('/', require('./routes/chat'));
 // Last: event series addresses (/wam/2026) must not shadow other pages.
 app.use('/', require('./routes/events'));
 

@@ -1,27 +1,79 @@
 <% const statusColor = { open: 'yellow', upheld: 'green', dismissed: 'secondary' }; const statusLabel = { open: t('Open'), upheld: t('Upheld'), dismissed: t('Dismissed') }; %>
 <%- include('../../partials/contestHeader', { active: 'appeals' }) %>
 <div class="page-body"><div class="container-xl">
-  <%
-    const FLAGS = { deleted: ['Deleted', 'trash', 'red'], redirect: ['Now a redirect', 'arrow-forward-up', 'orange'], moved: ['Moved', 'arrows-right-left', 'blue'], shrunk: ['Much shorter since the decision', 'trending-down', 'yellow'], grew: ['Much improved since it was rejected', 'trending-up', 'green'] };
+<%
+    const FLAGS = { deleted: ['Deleted', 'trash', 'red'], redirect: ['Now a redirect', 'arrow-forward-up', 'orange'], moved: ['Moved', 'arrows-right-left', 'blue'], shrunk: ['Much shorter since the decision', 'trending-down', 'yellow'], grew: ['Much improved since it was rejected', 'trending-up', 'green'], split: ['Reviewers disagree', 'arrows-split', 'purple'] };
     const openAppeals = appeals.filter((a) => a.status === 'open').length;
+    const onMine = (a) => currentUser && (a.submission.reviews || []).some((rv) => rv.jurorId === currentUser.id);
+    const mineCount = appeals.filter((a) => a.status === 'open' && onMine(a)).length;
     const countOf = (k) => flagged.filter((r) => r.flags.includes(k)).length;
-    const chips = staff ? [['all', t('All'), flagged.length + openAppeals], ...Object.keys(FLAGS).map((k) => [k, t(FLAGS[k][0]), countOf(k)]), ['appeals', t('Appeals'), openAppeals]] : [];
-    const shown = show === 'all' ? flagged : show === 'appeals' ? [] : flagged.filter((r) => r.flags.includes(show));
-  %>
-  <% if (staff) { %>
-    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-      <div class="h3 m-0 me-auto"><i class="ti ti-shield-search me-1"></i><%= t('Patrol room') %></div>
-      <form method="post" action="<%= base %>/patrol/check"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Check all articles now') %></button></form>
+    const chips = staff ? [['all', t('All'), flagged.length + openAppeals], ...Object.keys(FLAGS).map((k) => [k, t(FLAGS[k][0]), countOf(k)]), ['appeals', t('Appeals'), openAppeals], ...(mineCount ? [['mine', t('On my reviews'), mineCount]] : [])] : [];
+    const shown = show === 'all' ? flagged : ['appeals', 'mine'].includes(show) ? [] : flagged.filter((r) => r.flags.includes(show));
+%>
+<%# The Patrol room: appeals first; below, the patrol list and reviewer progress as sections that fold. %>
+<div class="z-patrol-stack">
+  <section class="card z-sec">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-scale me-2"></i><%= t('Appeals') %><% if (openAppeals) { %> <span class="badge bg-red-lt ms-2"><%= formatNumber(openAppeals) %></span><% } %></h3>
+      <% if (mineCount) { %><div class="card-actions z-chips"><a class="z-chip<%= show !== 'mine' ? ' is-on' : '' %>" href="<%= base %>/patrol"><%= t('All') %></a><a class="z-chip<%= show === 'mine' ? ' is-on' : '' %>" href="<%= base %>/patrol?show=mine"><%= t('On my reviews') %> <b><%= formatNumber(mineCount) %></b></a></div><% } %>
     </div>
-    <div class="z-chips mb-3" role="tablist">
-      <% chips.forEach(([k, label, n]) => { %><a class="z-chip<%= show === k ? ' is-on' : '' %>" href="<%= base %>/patrol<%= k === 'all' ? '' : '?show=' + k %>"><%= label %> <b><%= formatNumber(n) %></b></a><% }) %>
+    <div class="card-body">
+      <% const listA = show === 'mine' ? appeals.filter(onMine) : appeals;
+         const openA = listA.filter((a) => a.status === 'open'); const doneA = listA.filter((a) => a.status !== 'open'); %>
+    <div class="z-set-head mt-2"><%= t('Open appeals') %> · <%= formatNumber(openA.length) %></div>
+    <% if (!openA.length) { %><p class="text-secondary"><%= t('No appeals') %></p><% } %>
+    <div class="z-appeals">
+      <% openA.forEach((a) => { const r = (typeof rights !== 'undefined' && rights[a.id]) || {}; %>
+        <div class="z-appeal">
+          <div class="d-flex flex-wrap gap-2 align-items-baseline">
+            <a class="fw-semibold" href="<%= base %>/review?entry=<%= a.submission.id %>"><%= a.submission.title %></a>
+            <a class="text-secondary" href="<%= entryUrl(a.submission) %>" target="_blank" rel="noopener" title="<%= t('Open on the wiki') %>"><i class="ti ti-external-link"></i></a>
+            <span class="text-secondary small ms-auto"><%= a.user.username %> · <%= formatDateTime(a.createdAt, contest.timezone) %></span>
+          </div>
+          <p class="mb-1 mt-1" style="white-space: pre-line"><%= a.reason %></p>
+          <% if (a.submission.reviews && a.submission.reviews.length) { %><div class="small text-secondary"><% a.submission.reviews.forEach((rv, i) => { %><%= i ? ' · ' : '' %><i class="ti ti-<%= rv.decision === 'accept' ? 'check text-green' : 'x text-red' %>"></i> <%= rv.juror ? rv.juror.username : '' %><%= rv.comment ? ': ' + rv.comment : '' %><% }) %></div><% } %>
+          <% if (r.accept || r.uphold || r.dismiss) { %>
+            <form method="post" class="z-appeal-act" action="<%= base %>/appeals/<%= a.id %>/dismiss">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input class="form-control form-control-sm" name="response" maxlength="2000" placeholder="<%= t('Reply to the participant (optional)') %>">
+              <% if (r.accept) { %><button class="btn btn-sm btn-success" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/accept"><i class="ti ti-check me-1"></i><%= t('Accept the entry') %></button><% } %>
+              <% if (r.uphold) { %><button class="btn btn-sm" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/uphold"><i class="ti ti-arrow-back-up me-1"></i><%= t('Back to the reviewers') %></button><% } %>
+              <% if (r.dismiss) { %><button class="btn btn-sm btn-ghost-danger" type="submit"><i class="ti ti-x me-1"></i><%= t('Dismiss') %></button><% } %>
+            </form>
+          <% } %>
+        </div>
+      <% }) %>
     </div>
-    <% if (typeof jury !== 'undefined' && jury && show === 'all') { %><div class="mb-3"><%- include('../../partials/juryProgress', { jury }) %></div><% } %>
-    <% if (show !== 'appeals') { %>
+    <% if (doneA.length) { %>
+      <details class="mt-3"><summary class="z-set-head"><%= t('Settled') %> · <%= formatNumber(doneA.length) %></summary>
+        <div class="z-appeals">
+          <% doneA.forEach((a) => { %>
+            <div class="z-appeal is-done">
+              <div class="d-flex flex-wrap gap-2 align-items-baseline"><a href="<%= base %>/review?entry=<%= a.submission.id %>"><%= a.submission.title %></a><span class="badge bg-<%= statusColor[a.status] %>-lt"><%= statusLabel[a.status] %></span><span class="text-secondary small ms-auto"><%= a.user.username %></span>
+                <% if (can('deleteAnything')) { %><form method="post" action="<%= base %>/appeals/<%= a.id %>/delete" data-confirm="<%= t('Delete this appeal from the log?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Delete') %>"><i class="ti ti-trash"></i></button></form><% } %>
+              </div>
+              <div class="small text-secondary"><%= a.reason %></div>
+              <% if (a.resolvedBy || a.response) { %><div class="small mt-1"><i class="ti ti-message-reply me-1"></i><%= a.resolvedBy ? a.resolvedBy.username : '' %><%= a.response ? ': ' + a.response : '' %></div><% } %>
+            </div>
+          <% }) %>
+        </div>
+      </details>
+    <% } %>
+    </div>
+    </div>
+  </section>
+
+  <% if (staff) { const flagOpen = show !== 'all' && !['appeals', 'mine'].includes(show); %>
+    <details class="card z-sec"<%= flagOpen || flagged.length ? ' open' : '' %>>
+      <summary class="card-header"><h3 class="card-title"><i class="ti ti-shield-search me-2"></i><%= t('Patrol') %><% if (flagged.length) { %> <span class="badge bg-red-lt ms-2"><%= formatNumber(flagged.length) %></span><% } %></h3><i class="ti ti-chevron-down z-sec-caret"></i></summary>
+      <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+          <div class="z-chips me-auto"><% chips.filter(([k]) => !['appeals', 'mine'].includes(k)).forEach(([k, label, n]) => { %><a class="z-chip<%= (show === k || (k === 'all' && !flagOpen)) ? ' is-on' : '' %>" href="<%= base %>/patrol<%= k === 'all' ? '' : '?show=' + k %>"><%= label %> <b><%= formatNumber(n) %></b></a><% }) %></div>
+          <form method="post" action="<%= base %>/patrol/check"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Check all articles now') %></button></form>
+        </div>
       <% if (!shown.length) { %>
-        <div class="card mb-3"><div class="card-body text-secondary"><i class="ti ti-circle-check text-green me-1"></i><%= t('Nothing to look at: no entered article was deleted, redirected, moved or cut down.') %></div></div>
+        <div class="mb-0"><div class="card-body text-secondary"><i class="ti ti-circle-check text-green me-1"></i><%= t('Nothing to look at: no entered article was deleted, redirected, moved or cut down.') %></div></div>
       <% } else { %>
-        <div class="card mb-3"><div class="list-group list-group-flush z-patrol">
+        <div class="mb-0"><div class="list-group list-group-flush z-patrol">
           <% shown.forEach((r) => { const w = r.watch; const st = SUBMISSION_STATUSES[r.status] || { label: r.status, badge: 'secondary' }; %>
             <div class="list-group-item">
               <div class="d-flex flex-wrap align-items-start gap-2">
@@ -43,55 +95,21 @@
                   <% if (!r.flags.includes('deleted')) { %><%- act('refresh', 'refresh', t('Update'), '', '') %><% } %>
                   <% if ((can('manageEvent') || can('manageAppeals')) && ['approved', 'rejected', 'disqualified'].includes(r.status)) { %><%- act('reopen', 'arrow-back-up', t('Review again'), '', t('Clear its reviews and send it back to the reviewers?')) %><% } %>
                   <% if (can('manageEvent')) { %><%- act('withdraw', 'circle-minus', t('Remove'), 'btn-ghost-danger', t('Remove this entry from the event?')) %><% } %>
-                  <%- act('seen', 'eye-check', t('Looked at'), 'btn-ghost-secondary', '', r.flags.length === 1 && ['shrunk', 'grew'].includes(r.flags[0]) ? r.flags[0] : 'state') %>
+                  <% if (!(r.flags.length === 1 && r.flags[0] === 'split')) { %><%- act('seen', 'eye-check', t('Looked at'), 'btn-ghost-secondary', '', r.flags.length === 1 && ['shrunk', 'grew'].includes(r.flags[0]) ? r.flags[0] : 'state') %><% } %>
                 </div>
               </div>
             </div>
           <% }) %>
         </div></div>
       <% } %>
+      </div>
+    </details>
+    <% if (typeof jury !== 'undefined' && jury) { %>
+      <details class="card z-sec">
+        <summary class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('Reviewer progress') %></h3><i class="ti ti-chevron-down z-sec-caret"></i></summary>
+        <div class="card-body"><%- include('../../partials/juryProgress', { jury }) %></div>
+      </details>
     <% } %>
   <% } %>
-  <% if (!staff || show === 'appeals' || show === 'all') { %>
-  <div class="d-flex flex-wrap gap-2 align-items-center mb-3"><div class="h3 m-0 me-auto"><%= t('Appeals') %></div><% ['open', 'upheld', 'dismissed'].forEach((k) => { const n = appeals.filter((a) => a.status === k).length; %><span class="badge bg-<%= statusColor[k] %>-lt"><%= statusLabel[k] %> <%= formatNumber(n) %></span><% }) %></div>
-  <% if (!appeals.length) { %>
-    <div class="card"><%- include('../../partials/emptyArt', { title: t('No appeals'), text: t('Participants can appeal a rejected entry until the appeal deadline.') }) %></div>
-  <% } %>
-  <div class="row row-cards">
-    <% appeals.forEach((a) => { %>
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="flex-fill">
-              <h3 class="card-title"><a href="<%= entryUrl(a.submission) %>" target="_blank" rel="noopener"><%= a.submission.title %></a></h3>
-              <div class="text-secondary small"><%= a.user.username %> · <%= formatDateTime(a.createdAt, contest.timezone) %></div>
-            </div>
-            <span class="badge bg-<%= statusColor[a.status] %>-lt"><%= statusLabel[a.status] %></span>
-            <% if (can('deleteAnything')) { %><form method="post" action="<%= base %>/appeals/<%= a.id %>/delete" class="ms-2" data-confirm="<%= t('Delete this appeal from the log?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" aria-label="<%= t('Delete') %>" title="<%= t('Delete') %>"><i class="ti ti-trash"></i></button></form><% } %>
-          </div>
-          <div class="card-body">
-            <p class="mb-2" style="white-space: pre-line"><%= a.reason %></p>
-            <% if (a.submission.reviews && a.submission.reviews.length) { %><div class="small"><span class="text-secondary"><%= t('Reviews') %>:</span> <% a.submission.reviews.forEach((rv, i) => { %><%= i ? ' · ' : '' %><span class="text-<%= rv.decision === 'accept' ? 'green' : rv.decision === 'reject' ? 'red' : 'secondary' %>"><%= rv.juror ? rv.juror.username : '' %></span><%= rv.comment ? ': ' + rv.comment : '' %><% }) %></div><% } %>
-            <% if (a.status !== 'open') { %>
-              <div class="mt-3 text-secondary small"><i class="ti ti-message-reply me-1"></i><%= a.resolvedBy ? a.resolvedBy.username : '' %><%= a.response ? ': ' + a.response : '' %></div>
-            <% } %>
-          </div>
-          <% if (a.status === 'open' && can('manageAppeals')) { %>
-            <div class="card-footer">
-              <form method="post" class="row g-2 align-items-center" action="<%= base %>/appeals/<%= a.id %>/dismiss">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <div class="col-md"><input class="form-control" name="response" maxlength="2000" placeholder="<%= t('Reply to the participant (optional)') %>"></div>
-                <div class="col-auto btn-list">
-                  <button class="btn btn-success" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/uphold"><i class="ti ti-arrow-back-up me-1"></i><%= t('Uphold: back to the reviewers') %></button>
-                  <button class="btn" type="submit"><i class="ti ti-x me-1"></i><%= t('Dismiss') %></button>
-                </div>
-              </form>
-            </div>
-          <% } %>
-        </div>
-      </div>
-    <% }) %>
-  </div>
-  <% } %>
 </div>
-</div>
+</div></div>

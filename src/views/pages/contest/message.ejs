@@ -4,7 +4,14 @@
   <div class="row row-cards">
     <div class="col-lg-8">
       <% if (error) { %><div class="alert alert-danger" role="alert"><%= error %></div><% } %>
-      <% if (result) { %>
+      <% if (result && result.list) { %>
+        <div class="alert alert-success" role="status">
+          <%= t('List of {n} people saved on the wiki.', { n: formatNumber(result.list.people) }) %>
+          <a href="<%= result.list.pageUrl %>" target="_blank" rel="noopener"><%= result.list.title %></a>
+          <div class="mt-2"><a class="btn btn-primary" href="<%= result.list.sendUrl %>" target="_blank" rel="noopener"><i class="ti ti-send me-1"></i><%= t('Send with Special:MassMessage') %></a></div>
+          <div class="small text-secondary mt-1"><%= t('Sending needs the MassMessage right on that wiki.') %></div>
+        </div>
+      <% } else if (result) { %>
         <div class="alert alert-<%= result.failed.length ? 'warning' : 'success' %>" role="status">
           <%= tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %>
           <% if (result.failed.length) { %>

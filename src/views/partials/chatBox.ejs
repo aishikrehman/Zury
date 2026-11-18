@@ -1,0 +1,33 @@
+<%# A chat card: messages (new ones arrive live, public/js/chat.js) and a box to write at the bottom. %>
+<div class="<%= typeof bare !== 'undefined' && bare ? '' : 'card ' %>z-chat" data-chat data-stream="<%= box.streamUrl %>" data-last="<%= box.lastId %>"<% if (typeof height !== 'undefined') { %> style="--z-chat-h: <%= height %>"<% } %>>
+  <% if (typeof tabs !== 'undefined' && tabs.length) { %>
+    <div class="card-header z-chat-head">
+      <ul class="nav nav-tabs card-header-tabs"><% tabs.forEach(([label, href, on, icon]) => { %><li class="nav-item"><a class="nav-link<%= on ? ' active' : '' %>" href="<%= href %>"><i class="ti ti-<%= icon %> me-1"></i><%= label %></a></li><% }) %></ul>
+      <span class="z-chat-live" title="<%= t('Live') %>"></span>
+    </div>
+  <% } %>
+  <div class="z-chat-warn">
+    <i class="ti ti-alert-triangle"></i><span><%= t('This chat is deleted when the event is archived (its results final).') %></span>
+    <span class="z-chat-tools">
+      <a class="btn btn-sm" href="<%= box.downloadUrl %>"><i class="ti ti-download me-1"></i><%= t('Download') %></a>
+      <% if (box.clearUrl) { %><form method="post" action="<%= box.clearUrl %>" data-confirm="<%= t('Delete every message in this chat? This cannot be undone.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="c" value="<%= box.channel %>"><button class="btn btn-sm btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete this chat') %></button></form><% } %>
+    </span>
+  </div>
+  <div class="card-body z-chat-list" data-chat-list>
+    <% if (box.messages.length >= 50) { %><a class="z-chat-older" href="?<%= box.kind === 'jury' ? 'tab=jury&' : ['series', 'edition'].includes(box.kind) ? 'tab=chat&' : '' %>before=<%= box.messages[0].id %>"><%= t('Earlier messages') %></a><% } %>
+    <% if (!box.messages.length) { %><div class="z-chat-empty" data-chat-empty><i class="ti ti-messages"></i><span><%= t('No messages yet. Say hello!') %></span></div><% } %>
+    <% box.messages.forEach((m, i) => { if (m.hiddenAt) return; const prev = box.messages[i - 1]; %><%- include('./chatMessage', { m, me: currentUser, canHide: box.canHide, hideUrl: box.hideUrl(m.id), cont: prev && !prev.hiddenAt && prev.userId === m.userId && new Date(m.createdAt) - new Date(prev.createdAt) < 5 * 60000 }) %><% }) %>
+  </div>
+  <% if (currentUser) { %>
+    <div class="card-footer z-chat-foot">
+      <form method="post" action="<%= box.sendUrl %>" class="z-chat-form" data-chat-form>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="c" value="<%= box.channel %>">
+        <div class="input-group input-group-flat">
+          <textarea class="form-control" name="body" rows="1" maxlength="1000" placeholder="<%= t('Write a message…') %>" required></textarea>
+          <span class="input-group-text"><button class="btn btn-primary btn-icon z-chat-send" type="submit" title="<%= t('Send') %>" aria-label="<%= t('Send') %>"><i class="ti ti-send"></i></button></span>
+        </div>
+      </form>
+      <div class="z-chat-rules"><i class="ti ti-shield-check"></i> <%= t('Be kind and follow the') %> <a href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Universal_Code_of_Conduct" target="_blank" rel="noopener"><%= t('Universal Code of Conduct') %></a>.</div>
+    </div>
+  <% } %>
+</div>

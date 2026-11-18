@@ -16,6 +16,9 @@
   let appealsOpen = true; try { appealsOpen = ((JSON.parse(settings.participation || '{}').rules) || {}).appealsPublic !== 'no'; } catch (e) {}
   // The Patrol room: appeals, and articles that were deleted, redirected, moved or shrank. Staff always; others for appeals.
   const patrolStaff = typeDef.entries !== false && (can('reviewAppeal') || can('manageAppeals') || can('manageEvent') || canReview);
+  // The chat: its own tab (not once the event is archived).
+  let chatX = {}; try { chatX = JSON.parse(settings.extras || '{}'); } catch (e) {}
+  if (currentUser && contest.status !== 'archived' && (chatX.chat !== false || (patrolStaff && chatX.juryChat !== false))) tabs.push(['chat', t('Chat'), '/chat', 'messages']);
   if (patrolStaff || (settings.appealsEnabled && (appealsOpen || currentUser))) tabs.push(['appeals', t('Patrol room'), '/patrol', 'shield-search', patrolStaff ? 'team' : '']);
   // People and the jury's assignments share one tab.
   const canAssign = typeDef.entries !== false && settings.juryReviewEnabled && (can('assignJury') || can('manageAssignments'));

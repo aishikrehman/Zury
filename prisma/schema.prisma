@@ -835,3 +835,26 @@ model Team {
   @@unique([contestId, name])
 }
 
+
+// Chat: everyone ("all"), an event ("e<id>"), its reviewers ("j<id>"), or two people ("d<low>.<high>").
+model ChatMessage {
+  id         Int       @id @default(autoincrement())
+  channel    String    @db.VarChar(64)
+  userId     Int
+  body       String    @db.VarChar(2000)
+  hiddenAt   DateTime?
+  hiddenById Int?
+  createdAt  DateTime  @default(now())
+
+  @@index([channel, id])
+  @@index([userId, createdAt])
+}
+
+// The last message each person has seen in a channel (for unread counts).
+model ChatRead {
+  userId  Int
+  channel String @db.VarChar(64)
+  lastId  Int    @default(0)
+
+  @@id([userId, channel])
+}

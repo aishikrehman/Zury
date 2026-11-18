@@ -123,11 +123,17 @@ contest.get('/results', reviewController.results);
 contest.post('/results/publish', requireEventWide('publishResults'), reviewController.publish);
 contest.post('/submissions/:submissionId(\\d+)/appeal', entriesOnly, requireAuth, reviewController.appeal);
 contest.get('/patrol', reviewController.appealsList);
+contest.get('/chat/stream', requireAuth, require('../controllers/chatController').eventStream);
+contest.get('/chat', requireAuth, require('../controllers/chatController').eventPage);
+contest.get('/chat/download', requireAuth, require('../controllers/chatController').eventDownload);
+contest.post('/chat/clear', requireAuth, require('../controllers/chatController').eventClear);
+contest.post('/chat/send', requireAuth, require('../controllers/chatController').eventSend);
+contest.post('/chat/:id(\d+)/hide', requireAuth, require('../controllers/chatController').eventHide);
 contest.get('/appeals', (req, res) => res.redirect(301, `${req.base}/patrol`));
 contest.post('/patrol/check', requireAuth, entriesOnly, reviewController.patrolCheck);
 contest.post('/patrol/:submissionId(\\d+)/:action(seen|refresh|reopen|withdraw)', requireAuth, entriesOnly, reviewController.patrolAction);
 contest.post('/appeals/:appealId(\\d+)/delete', requirePermission('deleteAnything'), reviewController.deleteAppeal);
-contest.post('/appeals/:appealId(\\d+)/:action(uphold|dismiss)', requirePermission('manageAppeals'), reviewController.resolve);
+contest.post('/appeals/:appealId(\\d+)/:action(uphold|dismiss|accept)', requireAuth, reviewController.resolve);
 
 contest.get('/sessions', activityOnly, sessionController.index);
 contest.post('/sessions', activityOnly, requirePermission('manageEvent'), sessionController.create);

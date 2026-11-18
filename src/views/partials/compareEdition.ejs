@@ -1,0 +1,19 @@
+<%# This event against the same event of the edition before. %>
+<% const c = compare; const delta = (a, b) => { const d = a - b; return d === 0 ? '' : `<small class="${d > 0 ? 'text-green' : 'text-red'}">${d > 0 ? '+' : '−'}${formatNumber(Math.abs(d))}</small>`; }; %>
+<div class="card mb-3">
+  <div class="card-header"><h3 class="card-title"><i class="ti ti-arrows-diff me-2"></i><%= t('Since last time') %> <small class="text-secondary">(<% if (c.previous.path) { %><a href="<%= c.previous.path %>"><%= digits(c.previous.label) %></a><% } else { %><%= digits(c.previous.label) %><% } %>)</small></h3></div>
+  <div class="card-body">
+    <div class="z-cmp">
+      <% [['Participants', 'people'], ['Entries', 'entries'], ['Accepted', 'accepted'], ['Words', 'words']].forEach(([label, k]) => { %>
+        <div><div class="z-cmp-n"><%= formatNumber(c.now[k]) %> <%- delta(c.now[k], c.then[k]) %></div><div class="text-secondary small"><%= t(label) %> · <%= t('then {n}', { n: formatNumber(c.then[k]) }) %></div></div>
+      <% }) %>
+    </div>
+    <div class="z-cmp-people mt-3">
+      <span class="badge bg-green-lt"><%= t('Came back') %> <%= formatNumber(c.back) %></span>
+      <span class="badge bg-blue-lt"><%= t('New') %> <%= formatNumber(c.fresh) %></span>
+      <span class="badge bg-secondary-lt"><%= t('Did not come back') %> <%= formatNumber(c.gone) %></span>
+    </div>
+    <% if (c.backNames.length) { %><details class="mt-2"><summary class="small"><%= t('Who came back') %></summary><div class="small mt-1"><%= c.backNames.join(', ') %></div></details><% } %>
+    <% if (c.goneNames.length) { %><details class="mt-1"><summary class="small"><%= t('Who did not come back') %></summary><div class="small mt-1"><%= c.goneNames.join(', ') %></div></details><% } %>
+  </div>
+</div>

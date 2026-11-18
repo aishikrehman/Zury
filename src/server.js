@@ -45,6 +45,10 @@ const server = app.listen(env.port, () => {
   const backupNow = () => require('./services/backupService').write('daily').then((f) => console.log(`Backup written: ${f}`)).catch((err) => console.error('Backup failed:', err.message));
   setTimeout(backupNow, 60 * 60 * 1000).unref();
   setInterval(backupNow, 24 * 60 * 60 * 1000).unref();
+  // Chats of archived events, series and editions are deleted, once a day (and soon after start).
+  const chatPrune = () => require('./services/chatService').prune().then((n) => n && console.log(`Chat: ${n} old messages deleted.`)).catch((err) => console.error('Chat prune failed:', err.message));
+  setTimeout(chatPrune, 15 * 60 * 1000).unref();
+  setInterval(chatPrune, 24 * 60 * 60 * 1000).unref();
   // Read notifications older than 90 days are dropped, once a day.
   setInterval(() => require('./services/notificationService').prune().catch(() => {}), 24 * 60 * 60 * 1000).unref();
   setInterval(trackingSweep, TRACKING_SWEEP_MS).unref();
@@ -52,10 +56,12 @@ const server = app.listen(env.port, () => {
   const fountainNow = () => require('./services/fountainService').syncAll().catch((err) => console.error('Fountain sync failed:', err.message));
   setTimeout(fountainNow, 5 * 60 * 1000).unref();
   setInterval(fountainNow, 60 * 60 * 1000).unref();
-  // Entered articles: deletions, redirects and moves; the revision at the end time once an event ends (every 3 hours).
+  // Entered articles: words while running, deletions, redirects and moves; the end-time revision once an event ends (every hour).
   const watchNow = () => require('./services/articleWatchService').sweep().then((n) => n && console.log('Article watch: ' + n + ' entries changed.')).catch((err) => console.error('Article watch failed:', err.message));
   setTimeout(watchNow, 10 * 60 * 1000).unref();
-  setInterval(watchNow, 3 * 60 * 60 * 1000).unref();
+  setInterval(watchNow, 60 * 60 * 1000).unref();
+  // Participants hear 3 days and 1 day before a running event ends.
+  setInterval(() => require('./services/reminderService').sweep().catch((err) => console.error('Reminders failed:', err.message)), 60 * 60 * 1000).unref();
 });
 
 // Hosts stop the app with SIGTERM: finish open requests, close the database, exit.

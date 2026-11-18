@@ -257,6 +257,7 @@ async function updateConfig(req, res, next) {
 async function changeStatus(req, res, next) {
   try {
     await eventService.changeStatus({ actorId: req.user.id, contest: req.contest, settings: req.settings, action: req.body.action, status: req.body.status });
+    if (req.body.action === 'archive') await require('../services/chatService').pruneArchived().catch(() => null);
     req.flash('success', 'Event status updated.');
   } catch (err) {
     if (!handled(err)) return next(err);
@@ -493,8 +494,9 @@ async function unblockUser(req, res, next) {
 const canSeeStats = (req) => req.settings.publicStatisticsEnabled || req.permissions.has('viewStatistics');
 
 // Statistics and analysis: the event's numbers, wikis, reviewers, rules, and the charts.
-function statistics(req, res, next) {
+async function statistics(req, res, next) {
   if (!canSeeStats(req) && !req.permissions.has('reviewEvent') && !req.permissions.has('manageEvent')) return res.status(404).render('pages/404', { title: 'Page Not Found' });
+  res.locals.compare = await require('../services/seriesService').compareWithPrevious(req.contest).catch(() => null);
   return show(req, res, next, 'pages/contest/statistics');
 }
 

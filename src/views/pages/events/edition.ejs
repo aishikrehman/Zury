@@ -1,6 +1,6 @@
 <%
   const base = `/series/${sr.slug}/${edition.slug}`;
-  const tabs = [['overview', 'layout-dashboard', t('Overview')], ['statistics', 'chart-bar', t('Statistics')], ...(canRun ? [['people', 'users', t('Organizers')], ['settings', 'settings', t('Settings')]] : [])];
+  const tabs = [['overview', 'layout-dashboard', t('Overview')], ['statistics', 'chart-bar', t('Statistics')], ['chat', 'messages', t('Chat')], ...(canRun ? [['people', 'users', t('Organizers')], ['settings', 'settings', t('Settings')]] : [])];
   const CYCLES = { annual: 'Annual', season: 'Season', phase: 'Phase', special: 'Special', other: 'Other' };
   const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
   const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
@@ -61,6 +61,8 @@
       <% } %>
 
 
+    <% } else if (tab === 'chat') { %>
+      <% if (typeof levelChat !== 'undefined' && levelChat) { %><%- include('../../partials/chatBox', { box: levelChat, height: '62vh' }) %><% } else { %><div class="card"><div class="card-body text-secondary"><a href="/login"><%= t('Log in') %></a> <%= t('to chat.') %></div></div><% } %>
     <% } else if (tab === 'settings') { %>
       <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/update" class="card mb-3">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">

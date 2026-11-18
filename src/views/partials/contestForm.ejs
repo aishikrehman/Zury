@@ -229,6 +229,12 @@
                 <div class="form-hint"><%= t('A question on one line, its answer below; a blank line before the next.') %></div>
               </div>
             </div>
+            <div class="z-set-head mt-4"><%= t('Chat') %></div>
+            <div class="row g-3">
+              <% const pick = (name, opts, cur) => `<select class="form-select" id="${name}" name="${name}">${opts.map(([k, l]) => `<option value="${k}"${String(cur) === String(k) ? ' selected' : ''}>${h(t(l))}</option>`).join('')}</select>`; %>
+              <div class="col-md-4"><label class="form-label" for="extras_chat"><%= t('Chat for everyone') %></label><%- pick('extras_chat', [['on', 'Yes'], ['off', 'No']], form.extras_chat || 'on') %></div>
+              <div class="col-md-4"><label class="form-label" for="extras_juryChat"><%= t('Reviewers’ room') %></label><%- pick('extras_juryChat', [['on', 'Yes'], ['off', 'No']], form.extras_juryChat || 'on') %></div>
+            </div>
           </section>
           <% } %>
 

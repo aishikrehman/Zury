@@ -43,7 +43,8 @@ async function index(req, res, next) {
     }
     const canRemove = req.permissions.has('maintainSite') && model && !PROTECTED.has(model.name) && model.fields.some((f) => f.isId);
     const status = req.permissions.has('maintainSite') ? await require('../services/maintenanceService').status() : null;
-    res.render('pages/admin/database', { title: 'Database — Zury', tables, view, canRemove, idField: model ? (model.fields.find((f) => f.isId) || {}).name : null, status });
+    const chatCount = require('./chatController').isSuperuser(req) ? await require('../config/prisma').chatMessage.count().catch(() => null) : null;
+    res.render('pages/admin/database', { title: 'Database — Zury', tables, view, canRemove, idField: model ? (model.fields.find((f) => f.isId) || {}).name : null, status, chatCount });
   } catch (err) {
     next(err);
   }

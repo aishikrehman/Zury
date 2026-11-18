@@ -72,6 +72,13 @@
                   <div class="z-pref-save"><button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i><%= t('Save') %></button></div>
                 </div>
               </form>
+              <% const noMass = (() => { try { return !!JSON.parse(me.uiPrefs || '{}').noMass; } catch (e) { return false; } })(); %>
+              <form action="/account/mass-messages" method="post" class="card-footer d-flex flex-wrap align-items-center gap-2">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <span class="small"><%= t('Mass messages') %></span>
+                <select class="form-select form-select-sm w-auto" name="noMass"><option value=""><%= t('Yes') %></option><option value="on"<%= noMass ? ' selected' : '' %>><%= t('No mass messages') %></option></select>
+                <button class="btn btn-sm" type="submit"><%= t('Save') %></button>
+              </form>
             </div>
           </div>
         <% } %>

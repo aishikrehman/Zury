@@ -212,6 +212,39 @@ async function insights(editions, { leaders = 50 } = {}) {
   return { trend, leaders: all.sort(byWords).slice(0, leaders), fame };
 }
 
+// An edition's event against the same event of the edition before (same address, else same wiki):
+// who came back, who is new, who did not come back, and entries and accepted words on both sides.
+async function compareWithPrevious(contest) {
+  if (!contest.editionId) return null;
+  const ed = await prisma.edition.findUnique({ where: { id: contest.editionId }, select: { id: true, seriesId: true, startDate: true, year: true, slug: true, identifier: true } });
+  if (!ed) return null;
+  const eds = await prisma.edition.findMany({ where: { seriesId: ed.seriesId, deletedAt: null, id: { not: ed.id } }, select: { id: true, startDate: true, year: true, slug: true, identifier: true } });
+  const prev = eds.filter((e) => when(e) < when(ed)).sort((a, b) => when(b) - when(a))[0];
+  if (!prev) return null;
+  const cands = await prisma.contest.findMany({ where: { editionId: prev.id, deletedAt: null }, select: { id: true, slug: true, primaryWiki: true, title: true, path: true } });
+  const before = cands.find((c) => c.slug === contest.slug) || cands.find((c) => c.primaryWiki === contest.primaryWiki);
+  if (!before) return null;
+  const side = async (cid) => {
+    const rows = await prisma.submission.groupBy({ by: ['participantId'], where: { contestId: cid, status: { not: 'withdrawn' } }, _count: { _all: true } });
+    const words = await prisma.submission.aggregate({ where: { contestId: cid, status: 'approved' }, _sum: { wordCount: true }, _count: { _all: true } });
+    return { people: new Set(rows.map((r) => r.participantId)), entries: rows.reduce((a, r) => a + r._count._all, 0), accepted: words._count._all, words: words._sum.wordCount || 0 };
+  };
+  const [now, then] = await Promise.all([side(contest.id), side(before.id)]);
+  const back = [...now.people].filter((id) => then.people.has(id));
+  const fresh = [...now.people].filter((id) => !then.people.has(id));
+  const gone = [...then.people].filter((id) => !now.people.has(id));
+  const users = await prisma.user.findMany({ where: { id: { in: [...back, ...gone].slice(0, 400) } }, select: { id: true, username: true } });
+  const name = new Map(users.map((u) => [u.id, u.username]));
+  const names = (ids) => ids.map((id) => name.get(id)).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  return {
+    previous: { label: prev.identifier || prev.slug, title: before.title, path: before.path },
+    now: { people: now.people.size, entries: now.entries, accepted: now.accepted, words: now.words },
+    then: { people: then.people.size, entries: then.entries, accepted: then.accepted, words: then.words },
+    back: back.length, fresh: fresh.length, gone: gone.length,
+    backNames: names(back), goneNames: names(gone),
+  };
+}
+
 // The edition to open for "/<series>/current": the featured one, else one that is running,
 // else the next one coming, else the newest.
 function currentOf(editions) {
@@ -223,6 +256,6 @@ function currentOf(editions) {
 }
 
 module.exports = {
-  insights, currentOf, when,
+  insights, currentOf, when, compareWithPrevious,
   SERIES_STATUSES,
   VISIBILITIES, SeriesError, create, summary, nextEdition, createEdition, listAll, update, remove };

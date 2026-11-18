@@ -105,8 +105,19 @@ async function window(req, res, next) {
     }
     const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, after, filters });
     const id = Number(req.query.entry) || q.nextId;
-    const entry = id ? await reviewService.entryForReview(req.contest.id, id) : null;
+    let entry = id ? await reviewService.entryForReview(req.contest.id, id) : null;
     if (entry && !canJudge(req, entry)) return res.status(404).render('pages/404', { title: 'Submission Not Found' });
+    // While the event runs, the entry's words are counted afresh when it is opened (at most every
+    // two minutes, and never holding the page more than three seconds).
+    const watchSvc = require('../services/articleWatchService');
+    const fx = req.effective.contest;
+    if (entry && entry.entryType === 'article' && watchSvc.running(fx) && !reviewService.resultsFinal(fx)) {
+      const checked = (JSON.parse(entry.metadata || '{}').watch || {}).checkedAt;
+      if (!checked || Date.now() - new Date(checked).getTime() > 120000) {
+        await Promise.race([watchSvc.checkEvent(req.contest, req.eventSettings, { ids: [entry.id] }).catch(() => null), new Promise((ok) => setTimeout(ok, 3000))]);
+        entry = await reviewService.entryForReview(req.contest.id, id);
+      }
+    }
     // Entries brought in with little data (e.g. from Fountain): the page's details are fetched once and kept.
     if (entry && entry.entryType === 'article') {
       let m = {}; try { m = JSON.parse(entry.metadata || '{}'); } catch { m = {}; }
@@ -119,7 +130,7 @@ async function window(req, res, next) {
         }
       }
     }
-    const revMode = require('../services/participationService').read(req.settings).rules.revision === 'latest' ? 'latest' : 'pinned';
+    const revMode = 'pinned';
     let revChanged = false;
     if (entry && revMode === 'pinned' && entry.revId && !reviewService.resultsFinal(req.effective.contest)) {
       const host = require('../wiki/wikiUrls').dbnameToHost(entry.wiki);
@@ -134,7 +145,8 @@ async function window(req, res, next) {
     res.render('pages/contest/review', {
       title: `Review — ${req.contest.title}`,
       handTo,
-      blocked: entry ? await reviewService.reviewBlock(req.eventSettings, entry, req.user.id) : null,
+      juryChat: await require("./chatController").embed(req, res, "jury").catch(() => null),
+      blocked: entry ? await reviewService.reviewBlock(req.eventSettings, entry, req.user.id, { contest: req.effective.contest, permissions: req.permissions }) : null,
       entry,
       meta: entry ? JSON.parse(entry.metadata || '{}') : null,
       preview: pagePreview(entry, req.base),
@@ -182,6 +194,7 @@ async function save(req, res, next) {
       comment: req.body.comment,
       notify: ['auto', 'bell', 'onwiki', 'none'].includes(req.body.notify) ? req.body.notify : 'auto',
       note: String(req.body.note || '').trim().slice(0, 2000),
+      permissions: req.permissions,
     });
     // An on-wiki message to the participant, with the reviewer's own login.
     if (req.body.notify === 'onwiki' && req.session.wikimediaToken && result.decided) {
@@ -319,10 +332,26 @@ async function appealsList(req, res, next) {
         orderBy: { id: 'desc' }, take: 5000,
       });
       flagged = rows.map((r) => ({ ...r, flags: watch.flagsOf(r), watch: (JSON.parse(r.metadata || '{}').watch) || {} })).filter((r) => r.flags.length);
+      const split = await prisma.submission.findMany({
+        where: { contestId: req.contest.id, status: 'under_review', AND: [{ reviews: { some: { decision: 'accept' } } }, { reviews: { some: { decision: 'reject' } } }], ...(wikis && { wiki: { in: wikis } }) },
+        select: { id: true, title: true, wiki: true, url: true, status: true, revId: true, wordCount: true, metadata: true, participant: { select: { username: true } } },
+        take: 500,
+      });
+      for (const r of split) {
+        const have = flagged.find((x) => x.id === r.id);
+        if (have) have.flags.push('split');
+        else flagged.push({ ...r, flags: ['split'], watch: {} });
+      }
     }
-    const show = ['all', 'deleted', 'redirect', 'moved', 'shrunk', 'grew', 'appeals'].includes(req.query.show) ? req.query.show : 'all';
+    const show = ['all', 'deleted', 'redirect', 'moved', 'shrunk', 'grew', 'split', 'appeals', 'mine'].includes(req.query.show) ? req.query.show : 'all';
+    // Who may do what on each open appeal (reviewers of the entry, organizers).
+    const rights = {};
+    if (req.user) for (const a of list.filter((x) => x.status === 'open')) rights[a.id] = await reviewService.appealRights({ actor: req.user, permissions: req.permissions, appeal: a });
+    // The chat beside it: the room asked for (the reviewers' room for those who have it), else everyone's.
+    // Which tab of the one card: a chat, the patrol list or the appeals (older links with ?show= still land right).
+    const juryChat = null;
     const jury = staff && req.settings.juryReviewEnabled ? await Promise.all([reviewService.progress(req.contest.id, { wiki: req.wikiScope?.wiki }), reviewService.juryActivity(req.contest.id, { wiki: req.wikiScope?.wiki })]).then(([progress, activity]) => ({ progress, activity })).catch(() => null) : null;
-    res.render('pages/contest/appeals', { title: `${req.t('Patrol room')} — ${req.contest.title}`, appeals: list, flagged, staff, show, jury });
+    res.render('pages/contest/appeals', { title: `${req.t('Patrol room')} — ${req.contest.title}`, appeals: list, flagged, staff, show, jury, rights, juryChat });
   } catch (err) {
     next(err);
   }
@@ -330,8 +359,8 @@ async function appealsList(req, res, next) {
 
 async function resolve(req, res, next) {
   try {
-    await reviewService.resolveAppeal({ actor: req.user, contest: req.contest, appealId: Number(req.params.appealId), action: req.params.action, response: req.body.response });
-    req.flash('success', req.params.action === 'uphold' ? 'Appeal upheld; the entry goes back to the reviewers.' : 'Appeal dismissed.');
+    await reviewService.resolveAppeal({ actor: req.user, contest: req.effective ? req.effective.contest : req.contest, appealId: Number(req.params.appealId), action: req.params.action, response: req.body.response, permissions: req.permissions, settings: req.eventSettings });
+    req.flash('success', { uphold: 'Appeal upheld; the entry goes back to the reviewers.', dismiss: 'Appeal dismissed.', accept: 'Appeal accepted; the entry is accepted.' }[req.params.action]);
   } catch (err) {
     if (!(err instanceof ReviewError)) return next(err);
     req.flash('danger', err.message);
@@ -488,6 +517,7 @@ async function patrolAction(req, res, next) {
   const back = `${req.base}/patrol${req.body.show ? `?show=${encodeURIComponent(req.body.show)}` : ''}`;
   try {
     if (!patrolStaff(req)) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
+    if (reviewService.archivedFor(req.effective.contest, req.permissions)) throw new ReviewError('This event is archived.');
     const s1 = await prisma.submission.findFirst({ where: { id: Number(req.params.submissionId), contestId: req.contest.id } });
     if (!s1) return next();
     const watch = require('../services/articleWatchService');
@@ -496,7 +526,7 @@ async function patrolAction(req, res, next) {
       await watch.markSeen(s1, ['shrunk', 'grew'].includes(req.body.flag) ? req.body.flag : 'state');
       req.flash('success', req.t('Marked as looked at.'));
     } else if (action === 'refresh') {
-      if (reviewService.resultsFinal(req.effective.contest)) throw new ReviewError('The event is archived, so the revision can no longer change.');
+      if (reviewService.resultsFinal(req.effective.contest)) throw new ReviewError('Results are locked, so the words and revision can no longer change.');
       await watch.checkEvent(req.contest, req.eventSettings, { force: true, ids: [s1.id] });
       req.flash('success', req.t('Brought up to date from the wiki.'));
     } else if (action === 'reopen') {

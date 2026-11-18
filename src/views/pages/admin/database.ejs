@@ -42,6 +42,12 @@
               <div class="flex-fill"><div><%= t('Activity log older than a year') %></div><div class="text-secondary small"><%= status.oldestLog ? t('Oldest: {date}', { date: formatDate(status.oldestLog) }) : '—' %></div></div>
               <form method="post" action="/admin/maintenance/clean/activity" data-confirm="<%= t('Remove activity log rows older than a year?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><%= t('Remove') %></button></form>
             </div>
+            <% if (typeof chatCount !== 'undefined' && chatCount !== null) { %>
+            <div class="list-group-item d-flex align-items-center gap-2">
+              <div class="flex-fill"><div><%= t('All chat messages') %></div><div class="text-secondary small"><%= formatNumber(chatCount) %></div></div>
+              <form method="post" action="/chat/clear" data-confirm="<%= t('Delete every chat message on Zury? This cannot be undone.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="all" value="1"><input type="hidden" name="back" value="/admin/database"><button class="btn btn-sm btn-ghost-danger" type="submit"<%= chatCount ? '' : ' disabled' %>><%= t('Remove') %></button></form>
+            </div>
+            <% } %>
           </div>
         </div>
               </div>

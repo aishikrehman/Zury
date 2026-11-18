@@ -1,8 +1,8 @@
 // Keeps entered articles in step with their wikis.
-// - Revision rule "live" (the default): once the event ends, each article is pinned to the
-//   revision it had at the end time (asked of the wiki by time, so a late check gives the same
-//   answer), and its words are counted from that revision. Reviewers and organizers can still
-//   bring one up to date by hand.
+// - Words: while the event runs, each article's words follow the wiki (latest revision). Once it
+//   ends, each is pinned to the revision it had at the end time (asked of the wiki by time, so a
+//   late check gives the same answer). Reviewers can still bring one up to date by hand until the
+//   results are locked; after that (or once archived) words and revisions never change.
 // - Always (also for some time after the end): a deleted article, one turned into a redirect, or
 //   one moved to a new title is marked; a move brings the new title along.
 // - A decided entry whose article shrank a lot afterwards is marked for a second look.
@@ -21,7 +21,7 @@ const pageIdOf = (s, m) => m.pageId || Number(String(s.pageKey || '').split(':')
 
 function ruleOf(settings) {
   const r = participation.read(settings).rules;
-  return { revision: r.revision || 'live', ownWords: r.ownWords === 'on' };
+  return { revision: 'live', ownWords: r.ownWords === 'on' };
 }
 
 // Is the event still running (entries still follow the wiki)?
@@ -41,8 +41,9 @@ async function pageInfo(wiki, ids) {
 // Checks the entries of one event; returns how many changed.
 async function checkEvent(contest, settings, { force = false, ids = null } = {}) {
   const live = running(contest);
-  const { revision, ownWords } = ruleOf(settings);
-  const pinEnd = !live && revision === 'live' && contest.endDate;
+  const { ownWords } = ruleOf(settings);
+  const frozen = contest.status === 'archived' || !!contest.resultsPublishedAt;
+  const pinEnd = !live && !frozen && contest.endDate;
   const entries = await prisma.submission.findMany({
     where: { contestId: contest.id, entryType: 'article', status: { not: 'withdrawn' }, ...(ids && { id: { in: ids } }) },
     select: { id: true, wiki: true, title: true, pageKey: true, revId: true, wordCount: true, status: true, metadata: true, participantId: true, url: true },
@@ -101,8 +102,8 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
               meta = { ...meta, sizeBytes: at.size, pinnedAtEnd: at.timestamp, wordCount: words };
             }
           }
-          // By hand (reviewers, organizers): the latest revision, words and all.
-          if (force && p.lastrevid && p.lastrevid !== s.revId) {
+          // While running, and by hand (reviewers, organizers) until locked: the latest revision, words and all.
+          if (!frozen && (force || live) && p.lastrevid && p.lastrevid !== s.revId) {
             const fresh = await require('../wiki/entryMetadata').fetchEntryMetadata({ wiki, pageId: pid }, { language: contest.language, wordCountMethod: settings.wordCountMethod || 'auto' }).catch(() => null);
             if (fresh && fresh.exists) {
               data.revId = fresh.revId ?? p.lastrevid;

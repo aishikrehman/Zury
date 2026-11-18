@@ -292,3 +292,8 @@
 </div>
 </div></div>
 </div></div>
+<% if (typeof juryChat !== 'undefined' && juryChat) { %>
+  <details class="z-chat-float"><summary class="btn btn-primary"><i class="ti ti-messages me-1"></i><%= t('Reviewers’ room') %></summary>
+    <div class="z-chat-float-box"><%- include('../../partials/chatBox', { box: juryChat, height: '45vh' }) %></div>
+  </details>
+<% } %>

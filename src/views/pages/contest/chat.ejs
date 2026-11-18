@@ -1,0 +1,7 @@
+<%- include('../../partials/contestHeader', { active: 'chat' }) %>
+<div class="page-body"><div class="container-xl">
+  <%- include('../../partials/chatBox', { box: chatBox, height: '60vh', tabs: [
+    ...(rooms.event ? [[t('Everyone'), base + '/chat', room === 'event', 'messages']] : []),
+    ...(rooms.jury ? [[t('Reviewers and organizers'), base + '/chat?room=jury', room === 'jury', 'lock']] : []),
+  ] }) %>
+</div></div>
