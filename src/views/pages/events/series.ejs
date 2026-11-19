@@ -5,7 +5,6 @@
     ['editions', 'calendar', t('Editions')],
     ['events', 'calendar-event', t('Direct events')],
     ['statistics', 'chart-bar', t('Statistics')],
-    ['chat', 'messages', t('Chat')],
     ...(canRun ? [['people', 'users', t('Organizers')], ['settings', 'settings', t('Settings')]] : []),
   ];
   const json = (s, d) => { try { return JSON.parse(s || '') || d; } catch (e) { return d; } };
@@ -120,8 +119,6 @@
         </div></div>
       <% } %>
 
-    <% } else if (tab === 'chat') { %>
-      <% if (typeof levelChat !== 'undefined' && levelChat) { %><%- include('../../partials/chatBox', { box: levelChat, height: '62vh' }) %><% } else { %><div class="card"><div class="card-body text-secondary"><a href="/login"><%= t('Log in') %></a> <%= t('to chat.') %></div></div><% } %>
     <% } else if (tab === 'statistics') { %>
       <% if (canRun && fountainCount) { %><form method="post" action="/series/<%= series.slug %>/fountain-sync" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Update all from Fountain') %> (<%= formatNumber(fountainCount) %>)</button></form><% } %>
       <%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
@@ -168,3 +165,4 @@
     <% } %>
   </div>
 </div>
+<% if (typeof levelChat !== 'undefined' && levelChat) { %><%- include('../../partials/chatLaunch', { panelUrl: '/chat/panel?c=' + levelChat }) %><% } %>

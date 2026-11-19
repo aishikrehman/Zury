@@ -40,8 +40,10 @@ async function table(contest, settings, dataset, { wiki } = {}) {
   throw new Error('Unknown dataset.');
 }
 
+// A cell that starts like a formula (= + - @) is written as text, so a spreadsheet never runs it.
+const noFormula = (v) => (typeof v === 'string' && /^[=+\-@\t\r]/.test(v) && !/^-?\d+(\.\d+)?$/.test(v) ? `'${v}` : v);
 const esc = {
-  csv: (v) => (/[",\n\r]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v)),
+  csv: (v0) => { const v = noFormula(v0); return /[",\n\r]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v); },
   xml: (v) => String(v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])),
   wiki: (v) => String(v).replace(/\|/g, '&#124;').replace(/\n/g, ' '),
   md: (v) => String(v).replace(/\|/g, '\\|').replace(/\n/g, ' '),

@@ -40,6 +40,8 @@ const CLIENT_STRINGS = [
   'The edition’s event: its address is the edition’s.',
   'has its event',
   'Locked by the series or edition',
+  'Notification',
+  'Could not load the chat. Reload the page, or log in again.',
 ];
 
 // { English: translation } for one language, safe to put inside a <script> element.

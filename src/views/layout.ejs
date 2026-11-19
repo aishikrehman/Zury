@@ -37,7 +37,7 @@
   <link rel="stylesheet" href="/css/style.css?v=<%= assetV %>">
   <link rel="stylesheet" href="/icons/icons.css?v=<%= assetV %>">
 </head>
-<body>
+<body<%- currentUser && features.toasts ? ` data-live="${features.checkSeconds}"` : '' %>>
   <a href="#content" class="visually-hidden-focusable skip-link"><%= t("Skip to main content") %></a>
   <%- include('partials/header', { navItems }) %>
 
@@ -53,7 +53,6 @@
   </main>
 
   <%- include('partials/footer') %>
-  <%- include('partials/a11y') %>
   <script type="application/json" id="zury-i18n"><%- clientStrings %></script>
   <script src="/js/i18n.js?v=<%= assetV %>" defer></script>
   <script src="/vendor/tabler/js/tabler.min.js" defer></script>

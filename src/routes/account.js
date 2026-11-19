@@ -21,6 +21,6 @@ router.post('/account/mass-messages', require('../middleware/auth').requireAuth,
     p.noMass = req.body.noMass === 'on';
     await prisma.user.update({ where: { id: req.user.id }, data: { uiPrefs: JSON.stringify(p) } });
     req.flash('success', p.noMass ? 'You will not get mass messages.' : 'You will get mass messages again.');
-    res.redirect(req.get('Referer') || '/account');
+    res.redirect('/settings#messages');
   } catch (err) { next(err); }
 });

@@ -249,7 +249,7 @@ function reviewWikis(req) {
 // After an action from the list, go back to the same list page (only within this event).
 function backTo(req, fallback) {
   const back = typeof req.body.back === 'string' ? req.body.back : '';
-  return back.startsWith(`${req.base}/`) && !back.startsWith('//') && !/[\r\n]/.test(back) ? back : fallback;
+  return back.startsWith(`${req.base}/`) && require('../utils/safePath').isLocalPath(back) ? back : fallback;
 }
 
 async function load(req) {
@@ -341,6 +341,7 @@ async function destroy(req, res, next) {
 async function destroyReview(req, res, next) {
   try {
     const review = require('../services/reviewService');
+    if (review.archivedFor(req.effective ? req.effective.contest : req.contest, req.permissions)) { req.flash('danger', req.t('This event is archived.')); return res.redirect(`${req.base}/review?entry=${req.params.submissionId}`); }
     const r = await prisma.review.findFirst({ where: { id: Number(req.params.reviewId), submissionId: Number(req.params.submissionId), contestId: req.contest.id }, include: { juror: { select: { username: true } } } });
     if (r) {
       await prisma.review.delete({ where: { id: r.id } });
@@ -351,7 +352,7 @@ async function destroyReview(req, res, next) {
       await require('../services/auditService').record({ actorId: req.user.id, contestId: req.contest.id, action: 'review.deleted', entityType: 'Submission', entityId: s.id, details: { title: s.title, juror: r.juror.username, decision: r.decision } });
       req.flash('success', req.t('Review deleted; the entry was decided again.'));
     }
-    res.redirect(`${req.base}/submissions`);
+    res.redirect(`${req.base}/review?entry=${req.params.submissionId}`);
   } catch (err) {
     next(err);
   }

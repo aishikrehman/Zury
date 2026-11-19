@@ -116,11 +116,14 @@ async function dashboard(req, res, next) {
 }
 
 const { userPath } = require('../utils/format');
-const prefsUrl = (req, query = '') => `${userPath(req.user.username)}${query}#preferences`;
+const prefsUrl = (req, query = '') => `/settings${query}`;
 
-// Preferences live on your own profile.
+// Settings: account, display and accessibility, messages.
 function showSettings(req, res) {
-  res.redirect(prefsUrl(req, req.query.saved === '1' ? '?saved=1' : ''));
+  res.render('pages/account/settings', {
+    title: 'Settings — Zury',
+    prefs: { values: { preferredLanguage: req.user.preferredLanguage, timezone: req.user.timezone }, errors: {}, saved: req.query.saved === '1', timezones: require('../utils/time').TIMEZONES },
+  });
 }
 
 async function updateSettings(req, res, next) {

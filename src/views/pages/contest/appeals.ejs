@@ -11,7 +11,9 @@
     const shown = show === 'all' ? flagged : ['appeals', 'mine'].includes(show) ? [] : flagged.filter((r) => r.flags.includes(show));
 %>
 <%# The Patrol room: appeals first; below, the patrol list and reviewer progress as sections that fold. %>
-<div class="z-patrol-stack">
+<% const flagOpen = show !== 'all' && !['appeals', 'mine'].includes(show); %>
+<div class="row g-3 z-patrol-grid">
+  <div class="<%= staff ? 'col-lg-8' : 'col-12' %>">
   <section class="card z-sec">
     <div class="card-header"><h3 class="card-title"><i class="ti ti-scale me-2"></i><%= t('Appeals') %><% if (openAppeals) { %> <span class="badge bg-red-lt ms-2"><%= formatNumber(openAppeals) %></span><% } %></h3>
       <% if (mineCount) { %><div class="card-actions z-chips"><a class="z-chip<%= show !== 'mine' ? ' is-on' : '' %>" href="<%= base %>/patrol"><%= t('All') %></a><a class="z-chip<%= show === 'mine' ? ' is-on' : '' %>" href="<%= base %>/patrol?show=mine"><%= t('On my reviews') %> <b><%= formatNumber(mineCount) %></b></a></div><% } %>
@@ -59,17 +61,32 @@
       </details>
     <% } %>
     </div>
-    </div>
   </section>
-
-  <% if (staff) { const flagOpen = show !== 'all' && !['appeals', 'mine'].includes(show); %>
-    <details class="card z-sec"<%= flagOpen || flagged.length ? ' open' : '' %>>
-      <summary class="card-header"><h3 class="card-title"><i class="ti ti-shield-search me-2"></i><%= t('Patrol') %><% if (flagged.length) { %> <span class="badge bg-red-lt ms-2"><%= formatNumber(flagged.length) %></span><% } %></h3><i class="ti ti-chevron-down z-sec-caret"></i></summary>
-      <div class="card-body">
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-          <div class="z-chips me-auto"><% chips.filter(([k]) => !['appeals', 'mine'].includes(k)).forEach(([k, label, n]) => { %><a class="z-chip<%= (show === k || (k === 'all' && !flagOpen)) ? ' is-on' : '' %>" href="<%= base %>/patrol<%= k === 'all' ? '' : '?show=' + k %>"><%= label %> <b><%= formatNumber(n) %></b></a><% }) %></div>
-          <form method="post" action="<%= base %>/patrol/check"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Check all articles now') %></button></form>
+  </div>
+  <% if (staff) { %>
+    <aside class="col-lg-4 d-flex flex-column gap-3">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><i class="ti ti-shield-search me-2"></i><%= t('Patrol') %></h3>
+          <div class="card-actions"><form method="post" action="<%= base %>/patrol/check"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-icon" type="submit" title="<%= t('Check all articles now') %>" aria-label="<%= t('Check all articles now') %>"><i class="ti ti-refresh"></i></button></form></div>
         </div>
+        <div class="card-body z-flag-grid">
+          <% Object.keys(FLAGS).forEach((k) => { const [label, icon, color] = FLAGS[k]; const n = countOf(k); %>
+            <a class="z-flag<%= show === k ? ' is-on' : '' %><%= n ? '' : ' is-zero' %>" href="<%= base %>/patrol?show=<%= k %>#patrol-list"><i class="ti ti-<%= icon %> text-<%= color %>"></i><b><%= formatNumber(n) %></b><span><%= t(label) %></span></a>
+          <% }) %>
+        </div>
+      </div>
+      <% if (typeof jury !== 'undefined' && jury) { %>
+        <details class="card z-sec">
+          <summary class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('Reviewer progress') %></h3><i class="ti ti-chevron-down z-sec-caret"></i></summary>
+          <div class="card-body"><%- include('../../partials/juryProgress', { jury }) %></div>
+        </details>
+      <% } %>
+    </aside>
+    <% if (flagged.length || flagOpen) { %>
+      <div class="col-12" id="patrol-list">
+        <details class="card z-sec" open>
+          <summary class="card-header"><h3 class="card-title"><i class="ti ti-list-search me-2"></i><%= flagOpen ? t(FLAGS[show] ? FLAGS[show][0] : 'Patrol') : t('Articles to look at') %> <span class="badge bg-secondary-lt ms-2"><%= formatNumber(shown.length) %></span></h3><% if (flagOpen) { %><a class="small me-3" href="<%= base %>/patrol#patrol-list"><%= t('All') %></a><% } %><i class="ti ti-chevron-down z-sec-caret"></i></summary>
+          <div class="card-body p-0">
       <% if (!shown.length) { %>
         <div class="mb-0"><div class="card-body text-secondary"><i class="ti ti-circle-check text-green me-1"></i><%= t('Nothing to look at: no entered article was deleted, redirected, moved or cut down.') %></div></div>
       <% } else { %>
@@ -102,13 +119,9 @@
           <% }) %>
         </div></div>
       <% } %>
+          </div>
+        </details>
       </div>
-    </details>
-    <% if (typeof jury !== 'undefined' && jury) { %>
-      <details class="card z-sec">
-        <summary class="card-header"><h3 class="card-title"><i class="ti ti-users me-2"></i><%= t('Reviewer progress') %></h3><i class="ti ti-chevron-down z-sec-caret"></i></summary>
-        <div class="card-body"><%- include('../../partials/juryProgress', { jury }) %></div>
-      </details>
     <% } %>
   <% } %>
 </div>

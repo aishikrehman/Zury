@@ -84,6 +84,7 @@ async function send({ actor, accessToken, contest, method, subject, body, people
     return { sent: people.length, failed: [] };
   }
   if (!accessToken) throw new MessageError('Log in with your Wikimedia account to send messages.');
+  if (method === 'massmessage' && !require('./featureService').now().massMessages) throw new MessageError('Choose how to send the message.');
   if (method === 'massmessage') return massList({ actor, accessToken, contest, subject, body, people, wiki: fallbackWiki });
   if (people.length > MAX_RECIPIENTS) throw new MessageError(`At most ${MAX_RECIPIENTS} people at a time.`);
 

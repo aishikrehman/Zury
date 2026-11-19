@@ -1,0 +1,49 @@
+<%- include('../../partials/accountHeader', { tab: 'settings' }) %>
+<% const me = currentUser; const noMass = (() => { try { return !!JSON.parse(me.uiPrefs || '{}').noMass; } catch (e) { return false; } })();
+   const sections = [['account', 'user-circle', t('Account')], ['display', 'accessible', t('Display and accessibility')], ['messages', 'mail', t('Messages')]]; %>
+<div class="col-12"><div class="row g-4 z-settings">
+  <aside class="col-lg-3">
+    <nav class="z-mail-nav z-settings-nav card p-2">
+      <% sections.forEach(([k, icon, label], i) => { %><a href="#<%= k %>" class="<%= i === 0 ? 'active' : '' %>"><i class="ti ti-<%= icon %>"></i><span><%= label %></span></a><% }) %>
+    </nav>
+  </aside>
+  <div class="col-lg-9 d-flex flex-column gap-3">
+    <section class="card" id="account">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-user-circle me-2"></i><%= t('Account') %></h3></div>
+      <div class="card-body">
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+          <%- include('../../partials/avatar', { u: me, size: 'xl' }) %>
+          <form action="/settings/avatar" method="post" class="flex-fill" style="max-width: 28rem">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label class="form-label" for="avatar-file"><%= t('Profile picture') %></label>
+            <div class="input-group"><input class="form-control" id="avatar-file" name="file" placeholder="<%= t('File:Example.jpg') %>" maxlength="250"><button class="btn" type="submit"><%= t('Use this picture') %></button><% if (me.avatarUrl) { %><button class="btn btn-ghost-danger" type="submit" name="remove" value="1" title="<%= t('Remove picture') %>" aria-label="<%= t('Remove picture') %>"><i class="ti ti-trash"></i></button><% } %></div>
+            <div class="form-hint"><%= t('A file name on Wikimedia Commons.') %></div>
+          </form>
+        </div>
+        <form action="/settings" method="post" novalidate>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% if (prefs.saved) { %><div class="text-green small mb-2"><i class="ti ti-circle-check me-1"></i><%= t('Preferences saved.') %></div><% } %>
+          <div class="row g-3 align-items-end">
+            <div class="col-md-5"><label for="preferredLanguage" class="form-label"><%= t('Preferred language') %></label>
+              <select id="preferredLanguage" name="preferredLanguage" data-picker="language" placeholder="<%= t('Search languages…') %>" class="form-select"><option value=""><%= t('Default') %></option><% if (prefs.values.preferredLanguage) { %><option value="<%= prefs.values.preferredLanguage %>" selected><%= langLocal(prefs.values.preferredLanguage) %></option><% } %></select></div>
+            <div class="col-md-5"><label for="timezone" class="form-label"><%= t('Timezone') %></label>
+              <select id="timezone" name="timezone" class="form-select"><option value=""><%= t('Not set') %></option><% prefs.timezones.forEach((tz) => { %><option value="<%= tz %>"<%= prefs.values.timezone === tz ? ' selected' : '' %>><%= tz %></option><% }) %></select></div>
+            <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><%= t('Save') %></button></div>
+          </div>
+        </form>
+      </div>
+    </section>
+    <section id="display"><%- include('../../partials/a11y', { displayNext: '/settings#display' }) %></section>
+    <section class="card" id="messages">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-mail me-2"></i><%= t('Messages') %></h3></div>
+      <form action="/account/mass-messages" method="post" class="card-body row g-3 align-items-end">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="col-md-6"><label class="form-label" for="noMass"><%= t('Mass messages from organizers') %></label>
+          <select class="form-select" id="noMass" name="noMass"><option value=""><%= t('Yes') %></option><option value="on"<%= noMass ? ' selected' : '' %>><%= t('No mass messages') %></option></select></div>
+        <div class="col-md-2"><button class="btn w-100" type="submit"><%= t('Save') %></button></div>
+        <div class="col-12 form-hint m-0"><%= t('Zury notifications and chats are in your inbox.') %> <a href="/inbox"><%= t('Inbox') %></a></div>
+      </form>
+    </section>
+  </div>
+</div></div>
+<%- include('../../partials/accountEnd') %>

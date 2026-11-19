@@ -102,6 +102,7 @@ app.use((req, res, next) => {
   // English until the language is known (errors can happen before that).
   Object.assign(res.locals, { t: require('./i18n').translator('en'), lang: require('./i18n').LANGUAGES.en, LANGUAGES: require('./i18n').LANGUAGES, formatNumber: (n) => String(n), clientStrings: '{}', th: (text) => text, h: (v) => String(v), tn: (one, other, n) => (n === 1 ? one : other).replace('{n}', n) });
   res.locals.csrfToken = '';
+  res.locals.features = require('./services/featureService').now();
   res.locals.can = () => false;
   res.locals.currentPath = req.path;
   // The site's own address, for canonical links and sharing cards.
@@ -181,6 +182,7 @@ app.use(async (req, res, next) => {
   }
 });
 app.use(displayPreferences);
+app.use(require('./services/featureService').middleware);
 app.use(csrfProtection);
 app.use(flashMessages);
 

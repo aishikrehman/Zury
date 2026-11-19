@@ -145,7 +145,6 @@ async function window(req, res, next) {
     res.render('pages/contest/review', {
       title: `Review — ${req.contest.title}`,
       handTo,
-      juryChat: await require("./chatController").embed(req, res, "jury").catch(() => null),
       blocked: entry ? await reviewService.reviewBlock(req.eventSettings, entry, req.user.id, { contest: req.effective.contest, permissions: req.permissions }) : null,
       entry,
       meta: entry ? JSON.parse(entry.metadata || '{}') : null,
@@ -290,7 +289,8 @@ async function publish(req, res, next) {
     const published = req.body.published === '1';
     await reviewService.setResultsPublished({ actor: req.user, contest: req.contest, published });
     req.flash('success', published ? 'Results published.' : 'Results hidden again.');
-    res.redirect(`${req.base}/results`);
+    const ref = req.get('Referer') || '';
+    res.redirect(ref.includes(req.base) ? ref : `${req.base}/results`);
   } catch (err) {
     next(err);
   }
@@ -514,7 +514,7 @@ const releaseJuror = assignmentAction(async (req) => {
 
 // Patrol room actions on one entry: looked at, back to the reviewers, out of the event, or brought up to date from the wiki.
 async function patrolAction(req, res, next) {
-  const back = `${req.base}/patrol${req.body.show ? `?show=${encodeURIComponent(req.body.show)}` : ''}`;
+  const back = req.body.back === 'review' ? `${req.base}/review?entry=${req.params.submissionId}` : `${req.base}/patrol${req.body.show ? `?show=${encodeURIComponent(req.body.show)}` : ''}`;
   try {
     if (!patrolStaff(req)) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
     if (reviewService.archivedFor(req.effective.contest, req.permissions)) throw new ReviewError('This event is archived.');

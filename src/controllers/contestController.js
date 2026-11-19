@@ -257,13 +257,17 @@ async function updateConfig(req, res, next) {
 async function changeStatus(req, res, next) {
   try {
     await eventService.changeStatus({ actorId: req.user.id, contest: req.contest, settings: req.settings, action: req.body.action, status: req.body.status });
-    if (req.body.action === 'archive') await require('../services/chatService').pruneArchived().catch(() => null);
+    if (req.body.action === 'archive') {
+      if (!req.contest.resultsPublishedAt) await require('../services/reviewService').setResultsPublished({ actor: req.user, contest: req.contest, published: true }).catch(() => null);
+      await require('../services/chatService').pruneArchived().catch(() => null);
+    }
     req.flash('success', 'Event status updated.');
   } catch (err) {
     if (!handled(err)) return next(err);
     req.flash('danger', err.message);
   }
-  res.redirect(back(req, '/config'));
+  const ref = req.get('Referer') || '';
+  res.redirect(ref.includes(req.base) ? ref : back(req, '/config'));
 }
 
 // Move into another event: first a confirmation page with what will move, then the move.

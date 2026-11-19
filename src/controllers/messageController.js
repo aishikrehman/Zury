@@ -10,7 +10,7 @@ function render(req, res, { form = {}, people = null, result = null, error = nul
     people,
     result,
     error,
-    methods: messageService.METHODS,
+    methods: res.locals.features.massMessages ? messageService.METHODS : Object.fromEntries(Object.entries(messageService.METHODS).filter(([k]) => k !== 'massmessage')),
     audiences: messageService.AUDIENCES,
     maxRecipients: messageService.MAX_RECIPIENTS,
     hasToken: !!req.session.wikimediaToken,

@@ -29,17 +29,27 @@
 
       <% if (currentUser) { %>
         <div class="dropdown" data-notifications data-bell-known="<%= unreadNotifications || 0 %>">
-          <button class="z-bell-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t('Notifications') %><%= unreadNotifications ? ` (${unreadNotifications})` : '' %>" title="<%= t('Notifications') %>">
-            <i class="ti ti-bell"></i><% if (unreadNotifications) { %><span class="z-bell-count" data-bell-count><%= unreadNotifications > 99 ? '99+' : formatNumber(unreadNotifications) %></span><% } %>
+          <button class="z-bell-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t('Inbox') %><%= unreadNotifications ? ` (${unreadNotifications})` : '' %>" title="<%= t('Inbox') %>">
+            <i class="ti ti-inbox"></i><span class="z-chat-dot" data-chat-dot<%= unreadRooms ? '' : ' hidden' %>></span><% if (unreadNotifications) { %><span class="z-bell-count" data-bell-count><%= unreadNotifications > 99 ? '99+' : formatNumber(unreadNotifications) %></span><% } %>
           </button>
           <div class="dropdown-menu dropdown-menu-end z-bell-menu">
+            <%# Head: notifications here, chats one tap away; the sound switch. Foot: mark read, see all. %>
             <div class="z-bell-head">
-              <strong><%= t('Notifications') %></strong>
-              <button class="z-bell-readall" type="button" data-bell-read-all<%= unreadNotifications ? '' : ' hidden' %>><%= t('Mark all as read') %></button>
+              <nav class="z-mail-switch flex-fill">
+                <a class="active" href="/notifications"><i class="ti ti-bell"></i><%= t('Notifications') %></a>
+                <% if (features.inbox) { %><a href="/inbox"><i class="ti ti-messages"></i><%= t('Chats') %><% if (unreadRooms) { %><b><%= formatNumber(unreadRooms) %></b><% } %></a><% } %>
+              </nav>
               <button class="z-bell-sound" type="button" data-bell-sound title="<%= t('Sound') %>" aria-label="<%= t('Sound') %>" aria-pressed="true"><i class="ti ti-volume"></i></button>
-              <a class="z-bell-link" href="/notifications"><%= t('See all') %></a>
             </div>
-            <div data-bell-list><div class="z-bell-empty"><%= t('Loading…') %></div></div>
+            <div data-bell-list>
+              <% const bell = typeof bellNotes !== 'undefined' ? bellNotes : []; %>
+              <% if (!bell.length) { %><div class="z-bell-empty"><%= t('No notifications yet') %></div><% } %>
+              <% bell.forEach((n) => { %><a class="dropdown-item z-bell-item z-note-<%= n.level %><%= n.unread ? ' z-unread' : '' %>" href="<%= n.href %>"><span class="z-note-icon ti ti-<%= ({ good: 'circle-check', urgent: 'alert-triangle' })[n.level] || 'bell' %>"></span><div class="min-w-0"><div class="z-bell-text"><%= n.text %></div><div class="text-secondary small"><%= n.when %></div></div></a><% }) %>
+            </div>
+            <div class="z-bell-foot">
+              <button class="z-bell-readall" type="button" data-bell-read-all<%= unreadNotifications ? '' : ' hidden' %>><i class="ti ti-checks me-1"></i><%= t('Mark all as read') %></button>
+              <a class="z-bell-link ms-auto" href="/notifications"><%= t('See all') %> <i class="ti ti-arrow-right"></i></a>
+            </div>
           </div>
         </div>
         <div class="dropdown">

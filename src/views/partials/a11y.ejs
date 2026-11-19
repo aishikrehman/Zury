@@ -1,10 +1,5 @@
-<% const back = encodeURIComponent(currentPath); %>
-<div class="zury-a11y dropup d-print-none">
-  <button type="button" class="btn btn-icon" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t("Display and accessibility settings") %>">
-    <i class="ti ti-accessible" style="font-size: 1.5rem"></i>
-  </button>
-  <div class="dropdown-menu dropdown-menu-end dropdown-menu-card z-a11y-menu">
-    <div class="card">
+<% const back = encodeURIComponent(typeof displayNext !== 'undefined' ? displayNext : currentPath); %>
+<div class="card z-a11y-card">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-accessible me-2"></i><%= t("Display and accessibility") %></h3></div>
       <div class="card-body py-2 border-bottom">
         <div class="subheader mb-1"><%= t('Theme') %></div>
@@ -23,5 +18,3 @@
         <% }) %>
       </div>
     </div>
-  </div>
-</div>

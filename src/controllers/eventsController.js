@@ -433,8 +433,8 @@ module.exports.levelAction = levelAction;
 
 // The series page (/wam) and the edition page (/wam/2026), in tabs. Settings and People are for
 // those who run that level, and hold that level's own settings and roles only.
-const SERIES_TABS = ['overview', 'editions', 'events', 'statistics', 'chat', 'people', 'settings'];
-const EDITION_TABS = ['overview', 'statistics', 'chat', 'people', 'settings'];
+const SERIES_TABS = ['overview', 'editions', 'events', 'statistics', 'people', 'settings'];
+const EDITION_TABS = ['overview', 'statistics', 'people', 'settings'];
 const RUNNERS_ONLY = ['settings', 'people'];
 
 
@@ -473,7 +473,8 @@ async function seriesPage(req, res, next) {
     if (!canRun && (found.status === 'draft' || found.visibility === 'private')) return next();
     let tab = SERIES_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
     if (!canRun && RUNNERS_ONLY.includes(tab)) tab = 'overview';
-    if (tab === 'chat') res.locals.levelChat = await require('./chatController').levelBox(req, res, 'series', found.id);
+    // The series' chat button (signed in; not for drafts or archived series).
+    if (req.user && res.locals.features.levelChat && !['draft', 'archived'].includes(found.status) && found.visibility !== 'private') res.locals.levelChat = `s${found.id}`;
     const directEvents = await prisma.contest.findMany({
       where: { seriesId: found.id, deletedAt: null, ...(canRun ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: [{ sortOrder: 'asc' }, { startDate: 'desc' }],
@@ -522,7 +523,7 @@ async function editionTabs(req, res, next) {
       : 0;
     if (!canSee && (edition.visibility === 'private' || (edition.status === 'draft' && !hasPublic))) return next();
     if (!canRun && RUNNERS_ONLY.includes(tab)) tab = 'overview';
-    if (tab === 'chat') res.locals.levelChat = await require('./chatController').levelBox(req, res, 'edition', edition.id);
+    if (req.user && res.locals.features.levelChat && !['draft', 'archived'].includes(edition.status) && edition.visibility !== 'private') res.locals.levelChat = `x${edition.id}`;
     const events = await prisma.contest.findMany({
       where: { editionId: edition.id, deletedAt: null, ...(canSee ? {} : { visibility: 'public', status: { not: 'draft' } }) },
       orderBy: { startDate: 'asc' },

@@ -1,0 +1,3 @@
+<%# A chat button at the corner of an event's (series', edition's) pages; the chat opens beside the page. %>
+<button type="button" class="z-chat-fab d-print-none" data-chat-launch="<%= panelUrl %>" data-bs-toggle="offcanvas" data-bs-target="#z-chat-side" aria-controls="z-chat-side" aria-label="<%= t('Chat') %>" title="<%= t('Chat') %>"><i class="ti ti-messages"></i></button>
+<div class="offcanvas offcanvas-end z-chat-side" tabindex="-1" id="z-chat-side" aria-label="<%= t('Chat') %>"><div class="offcanvas-body p-0" data-chat-slot><div class="z-chat-empty p-4"><%= t('Loading…') %></div></div></div>

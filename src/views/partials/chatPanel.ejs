@@ -1,0 +1,9 @@
+<%# The chat pop-up's contents, fetched when the chat button is pressed. %>
+<div class="z-chatpanel">
+  <div class="z-chatpanel-head">
+    <% if (tabs.length > 1) { %><ul class="nav nav-tabs z-chatpanel-tabs"><% tabs.forEach(([k, label, url]) => { %><li class="nav-item"><a class="nav-link<%= room === k ? ' active' : '' %>" href="<%= url %>" data-chat-tab><i class="ti ti-<%= k === 'jury' ? 'lock' : 'messages' %> me-1"></i><%= label %></a></li><% }) %></ul><% } else { %><div class="z-chatpanel-title"><i class="ti ti-messages me-1"></i><%= t('Chat') %></div><% } %>
+    <a class="btn btn-icon btn-sm btn-ghost-secondary" href="/inbox?c=<%= chatBox.channel %>" title="<%= t('Open in the inbox') %>" aria-label="<%= t('Open in the inbox') %>"><i class="ti ti-arrows-maximize"></i></a>
+    <button type="button" class="btn btn-icon btn-sm btn-ghost-secondary" data-bs-dismiss="offcanvas" aria-label="<%= t('Close') %>"><i class="ti ti-x"></i></button>
+  </div>
+  <%- include('./chatBox', { box: chatBox, bare: true, height: 'calc(100dvh - 15rem)', tabs: [] }) %>
+</div>

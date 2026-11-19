@@ -82,6 +82,9 @@
                 <input class="form-control mb-2" name="note" maxlength="500" placeholder="<%= t("Note (optional, shown in history)") %>">
                 <button class="btn btn-primary w-100" type="submit"><%= t("Update status") %></button>
               </form>
+              <% if (['approved', 'rejected', 'disqualified', 'under_review'].includes(submission.status) && reviews.length) { %>
+                <form method="post" action="<%= base %>/patrol/<%= submission.id %>/reopen" class="mb-2" data-confirm="<%= t('Clear its reviews and send it back to the reviewers?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary w-100" type="submit"><i class="ti ti-arrow-back-up me-1"></i><%= t('Open for review again') %></button></form>
+              <% } %>
               <form method="post" action="<%= base %>/submissions/<%= submission.id %>/revalidate" class="mb-2">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button class="btn btn-outline-secondary w-100" type="submit"><i class="ti ti-refresh me-1"></i><%= t("Check again on the wiki") %></button>
@@ -121,7 +124,7 @@
                   <strong><%= r.juror.username %></strong>
                   <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt"><%= t(r.decision === 'accept' ? 'Accept' : 'Reject') %></span>
                   <span class="ms-auto text-secondary small"><%= t('{n} points', { n: r.points }) %></span>
-                  <% if (can('deleteAnything')) { %><form method="post" action="<%= base %>/submissions/<%= submission.id %>/reviews/<%= r.id %>/delete" data-confirm="<%= t('Delete this review? The entry is decided again from the other reviews.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Delete review') %>" aria-label="<%= t('Delete review') %>"><i class="ti ti-trash"></i></button></form><% } %>
+                  <% if (can('manageEvent') || can('deleteAnything')) { %><form method="post" action="<%= base %>/submissions/<%= submission.id %>/reviews/<%= r.id %>/delete" data-confirm="<%= t('Delete this review? The entry is decided again from the other reviews.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Delete review') %>" aria-label="<%= t('Delete review') %>"><i class="ti ti-trash"></i></button></form><% } %>
                 </div>
                 <% if (Object.keys(marks).length) { %><div class="text-secondary small mt-1"><%= Object.entries(marks).map(([k, v]) => k + ': ' + v).join(' · ') %></div><% } %>
                 <% if (r.comment) { %><div class="small mt-1"><%= r.comment %></div><% } %>

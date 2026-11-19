@@ -22,14 +22,6 @@
           <h6 class="dropdown-header"><%= t('Summary report') %></h6>
           <% [['wiki', 'Wikitext (for a wiki page)', 'brand-wikipedia'], ['md', 'Markdown', 'markdown'], ['csv', 'CSV', 'file-spreadsheet'], ['xls', 'Excel', 'file-spreadsheet']].forEach(([fmt, label, icon]) => { %><a class="dropdown-item" href="<%= base %>/export/summary.<%= fmt %>"><i class="ti ti-<%= icon %> me-2"></i><%= t(label) %></a><% }) %>
         <% } %>
-        <% if (can('publishResults')) { %>
-          <div class="dropdown-divider"></div>
-          <form method="post" action="<%= base %>/results/publish" class="m-0">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="hidden" name="published" value="<%= published ? 0 : 1 %>">
-            <button class="dropdown-item" type="submit"><i class="ti ti-<%= published ? 'eye-off' : 'speakerphone' %> me-2"></i><%= published ? t('Hide results') : t('Publish results') %></button>
-          </form>
-        <% } %>
       </div>
     </div>
   </div>

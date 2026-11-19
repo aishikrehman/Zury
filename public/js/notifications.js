@@ -55,10 +55,10 @@
     } catch (e) { /* no audio here */ }
   }
   let known = Number(box.dataset.bellKnown) || 0;
-  const check = () => {
-    if (document.hidden) return;
-    fetch('/notifications/count.json', { headers: { Accept: 'application/json' } }).then((r) => r.json()).then((d) => {
-      const n = Number(d.unread) || 0;
+  // The page's one check (live.js) tells the bell the unread count.
+  document.addEventListener('zury:unread', (e) => {
+    {
+      const n = Number(e.detail) || 0;
       if (n > known) {
         // Several tabs open: only one chimes.
         const last = Number(store.get('zury.chimeAt')) || 0;
@@ -66,10 +66,8 @@
       }
       if (n !== known) setCount(n);
       known = n;
-    }).catch(() => {});
-  };
-  setInterval(check, 60000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    }
+  });
   box.querySelector('[data-bell-read-all]').addEventListener('click', () => {
     fetch('/notifications/read-all', { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ _csrf: csrf }) })
       .then(() => { setCount(0); list.querySelectorAll('.z-unread').forEach((el) => el.classList.remove('z-unread')); list.querySelectorAll('.z-dot').forEach((el) => el.classList.add('invisible')); })

@@ -858,3 +858,10 @@ model ChatRead {
 
   @@id([userId, channel])
 }
+
+// Site-wide switches and numbers set by administrators on Admin → Features (see featureService).
+model SiteSetting {
+  key       String   @id @db.VarChar(64)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}

@@ -6,7 +6,7 @@ const { LANGUAGES } = require('../i18n');
 const router = express.Router();
 
 const safeNext = (value, fallback) =>
-  typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : fallback;
+  require('../utils/safePath').localOr(value, fallback);
 
 const display = require('../config/displayOptions');
 
@@ -40,6 +40,9 @@ router.get('/preferences/display', async (req, res, next) => {
     next(err);
   }
 });
+
+// Display and accessibility options on a page of their own (linked from every page's footer).
+router.get('/display', (req, res) => res.render('pages/display', { title: 'Display and accessibility' }));
 
 // Interface language: on the account when logged in, else in the session.
 router.get('/preferences/language/:code', async (req, res, next) => {

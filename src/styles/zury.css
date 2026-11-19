@@ -3312,3 +3312,138 @@ details.z-sec > summary .card-title { flex: 1; }
 .z-sec-caret { transition: transform .2s; color: var(--z-fg-muted); }
 details.z-sec[open] .z-sec-caret { transform: rotate(180deg); }
 details.z-sec:not([open]) > summary { border-bottom: 0; }
+/* Patrol room grid: appeals beside the patrol tiles; the article list below */
+.z-flag-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.z-flag { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: .5rem; align-items: center; padding: .6rem .7rem; border-radius: .6rem; background: var(--z-hover); color: var(--z-fg); text-decoration: none; min-width: 0; }
+.z-flag .ti { grid-row: span 2; font-size: 1.25rem; }
+.z-flag b { font-size: 1.1rem; line-height: 1.1; }
+.z-flag span { font-size: .75rem; color: var(--z-fg-muted); line-height: 1.25; overflow-wrap: anywhere; }
+.z-flag:hover { background: #eaf3ff; text-decoration: none; }
+.z-flag.is-on { background: #eaf3ff; box-shadow: inset 0 0 0 2px #3366cc; }
+.z-flag.is-zero { opacity: .55; }
+.z-patrol-grid .z-patrol .list-group-item { padding: .75rem 1rem; }
+@media (max-width: 575.98px) {
+  .z-flag-grid { grid-template-columns: 1fr 1fr; }
+  .z-appeal-act .btn { flex: 1 1 auto; }
+  .z-patrol .btn-list { flex-wrap: wrap !important; }
+}
+/* Chat button at the page's corner, and the chat beside the page */
+.z-chat-fab { position: fixed; right: 1rem; bottom: 1rem; z-index: 1030; width: 3.25rem; height: 3.25rem; border: 0; border-radius: 50%; background: #3366cc; color: #fff; font-size: 1.5rem; display: grid; place-items: center; box-shadow: 0 6px 18px rgba(51, 102, 204, .35); }
+.z-chat-fab:hover { background: #2a4b8d; }
+.z-chat-side { width: min(28rem, 100vw) !important; }
+.z-chatpanel-head { display: flex; align-items: center; gap: .25rem; padding: .5rem .75rem 0; border-bottom: 1px solid var(--z-border); }
+.z-chatpanel-tabs { flex: 1; border: 0; flex-wrap: nowrap; overflow-x: auto; }
+.z-chatpanel-title { flex: 1; font-weight: 700; padding: .5rem 0; }
+@media (max-width: 575.98px) { .z-chat-side { width: 100vw !important; } }
+/* Header: the chat (inbox) button beside the bell */
+.z-chat-btn { position: relative; display: inline-grid; place-items: center; text-decoration: none; }
+.z-chat-dot { position: absolute; top: .3rem; right: .3rem; width: .55rem; height: .55rem; border-radius: 50%; background: #d73333; box-shadow: 0 0 0 2px var(--z-surface); }
+/* Inbox */
+.z-inbox-nav .list-group-item.active { background: #eaf3ff; color: #3366cc; border-color: transparent; font-weight: 600; }
+.z-inbox-h { padding: .9rem 1rem .3rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; color: #3366cc; }
+.z-inbox-list .list-group-item { align-items: baseline; }
+.z-inbox-dot { width: .5rem; height: .5rem; border-radius: 50%; flex: none; margin-top: .45rem; }
+.z-inbox-list .is-unread { font-weight: 600; }
+.z-inbox-list .is-unread .z-inbox-dot { background: #3366cc; }
+@media (min-width: 992px) { .z-inbox aside .card { position: sticky; top: 1rem; } }
+/* Live toasts (bottom right, above the chat button) */
+.z-toasts { position: fixed; right: 1rem; bottom: 5rem; z-index: 1090; display: flex; flex-direction: column; gap: .5rem; width: min(22rem, calc(100vw - 2rem)); }
+.z-live-toast { display: flex; gap: .65rem; align-items: flex-start; padding: .7rem .9rem; border-radius: .75rem; background: var(--z-surface); color: var(--z-fg); border: 1px solid var(--z-border); box-shadow: 0 10px 30px rgba(0, 0, 0, .12); text-decoration: none; animation: z-toast-in .2s ease-out; transition: opacity .5s, transform .5s; }
+.z-live-toast:hover { text-decoration: none; border-color: #3366cc; }
+.z-live-toast > .ti { color: #3366cc; font-size: 1.25rem; }
+.z-live-toast > span { display: flex; flex-direction: column; min-width: 0; font-size: .875rem; }
+.z-live-toast > span > span { color: var(--z-fg-muted); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.z-live-toast.is-out { opacity: 0; transform: translateY(.5rem); }
+@keyframes z-toast-in { from { opacity: 0; transform: translateY(.5rem); } }
+.z-a11y-card { box-shadow: none; }
+/* Inbox, in the manner of Tabler's mailbox */
+.z-mailbox { overflow: hidden; }
+.z-mail-side { border-right: 1px solid var(--z-border); }
+.z-mail-nav { display: flex; flex-direction: column; padding: 0 .75rem 1rem; }
+.z-mail-nav a { display: flex; align-items: center; gap: .6rem; padding: .45rem .6rem; border-radius: .5rem; color: var(--z-fg); text-decoration: none; font-size: .9rem; }
+.z-mail-nav a:hover { background: var(--z-hover); }
+.z-mail-nav a.active { background: #eaf3ff; color: #3366cc; font-weight: 600; }
+.z-mail-nav a span { flex: 1; min-width: 0; }
+.z-mail-nav a b { font-size: .75rem; font-weight: 600; padding: .05rem .45rem; border-radius: .4rem; background: #eaf3ff; color: #3366cc; }
+.z-mail-h { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--z-fg-muted); padding: 1rem .6rem .35rem; }
+.z-mail-dot { display: inline-block; width: .5rem; height: .5rem; border-radius: 50%; flex: none; }
+.z-mail-bar { display: flex; align-items: center; gap: .4rem; padding: .75rem 1rem; border-bottom: 1px solid var(--z-border); min-height: 3.6rem; }
+.z-mail-bar form { margin: 0; }
+.z-mail-list { display: flex; flex-direction: column; }
+.z-mail-row { display: grid; grid-template-columns: 13rem minmax(0, 1fr) auto 5.5rem; gap: 1rem; align-items: center; padding: .8rem 1rem; border-bottom: 1px solid var(--z-border); color: var(--z-fg-muted); text-decoration: none; font-size: .875rem; }
+.z-mail-row:hover { background: var(--z-hover); text-decoration: none; }
+.z-mail-row.is-unread { color: var(--z-fg); font-weight: 600; }
+.z-mail-from { display: flex; align-items: center; gap: .5rem; min-width: 0; color: var(--z-fg); }
+.z-mail-date { text-align: right; font-size: .8rem; white-space: nowrap; }
+@media (max-width: 991.98px) {
+  .z-mail-side { border-right: 0; border-bottom: 1px solid var(--z-border); }
+  .z-mail-nav { flex-direction: row; flex-wrap: wrap; gap: .25rem; }
+  .z-mail-h { display: none; }
+}
+@media (max-width: 575.98px) {
+  .z-mail-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: .15rem .75rem; }
+  .z-mail-from { grid-column: 1; }
+  .z-mail-date { grid-column: 2; grid-row: 1; }
+  .z-mail-subj { grid-column: 1 / -1; }
+  .z-mail-row > .z-mail-dot { display: none; }
+}
+/* Manage the event: its life as steps, and the actions under them */
+.z-life { display: grid; grid-template-columns: repeat(4, 1fr); list-style: none; padding: 0; margin: 0 0 1.25rem; counter-reset: none; }
+.z-life li { position: relative; display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center; font-size: .78rem; color: var(--z-fg-muted); }
+.z-life li::before { content: ''; position: absolute; top: 1.1rem; left: -50%; width: 100%; height: 2px; background: var(--z-border); z-index: 0; }
+.z-life li:first-child::before { display: none; }
+.z-life li span { position: relative; z-index: 1; width: 2.2rem; height: 2.2rem; border-radius: 50%; display: grid; place-items: center; background: var(--z-hover); font-size: 1.05rem; }
+.z-life li.is-done span { background: #339966; color: #fff; }
+.z-life li.is-done::before, .z-life li.is-now::before { background: #339966; }
+.z-life li.is-now span { background: #3366cc; color: #fff; box-shadow: 0 0 0 4px rgba(51, 102, 204, .18); }
+.z-life li.is-now b { color: var(--z-fg); }
+.z-life-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.z-life-actions form { margin: 0; }
+.z-life-danger { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--z-border); }
+/* Profile: numbers, then events as cards */
+.z-prof-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .75rem; }
+.z-prof-tile { display: flex; align-items: center; gap: .75rem; padding: .9rem 1rem; border: 1px solid var(--z-border); border-radius: .75rem; background: var(--z-surface); }
+.z-prof-tile > span { width: 2.5rem; height: 2.5rem; border-radius: .6rem; display: grid; place-items: center; font-size: 1.2rem; flex: none; }
+.z-prof-tile b { display: block; font-size: 1.25rem; line-height: 1.2; }
+.z-prof-tile small { color: var(--z-fg-muted); }
+.z-prof-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: .9rem; }
+.z-prof-ev { text-decoration: none; color: var(--z-fg); }
+.z-prof-ev-title { font-weight: 650; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.z-prof-ev-foot { display: flex; gap: 1rem; font-size: .85rem; color: var(--z-fg-muted); }
+.z-prof-ev-foot span { display: inline-flex; align-items: center; gap: .3rem; }
+/* Settings */
+.z-settings-nav { gap: .15rem; }
+@media (min-width: 992px) { .z-settings-nav { position: sticky; top: 1rem; } }
+.z-settings section { scroll-margin-top: 1rem; }
+/* Inbox side: groups that fold (Gmail-like); a drawer on phones */
+.z-mail-group > summary, .z-mail-ev > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem; border-radius: .5rem; }
+.z-mail-group > summary::-webkit-details-marker, .z-mail-ev > summary::-webkit-details-marker { display: none; }
+.z-mail-group > summary { margin-top: .75rem; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--z-fg-muted); }
+.z-mail-group > summary .ti, .z-mail-ev > summary .ti { transition: transform .15s; font-size: .9rem; }
+.z-mail-group:not([open]) > summary .ti { transform: rotate(-90deg); }
+.z-mail-ev[open] > summary .ti { transform: rotate(90deg); }
+.z-mail-ev > summary { font-size: .9rem; color: var(--z-fg); }
+.z-mail-ev > summary:hover { background: var(--z-hover); }
+.z-mail-ev > summary span { flex: 1; min-width: 0; }
+.z-mail-ev > summary b, .z-mail-sub b { font-size: .75rem; font-weight: 700; color: #3366cc; }
+.z-mail-nav .z-mail-sub { padding-left: 1.6rem; }
+.z-mail-nav .z-mail-room { padding-left: 2.6rem; font-size: .85rem; }
+.z-mail-nav .is-unread span, .z-mail-ev > summary.is-unread span { font-weight: 700; color: var(--z-fg); }
+@media (max-width: 991.98px) {
+  .z-mail-side.offcanvas-lg { width: min(20rem, 85vw); background: var(--z-surface); border: 0; }
+  .z-mail-nav { flex-direction: column; flex-wrap: nowrap; }
+  .z-mail-side .z-mail-h { display: block; }
+}
+/* Mailbox: the switch between notifications and chats */
+.z-mail-switch { display: flex; gap: .25rem; padding: .2rem; border-radius: .6rem; background: var(--z-hover); }
+.z-mail-switch a { flex: 1; display: flex; align-items: center; justify-content: center; gap: .35rem; padding: .4rem .5rem; border-radius: .45rem; color: var(--z-fg-muted); text-decoration: none; font-size: .875rem; font-weight: 500; white-space: nowrap; }
+.z-mail-switch a.active { background: var(--z-surface); color: #3366cc; font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.z-mail-switch b { font-size: .7rem; padding: 0 .35rem; border-radius: .35rem; background: #3366cc; color: #fff; }
+.z-bell-btn .z-chat-dot { top: auto; bottom: .25rem; right: .2rem; }
+/* The inbox menu: a switch on top, a plain foot */
+.z-bell-head { gap: .5rem; padding: .6rem .75rem; }
+.z-bell-head .z-mail-switch a { padding: .35rem .5rem; font-size: .8125rem; }
+.z-bell-foot { display: flex; align-items: center; gap: .5rem; padding: .55rem 1rem; border-top: 1px solid var(--z-border-color); font-size: .8125rem; }
+.z-bell-foot .z-bell-readall { padding: 0; border: 0; background: none; color: var(--z-fg-muted); font-size: .8125rem; }
+.z-bell-foot .z-bell-readall:hover { color: #3366cc; }
+.z-bell-foot .z-bell-link { font-weight: 600; text-decoration: none; }

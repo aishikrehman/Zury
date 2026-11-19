@@ -16,9 +16,9 @@
   let appealsOpen = true; try { appealsOpen = ((JSON.parse(settings.participation || '{}').rules) || {}).appealsPublic !== 'no'; } catch (e) {}
   // The Patrol room: appeals, and articles that were deleted, redirected, moved or shrank. Staff always; others for appeals.
   const patrolStaff = typeDef.entries !== false && (can('reviewAppeal') || can('manageAppeals') || can('manageEvent') || canReview);
-  // The chat: its own tab (not once the event is archived).
+  // The chat: a button at the corner of every page of the event (not once it is archived).
   let chatX = {}; try { chatX = JSON.parse(settings.extras || '{}'); } catch (e) {}
-  if (currentUser && contest.status !== 'archived' && (chatX.chat !== false || (patrolStaff && chatX.juryChat !== false))) tabs.push(['chat', t('Chat'), '/chat', 'messages']);
+  const chatHere = currentUser && contest.status !== 'archived' && ((features.chat && chatX.chat !== false) || (features.juryChat && patrolStaff && chatX.juryChat !== false));
   if (patrolStaff || (settings.appealsEnabled && (appealsOpen || currentUser))) tabs.push(['appeals', t('Patrol room'), '/patrol', 'shield-search', patrolStaff ? 'team' : '']);
   // People and the jury's assignments share one tab.
   const canAssign = typeDef.entries !== false && settings.juryReviewEnabled && (can('assignJury') || can('manageAssignments'));
@@ -150,8 +150,9 @@
              ...(can('sendNotifications') ? [['/message', 'mail', 'Send a message']] : []),
              ...(typeDef.entries !== false && (can('manageEvent') || can('importEntries')) ? [['/import', 'file-import', 'Import entries']] : []),
              ...(can('manageEvent') || can('exportData') ? [['/export/entries.csv', 'download', 'Download the entries (CSV)'], ['/export/summary.wiki', 'report', 'Summary report']] : []),
-             ...(can('deleteAnything') ? [['/config#move', 'arrows-move', 'Move or delete']] : []),
            ]; %>
+        <% const canManageLife = !wikiScope && (can('manageEvent') || can('publishResults') || can('deleteAnything')); %>
+        <% if (canManageLife) { %><button class="btn" type="button" data-bs-toggle="modal" data-bs-target="#event-controls"><i class="ti ti-adjustments me-1"></i><%= t('Manage') %></button><% } %>
         <% if (moreItems.length) { %>
           <div class="dropdown">
             <button class="btn btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('More') %>" aria-label="<%= t('More') %>"><i class="ti ti-dots"></i></button>
@@ -170,3 +171,5 @@
     </nav>
   </div>
 </header>
+<% if (chatHere) { %><%- include('./chatLaunch', { panelUrl: base + '/chat/panel' }) %><% } %>
+<% if (typeof canManageLife !== 'undefined' && canManageLife) { %><%- include('./eventControls', { typeDef }) %><% } %>

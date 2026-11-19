@@ -4,7 +4,7 @@ const wikimediaApi = require('../services/wikimediaApiService');
 const rightsService = require('../services/rightsService');
 
 function safeReturnTo(value) {
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/dashboard';
+  return require('../utils/safePath').localOr(value, '/dashboard');
 }
 
 function renderLoginError(res, status, message) {

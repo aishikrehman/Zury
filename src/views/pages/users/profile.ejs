@@ -1,91 +1,57 @@
 <%
-  const wikiUserUrl = 'https://meta.wikimedia.org/wiki/Special:CentralAuth/' + encodeURIComponent(profileUser.username.replace(/ /g, '_'));
   const groups = [
-    { heading: t('Organized'), icon: 'briefcase', color: 'green', items: organized, empty: 'No public events organized.' },
-    { heading: t('Reviewer'), icon: 'gavel', color: 'orange', items: judged, empty: 'No public reviewers roles.' },
-    { heading: t('Participated'), icon: 'users', color: 'blue', items: participated, empty: 'No public event participation.' },
+    { key: 'organized', heading: t('Organized'), icon: 'briefcase', color: 'green', items: organized },
+    { key: 'reviewer', heading: t('Reviewer'), icon: 'gavel', color: 'orange', items: judged },
+    { key: 'participated', heading: t('Participated'), icon: 'users', color: 'blue', items: participated },
   ];
+  const RUNNING = ['published', 'upcoming', 'active', 'submission_closed', 'under_review'];
+  const pick = show ? groups.find((g) => g.key === show) : (groups.find((g) => g.items.length) || groups[0]);
+  const list = pick.items.filter(({ contest: c }) => when === 'all' || (when === 'running' ? RUNNING.includes(c.status) : !RUNNING.includes(c.status)));
+  const allIds = new Set([...organized, ...judged, ...participated].map((e) => e.contest.id));
+  const q = (o) => '?' + new URLSearchParams({ show: o.show || pick.key, ...(o.when && o.when !== 'all' ? { when: o.when } : {}) }).toString();
+  const tiles = [['calendar-event', allIds.size, t('Events'), 'blue'], ['files', numbers.entries, t('Entries'), 'azure'], ['circle-check', numbers.accepted, t('Accepted'), 'green'], ['letter-case', numbers.words, t('Words'), 'purple'], ['gavel', numbers.reviews, t('Reviews'), 'orange']];
 %>
-<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', prefs, eventCount: new Set([...organized, ...judged, ...participated].map((e) => e.contest.id)).size }) %><% } else { %>
-<div class="page-header d-print-none">
-  <div class="container-xl">
-    <div class="row g-3 align-items-center">
-      <div class="col-auto"><%- include('../../partials/avatar', { u: profileUser, size: 'lg' }) %></div>
-      <div class="col">
-        <div class="page-pretitle"><%= t("Profile") %></div>
-        <h2 class="page-title"><%= profileUser.username %></h2>
-        <% if (!profileUser.lastLoginAt) { %><div class="text-secondary small mt-1"><i class="ti ti-clock me-1"></i><%= t('Has not logged in to Zury yet') %></div><% } %>
-      </div>
-      <div class="col-auto ms-auto btn-list">
-        <a class="btn btn-outline-secondary" href="<%= wikiUserUrl %>" rel="noopener" target="_blank"><i class="ti ti-world me-1"></i><%= t("Wikimedia account") %></a>
-        <% if (isOwnProfile) { %><a class="btn btn-primary" href="/settings"><i class="ti ti-settings me-1"></i><%= t("Preferences") %></a><% } %>
+<% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', eventCount: allIds.size }) %><% } else { %>
+<div class="page-body"><div class="container-xl"><div class="row g-4">
+  <div class="col-12"><div class="card z-prof-head"><div class="card-body">
+    <div class="z-prof-avatar"><%- include('../../partials/avatar', { u: profileUser, size: 'xl' }) %></div>
+    <div class="z-prof-main"><div class="z-prof-name"><%= profileUser.username %> <span><%= profileUser.homeWiki ? wikiLocal(profileUser.homeWiki) : 'Wikimedia' %></span></div>
+      <div class="z-prof-roles"><%- include('../../partials/accessSummary', { s: profileSubject }) %></div></div>
+  </div></div></div>
+<% } %>
+    <div class="col-12">
+      <div class="z-prof-tiles">
+        <% tiles.forEach(([icon, n, label, color]) => { %><div class="z-prof-tile"><span class="bg-<%= color %>-lt text-<%= color %>"><i class="ti ti-<%= icon %>"></i></span><div><b><%= formatNumber(n) %></b><small><%= label %></small></div></div><% }) %>
       </div>
     </div>
-  </div>
-</div>
-<div class="page-body">
-  <div class="container-xl">
-<% } %>
-    <div class="row row-cards">
-      <% if (!isOwnProfile) { %>
-      <div class="col-lg-4">
-        <div class="card">
-          <div class="card-body p-4 text-center">
-            <div class="mb-3"><%- include('../../partials/avatar', { u: profileUser, size: 'xl' }) %></div>
-            <h3 class="m-0 mb-1"><%= profileUser.username %></h3>
-            <div class="text-secondary"><%- profileUser.homeWiki ? wikiLabel(profileUser.homeWiki) : 'Wikimedia' %></div>
-          </div>
-          <div class="card-body">
-            <div class="datagrid">
-              <% if (profileUser.wikimediaRegisteredAt) { %><div class="datagrid-item"><div class="datagrid-title"><%= t("Wikimedia account since") %></div><div class="datagrid-content"><%= formatDate(profileUser.wikimediaRegisteredAt) %></div></div><% } %>
-              <div class="datagrid-item"><div class="datagrid-title"><%= t("Joined Zury") %></div><div class="datagrid-content"><%= formatDate(profileUser.createdAt) %></div></div>
-              <div class="datagrid-item"><div class="datagrid-title"><%= t("Events") %></div><div class="datagrid-content"><%= formatNumber(new Set([...organized, ...judged, ...participated].map((e) => e.contest.id)).size) %></div></div>
-            </div>
-          </div>
-          <div class="card-footer">
-            <div class="subheader mb-2"><%= t("Roles") %></div>
-            <%- include('../../partials/accessSummary', { s: profileSubject }) %>
-          </div>
+    <div class="col-12">
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <nav class="z-seg" aria-label="<%= t('Events') %>">
+          <% groups.forEach((g) => { %><a class="<%= g.key === pick.key ? 'active' : '' %>" href="<%= q({ show: g.key, when }) %>"><i class="ti ti-<%= g.icon %>"></i><%= g.heading %> <span class="badge bg-<%= g.color %>-lt ms-1"><%= formatNumber(g.items.length) %></span></a><% }) %>
+        </nav>
+        <div class="z-chips ms-auto">
+          <% [['all', t('All')], ['running', t('Running')], ['done', t('Finished')]].forEach(([k, label]) => { %><a class="z-chip<%= when === k ? ' is-on' : '' %>" href="<%= q({ when: k }) %>"><%= label %></a><% }) %>
         </div>
       </div>
-      <% } %>
-      <div class="<%= isOwnProfile ? 'col-12' : 'col-lg-8' %>">
-        <% const firstTab = Math.max(0, groups.findIndex((g) => g.items.length)); %>
-        <div class="card z-prof-events">
-          <div class="card-header">
-            <ul class="nav nav-tabs card-header-tabs" role="tablist">
-              <% groups.forEach((g, i) => { %>
-                <li class="nav-item" role="presentation"><a class="nav-link<%= i === firstTab ? ' active' : '' %>" href="#prof-ev-<%= i %>" data-bs-toggle="tab" role="tab"><i class="ti ti-<%= g.icon %> me-1 text-<%= g.color %>"></i><%= g.heading %> <span class="badge bg-<%= g.color %>-lt ms-1"><%= formatNumber(g.items.length) %></span></a></li>
-              <% }) %>
-            </ul>
-          </div>
-          <div class="tab-content">
-            <% groups.forEach((g, i) => { %>
-              <div class="tab-pane<%= i === firstTab ? ' active show' : '' %>" id="prof-ev-<%= i %>" role="tabpanel">
-                <% if (!g.items.length) { %>
-                  <div class="card-body text-secondary"><%= t(g.empty) %></div>
-                <% } else { %>
-                  <div class="list-group list-group-flush">
-                    <% g.items.forEach(({ contest: c }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-                      <a href="<%= eventPath(c) %>" class="list-group-item list-group-item-action d-flex align-items-center gap-3">
-                        <span class="z-evhead-status is-<%= st.badge === 'dark' ? 'secondary' : st.badge %>" title="<%= t(st.label) %>"><i></i></span>
-                        <div class="flex-fill min-w-0">
-                          <div class="text-truncate fw-medium"><%= c.title %></div>
-                          <div class="text-secondary small"><%= t(CONTEST_TYPES[c.type]) %> · <%= wikiLocal(c.primaryWiki) %></div>
-                        </div>
-                        <span class="text-secondary small text-nowrap"><%= c.startDate ? formatDate(c.startDate, c.timezone) : '' %></span>
-                      </a>
-                    <% }) %>
-                  </div>
-                <% } %>
+      <% if (!list.length) { %>
+        <div class="card"><div class="card-body text-secondary text-center py-5"><i class="ti ti-calendar-off d-block mb-2" style="font-size: 2rem"></i><%= t('No events here.') %></div></div>
+      <% } else { %>
+        <div class="z-prof-grid">
+          <% list.forEach(({ contest: c }) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; const m = mine[c.id] || { entries: 0, accepted: 0, reviews: 0 }; %>
+            <a class="card card-link z-prof-ev" href="<%= eventPath(c) %>">
+              <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-2"><span class="badge bg-<%= st.badge === 'dark' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span><span class="text-secondary small ms-auto"><%= c.startDate ? formatDate(c.startDate, c.timezone) : '' %></span></div>
+                <div class="z-prof-ev-title"><%= c.title %></div>
+                <div class="text-secondary small mt-1"><%= t(CONTEST_TYPES[c.type]) %> · <%= wikiLocal(c.primaryWiki) %><% if (c.series) { %> · <%= c.series.title %><% } %></div>
               </div>
-            <% }) %>
-          </div>
+              <div class="card-footer z-prof-ev-foot">
+                <% if (pick.key === 'participated') { %><span><i class="ti ti-files"></i><%= formatNumber(m.entries) %></span><span class="text-green"><i class="ti ti-circle-check"></i><%= formatNumber(m.accepted) %></span>
+                <% } else if (pick.key === 'reviewer') { %><span><i class="ti ti-gavel"></i><%= tn('{n} review', '{n} reviews', m.reviews) %></span>
+                <% } else { %><span><i class="ti ti-users"></i><%= tn('{n} participant', '{n} participants', c._count ? c._count.memberships : 0) %></span><% } %>
+              </div>
+            </a>
+          <% }) %>
         </div>
-      </div>
+      <% } %>
     </div>
-<% if (isOwnProfile) { %>
-<%- include('../../partials/accountEnd') %><% } else { %>
-  </div>
-</div>
-<% } %>
+<% if (isOwnProfile) { %><%- include('../../partials/accountEnd') %><% } else { %></div></div></div><% } %>

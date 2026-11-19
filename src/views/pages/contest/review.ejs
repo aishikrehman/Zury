@@ -1,3 +1,4 @@
+<% const orgTools = typeof entry !== 'undefined' && entry && (can('manageEvent') || can('deleteAnything')) && contest.status !== 'archived'; %>
 <%
   const total = progress.waiting + progress.decided;
   const done = total ? Math.round((progress.decided / total) * 100) : 0;
@@ -26,7 +27,7 @@
     <span class="z-ring" style="--p: <%= done %>"><b><%= formatNumber(done) %>%</b></span>
     <span class="z-ring-text">
       <% if (position) { %><span><b><%= formatNumber(position) %></b> / <%= formatNumber(queue.remaining) %> <%= t('waiting') %></span><% } else { %><span><b><%= formatNumber(queue.remaining) %></b> <%= t('waiting') %></span><% } %>
-      <span class="text-secondary"><%= t('You reviewed {n}', { n: formatNumber(queue.reviewedByMe) }) %></span>
+      <% if (filters.mode === 'mine') { %><a class="text-secondary" href="<%= base %>/review"><i class="ti ti-arrow-left me-1"></i><%= t('Waiting for me') %></a><% } else { %><a class="text-secondary" href="<%= base %>/review?mode=mine" title="<%= t('Open and change your earlier reviews') %>"><%= t('You reviewed {n}', { n: formatNumber(queue.reviewedByMe) }) %> <i class="ti ti-pencil"></i></a><% } %>
     </span>
   </div>
   <form method="get" class="z-review-filters collapse<%= filtered ? ' show' : '' %>" id="review-filters">
@@ -280,10 +281,14 @@
                   <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt ms-1"><%= decisionLabel[r.decision] %></span>
                   <span class="text-secondary"><%= t('{n} points', { n: r.points }) %></span>
                   <% if (r.comment) { %><div class="text-secondary"><%= r.comment %></div><% } %>
+                  <% if (orgTools) { %><form method="post" action="<%= base %>/submissions/<%= entry.id %>/reviews/<%= r.id %>/delete" class="d-inline" data-confirm="<%= t('Delete this review? The entry is decided again from the other reviews.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-link btn-sm p-0 text-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Remove this review') %></button></form><% } %>
                 </div>
               <% }) %>
             </div>
           </div>
+        <% } %>
+        <% if (orgTools && entry.reviews.length) { %>
+          <form method="post" action="<%= base %>/patrol/<%= entry.id %>/reopen" class="mt-2" data-confirm="<%= t('Clear its reviews and send it back to the reviewers?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="back" value="review"><button class="btn btn-outline-primary w-100" type="submit"><i class="ti ti-arrow-back-up me-1"></i><%= t('Open for review again') %></button></form>
         <% } %>
 
       </aside>
@@ -292,8 +297,3 @@
 </div>
 </div></div>
 </div></div>
-<% if (typeof juryChat !== 'undefined' && juryChat) { %>
-  <details class="z-chat-float"><summary class="btn btn-primary"><i class="ti ti-messages me-1"></i><%= t('Reviewers’ room') %></summary>
-    <div class="z-chat-float-box"><%- include('../../partials/chatBox', { box: juryChat, height: '45vh' }) %></div>
-  </details>
-<% } %>

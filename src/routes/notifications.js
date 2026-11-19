@@ -9,13 +9,21 @@ const router = express.Router();
 // Every page: how many are unread (only for signed-in people; one indexed count).
 router.use(async (req, res, next) => {
   res.locals.unreadNotifications = 0;
+  res.locals.unreadRooms = 0;
   if (req.user && req.method === 'GET' && req.accepts('html')) {
-    res.locals.unreadNotifications = await notifications.unreadCount(req.user.id).catch(() => 0);
+    let latest;
+    [res.locals.unreadNotifications, res.locals.unreadRooms, latest] = await Promise.all([
+      notifications.unreadCount(req.user.id).catch(() => 0),
+      require('../services/chatService').unreadRooms(req.user.id).catch(() => 0),
+      notifications.latest(req.user.id, 6).catch(() => []),
+    ]);
+    res.locals.bellNotes = latest.map((n) => view(req, res, n));
   }
   next();
 });
 
-const view = (req, res, n) => ({
+function view(req, res, n) {
+  return ({
   id: n.id,
   text: notifications.text(req.t, n),
   href: `/notifications/${n.id}`,
@@ -23,10 +31,11 @@ const view = (req, res, n) => ({
   unread: !n.readAt,
   kind: n.kind,
   level: /not accepted|was appealed|blocked|removed/i.test(n.message || '') ? 'urgent' : /accepted|upheld|now /i.test(n.message || '') ? 'good' : 'normal',
-});
+  });
+}
 
 // Just the unread count, for the bell's quiet check every minute.
-router.get('/notifications/count.json', requireAuth, async (req, res, next) => {
+router.get('/notifications/count.json', (req, res, next) => (req.user ? next() : res.status(401).json({ signedOut: true })), async (req, res, next) => {
   try {
     res.set('Cache-Control', 'no-store').json({ unread: await notifications.unreadCount(req.user.id) });
   } catch (err) {
@@ -43,21 +52,13 @@ router.get('/notifications.json', requireAuth, async (req, res, next) => {
   }
 });
 
-router.get('/notifications', requireAuth, async (req, res, next) => {
-  try {
-    const n = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const result = await notifications.page(req.user.id, { page: n });
-    res.render('pages/account/notifications', { title: 'Notifications — Zury', ...result, items: result.items.map((x) => view(req, res, x)) });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get('/notifications', requireAuth, require('../controllers/inboxController').page);
 
 router.get('/notifications/:id(\\d+)', requireAuth, async (req, res, next) => {
   try {
     const n = await notifications.open(req.user.id, Number(req.params.id));
     // Only addresses inside Zury.
-    res.redirect(n && n.link && n.link.startsWith('/') && !n.link.startsWith('//') ? n.link : '/notifications');
+    res.redirect(require('../utils/safePath').localOr(n && n.link, '/notifications'));
   } catch (err) {
     next(err);
   }

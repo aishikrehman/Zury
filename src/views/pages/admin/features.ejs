@@ -1,0 +1,22 @@
+<%- include('../../partials/adminHeader', { tab: 'features' }) %>
+<div class="page-body"><div class="container-xl" style="max-width: 56rem">
+  <form method="post" action="/admin/features" class="card">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-toggle-right me-2"></i><%= t('Features') %></h3><% if (saved) { %><span class="ms-auto text-green small"><i class="ti ti-circle-check me-1"></i><%= t('Saved.') %></span><% } %></div>
+    <div class="list-group list-group-flush">
+      <% Object.entries(SWITCHES).forEach(([k, [label, desc, beta]]) => { %>
+        <div class="list-group-item z-set-row">
+          <div><div class="fw-semibold"><%= t(label) %><% if (beta) { %> <span class="badge bg-purple-lt ms-1"><%= t('Beta') %></span><% } %></div><div class="text-secondary small"><%= t(desc) %></div></div>
+          <select class="form-select" name="<%= k %>"><option value="on"<%= features[k] ? ' selected' : '' %>><%= t('Turned on') %></option><option value="off"<%= features[k] ? '' : ' selected' %>><%= t('Turned off') %></option></select>
+        </div>
+      <% }) %>
+      <% Object.entries(NUMBERS).forEach(([k, [label, desc, def, min, max]]) => { %>
+        <div class="list-group-item z-set-row">
+          <div><div class="fw-semibold"><%= t(label) %></div><% if (desc) { %><div class="text-secondary small"><%= t(desc) %></div><% } %></div>
+          <input class="form-control" type="number" name="<%= k %>" value="<%= features[k] %>" min="<%= min %>" max="<%= max %>">
+        </div>
+      <% }) %>
+    </div>
+    <div class="card-footer text-end"><button class="btn btn-primary" type="submit"><%= t('Save') %></button></div>
+  </form>
+</div></div>

@@ -124,7 +124,7 @@ contest.post('/results/publish', requireEventWide('publishResults'), reviewContr
 contest.post('/submissions/:submissionId(\\d+)/appeal', entriesOnly, requireAuth, reviewController.appeal);
 contest.get('/patrol', reviewController.appealsList);
 contest.get('/chat/stream', requireAuth, require('../controllers/chatController').eventStream);
-contest.get('/chat', requireAuth, require('../controllers/chatController').eventPage);
+contest.get('/chat/panel', requireAuth, require('../controllers/chatController').eventPanel);
 contest.get('/chat/download', requireAuth, require('../controllers/chatController').eventDownload);
 contest.post('/chat/clear', requireAuth, require('../controllers/chatController').eventClear);
 contest.post('/chat/send', requireAuth, require('../controllers/chatController').eventSend);
@@ -151,7 +151,7 @@ contest.get('/submissions', entriesOnly, submissionController.index);
 contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissionController.withdraw);
 // Superusers delete a single entry, or a single review (the entry is then decided again).
 contest.post('/submissions/:submissionId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroy);
-contest.post('/submissions/:submissionId(\\d+)/reviews/:reviewId(\\d+)/delete', requireEventWide('deleteAnything'), submissionController.destroyReview);
+contest.post('/submissions/:submissionId(\\d+)/reviews/:reviewId(\\d+)/delete', requirePermission('manageEvent', 'deleteAnything'), submissionController.destroyReview);
 contest.post('/submissions/:submissionId(\\d+)/status', requirePermission('manageEvent'), submissionController.setStatus);
 contest.post('/submissions/:submissionId(\\d+)/latest', requireAuth, submissionController.useLatest);
 contest.post('/submissions/:submissionId(\\d+)/revision', requireAuth, submissionController.useRevision);

@@ -642,13 +642,13 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
 }
 
 // upheld: the entry goes back to the jury; dismissed: the earlier decision stands.
-// Who may settle an appeal: organizers (manageAppeals) any way; a reviewer of the entry may accept
-// it or send it back to the reviewers, but dismissing is for someone who did not review it.
+// Who may settle an appeal: the entry's own reviewers and organizers (manageAppeals), any way.
 async function appealRights({ actor, permissions, appeal }) {
   const reviewed = await prisma.review.count({ where: { submissionId: appeal.submissionId, jurorId: actor.id } });
   const superuser = !!(permissions && permissions.has('deleteAnything'));
   const manager = !!(permissions && permissions.has('manageAppeals'));
-  return { accept: !!reviewed || manager, uphold: !!reviewed || manager, dismiss: superuser || (manager && !reviewed) };
+  const may = !!reviewed || manager || superuser;
+  return { accept: may, uphold: may, dismiss: may };
 }
 
 // accept: the entry is accepted; uphold: back to the reviewers; dismiss: the decision stands.

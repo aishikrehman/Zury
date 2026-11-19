@@ -1,0 +1,121 @@
+<%# Notifications and chats: one mailbox look. A switch on top of the side moves between them;
+    folders on the left; on the right a toolbar and the list, or the open conversation. %>
+<%
+  const KIND = { event: ['Events', 'messages', 'blue'], jury: ['Reviewers', 'lock', 'red'], series: ['Series', 'stack-2', 'purple'], edition: ['Series', 'stack-2', 'purple'], direct: ['People', 'user', 'green'] };
+  const unreadOf = (fn) => rooms.filter((r) => r.unread && fn(r)).length;
+  const unreadChats = unreadOf(() => true);
+  const folders = mode === 'notes'
+    ? [['all', '/notifications', 'inbox', t('All'), 0], ['unread', '/notifications?f=unread', 'mail', t('Unread'), unreadNotes]]
+    : [['chats', '/inbox', 'messages', t('All chats'), unreadChats], ['direct', '/inbox?f=direct', 'user', t('Direct messages'), unreadOf((r) => r.room === 'direct')]];
+  const folder = f;
+  const shownRooms = f === 'direct' ? rooms.filter((r) => r.room === 'direct') : rooms;
+  const day = (d) => { const x = new Date(d); return x.toDateString() === new Date().toDateString() ? formatDateTime(d).replace(/^.*?(\d{1,2}[:.]\d{2}.*)$/, '$1') : formatDate(d); };
+%>
+<div class="page-body"><div class="container-xl">
+  <div class="card z-mailbox">
+    <div class="row g-0">
+      <%# The folders, Gmail-like: each event a group that opens to its rooms. On phones this is a drawer. %>
+      <% const byEvent = []; rooms.filter((r) => ['event', 'jury'].includes(r.room)).forEach((r) => { let g = byEvent.find((x) => x.path === r.path); if (!g) { g = { path: r.path, title: r.title, rooms: [] }; byEvent.push(g); } g.rooms.push(r); });
+         const levels = rooms.filter((r) => ['series', 'edition'].includes(r.room));
+         const people = rooms.filter((r) => r.room === 'direct');
+         const here = (r) => open && open.channel === r.channel; %>
+      <aside class="col-lg-3 z-mail-side offcanvas-lg offcanvas-start" tabindex="-1" id="z-mail-folders" aria-label="<%= t('Inbox') %>">
+        <div class="p-3 pb-2 d-flex align-items-center gap-2">
+          <nav class="z-mail-switch flex-fill" aria-label="<%= t('Inbox') %>">
+            <a class="<%= mode === 'notes' ? 'active' : '' %>" href="/notifications"><i class="ti ti-bell"></i><%= t('Notifications') %><% if (unreadNotes) { %><b><%= formatNumber(unreadNotes) %></b><% } %></a>
+            <% if (features.inbox) { %><a class="<%= mode === 'chats' ? 'active' : '' %>" href="/inbox"><i class="ti ti-messages"></i><%= t('Chats') %><% if (unreadChats) { %><b><%= formatNumber(unreadChats) %></b><% } %></a><% } %>
+          </nav>
+          <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#z-mail-folders" aria-label="<%= t('Close') %>"></button>
+        </div>
+        <% if (mode === 'chats' && features.directMessages) { %><div class="px-3 pb-2"><button class="btn btn-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#z-compose" aria-expanded="false"><i class="ti ti-pencil me-1"></i><%= t('New message') %></button></div><% } %>
+        <form method="post" action="/inbox/new" class="collapse px-3 pb-3" id="z-compose">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="input-group"><input class="form-control" name="username" placeholder="<%= t('Username') %>" required><button class="btn" type="submit" aria-label="<%= t('Start') %>"><i class="ti ti-arrow-right"></i></button></div>
+          <div class="form-hint"><%= t('Someone who takes part in an event with you.') %></div>
+        </form>
+        <nav class="z-mail-nav">
+          <% folders.forEach(([k, href, icon, label, n]) => { %><a class="<%= !open && folder === k ? 'active' : '' %>" href="<%= href %>"><i class="ti ti-<%= icon %>"></i><span><%= label %></span><% if (n) { %><b><%= formatNumber(n) %></b><% } %></a><% }) %>
+          <% if (mode === 'chats') { %>
+
+          <% if (byEvent.length) { %>
+            <details class="z-mail-group" open><summary><i class="ti ti-chevron-down"></i><span><%= t('Events') %></span></summary>
+              <% byEvent.forEach((g) => { const n = g.rooms.filter((r) => r.unread).length; const inside = g.rooms.some(here); %>
+                <% if (g.rooms.length === 1) { const r = g.rooms[0]; %>
+                  <a class="z-mail-sub<%= here(r) ? ' active' : '' %><%= r.unread ? ' is-unread' : '' %>" href="/inbox?c=<%= r.channel %>"><i class="z-mail-dot bg-blue"></i><span class="text-truncate"><%= g.title %></span><% if (r.unread) { %><b>•</b><% } %></a>
+                <% } else { %>
+                  <details class="z-mail-ev"<%= inside || n ? ' open' : '' %>><summary class="<%= n ? 'is-unread' : '' %>"><i class="ti ti-chevron-right"></i><span class="text-truncate"><%= g.title %></span><% if (n) { %><b><%= formatNumber(n) %></b><% } %></summary>
+                    <% g.rooms.forEach((r) => { %><a class="z-mail-sub z-mail-room<%= here(r) ? ' active' : '' %><%= r.unread ? ' is-unread' : '' %>" href="/inbox?c=<%= r.channel %>"><i class="ti ti-<%= r.room === 'jury' ? 'lock' : 'messages' %>"></i><span class="text-truncate"><%= r.room === 'jury' ? t('Reviewers and organizers') : t('Everyone') %></span><% if (r.unread) { %><b>•</b><% } %></a><% }) %>
+                  </details>
+                <% } %>
+              <% }) %>
+            </details>
+          <% } %>
+          <% if (levels.length) { %>
+            <details class="z-mail-group" open><summary><i class="ti ti-chevron-down"></i><span><%= t('Series') %></span></summary>
+              <% levels.forEach((r) => { %><a class="z-mail-sub<%= here(r) ? ' active' : '' %><%= r.unread ? ' is-unread' : '' %>" href="/inbox?c=<%= r.channel %>"><i class="z-mail-dot bg-purple"></i><span class="text-truncate"><%= r.title %></span><% if (r.unread) { %><b>•</b><% } %></a><% }) %>
+            </details>
+          <% } %>
+          <% if (people.length) { %>
+            <details class="z-mail-group" open><summary><i class="ti ti-chevron-down"></i><span><%= t('People') %></span></summary>
+              <% people.forEach((r) => { %><a class="z-mail-sub<%= here(r) ? ' active' : '' %><%= r.unread ? ' is-unread' : '' %>" href="/inbox?c=<%= r.channel %>"><%- include('../../partials/avatar', { u: r.person, size: 'xs' }) %><span class="text-truncate"><%= r.title %></span><% if (r.unread) { %><b>•</b><% } %></a><% }) %>
+            </details>
+          <% } %>
+          <% } %>
+          <div class="px-2 pt-3"><span class="badge bg-purple-lt"><%= t('Beta') %></span></div>
+        </nav>
+      </aside>
+      <div class="col-lg-9 z-mail-main">
+        <% if (open) { %>
+          <div class="z-mail-bar">
+            <button class="btn btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#z-mail-folders" aria-controls="z-mail-folders" aria-label="<%= t('Folders') %>" title="<%= t('Folders') %>"><i class="ti ti-menu-2"></i></button>
+            <a class="btn btn-icon" href="/inbox<%= folder === 'direct' ? '?f=direct' : '' %>" title="<%= t('Back') %>" aria-label="<%= t('Back') %>"><i class="ti ti-arrow-left"></i></a>
+            <% if (open.person) { %><%- include('../../partials/avatar', { u: open.person, size: 'sm' }) %><% } else { %><i class="z-mail-dot bg-<%= (KIND[open.room] || KIND.event)[2] %>"></i><% } %>
+            <a class="fw-bold text-truncate" href="<%= open.path %>"><%= open.title %></a>
+            <% if (open.room === 'jury') { %><span class="badge bg-red-lt"><i class="ti ti-lock me-1"></i><%= t('Reviewers and organizers only') %></span><% } %>
+            <% if (open.room === 'direct') { %><span class="badge bg-green-lt"><i class="ti ti-lock me-1"></i><%= t('Only the two of you') %></span><% } %>
+          </div>
+          <%- include('../../partials/chatBox', { box: chatBox, bare: true, height: 'calc(100dvh - 22rem)' }) %>
+        <% } else if (mode === 'chats') { %>
+          <div class="z-mail-bar">
+            <button class="btn btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#z-mail-folders" aria-controls="z-mail-folders" aria-label="<%= t('Folders') %>" title="<%= t('Folders') %>"><i class="ti ti-menu-2"></i></button>
+            <a class="btn btn-icon" href="/inbox<%= f === 'direct' ? '?f=direct' : '' %>" title="<%= t('Refresh') %>" aria-label="<%= t('Refresh') %>"><i class="ti ti-refresh"></i></a>
+            <span class="text-secondary small ms-auto"><%= formatNumber(shownRooms.length) %></span>
+          </div>
+          <% if (!shownRooms.length) { %><div class="p-4 text-secondary"><%= f === 'direct' ? t('No conversations yet. Press New message to write to someone.') : t('Your events’ chats appear here.') %></div><% } %>
+          <div class="z-mail-list">
+            <% shownRooms.forEach((r) => { const kd = KIND[r.room] || KIND.event; %>
+              <a class="z-mail-row<%= r.unread ? ' is-unread' : '' %>" href="/inbox?c=<%= r.channel %>">
+                <span class="z-mail-from"><% if (r.person) { %><%- include('../../partials/avatar', { u: r.person, size: 'xs' }) %><% } else { %><i class="ti ti-<%= kd[1] %>"></i><% } %><span class="text-truncate"><%= r.title %></span></span>
+                <span class="z-mail-subj text-truncate"><%= r.preview || t('No messages yet.') %></span>
+                <i class="z-mail-dot bg-<%= kd[2] %>" title="<%= t(kd[0]) %>"></i>
+                <span class="z-mail-date"><%= r.lastAt ? day(r.lastAt) : '' %></span>
+              </a>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="z-mail-bar">
+            <button class="btn btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#z-mail-folders" aria-controls="z-mail-folders" aria-label="<%= t('Folders') %>" title="<%= t('Folders') %>"><i class="ti ti-menu-2"></i></button>
+            <% if (unreadNotes) { %><form method="post" action="/notifications/read-all"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-icon" type="submit" title="<%= t('Mark all as read') %>" aria-label="<%= t('Mark all as read') %>"><i class="ti ti-checks"></i></button></form><% } %>
+            <a class="btn btn-icon" href="/notifications<%= f === 'unread' ? '?f=unread' : '' %>" title="<%= t('Refresh') %>" aria-label="<%= t('Refresh') %>"><i class="ti ti-refresh"></i></a>
+            <% if (notes.total > notes.perPage) { const pages = Math.ceil(notes.total / notes.perPage); %>
+              <span class="ms-auto small text-secondary"><%= formatNumber(notes.page) %> / <%= formatNumber(pages) %></span>
+              <a class="btn btn-icon<%= notes.page > 1 ? '' : ' disabled' %>" href="/notifications?<%= f === 'unread' ? 'f=unread&' : '' %>page=<%= notes.page - 1 %>" aria-label="<%= t('Newer') %>"><i class="ti ti-chevron-left"></i></a>
+              <a class="btn btn-icon<%= notes.page < pages ? '' : ' disabled' %>" href="/notifications?<%= f === 'unread' ? 'f=unread&' : '' %>page=<%= notes.page + 1 %>" aria-label="<%= t('Older') %>"><i class="ti ti-chevron-right"></i></a>
+            <% } %>
+          </div>
+          <% if (!notes.items.length) { %><div class="p-4 text-secondary"><%= t('Nothing yet.') %></div><% } %>
+          <div class="z-mail-list">
+            <% notes.items.forEach((n) => { %>
+              <a class="z-mail-row<%= n.unread ? ' is-unread' : '' %>" href="/notifications/<%= n.id %>">
+                <span class="z-mail-from"><i class="ti ti-bell"></i><span class="text-truncate"><%= n.event || t('Zury') %></span></span>
+                <span class="z-mail-subj text-truncate"><%= n.text %></span>
+                <i class="z-mail-dot <%= n.unread ? 'bg-primary' : '' %>"></i>
+                <span class="z-mail-date"><%= day(n.when) %></span>
+              </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div></div>

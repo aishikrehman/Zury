@@ -7,6 +7,7 @@ const audit = require('./auditService');
 const MARKS = [[3, 'reminder.3d', 'Three days left in {event}: submit your entries before it ends.'], [1, 'reminder.1d', 'One day left in {event}: submit your entries before it ends.']];
 
 async function sweep(now = new Date()) {
+  if (!(await require('./featureService').all()).reminders) return 0;
   let sent = 0;
   for (const [days, action, message] of MARKS) {
     const until = new Date(now.getTime() + days * 86400000);

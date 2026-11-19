@@ -25,5 +25,6 @@
   if (has('[data-review-form]')) add('/js/review.js');
   if (has('[data-notifications]')) add('/js/notifications.js');
   if (has('[data-level-setting]')) add('/js/levelSettings.js');
-  if (has('[data-chat]')) add('/js/chat.js');
+  if (has('[data-chat], [data-chat-launch]')) add('/js/chat.js');
+  if (has('body[data-live]')) add('/js/live.js');
 })();

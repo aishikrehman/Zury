@@ -2,12 +2,10 @@
 // ("j<id>"), a series ("s<id>") or an edition ("x<id>"). New messages reach open pages at once (server-sent events).
 // Against spam: signed-in only, a few messages a minute, no repeats, few links, short messages;
 // blocked people cannot write; moderators can hide a message; anyone can delete their own.
-const { EventEmitter } = require('events');
 const prisma = require('../config/prisma');
 const notifications = require('./notificationService');
 
-const bus = new EventEmitter();
-bus.setMaxListeners(0);
+const bus = require('./liveBus');
 
 const MAX_LEN = 1000;
 const MAX_LINKS = 2;
@@ -18,6 +16,8 @@ class ChatError extends Error {}
 const dm = (a, b) => `d${Math.min(a, b)}.${Math.max(a, b)}`;
 function parseChannel(c) {
   c = String(c || '');
+  const d = c.match(/^d(\d+)\.(\d+)$/);
+  if (d && Number(d[1]) < Number(d[2])) return { kind: 'direct', users: [Number(d[1]), Number(d[2])] };
   const m = c.match(/^([ejsx])(\d+)$/);
   if (!m) return null;
   return { kind: { e: 'event', j: 'jury', s: 'series', x: 'edition' }[m[1]], id: Number(m[2]), contestId: Number(m[2]) };
@@ -76,6 +76,8 @@ async function post({ user, channel, body, contest = null, link = '' }) {
 const told = new Map();
 async function tell({ user, channel, body, contest, link: given }) {
   const targets = [];
+  const dmp = parseChannel(channel);
+  if (dmp && dmp.kind === 'direct') targets.push(dmp.users.find((id) => id !== user.id));
   const names = [...body.matchAll(/@([^\s@,.:;!?]{2,85})/g)].map((m) => m[1].replace(/_/g, ' '));
   if (names.length) {
     const found = await prisma.user.findMany({ where: { username: { in: names.slice(0, 5) } }, select: { id: true } });
@@ -86,7 +88,7 @@ async function tell({ user, channel, body, contest, link: given }) {
   if (!fresh.length) return;
   fresh.forEach((id) => told.set(`${id}:${channel}`, now));
   const link = given || (contest ? `${contest.path || `/contest/${contest.id}`}/patrol${channel.startsWith('j') ? '?tab=jury' : ''}` : '');
-  await notifications.notify(fresh, { kind: 'chat.message', message: '{name} mentioned you in a chat.', params: { name: user.username }, link, contestId: contest ? contest.id : null });
+  await notifications.notify(fresh, { kind: 'chat.message', message: dmp && dmp.kind === 'direct' ? '{name} sent you a message.' : '{name} mentioned you in a chat.', params: { name: user.username }, link, contestId: contest ? contest.id : null });
 }
 
 // Hidden by a moderator, or deleted by its writer.
@@ -101,11 +103,18 @@ async function hide({ actor, id, channel, own }) {
 
 async function markRead(userId, channel, lastId) {
   if (!userId || !lastId) return;
+  unreadCache.delete(userId);
   await prisma.chatRead.upsert({ where: { userId_channel: { userId, channel } }, update: { lastId }, create: { userId, channel, lastId } }).catch(() => null);
 }
 
 // A live stream of a channel to one open page. Missed messages (after Last-Event-ID) come first.
+const openStreams = new Map(); // userId → how many live lines are open
+const MAX_STREAMS = 6;
 async function stream(req, res, channel, render) {
+  const who = req.user ? req.user.id : 0;
+  if ((openStreams.get(who) || 0) >= MAX_STREAMS) return res.status(429).end();
+  openStreams.set(who, (openStreams.get(who) || 0) + 1);
+  req.on('close', () => { const n = (openStreams.get(who) || 1) - 1; if (n > 0) openStreams.set(who, n); else openStreams.delete(who); });
   res.set({ 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
   res.flushHeaders();
   const send = async (m) => {
@@ -125,7 +134,9 @@ async function stream(req, res, channel, render) {
 
 // Chats are kept until their event, series or edition is archived (results final); then deleted.
 async function prune() {
-  const count = await pruneArchived();
+  let count = await pruneArchived();
+  const days = require('./featureService').now().directDays || DIRECT_DAYS;
+  count += (await prisma.chatMessage.deleteMany({ where: { channel: { startsWith: 'd' }, createdAt: { lt: new Date(Date.now() - days * 86400000) } } })).count;
   if (count) await prisma.$executeRawUnsafe('DELETE r FROM ChatRead r LEFT JOIN ChatMessage m ON m.channel = r.channel WHERE m.id IS NULL');
   return count;
 }
@@ -159,4 +170,90 @@ async function pruneArchived() {
   return count;
 }
 
-module.exports = { exportText, pruneArchived, prune, clear, ChatError, dm, parseChannel, list, post, hide, markRead, stream };
+// The chat rooms a person belongs to: their events' rooms (the reviewers' room for reviewers and
+// organizers), and series and edition rooms they have written in. Newest activity first.
+const STAFF_ROLES = ['jury', 'organizer'];
+const OLD_DAYS = 90; // events that ended longer ago leave the chat lists
+const DIRECT_DAYS = 90; // messages between two people are kept this long
+
+// Two people may write to each other when they share an event (organizers, reviewers or participants).
+async function mayWrite(a, b) {
+  if (!a || !b || a === b) return false;
+  const mine = await prisma.contestMembership.findMany({ where: { userId: a, status: 'active' }, select: { contestId: true } });
+  if (!mine.length) return false;
+  return (await prisma.contestMembership.count({ where: { userId: b, status: 'active', contestId: { in: mine.map((m) => m.contestId) } } })) > 0;
+}
+async function myRooms(userId) {
+  const F = require('./featureService').now();
+  if (!F.chat && !F.juryChat && !F.levelChat && !F.directMessages) return [];
+  const OLD = F.oldEventDays || OLD_DAYS;
+  const ms = await prisma.contestMembership.findMany({
+    where: { userId, status: 'active', contest: { deletedAt: null, status: { notIn: ['draft', 'archived', 'cancelled'] }, OR: [{ endDate: null }, { endDate: { gte: new Date(Date.now() - OLD * 86400000) } }] } },
+    select: { role: true, contest: { select: { id: true, title: true, path: true, settings: { select: { extras: true } } } } },
+  });
+  const extras = require('./extrasService');
+  const rooms = new Map();
+  for (const m of ms) {
+    const c = m.contest; const x = extras.read(c.settings);
+    const path = c.path || `/contest/${c.id}`;
+    if (F.chat && x.chat) rooms.set(`e${c.id}`, { channel: `e${c.id}`, title: c.title, path, room: 'event' });
+    if (F.juryChat && x.juryChat && STAFF_ROLES.includes(m.role)) rooms.set(`j${c.id}`, { channel: `j${c.id}`, title: c.title, path, room: 'jury' });
+  }
+  const written = !F.levelChat ? [] : await prisma.chatMessage.findMany({ where: { userId, OR: [{ channel: { startsWith: 's' } }, { channel: { startsWith: 'x' } }] }, distinct: ['channel'], select: { channel: true }, take: 50 });
+  const sIds = written.filter((w) => w.channel[0] === 's').map((w) => Number(w.channel.slice(1)));
+  const xIds = written.filter((w) => w.channel[0] === 'x').map((w) => Number(w.channel.slice(1)));
+  const [series, eds] = await Promise.all([
+    sIds.length ? prisma.eventSeries.findMany({ where: { id: { in: sIds }, deletedAt: null, status: { not: 'archived' } }, select: { id: true, title: true, slug: true } }) : [],
+    xIds.length ? prisma.edition.findMany({ where: { id: { in: xIds }, deletedAt: null, status: { not: 'archived' } }, select: { id: true, title: true, slug: true, series: { select: { slug: true } } } }) : [],
+  ]);
+  for (const s of series) rooms.set(`s${s.id}`, { channel: `s${s.id}`, title: s.title, path: `/${s.slug}`, room: 'series' });
+  for (const e of eds) rooms.set(`x${e.id}`, { channel: `x${e.id}`, title: e.title, path: `/series/${e.series.slug}/${e.slug}`, room: 'edition' });
+  // Conversations between two people.
+  const dms = !F.directMessages ? [] : await prisma.$queryRawUnsafe("SELECT DISTINCT channel FROM ChatMessage WHERE channel LIKE ? OR channel LIKE ? LIMIT 100", `d${userId}.%`, `d%.${userId}`);
+  const pairs = dms.map((r) => [r.channel, parseChannel(r.channel)]).filter(([, p]) => p && p.users.includes(userId));
+  if (pairs.length) {
+    const others = await prisma.user.findMany({ where: { id: { in: pairs.map(([, p]) => p.users.find((id) => id !== userId)) } }, select: { id: true, username: true, avatarUrl: true, lastLoginAt: true } });
+    for (const [c, p] of pairs) { const o = others.find((u) => u.id === p.users.find((id) => id !== userId)); if (o) rooms.set(c, { channel: c, title: o.username, path: `/users/${encodeURIComponent(o.username)}`, room: 'direct', person: o }); }
+  }
+  const list = [...rooms.values()];
+  if (!list.length) return [];
+  const chans = list.map((r) => r.channel);
+  const [lasts, reads] = await Promise.all([
+    prisma.chatMessage.groupBy({ by: ['channel'], where: { channel: { in: chans } }, _max: { id: true, createdAt: true } }),
+    prisma.chatRead.findMany({ where: { userId, channel: { in: chans } } }),
+  ]);
+  const last = new Map(lasts.map((l) => [l.channel, l._max]));
+  const read = new Map(reads.map((r) => [r.channel, r.lastId]));
+  for (const r of list) { const l = last.get(r.channel); r.lastAt = l ? l.createdAt : null; r.unread = !!(l && l.id > (read.get(r.channel) || 0)); r.lastId = l ? l.id : null; }
+  // Each room's latest message, for the inbox's lines.
+  const ids = list.map((r) => r.lastId).filter(Boolean);
+  const lastMsgs = ids.length ? await withUsers(await prisma.chatMessage.findMany({ where: { id: { in: ids } } })) : [];
+  for (const r of list) { const m = lastMsgs.find((x) => x.id === r.lastId); r.preview = m && !m.hiddenAt ? `${m.user.username}: ${m.body}`.slice(0, 160) : ''; }
+  return list.sort((a, b) => (b.lastAt ? +b.lastAt : 0) - (a.lastAt ? +a.lastAt : 0));
+}
+
+// How many of a person's rooms have something new (kept a minute, for the header).
+const unreadCache = new Map();
+async function unreadRooms(userId) {
+  const hit = unreadCache.get(userId);
+  if (hit && Date.now() - hit.at < 60000) return hit.n;
+  const n = (await myRooms(userId)).filter((r) => r.unread).length;
+  unreadCache.set(userId, { at: Date.now(), n });
+  return n;
+}
+
+// What is new for a person since a time: notifications, and messages by others in their rooms.
+const roomsCache = new Map();
+async function newsSince(userId, since) {
+  const hit = roomsCache.get(userId);
+  const rooms = hit && Date.now() - hit.at < 60000 ? hit.rooms : await myRooms(userId);
+  if (!hit || hit.rooms !== rooms) roomsCache.set(userId, { at: Date.now(), rooms });
+  const byChannel = new Map(rooms.map((r) => [r.channel, r]));
+  const [notes, msgs] = await Promise.all([
+    prisma.notification.findMany({ where: { userId, createdAt: { gt: since } }, orderBy: { id: 'asc' }, take: 5 }),
+    rooms.length ? prisma.chatMessage.findMany({ where: { channel: { in: [...byChannel.keys()] }, userId: { not: userId }, hiddenAt: null, createdAt: { gt: since } }, orderBy: { id: 'asc' }, take: 5 }) : [],
+  ]);
+  return { notes, msgs: (await withUsers(msgs)).map((m) => ({ ...m, room: byChannel.get(m.channel) })) };
+}
+
+module.exports = { newsSince, mayWrite, DIRECT_DAYS, myRooms, unreadRooms, exportText, pruneArchived, prune, clear, ChatError, dm, parseChannel, list, post, hide, markRead, stream };

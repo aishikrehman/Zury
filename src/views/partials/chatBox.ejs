@@ -1,5 +1,5 @@
 <%# A chat card: messages (new ones arrive live, public/js/chat.js) and a box to write at the bottom. %>
-<div class="<%= typeof bare !== 'undefined' && bare ? '' : 'card ' %>z-chat" data-chat data-stream="<%= box.streamUrl %>" data-last="<%= box.lastId %>"<% if (typeof height !== 'undefined') { %> style="--z-chat-h: <%= height %>"<% } %>>
+<div class="<%= typeof bare !== 'undefined' && bare ? '' : 'card ' %>z-chat" data-chat data-live="<%= box.live === false ? 0 : 1 %>" data-stream="<%= box.streamUrl %>" data-last="<%= box.lastId %>"<% if (typeof height !== 'undefined') { %> style="--z-chat-h: <%= height %>"<% } %>>
   <% if (typeof tabs !== 'undefined' && tabs.length) { %>
     <div class="card-header z-chat-head">
       <ul class="nav nav-tabs card-header-tabs"><% tabs.forEach(([label, href, on, icon]) => { %><li class="nav-item"><a class="nav-link<%= on ? ' active' : '' %>" href="<%= href %>"><i class="ti ti-<%= icon %> me-1"></i><%= label %></a></li><% }) %></ul>
@@ -9,6 +9,7 @@
   <div class="z-chat-warn">
     <i class="ti ti-alert-triangle"></i><span><%= t('This chat is deleted when the event is archived (its results final).') %></span>
     <span class="z-chat-tools">
+      <% if (box.live === false) { %><button class="btn btn-sm" type="button" data-chat-refresh title="<%= t('Refresh') %>" aria-label="<%= t('Refresh') %>"><i class="ti ti-refresh"></i></button><% } %>
       <a class="btn btn-sm" href="<%= box.downloadUrl %>"><i class="ti ti-download me-1"></i><%= t('Download') %></a>
       <% if (box.clearUrl) { %><form method="post" action="<%= box.clearUrl %>" data-confirm="<%= t('Delete every message in this chat? This cannot be undone.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="c" value="<%= box.channel %>"><button class="btn btn-sm btn-ghost-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Delete this chat') %></button></form><% } %>
     </span>
