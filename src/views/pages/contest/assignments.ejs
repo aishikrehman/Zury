@@ -14,7 +14,7 @@
         <% if (assignedMode) { %><%= t('Only assigned reviewers') %><% } else { %><%= t('Any reviewer of the wiki') %><% } %>
       </div>
     </div>
-    <form method="post" action="<%= base %>/assignments/reassign" class="ms-auto d-flex align-items-center gap-2" data-confirm="<%= t('Give the entries of reviewers inactive for this many days to the other reviewers?') %>">
+    <form method="post" action="<%= base %>/assignments/reassign" class="ms-auto d-flex align-items-center gap-2" data-confirm="<%= t('Reassign entries of reviewers inactive this many days?') %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <label class="small text-secondary text-nowrap" for="inactive-days"><%= t('Inactive for') %></label>
       <input class="form-control form-control-sm" style="width: 4.5rem" type="number" min="1" max="90" id="inactive-days" name="days" value="7">

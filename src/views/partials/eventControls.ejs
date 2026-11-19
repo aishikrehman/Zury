@@ -13,7 +13,7 @@
     if (['published', 'upcoming'].includes(s)) main.push(act('unpublish', 'arrow-back-up', 'Back to draft', ''));
     if (running) main.push(act('pause', 'player-pause', 'Pause', ''));
     if (s === 'paused') main.push(act('resume', 'player-play', 'Resume', 'primary'));
-    if (['completed', 'cancelled'].includes(s)) main.push(act('archive', 'archive', 'Archive (results final)', 'warning', t('Archive this event? Its results become final, nothing can be changed any more, and its chats are deleted.')));
+    if (['completed', 'cancelled'].includes(s)) main.push(act('archive', 'archive', 'Archive (results final)', 'warning', t('Archive this event? Results become final, editing stops and chats are deleted.')));
     if (s === 'cancelled') main.push(act('reopen', 'refresh', 'Reopen', ''));
     if (!['cancelled', 'archived', 'draft'].includes(s)) main.push(act('cancel', 'ban', 'Cancel the event', 'ghost-danger', t('Cancel this event?')));
   }
@@ -28,7 +28,7 @@
           <% steps.forEach(([label, icon], i) => { %><li class="<%= i < stage ? 'is-done' : i === stage ? 'is-now' : '' %>"><span><i class="ti ti-<%= i < stage ? 'check' : icon %>"></i></span><b><%= t(label) %></b></li><% }) %>
         </ol>
         <% if (s === 'paused' || s === 'cancelled') { %><div class="alert alert-<%= s === 'paused' ? 'warning' : 'danger' %> py-2"><%= s === 'paused' ? t('The event is paused.') : t('The event is cancelled.') %></div><% } %>
-        <% if (s === 'archived') { %><p class="text-secondary"><%= t('This event is archived: its results are final and it can no longer be changed.') %></p><% } %>
+        <% if (s === 'archived') { %><p class="text-secondary"><%= t('Archived. Results are final.') %></p><% } %>
         <div class="z-life-actions">
           <% main.forEach((a) => { %>
             <form method="post" action="<%= base %>/status" data-once<% if (a.confirm) { %> data-confirm="<%= a.confirm %>"<% } %>><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="action" value="<%= a.action %>"><button type="submit" class="btn<%= a.cls ? ' btn-' + a.cls : '' %>"><i class="ti ti-<%= a.icon %> me-1"></i><%= t(a.label) %></button></form>

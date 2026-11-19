@@ -110,13 +110,14 @@
     <% } else if (step === 'status') { %>
       <div class="card-body text-center py-5">
         <% if (result && result.list) { %>
-          <i class="ti ti-list-check text-green" style="font-size: 3rem"></i>
-          <h3 class="mt-2"><%= t('List of {n} people saved on the wiki.', { n: formatNumber(result.list.people) }) %></h3>
-          <p><a href="<%= result.list.pageUrl %>" target="_blank" rel="noopener"><%= result.list.title %></a></p>
+          <i class="ti ti-alert-triangle text-warning" style="font-size: 3rem"></i>
+          <h3 class="mt-2"><%= t('Not sent: the wiki refused the MassMessage bot') %></h3>
+          <% if (result.list.why) { %><p class="small text-danger mb-1"><%= result.list.why %></p><% } %>
+          <p class="small text-secondary"><%= t('The list of {n} people is on {page}. Someone with the massmessage-sender right can send it.', { n: formatNumber(result.list.people), page: result.list.title }) %> <a href="<%= result.list.pageUrl %>" target="_blank" rel="noopener"><i class="ti ti-external-link"></i></a></p>
           <a class="btn btn-primary" href="<%= result.list.sendUrl %>" target="_blank" rel="noopener"><i class="ti ti-send me-1"></i><%= t('Send with Special:MassMessage') %></a>
         <% } else if (result) { %>
           <i class="ti ti-<%= result.failed.length ? 'alert-triangle text-warning' : 'circle-check text-green' %>" style="font-size: 3rem"></i>
-          <h3 class="mt-2"><%= tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %></h3>
+          <h3 class="mt-2"><%= result.bot ? t('The MassMessage bot is delivering to {n} people', { n: formatNumber(result.sent) }) : tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %></h3>
           <% if (result.failed.length) { %><div class="text-start mx-auto" style="max-width: 32rem"><div class="fw-bold mb-1"><%= t('Not sent to:') %></div><ul><% result.failed.forEach((f) => { %><li><%= f.username %> — <%= f.error %></li><% }) %></ul></div><% } %>
         <% } %>
         <div class="mt-3"><a class="btn" href="/mass"><i class="ti ti-plus me-1"></i><%= t('New mass message') %></a></div>

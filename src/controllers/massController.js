@@ -102,15 +102,16 @@ function render(req, res, locals) {
     title: 'Mass message',
     form: { audience: 'participant', method: 'bell', wiki: req.user.homeWiki || 'bnwiki', ...locals.form },
     step: locals.step || 'who', notOnZury: locals.notOnZury || 0, people: locals.people || null, left: locals.left || [], result: locals.result || null, error: locals.error || null, preview: locals.preview || null,
-    events: locals.events, methods: res.locals.features.massMessages ? messageService.METHODS : Object.fromEntries(Object.entries(messageService.METHODS).filter(([k]) => k !== 'massmessage')),
+    events: locals.events, methods: res.locals.features.massMessages && res.locals.mmOk ? messageService.METHODS : Object.fromEntries(Object.entries(messageService.METHODS).filter(([k]) => k !== 'massmessage')),
     audiences: messageService.AUDIENCES, hasToken: !!req.session.wikimediaToken,
   });
 }
 
 async function page(req, res, next) {
   try {
+    if (!req.permissions.has('accessAdmin')) { const e = new Error('Only admins can use this tool.'); e.status = 403; return next(e); }
     const events = await managedEvents(req);
-    if (!events.length && !staff(req)) { const e = new Error('Only event organizers can send mass messages.'); e.status = 403; return next(e); }
+    res.locals.mmOk = await messageService.canMassMessage(req.user.username, req.user.homeWiki || 'bnwiki');
     render(req, res, { events, form: {} });
   } catch (err) { next(err); }
 }
@@ -119,8 +120,9 @@ async function send(req, res, next) {
   const form = { quarry: String(req.body.quarry || '').trim(), quarryColumn: String(req.body.quarryColumn || '').trim(), activeWiki: String(req.body.activeWiki || '').trim(), activeDays: req.body.activeDays, activeMin: req.body.activeMin, events: [].concat(req.body.events || []), audience: req.body.audience, names: req.body.names, pageWiki: String(req.body.pageWiki || '').trim(), pageTitle: String(req.body.pageTitle || '').trim(), exclude: req.body.exclude, wiki: String(req.body.wiki || '').trim(), method: req.body.method, subject: req.body.subject, body: req.body.body };
   let events = [];
   try {
+    if (!req.permissions.has('accessAdmin')) { const e = new Error('Only admins can use this tool.'); e.status = 403; return next(e); }
     events = await managedEvents(req);
-    if (!events.length && !staff(req)) { const e = new Error('Only event organizers can send mass messages.'); e.status = 403; return next(e); }
+    res.locals.mmOk = await messageService.canMassMessage(req.user.username, form.wiki || req.user.homeWiki || 'bnwiki');
     // People ticked to drop on the people step join the "leave out" list.
     const drop = [].concat(req.body.drop || []).map((s) => String(s).trim()).filter(Boolean);
     if (drop.length) form.exclude = [String(form.exclude || '').trim(), ...drop].filter(Boolean).join('\n');

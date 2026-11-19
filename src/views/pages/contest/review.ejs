@@ -284,7 +284,7 @@
                   <span class="badge bg-<%= r.decision === 'accept' ? 'green' : 'red' %>-lt ms-1"><%= decisionLabel[r.decision] %></span>
                   <span class="text-secondary"><%= t('{n} points', { n: r.points }) %></span>
                   <% if (r.comment) { %><div class="text-secondary"><%= r.comment %></div><% } %>
-                  <% if (orgTools) { %><form method="post" action="<%= base %>/submissions/<%= entry.id %>/reviews/<%= r.id %>/delete" class="d-inline" data-confirm="<%= t('Delete this review? The entry is decided again from the other reviews.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-link btn-sm p-0 text-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Remove this review') %></button></form><% } %>
+                  <% if (orgTools) { %><form method="post" action="<%= base %>/submissions/<%= entry.id %>/reviews/<%= r.id %>/delete" class="d-inline" data-confirm="<%= t('Delete this review? The entry is re-decided from the others.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-link btn-sm p-0 text-danger" type="submit"><i class="ti ti-trash me-1"></i><%= t('Remove this review') %></button></form><% } %>
                 </div>
               <% }) %>
             </div>

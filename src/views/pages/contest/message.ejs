@@ -21,7 +21,7 @@
         </div>
       <% } %>
       <% if (!hasToken) { %>
-        <div class="alert alert-warning" role="alert"><%= t("Messages are sent with your Wikimedia account. Log out and log in with Wikimedia to send them.") %></div>
+        <div class="alert alert-warning" role="alert"><%= t("Log in with Wikimedia to send messages.") %></div>
       <% } %>
       <form method="post" action="<%= base %>/message" class="card">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">

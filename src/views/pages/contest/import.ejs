@@ -7,7 +7,7 @@
   <div class="d-flex align-items-center gap-2 mb-3">
     <h2 class="m-0"><i class="ti ti-file-import me-2"></i><%= t('Import entries') %></h2>
   </div>
-  <p class="text-secondary"><%= t('Bring entries in from a list on a wiki page, a CSV or plain list, or a Fountain editathon. You see everything first; nothing is saved until you confirm.') %></p>
+  <p class="text-secondary"><%= t('Import from a wiki page, CSV, plain list or Fountain. Nothing is saved until you confirm.') %></p>
 
   <form method="post" action="<%= base %>/import/preview" class="card z-imp">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -28,20 +28,20 @@
           <% } else { %><input type="hidden" name="wiki" value="<%= wikis[0] %>"><% } %>
           <div class="col"><label class="form-label" for="imp-page"><%= t('Page with the list') %></label><input class="form-control" id="imp-page" name="page" value="<%= f.page %>" placeholder="<%= t('Page name or address, e.g. Wikipedia:Event/List') %>"></div>
         </div>
-        <div class="form-hint mt-1"><%= t('Every listed title is read, whether written plainly or as [[links]]. Files, categories and other namespaces are left out.') %></div>
+        <div class="form-hint mt-1"><%= t('Plain titles and [[links]] are read. Files, categories and other namespaces are skipped.') %></div>
       </div>
 
       <div class="z-imp-pane" data-pane="text">
         <label class="form-label" for="imp-text"><%= t('Paste CSV or a list') %></label>
         <textarea class="form-control font-monospace" id="imp-text" name="text" rows="8" placeholder="article,participant,status,reviewer,note"><%= f.text %></textarea>
-        <div class="form-hint mt-1"><%= t('Columns: article, participant, status, reviewer, note (a header row in English or Bangla, or in that order). Only the article is needed; one title per line also works. Status: accepted or not accepted.') %></div>
+        <div class="form-hint mt-1"><%= t('Columns: article, participant, status, reviewer, note. Only article is required. Status: accepted or not accepted.') %></div>
         <label class="btn btn-sm mt-2"><i class="ti ti-upload me-1"></i><%= t('Load a file') %><input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" class="visually-hidden" data-imp-file></label>
       </div>
 
       <div class="z-imp-pane" data-pane="fountain">
         <label class="form-label" for="imp-code"><%= t('Fountain editathon') %></label>
         <input class="form-control" id="imp-code" name="code" value="<%= f.code %>" placeholder="<%= t('Fountain editathon code or address') %>">
-        <div class="form-hint mt-1"><%= t('Its articles come with their status and each juror’s review, marked as reviewed on Fountain.') %></div>
+        <div class="form-hint mt-1"><%= t('Articles come with their status and jurors’ reviews.') %></div>
       </div>
     </div>
     <div class="card-footer text-end">
@@ -89,7 +89,7 @@
         <form method="post" action="<%= base %>/import" class="card-footer d-flex align-items-center gap-2" data-once>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <% ['source', 'page', 'text', 'code', 'wiki'].forEach((k) => { %><input type="hidden" name="<%= k %>" value="<%= f[k] %>"><% }) %>
-          <span class="text-secondary small"><%= t('You are the submitter; each entry is credited to its participant.') %></span>
+          <span class="text-secondary small"><%= t('Each entry is credited to its participant.') %></span>
           <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-file-import me-1"></i><%= t('Import {n} entries', { n: formatNumber(s.ready) }) %></button>
         </form>
       <% } %>

@@ -7,11 +7,11 @@
   <div class="row row-cards mb-3">
     <div class="col-md-6"><a class="card card-link h-100<%= method === 'blank' ? ' border-primary' : '' %>" href="?method=blank">
       <div class="card-body"><div class="h3 mb-1"><i class="ti ti-file me-1"></i><%= t('Blank') %></div>
-      <p class="text-secondary mb-0"><%= t('A completely new edition. Nothing is copied: you add its event and set everything yourself.') %></p></div>
+      <p class="text-secondary mb-0"><%= t('A blank edition. Nothing is copied.') %></p></div>
     </a></div>
     <div class="col-md-6"><a class="card card-link h-100<%= method === 'copy' ? ' border-primary' : '' %><%= list.length ? '' : ' disabled opacity-50' %>" href="<%= list.length ? `?method=copy${from ? `&from=${from.slug}` : ''}` : '#' %>">
       <div class="card-body"><div class="h3 mb-1"><i class="ti ti-copy me-1"></i><%= t('Copy an earlier edition') %></div>
-      <p class="text-secondary mb-0"><%= list.length ? t('Start from an earlier edition and choose what comes along. Participants, entries, reviews and results never do.') : t('This series has no edition to copy yet.') %></p></div>
+      <p class="text-secondary mb-0"><%= list.length ? t('Copy settings from an earlier edition. Participants, entries, reviews and results are not copied.') : t('This series has no edition to copy yet.') %></p></div>
     </a></div>
   </div>
 

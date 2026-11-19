@@ -10,7 +10,7 @@ function render(req, res, { form = {}, people = null, result = null, error = nul
     people,
     result,
     error,
-    methods: res.locals.features.massMessages ? messageService.METHODS : Object.fromEntries(Object.entries(messageService.METHODS).filter(([k]) => k !== 'massmessage')),
+    methods: res.locals.features.massMessages && res.locals.mmOk ? messageService.METHODS : Object.fromEntries(Object.entries(messageService.METHODS).filter(([k]) => k !== 'massmessage')),
     audiences: messageService.AUDIENCES,
     maxRecipients: messageService.MAX_RECIPIENTS,
     hasToken: !!req.session.wikimediaToken,
@@ -20,8 +20,11 @@ function render(req, res, { form = {}, people = null, result = null, error = nul
 const findPeople = (req, form) =>
   messageService.recipients({ contestId: req.contest.id, audience: form.audience, wiki: req.wikiScope?.wiki, usernames: listOf(form.only) });
 
+const mmCheck = async (req, res) => { res.locals.mmOk = await messageService.canMassMessage(req.user.username, req.wikiScope?.wiki || req.contest.primaryWiki); };
+
 async function form(req, res, next) {
   try {
+    await mmCheck(req, res);
     render(req, res, { people: await findPeople(req, { audience: 'participant' }) });
   } catch (err) {
     next(err);
@@ -32,6 +35,7 @@ async function form(req, res, next) {
 async function send(req, res, next) {
   const f = { audience: req.body.audience, method: req.body.method, subject: req.body.subject, body: req.body.body, only: req.body.only };
   try {
+    await mmCheck(req, res);
     const people = await findPeople(req, f);
     if (req.body.step !== 'send') return render(req, res, { form: f, people });
     const result = await messageService.send({

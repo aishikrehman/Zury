@@ -17,7 +17,7 @@
         <div class="list-group-item"><div class="row align-items-center">
           <div class="col"><span class="fw-medium"><%= d ? t(d.label) : r.key %></span>: <%= typeof val === 'boolean' ? t(val ? 'Yes' : 'No') : (val === null ? '—' : val) %>
             <span class="badge <%= r.mode === 'locked' ? 'bg-red-lt' : r.mode === 'default' ? 'bg-blue-lt' : 'bg-secondary-lt' %> ms-1"><% if (r.mode === 'locked') { %><i class="ti ti-lock me-1"></i><% } %><%= t(r.mode === 'locked' ? 'Locked' : r.mode === 'default' ? 'Default' : 'Suggested') %></span></div>
-          <div class="col-auto"><form method="post" action="/series/<%= seriesSlug %>/settings/<%= r.id %>/remove" data-confirm="<%= t('Remove this setting? Events below keep their current values as their own.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (editionId) { %><input type="hidden" name="editionId" value="<%= editionId %>"><% } %><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Remove') %>" aria-label="<%= t('Remove') %>"><i class="ti ti-x"></i></button></form></div>
+          <div class="col-auto"><form method="post" action="/series/<%= seriesSlug %>/settings/<%= r.id %>/remove" data-confirm="<%= t('Remove this setting? Events below keep their current values.') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (editionId) { %><input type="hidden" name="editionId" value="<%= editionId %>"><% } %><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Remove') %>" aria-label="<%= t('Remove') %>"><i class="ti ti-x"></i></button></form></div>
         </div></div>
       <% }) %>
     </div>

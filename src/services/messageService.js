@@ -85,6 +85,7 @@ async function send({ actor, accessToken, contest, method, subject, body, people
   }
   if (!accessToken) throw new MessageError('Log in with your Wikimedia account to send messages.');
   if (method === 'massmessage' && !require('./featureService').now().massMessages) throw new MessageError('Choose how to send the message.');
+  if (method === 'massmessage' && !(await canMassMessage(actor.username, fallbackWiki))) throw new MessageError('Only admins of this wiki can use the MassMessage bot.');
   if (method === 'massmessage') return massList({ actor, accessToken, contest, subject, body, people, wiki: fallbackWiki });
   if (people.length > MAX_RECIPIENTS) throw new MessageError(`At most ${MAX_RECIPIENTS} people at a time.`);
 
@@ -119,23 +120,45 @@ async function send({ actor, accessToken, contest, method, subject, body, people
   return { sent, failed };
 }
 
-// Writes the recipients as a MassMessage delivery list under the organizer's user page, and gives
-// the link to Special:MassMessage with the list, subject and message filled in.
+// MassMessage only sends to a list page, so the recipients are written to one fixed sandbox page
+// (plain wikitext "# {{#target:User talk:Name}}" lines) and sent at once with the MassMessage API. If the API refuses
+// (no massmessage-sender right, or the login lacks the grant), the Special:MassMessage link is given.
+// The person's rights on that wiki, read from the wiki (kept 10 minutes).
+const rightsKept = new Map();
+async function canMassMessage(username, wiki) {
+  if (!username || !wiki) return false;
+  const key = `${wiki}|${username}`;
+  const hit = rightsKept.get(key);
+  if (hit && Date.now() - hit.at < 600000) return hit.ok;
+  const d = await require('../wiki/wikiApi').get(wiki, { action: 'query', list: 'users', ususers: username, usprop: 'rights' }).catch(() => null);
+  const ok = !!(d && (d.query?.users?.[0]?.rights || []).includes('massmessage'));
+  rightsKept.set(key, { at: Date.now(), ok });
+  return ok;
+}
+
+const MASS_LIST_PAGE = 'Project:খেলাঘর/ZuryMassMessage';
 async function massList({ actor, accessToken, contest, subject, body, people, wiki }) {
   if (people.length > MAX_LIST) throw new MessageError('At most 5000 people at a time.');
   const { dbnameToHost } = require('../wiki/wikiUrls');
   const host = dbnameToHost(wiki);
-  const title = `User:${actor.username}/Zury mass message/${contest.id ? (contest.path || String(contest.id)).replace(/^\//, '').replace(/\//g, '-') : new Date().toISOString().slice(0, 10)}`;
-  const text = people.map((p) => `{{target |page=User talk:${p.username} |site=${dbnameToHost(p.wiki || wiki) || host}}}`).join('\n');
+  const title = MASS_LIST_PAGE;
+  // MassMessage's own list syntax; the site is named only for someone on another wiki.
+  const text = people.map((p) => {
+    const site = dbnameToHost(p.wiki || wiki) || host;
+    return `# {{#target:User talk:${p.username}${site !== host ? `|${site}` : ''}}}`;
+  }).join('\n');
   const token = await csrfToken(wiki, accessToken);
-  const r = await oauthService.userApi(wiki, accessToken, { action: 'edit', title, text, contentmodel: 'MassMessageListContent', summary: `${contest.title}: ${subject}`, token }, { post: true })
+  const saved = await oauthService.userApi(wiki, accessToken, { action: 'edit', title, text, summary: `${contest.title}: ${subject}`, token }, { post: true })
     .catch((err) => ({ error: { info: err.message } }));
-  // Wikis without the MassMessage list type: a plain wikitext list works the same.
-  const plain = r.error ? await oauthService.userApi(wiki, accessToken, { action: 'edit', title, text, summary: `${contest.title}: ${subject}`, token }, { post: true }) : r;
-  if (plain.error) throw new MessageError(plain.error.info || 'The list page could not be saved.');
+  if (saved.error) throw new MessageError(saved.error.info || 'The list page could not be saved.');
+  const pageUrl = `https://${host}/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`;
+  // Sent right after saving, so nobody's sandbox edit gets in between.
+  const sent = await oauthService.userApi(wiki, accessToken, { action: 'massmessage', spamlist: title, subject, message: body, token }, { post: true })
+    .catch((err) => ({ error: { info: err.message } }));
+  await audit.record({ actorId: actor.id, contestId: contest.id, action: sent.error ? 'message.list' : 'message.massmessage', entityType: 'Contest', entityId: contest.id, details: { subject, people: people.length, title, error: sent.error ? sent.error.info : undefined } });
+  if (!sent.error) return { sent: Number(sent.massmessage?.count) || people.length, failed: [], bot: true, list: null };
   const q = new URLSearchParams({ spamlist: title, subject, message: body });
-  await audit.record({ actorId: actor.id, contestId: contest.id, action: 'message.list', entityType: 'Contest', entityId: contest.id, details: { subject, people: people.length, title } });
-  return { sent: 0, failed: [], list: { title, people: people.length, pageUrl: `https://${host}/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`, sendUrl: `https://${host}/wiki/Special:MassMessage?${q}` } };
+  return { sent: 0, failed: [], list: { title, people: people.length, pageUrl, sendUrl: `https://${host}/wiki/Special:MassMessage?${q}`, why: sent.error.info || '' } };
 }
 
-module.exports = { METHODS, AUDIENCES, MAX_RECIPIENTS, MessageError, recipients, send };
+module.exports = { canMassMessage, METHODS, AUDIENCES, MAX_RECIPIENTS, MessageError, recipients, send };

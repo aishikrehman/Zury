@@ -15,7 +15,7 @@
           </form>
         <% } %>
       </div>
-      <% if (canEdit) { %><div class="card-body py-2 small text-secondary border-bottom"><%= t('Click a cell to give or take away that permission. Superusers always have everything.') %></div><% } %>
+      <% if (canEdit) { %><div class="card-body py-2 small text-secondary border-bottom"><%= t('Click a cell to toggle. Superusers have all permissions.') %></div><% } %>
       <div class="table-responsive z-perm-wrap">
         <table class="table table-vcenter card-table text-center z-perm">
           <thead>
