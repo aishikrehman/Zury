@@ -3460,3 +3460,7 @@ details.z-sec:not([open]) > summary { border-bottom: 0; }
 .z-quick-main > a { margin-right: .4rem; }
 .z-quick-act { display: flex; gap: .35rem; }
 .z-quick .z-mail-bar { flex-wrap: wrap; }
+/* Mass message */
+.z-mass-events { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .35rem .75rem; max-height: 14rem; overflow-y: auto; padding: .25rem; }
+.z-mass-people .list-group { max-height: 70vh; overflow-y: auto; }
+@media (min-width: 992px) { .z-mass-people { position: sticky; top: 1rem; } }

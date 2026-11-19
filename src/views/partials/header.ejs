@@ -61,6 +61,7 @@
           <div class="dropdown-menu dropdown-menu-end">
             <a href="<%= userPath(currentUser.username) %>" class="dropdown-item"><i class="ti ti-user me-2"></i><%= t('Profile') %></a>
             <a href="/dashboard" class="dropdown-item"><i class="ti ti-layout-dashboard me-2"></i><%= t('Dashboard') %></a>
+            <% if (features.massMessages) { %><a href="/mass" class="dropdown-item"><i class="ti ti-speakerphone me-2"></i><%= t('Mass message') %></a><% } %>
             <div class="dropdown-divider"></div>
             <form action="/logout" method="post" class="m-0">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">

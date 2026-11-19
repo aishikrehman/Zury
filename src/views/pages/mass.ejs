@@ -1,0 +1,63 @@
+<%# Mass message: sources on the left (events, a list, a wiki page), the people found on the right. %>
+<div class="page-body"><div class="container-xl">
+  <div class="d-flex align-items-center gap-2 mb-3"><h2 class="m-0"><i class="ti ti-speakerphone me-1"></i><%= t('Mass message') %></h2><span class="badge bg-purple-lt"><%= t('Beta') %></span></div>
+  <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+  <% if (result && result.list) { %>
+    <div class="alert alert-success"><%= t('List of {n} people saved on the wiki.', { n: formatNumber(result.list.people) }) %> <a href="<%= result.list.pageUrl %>" target="_blank" rel="noopener"><%= result.list.title %></a>
+      <div class="mt-2"><a class="btn btn-primary" href="<%= result.list.sendUrl %>" target="_blank" rel="noopener"><i class="ti ti-send me-1"></i><%= t('Send with Special:MassMessage') %></a></div></div>
+  <% } else if (result) { %>
+    <div class="alert alert-<%= result.failed.length ? 'warning' : 'success' %>"><%= tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %>
+      <% if (result.failed.length) { %><ul class="mb-0"><% result.failed.forEach((f) => { %><li><%= f.username %> — <%= f.error %></li><% }) %></ul><% } %></div>
+  <% } %>
+  <form method="post" action="/mass" class="row g-3">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="col-lg-8 d-flex flex-column gap-3">
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><span class="badge bg-blue-lt me-2">১</span><%= t('Who') %></h3></div>
+        <div class="card-body">
+          <% if (events.length) { %>
+            <label class="form-label"><%= t('From your events') %></label>
+            <div class="z-mass-events mb-2">
+              <% events.forEach((e) => { const on = [].concat(form.events || []).map(String).includes(String(e.id)); %><label class="form-check m-0"><input class="form-check-input" type="checkbox" name="events" value="<%= e.id %>"<%= on ? ' checked' : '' %>><span class="form-check-label"><%= e.title %></span></label><% }) %>
+            </div>
+            <select class="form-select mb-3" name="audience" aria-label="<%= t('To') %>"><% Object.entries(audiences).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.audience === k ? ' selected' : '' %>><%= t(label) %></option><% }) %></select>
+          <% } %>
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label" for="names"><%= t('These people') %></label><textarea class="form-control" id="names" name="names" rows="4" placeholder="<%= t('One username per line') %>"><%= form.names || '' %></textarea></div>
+            <div class="col-md-6"><label class="form-label" for="pageTitle"><%= t('Everyone linked on a wiki page') %></label>
+              <input class="form-control mb-2" name="pageWiki" value="<%= form.pageWiki || '' %>" placeholder="<%= t('Wiki, e.g. bnwiki') %>" aria-label="<%= t('Wiki') %>">
+              <input class="form-control" id="pageTitle" name="pageTitle" value="<%= form.pageTitle || '' %>" placeholder="<%= t('Page, e.g. a sign-up page') %>">
+            </div>
+            <div class="col-12"><label class="form-label" for="exclude"><%= t('Leave out') %></label><textarea class="form-control" id="exclude" name="exclude" rows="2" placeholder="<%= t('One username per line') %>"><%= form.exclude || '' %></textarea></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3 class="card-title"><span class="badge bg-blue-lt me-2">২</span><%= t('Message') %></h3></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-8"><label class="form-label" for="method"><%= t('Send as') %></label><select class="form-select" id="method" name="method"><% Object.entries(methods).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.method === k ? ' selected' : '' %>><%= t(label) %></option><% }) %></select></div>
+            <div class="col-md-4"><label class="form-label" for="wiki"><%= t('Wiki') %></label><input class="form-control" id="wiki" name="wiki" value="<%= form.wiki %>"></div>
+            <div class="col-12"><label class="form-label" for="subject"><%= t('Subject') %></label><input class="form-control" id="subject" name="subject" maxlength="200" value="<%= form.subject || '' %>"></div>
+            <div class="col-12"><label class="form-label" for="body"><%= t('Message') %></label><textarea class="form-control" id="body" name="body" rows="7" maxlength="10000"><%= form.body || '' %></textarea></div>
+          </div>
+          <% if (!hasToken) { %><div class="text-warning small mt-2"><%= t('Talk pages, email and MassMessage lists need your Wikimedia login. Log out and in again to send them.') %></div><% } %>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn" type="submit" name="step" value="preview"><i class="ti ti-users me-1"></i><%= t('Show recipients') %></button>
+          <button class="btn btn-primary" type="submit" name="step" value="send" data-confirm="<%= t('Send this message to everyone listed?') %>"><i class="ti ti-send me-1"></i><%= t('Send') %></button>
+        </div>
+      </div>
+    </div>
+    <aside class="col-lg-4">
+      <div class="card z-mass-people">
+        <div class="card-header"><h3 class="card-title"><%= t('Recipients') %></h3><span class="ms-auto badge bg-blue-lt"><%= formatNumber(people ? people.length : 0) %></span></div>
+        <% if (people && people.length) { %>
+          <div class="list-group list-group-flush">
+            <% people.forEach((u) => { %><div class="list-group-item py-2 d-flex gap-2 align-items-center"><span class="text-truncate flex-fill"><%= u.username %></span><% if (!u.id) { %><span class="badge bg-secondary-lt" title="<%= t('Not on Zury: no notification, only wiki messages') %>"><%= t('wiki only') %></span><% } %></div><% }) %>
+          </div>
+        <% } else { %><div class="card-body text-secondary small"><%= t('Choose who, then press Show recipients.') %></div><% } %>
+      </div>
+    </aside>
+  </form>
+</div></div>

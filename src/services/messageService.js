@@ -78,7 +78,7 @@ async function send({ actor, accessToken, contest, method, subject, body, people
   if (!people.length) throw new MessageError('Nobody matches these recipients.');
   if (method === 'bell') {
     if (people.length > MAX_LIST) throw new MessageError('At most 5000 people at a time.');
-    const link = contest.path || `/contest/${contest.id}`;
+    const link = contest.path || (contest.id ? `/contest/${contest.id}` : '/notifications');
     await require('./notificationService').notify(people.map((p) => p.id), { kind: 'message', message: '{event}: {text}', params: { event: contest.title, text: `${subject} — ${body}`.slice(0, 400) }, link, contestId: contest.id });
     await audit.record({ actorId: actor.id, contestId: contest.id, action: 'message.sent', entityType: 'Contest', entityId: contest.id, details: { method, subject, sent: people.length } });
     return { sent: people.length, failed: [] };
@@ -125,7 +125,7 @@ async function massList({ actor, accessToken, contest, subject, body, people, wi
   if (people.length > MAX_LIST) throw new MessageError('At most 5000 people at a time.');
   const { dbnameToHost } = require('../wiki/wikiUrls');
   const host = dbnameToHost(wiki);
-  const title = `User:${actor.username}/Zury mass message/${(contest.path || String(contest.id)).replace(/^\//, '').replace(/\//g, '-')}`;
+  const title = `User:${actor.username}/Zury mass message/${contest.id ? (contest.path || String(contest.id)).replace(/^\//, '').replace(/\//g, '-') : new Date().toISOString().slice(0, 10)}`;
   const text = people.map((p) => `{{target |page=User talk:${p.username} |site=${dbnameToHost(p.wiki || wiki) || host}}}`).join('\n');
   const token = await csrfToken(wiki, accessToken);
   const r = await oauthService.userApi(wiki, accessToken, { action: 'edit', title, text, contentmodel: 'MassMessageListContent', summary: `${contest.title}: ${subject}`, token }, { post: true })
