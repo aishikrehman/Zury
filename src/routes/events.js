@@ -109,6 +109,7 @@ contest.post('/tracking/refresh', requirePermission('manageEvent'), trackingCont
 // Jury review, results and appeals.
 contest.get('/review', entriesOnly, requireAuth, reviewController.window);
 contest.get('/review/:submissionId(\\d+)/preview', entriesOnly, requireAuth, reviewController.previewPage);
+contest.get('/review/quick', entriesOnly, requireAuth, reviewController.quick);
 contest.post('/review/bulk', entriesOnly, requireAuth, reviewController.bulkSave);
 contest.post('/review/:submissionId(\\d+)/handover', entriesOnly, requireAuth, reviewController.handOver);
 contest.get('/review/entries', entriesOnly, requireAuth, reviewController.entries);

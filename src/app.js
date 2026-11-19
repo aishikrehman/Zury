@@ -87,7 +87,7 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
   },
 }));
 // Self-hosted: Toolforge forbids loading assets from third-party CDNs.
-const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules', pkg, 'dist'), { maxAge: '7d' });
+const vendor = (pkg) => express.static(path.join(__dirname, '..', 'node_modules', pkg, 'dist'), { maxAge: '30d' });
 app.use('/vendor/tabler', vendor('@tabler/core'));
 app.use('/vendor/apexcharts', vendor('apexcharts'));
 app.use('/vendor/tom-select', vendor('tom-select'));

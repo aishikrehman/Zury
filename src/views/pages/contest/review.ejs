@@ -20,6 +20,7 @@
       </select>
     </div>
     <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters" title="<%= t('Filter') %>" aria-label="<%= t('Filter') %>" data-filter-btn><i class="ti ti-filter"></i></button>
+    <a class="btn" href="<%= base %>/review/quick" title="<%= t('Quick review') %>"><i class="ti ti-bolt me-1"></i><span class="d-none d-md-inline"><%= t('Quick review') %></span></a>
     <button class="btn btn-icon" type="button" data-review-full title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>" aria-pressed="false"><i class="ti ti-maximize"></i></button>
   </div>
 

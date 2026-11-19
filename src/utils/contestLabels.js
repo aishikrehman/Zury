@@ -1,7 +1,7 @@
 const CONTEST_TYPES = {
   photo: 'Photo contest',
   writing: 'Writing contest',
-  data: 'Data contest',
+  data: 'Data/Lexeme event',
   editathon: 'Edit-a-thon',
   workshop: 'Workshop',
   training: 'Training',

@@ -71,6 +71,9 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
       if (meta.wordCount == null) warnings.push("Word count couldn't be measured on this wiki; check it manually.");
       else if (meta.wordCount < typeConfig.minWordCount) rule('words', `Article has ${meta.wordCount} words; at least ${typeConfig.minWordCount} needed.`);
     }
+    // Wiktionary: the entry's language section.
+    const heading = (typeConfig.languageHeading || '').trim();
+    if (heading && meta.sections && !meta.sections.some((s) => s.includes(heading))) rule('language', `The entry has no "${heading}" section.`);
     if (typeConfig.createdDuringEventOnly && !within(meta.createdAt, contest.startDate, contest.endDate)) {
       if (typeConfig.allowExpansions) warnings.push('Article was created before the event; check that it was substantially expanded.');
       else rule('created', 'The article was not created during the event.');
@@ -122,6 +125,15 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
       if (typeConfig.minStatements > 0 && meta.entity.statementCount < typeConfig.minStatements) {
         rule('statements', `Has ${meta.entity.statementCount} statements; at least ${typeConfig.minStatements} needed.`);
       }
+      // Lexemes: language, senses and forms.
+      if (meta.entity.type === 'lexeme') {
+        const e = meta.entity;
+        const lang = (typeConfig.lexemeLanguage || '').trim();
+        if (lang && e.language !== lang) rule('language', `The lexeme's language is ${e.language || '?'}, not ${lang}.`);
+        if (typeConfig.minSenses > 0 && (e.senses || 0) < typeConfig.minSenses) rule('senses', `Has ${e.senses || 0} senses; at least ${typeConfig.minSenses} needed.`);
+        if (typeConfig.minForms > 0 && (e.forms || 0) < typeConfig.minForms) rule('forms', `Has ${e.forms || 0} forms; at least ${typeConfig.minForms} needed.`);
+      }
+      if (typeConfig.createdDuringEventOnly && !within(meta.createdAt, contest.startDate, contest.endDate)) rule('created', 'Not created during the event.');
     }
   }
 

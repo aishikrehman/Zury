@@ -44,10 +44,20 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
   const { ownWords } = ruleOf(settings);
   const frozen = contest.status === 'archived' || !!contest.resultsPublishedAt;
   const pinEnd = !live && !frozen && contest.endDate;
+  let changed = 0;
+  let fetched = 0; // full page fetches this run (words); capped so big events spread over several runs
+  const MAX_FETCH = force ? Infinity : 400;
+  const now = new Date().toISOString();
+  // In batches of 1000 entries, so a big event never sits in memory all at once.
+  let cursor = 0;
+  for (;;) {
   const entries = await prisma.submission.findMany({
-    where: { contestId: contest.id, entryType: 'article', status: { not: 'withdrawn' }, ...(ids && { id: { in: ids } }) },
+    where: { contestId: contest.id, entryType: 'article', status: { not: 'withdrawn' }, id: { gt: cursor, ...(ids && { in: ids }) } },
     select: { id: true, wiki: true, title: true, pageKey: true, revId: true, wordCount: true, status: true, metadata: true, participantId: true, url: true },
+    orderBy: { id: 'asc' }, take: 1000,
   });
+  if (!entries.length) break;
+  cursor = entries[entries.length - 1].id;
   const byWiki = new Map();
   for (const s of entries) {
     const m = parse(s.metadata);
@@ -56,8 +66,6 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
     if (!byWiki.has(s.wiki)) byWiki.set(s.wiki, []);
     byWiki.get(s.wiki).push({ s, m, pid });
   }
-  let changed = 0;
-  const now = new Date().toISOString();
   for (const [wiki, list] of byWiki) {
     for (let i = 0; i < list.length; i += 50) {
       const chunk = list.slice(i, i + 50);
@@ -89,7 +97,7 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
           meta.currentRevId = p.lastrevid;
           meta.currentSize = p.length;
           // After the end: the revision as it stood at the end time, once.
-          if (pinEnd && !force && !m.pinnedAtEnd) {
+          if (pinEnd && !force && !m.pinnedAtEnd && fetched++ < MAX_FETCH) {
             const at = await revisionAt(wiki, pid, contest.endDate).catch(() => null);
             if (at) {
               data.revId = at.revid;
@@ -103,7 +111,7 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
             }
           }
           // While running, and by hand (reviewers, organizers) until locked: the latest revision, words and all.
-          if (!frozen && (force || live) && p.lastrevid && p.lastrevid !== s.revId) {
+          if (!frozen && (force || live) && p.lastrevid && p.lastrevid !== s.revId && fetched++ < MAX_FETCH) {
             const fresh = await require('../wiki/entryMetadata').fetchEntryMetadata({ wiki, pageId: pid }, { language: contest.language, wordCountMethod: settings.wordCountMethod || 'auto' }).catch(() => null);
             if (fresh && fresh.exists) {
               data.revId = fresh.revId ?? p.lastrevid;
@@ -136,6 +144,8 @@ async function checkEvent(contest, settings, { force = false, ids = null } = {})
         await prisma.submission.update({ where: { id: s.id }, data: { ...data, metadata: JSON.stringify(meta) } }).catch(() => null);
       }
     }
+  }
+  if (entries.length < 1000) break;
   }
   return changed;
 }

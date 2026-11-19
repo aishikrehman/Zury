@@ -214,7 +214,25 @@ async function save(req, res, next) {
 
 // One verdict for many entries, chosen on the submissions table. Each entry is
 // checked as if reviewed alone (the person's wikis, assignments, own entries).
+// Quick review: the next 100 entries waiting for this person, one line each.
+async function quick(req, res, next) {
+  try {
+    const wikis = judgedWikis(req);
+    const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, filters: {} });
+    const ids = q.ids.slice(0, 100);
+    const rows = ids.length ? await prisma.submission.findMany({ where: { id: { in: ids } }, select: { id: true, title: true, url: true, wiki: true, metadata: true, validation: true, participant: { select: { username: true } } } }) : [];
+    const order = new Map(ids.map((id, i) => [id, i]));
+    rows.sort((a, b) => order.get(a.id) - order.get(b.id));
+    const parse = (s) => { try { return JSON.parse(s || '{}') || {}; } catch { return {}; } };
+    res.render('pages/contest/quickReview', { title: `${req.t('Quick review')} — ${req.contest.title}`, remaining: q.remaining, rows: rows.map((r) => ({ ...r, meta: parse(r.metadata), check: parse(r.validation) })) });
+  } catch (err) { next(err); }
+}
+
 async function bulkSave(req, res, next) {
+  // One line's own button: that entry only.
+  if (req.query.one) req.body.ids = [req.query.one];
+  // A rejection from the list needs a reason; the chosen one is used, else a plain one.
+  if (req.body.decision === 'reject' && !String(req.body.comment || '').trim()) req.body.comment = req.t('Not accepted in quick review.');
   if (req.eventSettings.bulkReviewEnabled === false) {
     req.flash('danger', req.t('Bulk review is off for this event.'));
     return res.redirect(`${req.base}/submissions`);
@@ -238,7 +256,8 @@ async function bulkSave(req, res, next) {
     }
     const text = [saved ? req.t('{n} entries reviewed.', { n: saved }) : '', ...[...problems].map((m) => req.t(m))].filter(Boolean).join(' ');
     if (text) req.flash(problems.size ? (saved ? 'warning' : 'danger') : 'success', text);
-    const back = typeof req.body.back === 'string' && req.body.back.startsWith(`${req.base}/`) && !/[\r\n]/.test(req.body.back) ? req.body.back : `${req.base}/submissions`;
+    if (req.get('Accept')?.includes('json')) return res.json({ ok: !problems.size, saved, message: text });
+    const back = typeof req.body.back === 'string' && req.body.back.startsWith(`${req.base}/`) && require('../utils/safePath').isLocalPath(req.body.back) ? req.body.back : `${req.base}/submissions`;
     res.redirect(back);
   } catch (err) {
     next(err);
@@ -327,7 +346,7 @@ async function appealsList(req, res, next) {
       const watch = require('../services/articleWatchService');
       const wikis = judgedWikis(req);
       const rows = await prisma.submission.findMany({
-        where: { contestId: req.contest.id, status: { not: 'withdrawn' }, metadata: { contains: '"watch"' }, ...(wikis && { wiki: { in: wikis } }) },
+        where: { contestId: req.contest.id, status: { not: 'withdrawn' }, OR: ['"shrunk"', '"grew"', '"state":"deleted"', '"state":"redirect"', '"state":"moved"'].map((x) => ({ metadata: { contains: x } })), ...(wikis && { wiki: { in: wikis } }) },
         select: { id: true, title: true, wiki: true, url: true, status: true, revId: true, wordCount: true, metadata: true, participant: { select: { username: true } } },
         orderBy: { id: 'desc' }, take: 5000,
       });
@@ -563,7 +582,7 @@ async function patrolCheck(req, res, next) {
   res.redirect(`${req.base}/patrol`);
 }
 
-module.exports = { patrolAction, patrolCheck, juryEventsFor, entries, bulkSave, assignments, distribute, reassignInactive, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
+module.exports = { quick, patrolAction, patrolCheck, juryEventsFor, entries, bulkSave, assignments, distribute, reassignInactive, addAssignment, removeAssignment, releaseJuror, window, save, results, publish, appeal, appealsList, resolve, myQueue, judgedWikis };
 
 // Higher levels clear an appeal from the log.
 async function deleteAppeal(req, res, next) {

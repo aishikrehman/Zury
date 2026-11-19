@@ -28,6 +28,6 @@
       if (dot && d.liveChat) dot.hidden = !d.unreadRooms;
     }).catch(() => {});
   };
-  setInterval(check, (Number(document.body.dataset.live) || 45) * 1000);
+  setInterval(check, (Number(document.body.dataset.newsCheck) || 45) * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
 })();

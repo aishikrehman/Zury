@@ -1,0 +1,51 @@
+<%# Quick review: many entries at once, one line each: accept or reject from the list (keys: a, r, j/k). %>
+<%- include('../../partials/contestHeader', { active: 'review' }) %>
+<% const REASONS = ['Not a real word or lexeme', 'Too little content', 'Wrong language', 'Copied or machine-made', 'Already exists']; %>
+<div class="page-body"><div class="container-xl">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <h2 class="m-0 me-auto"><i class="ti ti-bolt me-1"></i><%= t('Quick review') %> <small class="text-secondary"><%= t('{n} entries waiting', { n: formatNumber(remaining) }) %></small></h2>
+    <a class="btn" href="<%= base %>/review"><i class="ti ti-gavel me-1"></i><%= t('One at a time') %></a>
+  </div>
+  <% if (!rows.length) { %>
+    <div class="card"><div class="card-body text-center text-secondary py-5"><i class="ti ti-circle-check text-green d-block mb-2" style="font-size: 2rem"></i><%= t('Nothing waiting for you.') %></div></div>
+  <% } else { %>
+  <form method="post" action="<%= base %>/review/bulk" class="card z-quick" data-quick-review>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="back" value="<%= base %>/review/quick">
+    <div class="z-mail-bar">
+      <label class="form-check m-0"><input class="form-check-input" type="checkbox" data-check-all="ids" aria-label="<%= t('Select all') %>"></label>
+      <button class="btn btn-sm btn-success" type="submit" name="decision" value="accept"><i class="ti ti-check me-1"></i><%= t('Accept selected') %></button>
+      <select class="form-select form-select-sm w-auto" name="comment" aria-label="<%= t('Reason') %>">
+        <option value=""><%= t('Reason to reject…') %></option>
+        <% REASONS.forEach((r) => { %><option value="<%= t(r) %>"><%= t(r) %></option><% }) %>
+      </select>
+      <button class="btn btn-sm btn-ghost-danger" type="submit" name="decision" value="reject"><i class="ti ti-x me-1"></i><%= t('Reject selected') %></button>
+      <span class="ms-auto small text-secondary d-none d-md-inline"><kbd>j</kbd>/<kbd>k</kbd> <%= t('move') %> · <kbd>a</kbd> <%= t('accept') %> · <kbd>r</kbd> <%= t('reject') %></span>
+    </div>
+    <div class="z-quick-list">
+      <% rows.forEach((s, i) => { const m = s.meta; const v = s.check; %>
+        <div class="z-quick-row<%= i === 0 ? ' is-focus' : '' %>" data-id="<%= s.id %>" tabindex="-1">
+          <input class="form-check-input" type="checkbox" name="ids" value="<%= s.id %>" aria-label="<%= s.title %>">
+          <div class="z-quick-main">
+            <a class="fw-semibold" href="<%= s.url %>" target="_blank" rel="noopener"><%= m.entity && m.entity.lemma ? m.entity.lemma : s.title %></a>
+            <% if (m.entity && m.entity.lemma) { %><span class="text-secondary small"><%= s.title %></span><% } %>
+            <div class="small text-secondary">
+              <%= s.participant.username %>
+              <% if (m.sections && m.sections.length) { %> · <%= m.sections.slice(0, 4).join(', ') %><% } %>
+              <% if (m.entity && m.entity.type === 'lexeme') { %> · <%= t('{n} senses', { n: formatNumber(m.entity.senses || 0) }) %> · <%= t('{n} forms', { n: formatNumber(m.entity.forms || 0) }) %><% } %>
+              <% if (m.sizeBytes != null) { %> · <%= formatNumber(m.sizeBytes) %> B<% } %>
+            </div>
+            <% if (v.errors && v.errors.length) { %><div class="small text-danger"><i class="ti ti-alert-circle me-1"></i><%= v.errors.map((e) => t(e)).join(' ') %></div><% } %>
+            <% if (v.warnings && v.warnings.length) { %><div class="small text-warning"><i class="ti ti-alert-triangle me-1"></i><%= v.warnings.map((e) => t(e)).join(' ') %></div><% } %>
+          </div>
+          <div class="z-quick-act">
+            <button class="btn btn-sm btn-icon btn-success" type="submit" formaction="<%= base %>/review/bulk?one=<%= s.id %>" name="decision" value="accept" data-quick="accept" title="<%= t('Accept') %>" aria-label="<%= t('Accept') %>"><i class="ti ti-check"></i></button>
+            <button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" formaction="<%= base %>/review/bulk?one=<%= s.id %>" name="decision" value="reject" data-quick="reject" title="<%= t('Reject') %>" aria-label="<%= t('Reject') %>"><i class="ti ti-x"></i></button>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+    <% if (remaining > rows.length) { %><div class="card-footer text-secondary small"><%= t('Showing the first {n}; more come as you go.', { n: formatNumber(rows.length) }) %> <a href="<%= base %>/review/quick"><%= t('Load more') %></a></div><% } %>
+  </form>
+  <% } %>
+</div></div>

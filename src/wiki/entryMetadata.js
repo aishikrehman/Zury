@@ -33,7 +33,7 @@ async function fetchEntity(id, language) {
   const data = await wikiApi.get('wikidatawiki', {
     action: 'wbgetentities',
     ids: id,
-    props: 'info|labels|descriptions|claims',
+    ...(/^L\d+$/.test(id) ? {} : { props: 'info|labels|descriptions|claims' }),
     languages: [...new Set([language, 'en'].filter(Boolean))].join('|'),
     languagefallback: '1',
   });
@@ -48,6 +48,7 @@ async function fetchEntity(id, language) {
     description: pick(e.descriptions),
     properties: Object.keys(claims),
     statementCount: Object.values(claims).reduce((n, list) => n + list.length, 0),
+    ...(e.type === 'lexeme' && { lemma: pick(e.lemmas), language: e.language || null, lexicalCategory: e.lexicalCategory || null, senses: (e.senses || []).length, forms: (e.forms || []).length }),
   };
 }
 
@@ -123,6 +124,11 @@ async function fetchEntryMetadata(ref, { language = 'en', wordCountMethod = 'aut
       lastEditor: rev?.user || null,
       lastEditedAt: rev?.timestamp || null,
     };
+  }
+  // Wiktionary: the entry's language sections (level-2 headings).
+  if (wiki.endsWith('wiktionary') && page.ns === 0) {
+    const text = await currentWikitext(wiki, page.pageid).catch(() => null);
+    if (text != null) meta.sections = [...text.matchAll(/^==\s*([^=\n]+?)\s*==\s*$/gm)].map((m) => m[1].replace(/\{\{[^}]*\}\}/g, (x) => x).trim());
   }
   if (wiki === 'wikidatawiki' && WIKIDATA_NS[page.ns]) {
     meta.entity = await fetchEntity(page.title.replace(/^(Property|Lexeme):/, ''), language);

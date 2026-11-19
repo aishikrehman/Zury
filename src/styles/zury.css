@@ -3447,3 +3447,16 @@ details.z-sec:not([open]) > summary { border-bottom: 0; }
 .z-bell-foot .z-bell-readall { padding: 0; border: 0; background: none; color: var(--z-fg-muted); font-size: .8125rem; }
 .z-bell-foot .z-bell-readall:hover { color: #3366cc; }
 .z-bell-foot .z-bell-link { font-weight: 600; text-decoration: none; }
+/* Main menu: on wide screens a submenu also opens while the pointer or keyboard focus is in it */
+@media (min-width: 992px) and (hover: hover) {
+  .z-navbar .dropdown:hover > .dropdown-menu, .z-navbar .dropdown:focus-within > .dropdown-menu { display: block; margin-top: 0; top: 100%; left: 0; }
+}
+/* Quick review: one line per entry */
+.z-quick-list { display: flex; flex-direction: column; }
+.z-quick-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .75rem; align-items: center; padding: .65rem 1rem; border-bottom: 1px solid var(--z-border); outline: none; }
+.z-quick-row.is-focus { background: #eaf3ff; box-shadow: inset 3px 0 0 #3366cc; }
+.z-quick-row.is-busy { opacity: .45; pointer-events: none; }
+.z-quick-main { min-width: 0; }
+.z-quick-main > a { margin-right: .4rem; }
+.z-quick-act { display: flex; gap: .35rem; }
+.z-quick .z-mail-bar { flex-wrap: wrap; }

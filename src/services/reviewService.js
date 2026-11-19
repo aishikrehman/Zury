@@ -141,7 +141,10 @@ async function queue({ contestId, settings, jurorId, wikis = null, after = 0, fi
     ...(!settings.selfReview && { NOT: { participantId: jurorId } }),
   };
   const order = QUEUE_SORTS[filters.sort] || QUEUE_SORTS.oldest;
-  const candidates = await prisma.submission.findMany({ where, orderBy: [...order, { id: 'asc' }], select: { id: true } });
+  // Big events: the window works on the first 3000 in this order (enough to move through); the total is counted apart.
+  const CAP = 3000;
+  const candidates = await prisma.submission.findMany({ where, orderBy: [...order, { id: 'asc' }], select: { id: true }, take: CAP });
+  const more = candidates.length === CAP ? await prisma.submission.count({ where }) : null;
   // Entries that already have all their reviews are waiting to be decided, not for this person.
   // Counted apart (counting inside the query above is slow on big events).
   // Entries at the event's most reviews are closed to anyone who hasn't reviewed them.
@@ -164,7 +167,7 @@ async function queue({ contestId, settings, jurorId, wikis = null, after = 0, fi
   const from = after ? list.findIndex((c) => c.id === after) : -1;
   const next = (from >= 0 ? list[from + 1] : null) || (from >= 0 ? list.find((c) => c.id !== after) : list[0]) || null;
   const reviewedByMe = await prisma.review.count({ where: { contestId, jurorId } });
-  return { nextId: next ? next.id : null, remaining: list.length, reviewedByMe, mode, ids: list.map((c) => c.id) };
+  return { nextId: next ? next.id : null, remaining: more != null ? Math.max(list.length, more - (candidates.length - list.length)) : list.length, reviewedByMe, mode, ids: list.map((c) => c.id) };
 }
 
 // One page of the queue (in its order) for the entry picker, optionally searched by title.
