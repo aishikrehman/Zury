@@ -604,3 +604,47 @@ document.addEventListener('click', (e) => {
   const link = document.querySelector('[data-step-link][href="#step-' + a.dataset.openStep + '"]');
   if (link) { e.preventDefault(); link.click(); }
 });
+
+// Busy states: a thin bar at the top while the next page loads, and a sent form's buttons are
+// switched off (with a spinner on the pressed one) so nothing is sent twice.
+(() => {
+  const bar = document.createElement('div');
+  bar.className = 'z-busy-bar';
+  document.body.appendChild(bar);
+  let timer = null;
+  const busy = () => { clearTimeout(timer); timer = setTimeout(() => bar.classList.add('is-on'), 120); };
+  const idle = () => {
+    clearTimeout(timer);
+    bar.classList.remove('is-on');
+    document.querySelectorAll('.z-was-busy').forEach((b) => { b.disabled = false; b.classList.remove('btn-loading', 'z-was-busy'); });
+  };
+  document.addEventListener('submit', (e) => {
+    const form = e.target;
+    if (e.defaultPrevented || !(form instanceof HTMLFormElement) || form.target === '_blank' || form.hasAttribute('data-no-busy')) return;
+    busy();
+    // after the browser has taken the pressed button's value
+    setTimeout(() => form.querySelectorAll('button, input[type=submit]').forEach((b) => {
+      if (b.disabled) return;
+      b.disabled = true;
+      b.classList.add('z-was-busy');
+      if (b === e.submitter && b.classList.contains('btn')) b.classList.add('btn-loading');
+    }), 0);
+  });
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (a.target && a.target !== '_self') return;
+    if (a.hasAttribute('download') || a.origin !== location.origin || a.getAttribute('href').startsWith('#')) return;
+    if (a.pathname === location.pathname && a.search === location.search && a.hash) return;
+    busy();
+  });
+  // back/forward from the cache: nothing is loading any more
+  window.addEventListener('pageshow', idle);
+})();
+
+// A frame (the article in review) shows a spinner until it has loaded.
+document.querySelectorAll('iframe[data-loading]').forEach((f) => {
+  const box = f.parentElement;
+  box.classList.add('z-frame-loading');
+  f.addEventListener('load', () => box.classList.remove('z-frame-loading'), { once: true });
+});

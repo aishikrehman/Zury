@@ -3536,3 +3536,11 @@ details.z-sec:not([open]) > summary { border-bottom: 0; }
 .z-mway.is-risk:has(input:checked) { border-color: #d63939; box-shadow: 0 0 0 1px #d63939; }
 .z-mway.is-risk:has(input:checked) > .ti { color: #d63939; }
 .z-mway:has(input:focus-visible) { outline: 2px solid var(--tblr-primary, #206bc4); outline-offset: 2px; }
+/* Busy states */
+.z-busy-bar { position: fixed; top: 0; left: 0; height: 3px; width: 0; z-index: 2000; background: var(--tblr-primary, #206bc4); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.z-busy-bar.is-on { opacity: 1; animation: z-busy 8s cubic-bezier(.1, .7, .3, 1) forwards; }
+@keyframes z-busy { from { width: 0; } to { width: 92%; } }
+.z-frame-loading { position: relative; }
+.z-frame-loading::after { content: ''; position: absolute; top: 3rem; left: 50%; width: 2rem; height: 2rem; margin-left: -1rem; border: 3px solid var(--z-border); border-top-color: var(--tblr-primary, #206bc4); border-radius: 50%; animation: z-spin .7s linear infinite; }
+@keyframes z-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .z-busy-bar.is-on { animation: none; width: 60%; } .z-frame-loading::after { animation-duration: 2s; } }

@@ -122,7 +122,7 @@
         </div>
         <div class="z-review-frame">
           <% if (preview) { %>
-            <iframe src="<%= preview %>" title="<%= entry.title %>" loading="eager" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+            <iframe src="<%= preview %>" title="<%= entry.title %>" loading="eager" data-loading sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
           <% } else if (meta.file && meta.file.url && (String(meta.file.mime || '').startsWith('audio/') || ['application/ogg'].includes(meta.file.mime) || /\.(ogg|oga|opus|mp3|wav|flac)$/i.test(entry.title))) { %>
             <div class="z-review-audio"><i class="ti ti-microphone"></i><div class="flex-fill"><div class="fw-semibold mb-1"><%= entry.title.replace(/^[^:]+:/, '') %></div><audio controls preload="metadata" src="<%= meta.file.url %>"></audio><% if (meta.file.duration != null) { %><div class="small text-secondary mt-1"><%= t('{n} seconds', { n: formatNumber(meta.file.duration) }) %></div><% } %></div></div>
           <% } else if (meta.file && meta.file.thumbUrl) { %>
