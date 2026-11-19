@@ -1,0 +1,8 @@
+<%# Ways of sending as choice cards, each with a one-line note. %>
+<% const NOTE = { massmessage: ['robot', 'Posted by the MassMessage bot', 'Recommended', 'green'], bell: ['bell', 'Zury users only', '', ''], talk: ['message', 'From your account, up to 200', 'Risky', 'red'], email: ['mail', 'From your account, up to 200', 'Risky', 'red'] }; %>
+<div class="z-mways">
+  <% Object.entries(methods).forEach(([k, label]) => { const [icon, note, badge, color] = NOTE[k] || ['send', '', '', '']; %>
+    <label class="z-mway<%= color === 'red' ? ' is-risk' : '' %>"><input type="radio" name="method" value="<%= k %>"<%= form.method === k ? ' checked' : '' %>>
+      <i class="ti ti-<%= icon %>"></i><span><b><%= t(label) %></b><% if (badge) { %> <span class="badge bg-<%= color %>-lt"><%= t(badge) %></span><% } %><small><%= t(note) %></small></span></label>
+  <% }) %>
+</div>

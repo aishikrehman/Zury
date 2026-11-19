@@ -111,6 +111,8 @@ async function fetchEntryMetadata(ref, { language = 'en', wordCountMethod = 'aut
       mime: info.mime,
       thumbUrl: safeThumb(info.thumburl),
       license: info.extmetadata?.LicenseShortName?.value || null,
+      url: /^https:\/\/upload\.wikimedia\.org\//.test(info.url || '') ? info.url : null,
+      duration: info.duration != null ? Math.round(Number(info.duration) * 10) / 10 : null,
     };
   }
   if (wikisource && page.proofread) {

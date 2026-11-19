@@ -18,6 +18,10 @@
   if (currentUser && typeof onJury !== 'undefined' && onJury) {
     navItems.push({ href: '/review', icon: 'gavel', label: t('Review'), active: isActive('/review') });
   }
+  // Tools: work that is not about one event (mass messages; lists later).
+  if (currentUser && features.massMessages) navItems.push({ icon: 'tools', label: t('Tools'), active: isActive('/mass'), children: [
+    { href: '/mass', icon: 'speakerphone', label: t('Mass message'), active: isActive('/mass') },
+  ] });
   if (can('createEvent')) {
     navItems.push({ href: '/create/event', icon: 'plus', label: t('Organize'), active: isActive('/create/event') || isActive('/create/import') || isActive('/create/series') });
   }

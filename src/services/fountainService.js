@@ -167,6 +167,7 @@ function progressOf(code) {
 }
 
 async function sync(eventWiki, opts = {}) {
+  if (eventWiki.fountainTrackOnly) return null;
   if (running.has(eventWiki.id)) throw new FountainError('This Fountain editathon is being brought in already. Wait for it to finish.');
   running.set(eventWiki.id, { code: eventWiki.fountainCode, done: 0, total: 0 });
   try {
@@ -270,21 +271,21 @@ async function syncOnce(eventWiki, { actorId = null } = {}) {
 
 // A new Zury event from a Fountain editathon, following it from then on.
 // series: optional { slug, edition, title } to put the event in a series or edition.
-async function importEvent({ actorId, input, type = 'writing', series = null }) {
+async function importEvent({ actorId, input, type = 'writing', series = null, trackOnly = false }) {
   const code = parseCode(input);
   if (!code) throw new FountainError('Enter a Fountain editathon code or address.');
   // Two tabs importing the same editathon: the second waits for the first.
   if (importing.has(code)) throw new FountainError('This Fountain editathon is being brought in already. Wait for it to finish.');
   importing.add(code);
   try {
-    return await importOnce(code, { actorId, type, series });
+    return await importOnce(code, { actorId, type, series, trackOnly });
   } finally {
     importing.delete(code);
   }
 }
 
 const importing = new Set();
-async function importOnce(code, { actorId, type, series }) {
+async function importOnce(code, { actorId, type, series, trackOnly = false }) {
   const linked = await prisma.contestWiki.findFirst({ where: { fountainCode: code, contest: { deletedAt: null } }, include: { contest: true } });
   if (linked) return { contest: linked.contest, existed: true };
 
@@ -318,23 +319,25 @@ async function importOnce(code, { actorId, type, series }) {
     await prisma.contest.update({ where: { id: contest.id }, data: { status, statusMode: 'auto' } });
   }
   const eventWiki = await prisma.contestWiki.findFirst({ where: { contestId: contest.id, wiki } });
-  await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: code } });
-  await audit.record({ actorId, contestId: contest.id, action: 'fountain.imported', entityType: 'Contest', entityId: contest.id, details: { code } });
-  await sync({ ...eventWiki, fountainCode: code }, { actorId });
+  await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: code, fountainTrackOnly: !!trackOnly } });
+  await audit.record({ actorId, contestId: contest.id, action: trackOnly ? 'fountain.tracked' : 'fountain.imported', entityType: 'Contest', entityId: contest.id, details: { code } });
+  if (!trackOnly) await sync({ ...eventWiki, fountainCode: code }, { actorId });
   return { contest, existed: false };
 }
 
 // Lets a wiki of an event (e.g. one edition of a series) follow a Fountain editathon;
 // adds the wiki to the event when it isn't there yet.
-async function link({ actorId, contest, input }) {
+async function link({ actorId, contest, input, trackOnly = false }) {
   const code = parseCode(input);
   if (!code) throw new FountainError('Enter a Fountain editathon code or address.');
   const e = await fetchEditathon(code);
   const wiki = wikiOf(e);
   let eventWiki = await prisma.contestWiki.findFirst({ where: { contestId: contest.id, wiki } });
   if (!eventWiki) eventWiki = await eventWikiService.addWiki({ actorId, contest, wiki });
-  eventWiki = await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: code } });
-  await audit.record({ actorId, contestId: contest.id, action: 'fountain.linked', entityType: 'ContestWiki', entityId: eventWiki.id, details: { code, wiki } });
+  eventWiki = await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: code, fountainTrackOnly: !!trackOnly } });
+  await audit.record({ actorId, contestId: contest.id, action: trackOnly ? 'fountain.tracked' : 'fountain.linked', entityType: 'ContestWiki', entityId: eventWiki.id, details: { code, wiki } });
+  // Tracking only: nothing is copied; the numbers come from Fountain when they are shown.
+  if (trackOnly) return { eventWiki, result: null };
   return { eventWiki, result: await sync(eventWiki, { actorId }) };
 }
 
@@ -348,10 +351,35 @@ async function unlink({ actorId, contest, wikiId }) {
 }
 
 // Hourly: every followed editathon of an event that is running or ended in the last 30 days.
+// The numbers of a tracked editathon, read from Fountain (kept 10 minutes, never stored).
+const tracked = new Map();
+async function trackedStats(code) {
+  const hit = tracked.get(code);
+  if (hit && Date.now() - hit.at < 600000) return hit.data;
+  const e = await fetchEditathon(code);
+  const articles = e.articles || [];
+  const people = new Set(articles.map((a) => a.user));
+  let accepted = 0; let rejected = 0; let waiting = 0;
+  for (const a of articles) {
+    const d = decision(a, e.marks || {}).status;
+    if (d === 'approved') accepted += 1; else if (d === 'rejected') rejected += 1; else waiting += 1;
+  }
+  const byUser = new Map();
+  for (const a of articles) { const r = byUser.get(a.user) || { user: a.user, articles: 0, accepted: 0 }; r.articles += 1; if (decision(a, e.marks || {}).status === 'approved') r.accepted += 1; byUser.set(a.user, r); }
+  const data = {
+    code: e.code, name: e.name, start: e.start, finish: e.finish, wiki: wikiOf(e), jury: (e.jury || []).length,
+    articles: articles.length, participants: people.size, accepted, rejected, waiting,
+    top: [...byUser.values()].sort((a, b) => b.accepted - a.accepted || b.articles - a.articles).slice(0, 10),
+    url: `https://fountain.toolforge.org/editathons/${encodeURIComponent(e.code)}`, readAt: new Date(),
+  };
+  tracked.set(code, { at: Date.now(), data });
+  return data;
+}
+
 async function syncAll() {
   const since = new Date(Date.now() - 30 * 24 * 3600 * 1000);
   const rows = await prisma.contestWiki.findMany({
-    where: { fountainCode: { not: '' }, fountainAuto: true, status: 'active', contest: { deletedAt: null, OR: [{ endDate: null }, { endDate: { gte: since } }] } },
+    where: { fountainCode: { not: '' }, fountainAuto: true, fountainTrackOnly: false, status: 'active', contest: { deletedAt: null, OR: [{ endDate: null }, { endDate: { gte: since } }] } },
   });
   for (const row of rows) {
     try {
@@ -363,5 +391,5 @@ async function syncAll() {
   return rows.length;
 }
 
-module.exports = {
+module.exports = { trackedStats,
   progressOf, FountainError, parseCode, fetchEditathon, decision, reviewOf, wikiOf, importEvent, link, unlink, sync, syncAll };

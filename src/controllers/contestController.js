@@ -501,6 +501,9 @@ const canSeeStats = (req) => req.settings.publicStatisticsEnabled || req.permiss
 async function statistics(req, res, next) {
   if (!canSeeStats(req) && !req.permissions.has('reviewEvent') && !req.permissions.has('manageEvent')) return res.status(404).render('pages/404', { title: 'Page Not Found' });
   res.locals.compare = await require('../services/seriesService').compareWithPrevious(req.contest).catch(() => null);
+  // Wikis that only track a Fountain editathon: its numbers, read from Fountain now.
+  const trackedWikis = await require('../config/prisma').contestWiki.findMany({ where: { contestId: req.contest.id, fountainTrackOnly: true, fountainCode: { not: '' } }, select: { wiki: true, fountainCode: true } });
+  res.locals.fountainTracked = (await Promise.all(trackedWikis.map((w) => require('../services/fountainService').trackedStats(w.fountainCode).then((s) => ({ ...s, wiki: w.wiki })).catch(() => null)))).filter(Boolean);
   return show(req, res, next, 'pages/contest/statistics');
 }
 

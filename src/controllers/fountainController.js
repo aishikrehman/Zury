@@ -5,7 +5,8 @@ const { EventWikiError } = require('../services/eventWikiService');
 // Fountain counts Wikipedia articles: a writing contest or an edit-a-thon.
 const TYPES = ['writing', 'editathon'];
 
-const summary = (req, r) => req.t('Fountain: {added} new, {updated} updated.', { added: r.added, updated: r.updated });
+const summary = (req, r) => (r ? req.t('Fountain: {added} new, {updated} updated.', { added: r.added, updated: r.updated }) : req.t('Following on Fountain for its numbers only; nothing is copied.'));
+const trackOnlyOf = (req) => req.body.mode !== 'import';
 
 // Events the importer may add a wiki to: all of them for global controllers, else those they organize.
 async function targets(req) {
@@ -41,11 +42,11 @@ async function importEvent(req, res, next) {
       const allowed = (await targets(req)).find((e) => String(e.id) === target);
       if (!allowed) throw new fountain.FountainError('Choose an event you organize.');
       const contest = await prisma.contest.findUnique({ where: { id: allowed.id } });
-      const { result } = await fountain.link({ actorId: req.user.id, contest, input: value });
+      const { result } = await fountain.link({ actorId: req.user.id, contest, input: value, trackOnly: trackOnlyOf(req) });
       req.flash('success', summary(req, result));
       return res.redirect(allowed.path);
     }
-    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type });
+    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type, trackOnly: trackOnlyOf(req) });
     req.flash('success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));
     res.redirect((await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path);
   } catch (err) {
@@ -65,7 +66,7 @@ function back(req, res, fn) {
 }
 
 function link(req, res, next) {
-  back(req, res, async () => summary(req, (await fountain.link({ actorId: req.user.id, contest: req.contest, input: req.body.code })).result)).catch(next);
+  back(req, res, async () => summary(req, (await fountain.link({ actorId: req.user.id, contest: req.contest, input: req.body.code, trackOnly: trackOnlyOf(req) })).result)).catch(next);
 }
 
 function sync(req, res, next) {

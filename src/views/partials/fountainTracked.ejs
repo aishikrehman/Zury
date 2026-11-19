@@ -1,0 +1,17 @@
+<%# Editathons this event only tracks on Fountain: their numbers, read from Fountain (not stored in Zury). %>
+<% fountainTracked.forEach((f) => { %>
+  <div class="card mb-3 z-tracked">
+    <div class="card-header"><h3 class="card-title"><i class="ti ti-droplet me-2"></i><%= f.name %> <span class="badge bg-azure-lt ms-2"><%= t('Tracked on Fountain') %></span></h3>
+      <div class="card-actions"><a href="<%= f.url %>" target="_blank" rel="noopener"><%= t('Open on Fountain') %> <i class="ti ti-external-link"></i></a></div></div>
+    <div class="card-body">
+      <div class="z-cmp">
+        <% [['Participants', f.participants], ['Articles', f.articles], ['Accepted', f.accepted], ['Not accepted', f.rejected], ['Waiting', f.waiting], ['Reviewers', f.jury]].forEach(([label, n]) => { %><div><div class="z-cmp-n"><%= formatNumber(n) %></div><div class="text-secondary small"><%= t(label) %></div></div><% }) %>
+      </div>
+      <% if (f.top.length) { %>
+        <div class="z-set-head mt-3"><%= t('Most accepted') %></div>
+        <ol class="z-tracked-top"><% f.top.forEach((p) => { %><li><span><%= p.user %></span><b><%= formatNumber(p.accepted) %></b><small class="text-secondary">/ <%= formatNumber(p.articles) %></small></li><% }) %></ol>
+      <% } %>
+      <div class="small text-secondary mt-2"><i class="ti ti-info-circle me-1"></i><%= t('Read from Fountain {when}; nothing is stored in Zury.', { when: formatDateTime(f.readAt) }) %></div>
+    </div>
+  </div>
+<% }) %>

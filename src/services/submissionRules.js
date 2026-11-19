@@ -65,6 +65,23 @@ function checkEntry({ meta, contest, settings, typeConfig, existingKeys = new Se
     }
   }
 
+  if (contest.type === 'audio') {
+    const f = meta.file || {};
+    const mime = String(f.mime || '');
+    const ext = String(meta.title || '').split('.').pop().toLowerCase();
+    const isAudio = mime.startsWith('audio/') || ['application/ogg', 'video/webm'].includes(mime) || ['ogg', 'oga', 'opus', 'mp3', 'wav', 'flac', 'webm'].includes(ext);
+    if (!isAudio) rules.push('Not an audio file.');
+    else {
+      const FORMAT = { oga: 'ogg', opus: 'ogg', ogg: 'ogg', mp3: 'mp3', wav: 'wav', flac: 'flac', webm: 'webm' };
+      const formats = typeConfig.audioFormats || [];
+      if (formats.length && !formats.includes(FORMAT[ext])) rule('format', `.${ext} files are not accepted (allowed: ${formats.join(', ')}).`);
+      if (typeConfig.minDurationSeconds > 0 && f.duration != null && f.duration < typeConfig.minDurationSeconds) rule('length', `The recording is ${f.duration} seconds; at least ${typeConfig.minDurationSeconds} needed.`);
+    }
+    const required = (typeConfig.requiredCategory || '').replace(/_/g, ' ').trim();
+    if (required && !(meta.categories || []).includes(required)) rule('category', `The file is not in the category "${required}".`);
+    if (typeConfig.uploadedDuringEventOnly && !within(meta.createdAt, contest.startDate, contest.endDate)) rule('uploadDate', 'The file was not uploaded during the event.');
+  }
+
   if (contest.type === 'writing') {
     if (typeConfig.minBytes > 0 && (meta.sizeBytes ?? 0) < typeConfig.minBytes) rule('size', `Article is ${meta.sizeBytes} bytes; at least ${typeConfig.minBytes} needed.`);
     if (typeConfig.minWordCount > 0) {

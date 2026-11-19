@@ -2,6 +2,7 @@ const CONTEST_TYPES = {
   photo: 'Photo contest',
   writing: 'Writing contest',
   data: 'Data/Lexeme event',
+  audio: 'Audio edit-a-thon',
   editathon: 'Edit-a-thon',
   workshop: 'Workshop',
   training: 'Training',
@@ -10,8 +11,8 @@ const CONTEST_TYPES = {
   glam: 'GLAM partnership',
   digitization: 'Scanning and digitization',
 };
-const TYPE_ICONS = { photo: 'photo', writing: 'writing', data: 'database', editathon: 'users-group', workshop: 'presentation', training: 'school', photowalk: 'walk', proofread: 'book', glam: 'building-museum', digitization: 'scan' };
-const TYPE_COLORS = { photo: 'blue', writing: 'green', data: 'purple', editathon: 'orange', workshop: 'teal', training: 'cyan', photowalk: 'pink', proofread: 'indigo', glam: 'yellow', digitization: 'lime' };
+const TYPE_ICONS = { photo: 'photo', writing: 'writing', data: 'database', audio: 'microphone', editathon: 'users-group', workshop: 'presentation', training: 'school', photowalk: 'walk', proofread: 'book', glam: 'building-museum', digitization: 'scan' };
+const TYPE_COLORS = { photo: 'blue', writing: 'green', data: 'purple', audio: 'pink', editathon: 'orange', workshop: 'teal', training: 'cyan', photowalk: 'pink', proofread: 'indigo', glam: 'yellow', digitization: 'lime' };
 // What an event is about, for browsing and reports.
 const PROJECT_CATEGORIES = {
   glam: 'GLAM (galleries, libraries, archives, museums)',

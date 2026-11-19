@@ -50,6 +50,20 @@ const EVENT_TYPES = {
       { key: 'minStatements', label: 'Minimum statements per entity', type: 'int', min: 0, max: 10000, default: 0 },
     ],
   },
+  audio: {
+    label: 'Audio edit-a-thon',
+    description: 'Participants record and upload audio to Wikimedia Commons: pronunciations, spoken articles, songs or oral history.',
+    defaultWiki: 'commonswiki',
+    defaultNamespaces: [6],
+    defaults: { juryReviewEnabled: true, massSubmissionEnabled: true },
+    fields: [
+      { key: 'requiredCategory', label: 'Required Commons category', type: 'string', maxLength: 255, default: '', help: 'Without the "Category:" prefix. Leave blank for none.' },
+      { key: 'audioFormats', label: 'Accepted formats', type: 'choices', choices: { ogg: 'Ogg/Opus', mp3: 'MP3', wav: 'WAV', flac: 'FLAC', webm: 'WebM' }, default: ['ogg', 'mp3', 'wav', 'flac', 'webm'] },
+      { key: 'minDurationSeconds', label: 'Minimum length (seconds)', type: 'int', min: 0, max: 36000, default: 0, help: '0 means no minimum. Use 1 or 2 for single-word pronunciations.' },
+      { key: 'uploadedDuringEventOnly', label: 'Only files uploaded during the event', type: 'bool', default: true },
+      { key: 'maxEntriesPerParticipant', label: 'Maximum entries per participant', type: 'int', min: 0, max: 1000000, default: 0, help: '0 means no limit.' },
+    ],
+  },
   editathon: {
     label: 'Edit-a-thon',
     description: 'Registered participants edit a set of pages; contributions are counted over the event dates.',
@@ -173,6 +187,7 @@ const GUIDES = {
   photo: { rules: 'Set what a photo needs: resolution, the contest category and when it was uploaded.', judging: 'Reviewers rate photos, often in rounds; results list the winners per award.' },
   writing: { rules: 'Set what an article needs: size, words, and whether it must be new or may be expanded.', judging: 'Reviewers mark each article; points from marks make the leaderboard.' },
   data: { rules: 'Set which entities count and which properties or statements they need.', judging: 'Reviewers can approve or reject items; counts make the results.' },
+  audio: { rules: 'Say which formats count, how long a recording must be, the Commons category and whether it must be new.', judging: 'Reviewers listen and accept or reject, one at a time or quickly from a list; accepted recordings make the results.' },
   editathon: { rules: "Participants register; their edits during the event are counted automatically.", judging: 'Usually no reviewers: results come from tracked edits and bytes.' },
   proofread: { rules: 'Choose the books and the lowest proofreading level that counts. Pages are checked on Wikisource.', judging: 'No reviewers needed: proofread and validated pages earn points.' },
   glam: { rules: 'Name the partner and collection, the batch category and the licences you accept.', judging: 'Optionally curate uploads; reports show where the files are used.' },
@@ -191,6 +206,7 @@ const WARN_ONLY = {
   data: { properties: 'Required properties', statements: 'Number of statements', language: 'Language', senses: 'Senses', forms: 'Forms', created: 'Created during the event' },
   proofread: { level: 'Proofreading level', book: 'Book', edited: 'Changed during the event' },
   glam: { category: 'Batch category', license: 'Licence', uploadDate: 'Upload date' },
+  audio: { format: 'File format', length: 'Length', category: 'Category', uploadDate: 'Upload date' },
   digitization: { format: 'File format', category: 'Category', uploadDate: 'Upload date' },
 };
 for (const [type, choices] of Object.entries(WARN_ONLY)) {

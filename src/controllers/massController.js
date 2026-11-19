@@ -35,29 +35,73 @@ async function namesOnPage(wiki, title) {
 }
 
 // Everyone from the chosen sources, without repeats, minus the excluded names.
+// An IP address (v4 or v6) or a temporary account (~2025-12345-67).
+const anonymous = (n) => /^~/.test(n) || /^\d{1,3}(\.\d{1,3}){3}$/.test(n) || /^[0-9a-f]{1,4}(:[0-9a-f]{0,4}){2,7}$/i.test(n);
+
 async function gather(req, form, events) {
   const byName = new Map();
+  const left = [];
   const add = (p) => { const k = p.username.toLowerCase(); if (!byName.has(k)) byName.set(k, p); };
   const allowed = new Set(events.map((e) => e.id));
   for (const id of [].concat(form.events || []).map(Number).filter((n) => allowed.has(n) || staff(req))) {
     const ev = events.find((e) => e.id === id);
     for (const p of await messageService.recipients({ contestId: id, audience: form.audience || 'participant' })) add({ ...p, wiki: p.wiki || (ev && ev.primaryWiki) || form.wiki });
   }
-  const loose = [...lines(form.names), ...(form.pageTitle ? await namesOnPage(form.pageWiki || form.wiki, form.pageTitle).catch(() => { throw new MessageError('The wiki page could not be read.'); }) : [])];
+  // Active editors of a wiki over a period (no bots).
+  let active = [];
+  if (form.activeWiki) {
+    const r = await require('../services/activeEditorsService').activeEditors({ wiki: form.activeWiki, days: form.activeDays, minEdits: form.activeMin }).catch((err) => { throw new MessageError(req.t(err.message || 'The wiki could not be read.')); });
+    active = r.people.map((p) => p.username);
+    left.push(...r.left.map((p) => ({ username: p.username, why: p.why })));
+  }
+  // A Quarry query's result.
+  let fromQuarry = [];
+  if (form.quarry) {
+    const q = await require('../services/quarryService').names(form.quarry, form.quarryColumn).catch((err) => { throw new MessageError(err.message); });
+    fromQuarry = q.names;
+    form.quarryNote = `${q.names.length} · ${q.column}`;
+  }
+  const loose = [...lines(form.names), ...active, ...fromQuarry, ...(form.pageTitle ? await namesOnPage(form.pageWiki || form.wiki, form.pageTitle).catch(() => { throw new MessageError('The wiki page could not be read.'); }) : [])];
   if (loose.length) {
     const known = await prisma.user.findMany({ where: { username: { in: loose.slice(0, MAX_NAMES) } }, select: { id: true, username: true, homeWiki: true, uiPrefs: true } });
     const k = new Map(known.map((u) => [u.username.toLowerCase(), u]));
     for (const n of loose.slice(0, MAX_NAMES)) add(k.get(n.toLowerCase()) ? { ...k.get(n.toLowerCase()), wiki: form.wiki } : { id: null, username: n, wiki: form.wiki });
   }
   const skip = new Set(lines(form.exclude).map((n) => n.toLowerCase()));
-  return [...byName.values()].filter((p) => !skip.has(p.username.toLowerCase())).sort((a, b) => a.username.localeCompare(b.username)).slice(0, MAX_NAMES);
+  const optedOut = (p) => { try { return !!JSON.parse(p.uiPrefs || '{}').noMass; } catch { return false; } };
+  const people = [];
+  let notOnZury = 0;
+  for (const p of [...byName.values()].sort((a, b) => a.username.localeCompare(b.username))) {
+    // IP addresses and temporary accounts never get mass messages and are not listed anywhere.
+    if (anonymous(p.username)) continue;
+    if (skip.has(p.username.toLowerCase())) continue;
+    if (/bot(?![a-z])|বট/i.test(p.username)) left.push({ username: p.username, why: 'Bot-like name' });
+    else if (form.method !== 'bell' && optedOut(p)) continue;
+    else if (form.method === 'bell' && !p.id) notOnZury += 1;
+    else people.push(p);
+  }
+  const kept = people.slice(0, MAX_NAMES);
+  // Only the suspected bots and tools are shown as left out.
+  kept.notOnZury = notOnZury;
+  kept.left = left.filter((u) => !anonymous(u.username) && /bot/i.test(u.why || ''));
+  return kept;
+}
+
+// How the message will look: wikitext made into HTML by the wiki itself (talk page, MassMessage);
+// a notification is plain text.
+async function preview(form) {
+  const body = String(form.body || '').trim();
+  if (!body) return null;
+  if (form.method === 'bell') return { subject: form.subject, text: `${form.subject} — ${body}`.slice(0, 400) };
+  const d = await wikiApi.get(form.wiki || 'bnwiki', { action: 'parse', text: `${body.slice(0, 1500)} ~~~~`, contentmodel: 'wikitext', prop: 'text', disablelimitreport: '1', pst: '1' });
+  return { subject: form.subject, html: d.parse?.text || '' };
 }
 
 function render(req, res, locals) {
   res.status(locals.status || 200).render('pages/mass', {
     title: 'Mass message',
     form: { audience: 'participant', method: 'bell', wiki: req.user.homeWiki || 'bnwiki', ...locals.form },
-    people: locals.people || null, result: locals.result || null, error: locals.error || null,
+    step: locals.step || 'who', notOnZury: locals.notOnZury || 0, people: locals.people || null, left: locals.left || [], result: locals.result || null, error: locals.error || null, preview: locals.preview || null,
     events: locals.events, methods: res.locals.features.massMessages ? messageService.METHODS : Object.fromEntries(Object.entries(messageService.METHODS).filter(([k]) => k !== 'massmessage')),
     audiences: messageService.AUDIENCES, hasToken: !!req.session.wikimediaToken,
   });
@@ -72,20 +116,32 @@ async function page(req, res, next) {
 }
 
 async function send(req, res, next) {
-  const form = { events: [].concat(req.body.events || []), audience: req.body.audience, names: req.body.names, pageWiki: String(req.body.pageWiki || '').trim(), pageTitle: String(req.body.pageTitle || '').trim(), exclude: req.body.exclude, wiki: String(req.body.wiki || '').trim(), method: req.body.method, subject: req.body.subject, body: req.body.body };
+  const form = { quarry: String(req.body.quarry || '').trim(), quarryColumn: String(req.body.quarryColumn || '').trim(), activeWiki: String(req.body.activeWiki || '').trim(), activeDays: req.body.activeDays, activeMin: req.body.activeMin, events: [].concat(req.body.events || []), audience: req.body.audience, names: req.body.names, pageWiki: String(req.body.pageWiki || '').trim(), pageTitle: String(req.body.pageTitle || '').trim(), exclude: req.body.exclude, wiki: String(req.body.wiki || '').trim(), method: req.body.method, subject: req.body.subject, body: req.body.body };
   let events = [];
   try {
     events = await managedEvents(req);
     if (!events.length && !staff(req)) { const e = new Error('Only event organizers can send mass messages.'); e.status = 403; return next(e); }
-    const people = await gather(req, form, events);
-    if (req.body.step !== 'send') return render(req, res, { events, form, people });
+    // People ticked to drop on the people step join the "leave out" list.
+    const drop = [].concat(req.body.drop || []).map((s) => String(s).trim()).filter(Boolean);
+    if (drop.length) form.exclude = [String(form.exclude || '').trim(), ...drop].filter(Boolean).join('\n');
+    const STEPS = ['who', 'people', 'message', 'preview', 'send'];
+    const step = STEPS.includes(req.body.step) ? req.body.step : 'who';
+    if (step === 'who') return render(req, res, { events, form, step });
+    const people = await gather(req, ['preview', 'send'].includes(step) ? form : { ...form, method: '' }, events);
+    if (step === 'people' && !people.length) return render(req, res, { events, form, step: 'who', error: people.notOnZury ? req.t('{n} people found, but none use Zury, so a Zury notification cannot reach them. Choose talk page or email.', { n: people.notOnZury }) : req.t('Nobody matches these recipients.'), status: 422 });
+    if (step === 'message' || step === 'people') return render(req, res, { events, form, step, people, left: people.left, notOnZury: people.notOnZury });
+    if (step === 'preview') {
+      if (String(form.subject || '').trim().length < 3 || String(form.body || '').trim().length < 3) return render(req, res, { events, form, step: 'message', people, left: people.left, error: req.t('Enter a subject and a message.'), status: 422 });
+      return render(req, res, { events, form, step, people, left: people.left, notOnZury: people.notOnZury, preview: await preview(form).catch(() => null) });
+    }
     // A notification reaches only people who use Zury.
-    const to = form.method === 'bell' ? people.filter((p) => p.id) : people;
+    const to = people;
     const result = await messageService.send({ actor: req.user, accessToken: req.session.wikimediaToken, contest: { id: null, title: 'Zury', path: '/notifications' }, method: form.method, subject: form.subject, body: form.body, people: to, fallbackWiki: form.wiki || 'bnwiki' });
-    render(req, res, { events, form, people, result });
+    render(req, res, { events, form, step: 'status', people, left: people.left, result });
   } catch (err) {
     if (!(err instanceof MessageError)) return next(err);
-    render(req, res, { events, form, error: req.t(err.message), status: 422 });
+    const back = { send: 'preview', preview: 'message', message: 'people', people: 'who' }[req.body.step] || 'who';
+    render(req, res, { events, form, step: back === 'people' ? 'who' : back, error: req.t(err.message), status: 422 });
   }
 }
 

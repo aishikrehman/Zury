@@ -45,6 +45,7 @@
   <div class="row row-cards">
     <div class="col-12">
       <% if (stats) { %>
+        <% if (typeof fountainTracked !== 'undefined' && fountainTracked.length) { %><%- include('../../partials/fountainTracked') %><% } %>
         <% if (typeof compare !== 'undefined' && compare) { %><%- include('../../partials/compareEdition', { compare }) %><% } %>
         <%- include('../../partials/survival', { sv: stats.survival }) %>
         <%- include('../../partials/eventStats', { stats }) %>

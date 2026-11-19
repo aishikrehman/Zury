@@ -35,6 +35,7 @@
               <% if (m.entity && m.entity.type === 'lexeme') { %> · <%= t('{n} senses', { n: formatNumber(m.entity.senses || 0) }) %> · <%= t('{n} forms', { n: formatNumber(m.entity.forms || 0) }) %><% } %>
               <% if (m.sizeBytes != null) { %> · <%= formatNumber(m.sizeBytes) %> B<% } %>
             </div>
+            <% if (m.file && m.file.url && /\.(ogg|oga|opus|mp3|wav|flac|webm)$/i.test(s.title)) { %><audio class="z-quick-audio" controls preload="none" src="<%= m.file.url %>"></audio><% } %>
             <% if (v.errors && v.errors.length) { %><div class="small text-danger"><i class="ti ti-alert-circle me-1"></i><%= v.errors.map((e) => t(e)).join(' ') %></div><% } %>
             <% if (v.warnings && v.warnings.length) { %><div class="small text-warning"><i class="ti ti-alert-triangle me-1"></i><%= v.warnings.map((e) => t(e)).join(' ') %></div><% } %>
           </div>

@@ -10,6 +10,8 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https://upload.wikimedia.org https://commons.wikimedia.org https://thumb.wikimedia.org",
   "font-src 'self' data:",
+  // Audio entries are played from Commons.
+  "media-src 'self' https://upload.wikimedia.org",
   "connect-src 'self' https://*.wikipedia.org https://*.wiktionary.org https://*.wikibooks.org https://*.wikinews.org https://*.wikiquote.org https://*.wikisource.org https://*.wikiversity.org https://*.wikivoyage.org https://*.wikimedia.org https://www.wikidata.org",
   // The review window shows the entry's page from its wiki.
   "frame-src 'self' https://*.wikipedia.org https://*.wiktionary.org https://*.wikibooks.org https://*.wikinews.org https://*.wikiquote.org https://*.wikisource.org https://wikisource.org https://*.wikiversity.org https://*.wikivoyage.org https://*.wikimedia.org https://www.wikidata.org https://www.mediawiki.org",

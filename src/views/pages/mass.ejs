@@ -1,63 +1,126 @@
-<%# Mass message: sources on the left (events, a list, a wiki page), the people found on the right. %>
-<div class="page-body"><div class="container-xl">
+<%# Mass message, step by step: who → people → message → preview → status. Each step keeps the
+    others' answers in hidden fields; the server gathers the people again at each step. %>
+<%
+  const STEPS = [['who', 'list-search', 'List'], ['people', 'users', 'People'], ['message', 'pencil', 'Message'], ['preview', 'eye', 'Preview'], ['status', 'circle-check', 'Status']];
+  const at = STEPS.findIndex(([k]) => k === step);
+  const FIELDS = ['audience', 'names', 'pageWiki', 'pageTitle', 'activeWiki', 'activeDays', 'activeMin', 'quarry', 'quarryColumn', 'exclude', 'wiki', 'method', 'subject', 'body'];
+  const SHOWN = { who: ['audience', 'names', 'pageWiki', 'pageTitle', 'activeWiki', 'activeDays', 'activeMin', 'quarry', 'quarryColumn', 'exclude', 'events'], people: [], message: ['wiki', 'method', 'subject', 'body'], preview: [], status: [] }[step] || [];
+  const carry = () => FIELDS.filter((k) => !SHOWN.includes(k) && form[k] != null && form[k] !== '').map((k) => `<input type="hidden" name="${k}" value="${h(form[k])}">`).join('') + (SHOWN.includes('events') ? '' : [].concat(form.events || []).map((v) => `<input type="hidden" name="events" value="${h(v)}">`).join(''));
+  const nav = (backTo, nextTo, nextLabel, nextIcon, extra = '') => `<div class="z-mass-nav">${backTo ? `<button class="btn" type="submit" name="step" value="${backTo}" formnovalidate><i class="ti ti-arrow-left me-1"></i>${h(t('Back'))}</button>` : '<span></span>'}${nextTo ? `<button class="btn btn-primary" type="submit" name="step" value="${nextTo}"${extra}>${h(nextLabel)}<i class="ti ti-${nextIcon} ms-1"></i></button>` : ''}</div>`;
+  const methodLabel = methods[form.method] ? t(methods[form.method]) : '';
+%>
+<div class="page-body"><div class="container-xl" style="max-width: 60rem">
   <div class="d-flex align-items-center gap-2 mb-3"><h2 class="m-0"><i class="ti ti-speakerphone me-1"></i><%= t('Mass message') %></h2><span class="badge bg-purple-lt"><%= t('Beta') %></span></div>
+  <ol class="z-life z-mass-steps">
+    <% STEPS.forEach(([k, icon, label], i) => { %><li class="<%= i < at ? 'is-done' : i === at ? 'is-now' : '' %>"><span><i class="ti ti-<%= i < at ? 'check' : icon %>"></i></span><b><%= t(label) %></b></li><% }) %>
+  </ol>
   <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
-  <% if (result && result.list) { %>
-    <div class="alert alert-success"><%= t('List of {n} people saved on the wiki.', { n: formatNumber(result.list.people) }) %> <a href="<%= result.list.pageUrl %>" target="_blank" rel="noopener"><%= result.list.title %></a>
-      <div class="mt-2"><a class="btn btn-primary" href="<%= result.list.sendUrl %>" target="_blank" rel="noopener"><i class="ti ti-send me-1"></i><%= t('Send with Special:MassMessage') %></a></div></div>
-  <% } else if (result) { %>
-    <div class="alert alert-<%= result.failed.length ? 'warning' : 'success' %>"><%= tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %>
-      <% if (result.failed.length) { %><ul class="mb-0"><% result.failed.forEach((f) => { %><li><%= f.username %> — <%= f.error %></li><% }) %></ul><% } %></div>
-  <% } %>
-  <form method="post" action="/mass" class="row g-3">
+  <form method="post" action="/mass" class="card">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="col-lg-8 d-flex flex-column gap-3">
-      <div class="card">
-        <div class="card-header"><h3 class="card-title"><span class="badge bg-blue-lt me-2">১</span><%= t('Who') %></h3></div>
-        <div class="card-body">
-          <% if (events.length) { %>
-            <label class="form-label"><%= t('From your events') %></label>
-            <div class="z-mass-events mb-2">
-              <% events.forEach((e) => { const on = [].concat(form.events || []).map(String).includes(String(e.id)); %><label class="form-check m-0"><input class="form-check-input" type="checkbox" name="events" value="<%= e.id %>"<%= on ? ' checked' : '' %>><span class="form-check-label"><%= e.title %></span></label><% }) %>
+    <%- carry() %>
+
+    <% if (step === 'who') { const evOn = [].concat(form.events || []).length; %>
+      <div class="card-header"><h3 class="card-title"><%= t('Who should get it?') %></h3></div>
+      <div class="z-src-list">
+        <% if (events.length) { %>
+        <details class="z-src"<%= evOn ? ' open' : '' %>>
+          <summary><span class="z-src-ico"><i class="ti ti-calendar-event"></i></span><span class="z-src-name"><%= t('From your events') %></span><% if (evOn) { %><b><%= formatNumber(evOn) %></b><% } %><i class="ti ti-chevron-down z-src-caret"></i></summary>
+          <div class="z-src-body">
+            <select class="form-select mb-2" name="audience" aria-label="<%= t('To') %>"><% Object.entries(audiences).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.audience === k ? ' selected' : '' %>><%= t(label) %></option><% }) %></select>
+            <div class="z-mass-events"><% events.forEach((e) => { const on = [].concat(form.events || []).map(String).includes(String(e.id)); %><label class="form-check m-0"><input class="form-check-input" type="checkbox" name="events" value="<%= e.id %>"<%= on ? ' checked' : '' %>><span class="form-check-label"><%= e.title %></span></label><% }) %></div>
+          </div>
+        </details>
+        <% } %>
+        <details class="z-src"<%= form.activeWiki ? ' open' : '' %>>
+          <summary><span class="z-src-ico"><i class="ti ti-activity"></i></span><span class="z-src-name"><%= t('Active editors of a wiki (no bots)') %></span><i class="ti ti-chevron-down z-src-caret"></i></summary>
+          <div class="z-src-body z-src-row">
+            <input class="form-control" name="activeWiki" value="<%= form.activeWiki || '' %>" placeholder="<%= t('Wiki, e.g. bnwiki') %>" aria-label="<%= t('Wiki') %>">
+            <select class="form-select" name="activeDays" aria-label="<%= t('Period') %>"><% [['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year'], ['730', 'Last two years']].forEach(([v, l]) => { %><option value="<%= v %>"<%= String(form.activeDays || '365') === v ? ' selected' : '' %>><%= t(l) %></option><% }) %></select>
+            <div class="input-group"><span class="input-group-text"><%= t('at least') %></span><input class="form-control" type="number" min="1" name="activeMin" value="<%= form.activeMin || 10 %>" aria-label="<%= t('edits') %>"><span class="input-group-text"><%= t('edits') %></span></div>
+          </div>
+        </details>
+        <details class="z-src"<%= form.names ? ' open' : '' %>>
+          <summary><span class="z-src-ico"><i class="ti ti-list"></i></span><span class="z-src-name"><%= t('These people') %></span><i class="ti ti-chevron-down z-src-caret"></i></summary>
+          <div class="z-src-body"><textarea class="form-control" name="names" rows="4" placeholder="<%= t('One username per line') %>" aria-label="<%= t('These people') %>"><%= form.names || '' %></textarea></div>
+        </details>
+        <details class="z-src"<%= form.pageTitle ? ' open' : '' %>>
+          <summary><span class="z-src-ico"><i class="ti ti-file-text"></i></span><span class="z-src-name"><%= t('Everyone linked on a wiki page') %></span><i class="ti ti-chevron-down z-src-caret"></i></summary>
+          <div class="z-src-body z-src-row">
+            <input class="form-control" name="pageWiki" value="<%= form.pageWiki || '' %>" placeholder="<%= t('Wiki, e.g. bnwiki') %>" aria-label="<%= t('Wiki') %>">
+            <input class="form-control z-src-grow" name="pageTitle" value="<%= form.pageTitle || '' %>" placeholder="<%= t('Page, e.g. a sign-up page') %>" aria-label="<%= t('Page') %>">
+          </div>
+        </details>
+        <details class="z-src"<%= form.quarry ? ' open' : '' %>>
+          <summary><span class="z-src-ico"><i class="ti ti-sql"></i></span><span class="z-src-name"><%= t('From a Quarry query') %></span><i class="ti ti-chevron-down z-src-caret"></i></summary>
+          <div class="z-src-body">
+            <div class="z-src-row">
+              <input class="form-control z-src-grow" name="quarry" value="<%= form.quarry || '' %>" placeholder="https://quarry.wmcloud.org/query/12345" aria-label="<%= t('From a Quarry query') %>">
+              <input class="form-control" name="quarryColumn" value="<%= form.quarryColumn || '' %>" placeholder="<%= t('Column (optional)') %>" aria-label="<%= t('Column') %>">
             </div>
-            <select class="form-select mb-3" name="audience" aria-label="<%= t('To') %>"><% Object.entries(audiences).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.audience === k ? ' selected' : '' %>><%= t(label) %></option><% }) %></select>
-          <% } %>
-          <div class="row g-3">
-            <div class="col-md-6"><label class="form-label" for="names"><%= t('These people') %></label><textarea class="form-control" id="names" name="names" rows="4" placeholder="<%= t('One username per line') %>"><%= form.names || '' %></textarea></div>
-            <div class="col-md-6"><label class="form-label" for="pageTitle"><%= t('Everyone linked on a wiki page') %></label>
-              <input class="form-control mb-2" name="pageWiki" value="<%= form.pageWiki || '' %>" placeholder="<%= t('Wiki, e.g. bnwiki') %>" aria-label="<%= t('Wiki') %>">
-              <input class="form-control" id="pageTitle" name="pageTitle" value="<%= form.pageTitle || '' %>" placeholder="<%= t('Page, e.g. a sign-up page') %>">
-            </div>
-            <div class="col-12"><label class="form-label" for="exclude"><%= t('Leave out') %></label><textarea class="form-control" id="exclude" name="exclude" rows="2" placeholder="<%= t('One username per line') %>"><%= form.exclude || '' %></textarea></div>
+            <div class="form-hint"><%= t('Uses the latest result.') %></div>
           </div>
+        </details>
+        <details class="z-src z-src-minus"<%= form.exclude ? ' open' : '' %>>
+          <summary><span class="z-src-ico"><i class="ti ti-user-minus"></i></span><span class="z-src-name"><%= t('Leave out') %></span><i class="ti ti-chevron-down z-src-caret"></i></summary>
+          <div class="z-src-body"><textarea class="form-control" name="exclude" rows="2" placeholder="<%= t('One username per line') %>" aria-label="<%= t('Leave out') %>"><%= form.exclude || '' %></textarea></div>
+        </details>
+      </div>
+      <div class="card-footer"><%- nav(null, 'people', t('See the people'), 'arrow-right') %></div>
+
+    <% } else if (step === 'people') { %>
+      <div class="card-header"><h3 class="card-title"><%= t('{n} people', { n: formatNumber(people.length) }) %></h3><span class="ms-auto small text-secondary"><%= t('Tick to leave out') %></span></div>
+      <div class="z-mass-plist">
+        <% people.forEach((u) => { %><label class="z-mass-person"><input class="form-check-input" type="checkbox" name="drop" value="<%= u.username %>"><span class="text-truncate"><%= u.username %></span><% if (!u.id) { %><span class="badge bg-secondary-lt"><%= t('wiki only') %></span><% } %></label><% }) %>
+      </div>
+      <% if (left.length) { %><details class="z-src"><summary><span class="z-src-ico" style="background:#f1f3f5;color:#72777d"><i class="ti ti-user-off"></i></span><span class="z-src-name"><%= t('Left out: automated tools/bots') %></span><b><%= formatNumber(left.length) %></b><i class="ti ti-chevron-down z-src-caret"></i></summary>
+        <div class="z-mass-plist"><% left.forEach((u) => { %><div class="z-mass-person"><span class="text-truncate"><%= u.username %></span><span class="badge bg-secondary-lt"><%= t(u.why) %></span></div><% }) %></div></details><% } %>
+      <div class="card-footer"><%- nav('who', 'message', t('Write the message'), 'arrow-right') %></div>
+
+    <% } else if (step === 'message') { %>
+      <div class="card-header"><h3 class="card-title"><%= t('The message') %></h3><span class="ms-auto badge bg-blue-lt"><%= t('{n} people', { n: formatNumber(people.length) }) %></span></div>
+      <div class="card-body">
+        <label class="form-label"><%= t('Send as') %></label>
+        <%- include('../partials/massMethodHelp') %>
+        <div class="row g-3 mt-1">
+          <div class="col-md-4"><label class="form-label" for="wiki"><%= t('Wiki') %></label><input class="form-control" id="wiki" name="wiki" value="<%= form.wiki %>"></div>
+          <div class="col-12"><label class="form-label" for="subject"><%= t('Subject') %></label><input class="form-control" id="subject" name="subject" maxlength="200" value="<%= form.subject || '' %>" required></div>
+          <div class="col-12"><label class="form-label" for="body"><%= t('Message') %></label><textarea class="form-control" id="body" name="body" rows="8" maxlength="10000" required><%= form.body || '' %></textarea></div>
+        </div>
+        <% if (!hasToken) { %><div class="text-warning small mt-2"><%= t('Log in again with Wikimedia to send on the wiki.') %></div><% } %>
+      </div>
+      <div class="card-footer"><%- nav('people', 'preview', t('Preview'), 'eye') %></div>
+
+    <% } else if (step === 'preview') { %>
+      <div class="card-header"><h3 class="card-title"><%= t('Check before sending') %></h3></div>
+      <div class="card-body">
+        <div class="z-mass-sum">
+          <div><small><%= t('To') %></small><b><%= t('{n} people', { n: formatNumber(people.length) }) %></b></div>
+          <div><small><%= t('Send as') %></small><b><%= methodLabel %></b></div>
+          <% if (form.method !== 'bell') { %><div><small><%= t('Wiki') %></small><b><%= form.wiki %></b></div><% } %>
+        </div>
+        <% if (['talk', 'email'].includes(form.method)) { %><div class="alert alert-danger py-2"><i class="ti ti-alert-triangle me-1"></i><%= t('{n} messages from your account', { n: formatNumber(people.length) }) %></div><% } %>
+        <% if (form.method === 'bell' && notOnZury) { %><div class="alert alert-warning py-2"><i class="ti ti-info-circle me-1"></i><%= t('{n} people not on Zury will not get it', { n: formatNumber(notOnZury) }) %></div><% } %>
+        <div class="z-mass-preview-box">
+          <div class="fw-bold mb-2"><%= form.subject %></div>
+          <% if (preview && preview.html) { %><div class="z-mass-preview"><%- preview.html %></div><% } else { %><div style="white-space: pre-line"><%= preview ? preview.text : form.body %></div><% } %>
         </div>
       </div>
-      <div class="card">
-        <div class="card-header"><h3 class="card-title"><span class="badge bg-blue-lt me-2">২</span><%= t('Message') %></h3></div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-8"><label class="form-label" for="method"><%= t('Send as') %></label><select class="form-select" id="method" name="method"><% Object.entries(methods).forEach(([k, label]) => { %><option value="<%= k %>"<%= form.method === k ? ' selected' : '' %>><%= t(label) %></option><% }) %></select></div>
-            <div class="col-md-4"><label class="form-label" for="wiki"><%= t('Wiki') %></label><input class="form-control" id="wiki" name="wiki" value="<%= form.wiki %>"></div>
-            <div class="col-12"><label class="form-label" for="subject"><%= t('Subject') %></label><input class="form-control" id="subject" name="subject" maxlength="200" value="<%= form.subject || '' %>"></div>
-            <div class="col-12"><label class="form-label" for="body"><%= t('Message') %></label><textarea class="form-control" id="body" name="body" rows="7" maxlength="10000"><%= form.body || '' %></textarea></div>
-          </div>
-          <% if (!hasToken) { %><div class="text-warning small mt-2"><%= t('Talk pages, email and MassMessage lists need your Wikimedia login. Log out and in again to send them.') %></div><% } %>
-        </div>
-        <div class="card-footer d-flex gap-2 justify-content-end">
-          <button class="btn" type="submit" name="step" value="preview"><i class="ti ti-users me-1"></i><%= t('Show recipients') %></button>
-          <button class="btn btn-primary" type="submit" name="step" value="send" data-confirm="<%= t('Send this message to everyone listed?') %>"><i class="ti ti-send me-1"></i><%= t('Send') %></button>
-        </div>
+      <div class="card-footer"><%- nav('message', 'send', t('Send to {n} people', { n: formatNumber(people.length) }), 'send', ` data-confirm="${h(t('Send this message to everyone listed?'))}"`) %></div>
+
+    <% } else if (step === 'status') { %>
+      <div class="card-body text-center py-5">
+        <% if (result && result.list) { %>
+          <i class="ti ti-list-check text-green" style="font-size: 3rem"></i>
+          <h3 class="mt-2"><%= t('List of {n} people saved on the wiki.', { n: formatNumber(result.list.people) }) %></h3>
+          <p><a href="<%= result.list.pageUrl %>" target="_blank" rel="noopener"><%= result.list.title %></a></p>
+          <a class="btn btn-primary" href="<%= result.list.sendUrl %>" target="_blank" rel="noopener"><i class="ti ti-send me-1"></i><%= t('Send with Special:MassMessage') %></a>
+        <% } else if (result) { %>
+          <i class="ti ti-<%= result.failed.length ? 'alert-triangle text-warning' : 'circle-check text-green' %>" style="font-size: 3rem"></i>
+          <h3 class="mt-2"><%= tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %></h3>
+          <% if (result.failed.length) { %><div class="text-start mx-auto" style="max-width: 32rem"><div class="fw-bold mb-1"><%= t('Not sent to:') %></div><ul><% result.failed.forEach((f) => { %><li><%= f.username %> — <%= f.error %></li><% }) %></ul></div><% } %>
+        <% } %>
+        <div class="mt-3"><a class="btn" href="/mass"><i class="ti ti-plus me-1"></i><%= t('New mass message') %></a></div>
       </div>
-    </div>
-    <aside class="col-lg-4">
-      <div class="card z-mass-people">
-        <div class="card-header"><h3 class="card-title"><%= t('Recipients') %></h3><span class="ms-auto badge bg-blue-lt"><%= formatNumber(people ? people.length : 0) %></span></div>
-        <% if (people && people.length) { %>
-          <div class="list-group list-group-flush">
-            <% people.forEach((u) => { %><div class="list-group-item py-2 d-flex gap-2 align-items-center"><span class="text-truncate flex-fill"><%= u.username %></span><% if (!u.id) { %><span class="badge bg-secondary-lt" title="<%= t('Not on Zury: no notification, only wiki messages') %>"><%= t('wiki only') %></span><% } %></div><% }) %>
-          </div>
-        <% } else { %><div class="card-body text-secondary small"><%= t('Choose who, then press Show recipients.') %></div><% } %>
-      </div>
-    </aside>
+    <% } %>
   </form>
 </div></div>

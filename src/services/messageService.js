@@ -7,7 +7,7 @@ const prisma = require('../config/prisma');
 const audit = require('./auditService');
 const oauthService = require('./wikimediaOAuthService');
 
-const METHODS = { bell: 'Zury notification', talk: 'Talk page message', email: 'Email (through Wikimedia)', massmessage: 'MassMessage list on the wiki' };
+const METHODS = { massmessage: 'MassMessage bot', bell: 'Zury notification', talk: 'Talk page', email: 'Email' };
 const AUDIENCES = { participant: 'Participants', nosubmit: 'Participants with no entries', waiting: 'Reviewers with entries waiting', lapsed: 'Took part last time, not this time', jury: 'Reviewers', organizer: 'Organizers' };
 const MAX_RECIPIENTS = 200; // one by one with the organizer's login
 const MAX_LIST = 5000; // notifications and MassMessage lists

@@ -314,6 +314,8 @@ model ContestWiki {
   fountainSyncedAt DateTime?
   // Brought up to date every hour by itself (else only with Update now).
   fountainAuto     Boolean   @default(true)
+  // Only tracked: numbers are read from Fountain when shown; no entries are copied into Zury.
+  fountainTrackOnly Boolean  @default(false)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

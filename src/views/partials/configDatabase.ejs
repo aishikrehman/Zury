@@ -42,7 +42,7 @@
                 <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= t(w.status) %></span></td>
                 <td class="text-nowrap">
                   <% if (w.fountainCode) { %>
-                    <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(w.fountainCode) %>" rel="noopener" target="_blank"><%= w.fountainCode %></a>
+                    <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(w.fountainCode) %>" rel="noopener" target="_blank"><%= w.fountainCode %></a><% if (w.fountainTrackOnly) { %> <span class="badge bg-azure-lt"><%= t('Tracked') %></span><% } %>
                     <div class="text-secondary small"><%= w.fountainSyncedAt ? t('Updated {when}', { when: formatDateTime(w.fountainSyncedAt, contest.timezone) }) : '' %></div>
                   <% } else { %><span class="text-secondary">—</span><% } %>
                 </td>
@@ -70,7 +70,8 @@
         </form>
         <% if (can('importEvents')) { %><form method="post" action="<%= eventBase %>/fountain" class="row g-2 align-items-center mt-2">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="col"><input class="form-control" name="code" placeholder="<%= t('Fountain editathon code or address') %>" aria-label="<%= t('Fountain editathon code or address') %>" required></div>
+          <div class="col-md"><input class="form-control" name="code" placeholder="<%= t('Fountain editathon code or address') %>" aria-label="<%= t('Fountain editathon code or address') %>" required></div>
+          <div class="col-md-auto"><select class="form-select" name="mode" aria-label="<%= t('How') %>"><option value="track"><%= t('Track only: numbers from Fountain, nothing copied') %></option><option value="import"><%= t('Import: copy entries and reviews into Zury') %></option></select></div>
           <div class="col-auto"><button class="btn" type="submit"><%= t("Follow on Fountain") %></button></div>
         </form><% } %>
       </div>
