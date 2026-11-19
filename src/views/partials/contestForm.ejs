@@ -12,9 +12,9 @@
   const marks = locals.wikiMode ? locals.overridden : new Set();
   const mark = (key) => (marks.has(key) ? `<span class="badge bg-orange-lt ms-1">${esc(t('this wiki'))}</span>` : '');
   const creating = action === '/events/create';
-  // New events: the sections as tabs down the side (any can be opened); Configuration: tabs across the top.
   const pageMode = false;
-  const sideTabs = false;
+  // New event and settings alike: the sections as a sidebar on wide screens.
+  const sideTabs = true;
   const extra = typeof extraPane === 'string' && extraPane ? extraPane : '';
   const judged = !typeDef || typeDef.entries !== false;
   const dateLabel = Object.fromEntries(DATE_FIELDS);
@@ -75,7 +75,6 @@
                     <span class="form-label"><%= t("Type of event") %></span>
                     <input type="hidden" name="type" value="<%= type %>">
                     <div class="d-flex align-items-center gap-2"><strong><%= t(typeDef.label) %></strong><% if (!locals.typeFixed) { %><a class="small" href="/create/event<%= form.seriesSlug ? `?series=${encodeURIComponent(form.seriesSlug)}${form.edition ? `&edition=${encodeURIComponent(form.edition)}` : ''}` : '' %>"><%= t('Change') %></a><% } %></div>
-                    <div class="form-hint"><%= t(typeDef.description) %></div>
                   </div>
                 <% } else { const draftType = typeof contest !== 'undefined' && contest && contest.status === 'draft' && !contest.seriesId && !contest.editionId; %>
                   <div class="col-12">

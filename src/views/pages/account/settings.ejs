@@ -17,7 +17,6 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <label class="form-label" for="avatar-file"><%= t('Profile picture') %></label>
             <div class="input-group"><input class="form-control" id="avatar-file" name="file" placeholder="<%= t('File:Example.jpg') %>" maxlength="250"><button class="btn" type="submit"><%= t('Use this picture') %></button><% if (me.avatarUrl) { %><button class="btn btn-ghost-danger" type="submit" name="remove" value="1" title="<%= t('Remove picture') %>" aria-label="<%= t('Remove picture') %>"><i class="ti ti-trash"></i></button><% } %></div>
-            <div class="form-hint"><%= t('A file name on Wikimedia Commons.') %></div>
           </form>
         </div>
         <form action="/settings" method="post" novalidate>
@@ -41,7 +40,6 @@
         <div class="col-md-6"><label class="form-label" for="noMass"><%= t('Mass messages from organizers') %></label>
           <select class="form-select" id="noMass" name="noMass"><option value=""><%= t('Yes') %></option><option value="on"<%= noMass ? ' selected' : '' %>><%= t('No mass messages') %></option></select></div>
         <div class="col-md-2"><button class="btn w-100" type="submit"><%= t('Save') %></button></div>
-        <div class="col-12 form-hint m-0"><%= t('Zury notifications and chats are in your inbox.') %> <a href="/inbox"><%= t('Inbox') %></a></div>
       </form>
     </section>
   </div>

@@ -38,6 +38,8 @@ model User {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   lastLoginAt           DateTime?
+  // The first time this person logged in to Zury (earlier accounts: when the account was made).
+  firstLoginAt          DateTime?
 
   globalRoles         UserGlobalRole[]    @relation("GlobalRoleHolder")
   globalRolesAssigned UserGlobalRole[]    @relation("GlobalRoleAssigner")
@@ -866,4 +868,19 @@ model SiteSetting {
   key       String   @id @db.VarChar(64)
   value     String   @db.Text
   updatedAt DateTime @updatedAt
+}
+
+// Something followed elsewhere for its numbers only (nothing copied): a Fountain editathon or a
+// CampWiz campaign, on a series, an edition or one event.
+model Tracker {
+  id          Int      @id @default(autoincrement())
+  level       String   @db.VarChar(10) // series | edition | event
+  levelId     Int
+  kind        String   @db.VarChar(10) // fountain | campwiz
+  code        String   @db.VarChar(300)
+  category    String   @default("") @db.VarChar(255)
+  createdById Int?
+  createdAt   DateTime @default(now())
+
+  @@index([level, levelId])
 }

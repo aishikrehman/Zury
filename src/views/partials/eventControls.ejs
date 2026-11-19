@@ -4,8 +4,12 @@
   const s = contest.status;
   const running = ['published', 'upcoming', 'active', 'submission_closed', 'under_review'].includes(s);
   const resultsOut = !!contest.resultsPublishedAt;
-  const stage = s === 'draft' ? 0 : s === 'archived' ? 3 : resultsOut ? 2 : 1;
-  const steps = [['Draft', 'pencil'], ['Published', 'rocket'], ['Results published', 'trophy'], ['Archived', 'archive']];
+  // Results shown live (or by themselves after review): there is no publish step.
+  let resultsRule = 'always'; try { resultsRule = ((JSON.parse(settings.participation || '{}').rules) || {}).results || 'always'; } catch (e) { resultsRule = 'always'; }
+  // Always open: no publish step and no publish/hide button, whatever an old publish date says.
+  const byHand = resultsRule !== 'always';
+  const steps = byHand ? [['Draft', 'pencil'], ['Published', 'rocket'], ['Results published', 'trophy'], ['Archived', 'archive']] : [['Draft', 'pencil'], ['Published', 'rocket'], ['Archived', 'archive']];
+  const stage = s === 'draft' ? 0 : s === 'archived' ? steps.length - 1 : byHand && resultsOut ? 2 : 1;
   const act = (action, icon, label, cls, confirm) => ({ action, icon, label, cls, confirm });
   const main = [];
   if (can('manageEvent')) {
@@ -17,7 +21,7 @@
     if (s === 'cancelled') main.push(act('reopen', 'refresh', 'Reopen', ''));
     if (!['cancelled', 'archived', 'draft'].includes(s)) main.push(act('cancel', 'ban', 'Cancel the event', 'ghost-danger', t('Cancel this event?')));
   }
-  const canResults = can('publishResults') && typeDef.entries !== false && s !== 'archived' && s !== 'draft';
+  const canResults = byHand && can('publishResults') && typeDef.entries !== false && s !== 'archived' && s !== 'draft';
 %>
 <div class="modal fade" id="event-controls" tabindex="-1" aria-labelledby="event-controls-title" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -38,14 +42,14 @@
           <% } %>
         </div>
         <% if (can('deleteAnything')) { %>
-          <div class="z-life-danger">
-            <a class="btn btn-sm" href="<%= base %>/config#move"><i class="ti ti-arrows-move me-1"></i><%= t('Move into another event') %></a>
+          <details class="z-life-danger"><summary><i class="ti ti-alert-triangle me-1"></i><%= t('Move or delete') %></summary>
+            <a class="btn btn-sm mt-2" href="<%= base %>/config#move"><i class="ti ti-arrows-move me-1"></i><%= t('Move into another event') %></a>
             <form method="post" action="<%= base %>/delete" class="d-flex flex-wrap align-items-end gap-2 mt-3">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <div class="flex-fill"><label class="form-label small" for="ec-confirm"><%- th('Type {address} to confirm', { address: '<code>' + h(contest.slug) + '</code>' }) %></label><input class="form-control form-control-sm" id="ec-confirm" name="confirmation" autocomplete="off"></div>
               <button type="submit" class="btn btn-sm btn-danger"><i class="ti ti-trash me-1"></i><%= t('Delete event') %></button>
             </form>
-          </div>
+          </details>
         <% } %>
       </div>
     </div>

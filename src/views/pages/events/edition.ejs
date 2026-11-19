@@ -1,6 +1,6 @@
 <%
   const base = `/series/${sr.slug}/${edition.slug}`;
-  const tabs = [['overview', 'layout-dashboard', t('Overview')], ['statistics', 'chart-bar', t('Statistics')], ...(canRun ? [['people', 'users', t('Organizers')], ['settings', 'settings', t('Settings')]] : [])];
+  const tabs = [['overview', 'layout-dashboard', t('Overview')], ['statistics', 'chart-bar', t('Statistics')], ...(canRun ? [['settings', 'settings', t('Settings')]] : [])];
   const CYCLES = { annual: 'Annual', season: 'Season', phase: 'Phase', special: 'Special', other: 'Other' };
   const dates = edition.startDate ? `<span><i class="ti ti-calendar"></i>${formatDate(edition.startDate)}${edition.endDate ? ` – ${formatDate(edition.endDate)}` : ''}</span>` : '';
   const day = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
@@ -62,6 +62,7 @@
 
 
     <% } else if (tab === 'settings') { %>
+      <% if (canRun) { %><%- include('../../partials/trackersManage', { trackers: typeof levelTrackers !== 'undefined' ? levelTrackers : [], trackAction: '/series/' + sr.slug + '/' + edition.slug + '/track' }) %><% } %>
       <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/update" class="card mb-3">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t('Details') %></h3></div>
@@ -106,12 +107,13 @@
 
       <%- include('../../partials/levelDelete', { inside, seriesSlug: sr.slug, editionSlug: edition.slug, canDelete: can('deleteAnything') }) %>
 
-    <% } else if (tab === 'people') { %>
+    <% } if (tab === 'settings' && canRun) { %>
       <%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, inherited, ROLES }) %>
     <% } else if (tab === 'statistics') { %>
+      <%- include('../../partials/trackers', { trackers: typeof trackers !== 'undefined' ? trackers : [], trackAction: null }) %>
       <% if (events.length) { %><% if (canRun && fountainCount) { %><form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/fountain-sync" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Update all from Fountain') %> (<%= formatNumber(fountainCount) %>)</button></form><% } %>
       <%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Event'), chartTitle: t('Entries per event') }) %><% } else { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events in this edition yet') }) %></div><% } %>
     <% } %>
   </div>
 </div>
-<% if (typeof levelChat !== 'undefined' && levelChat) { %><%- include('../../partials/chatLaunch', { panelUrl: '/chat/panel?c=' + levelChat }) %><% } %>
+

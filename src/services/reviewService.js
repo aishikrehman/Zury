@@ -405,8 +405,25 @@ async function leaderboard({ contest, settings, wiki }) {
 }
 
 // Words and revisions stop changing once results are locked (published) or the event is archived.
-function resultsFinal(contest) {
-  return contest.status === 'archived' || !!contest.resultsPublishedAt;
+// With results always open there is no publishing, so only archiving freezes them.
+function resultsFinal(contest, settings) {
+  if (contest.status === 'archived') return true;
+  if (settings && resultsMode(settings) === 'always') return false;
+  return !!contest.resultsPublishedAt;
+}
+
+// Are the results open to everyone? By the event's "results" rule:
+//   always       — from the start, as reviews come in (no publish step)
+//   afterReview  — by themselves once reviewing is over (event completed or archived), or when published
+//   manual       — only when the organizers publish them
+function resultsMode(settings) {
+  return require('./participationService').read(settings).rules.results || 'always';
+}
+function resultsOpen(contest, settings) {
+  const mode = resultsMode(settings);
+  if (mode === 'always') return true;
+  if (contest.resultsPublishedAt) return true;
+  return mode === 'afterReview' && ['completed', 'archived'].includes(contest.status);
 }
 
 // An archived event cannot change any more, except by a superuser.
@@ -628,7 +645,7 @@ async function createAppeal({ user, contest, settings, submission, reason }) {
   const maxAppeals = require('./participationService').read(settings).rules.maxAppeals || 1;
   if ((await prisma.appeal.count({ where: { submissionId: submission.id } })) >= maxAppeals) throw new ReviewError('This entry cannot be appealed again.');
   // While the event runs, the page as it is now replaces the entry's revision; after the end the end-time revision stays.
-  if (require('./articleWatchService').running(contest) && !resultsFinal(contest)) await require('./submissionService').repin(submission).catch(() => null);
+  if (require('./articleWatchService').running(contest) && !resultsFinal(contest, settings)) await require('./submissionService').repin(submission).catch(() => null);
   return prisma.$transaction(async (tx) => {
     const appeal = await tx.appeal.create({ data: { contestId: contest.id, submissionId: submission.id, userId: user.id, reason } });
     await tx.submission.update({
@@ -741,7 +758,7 @@ async function handOverChoices({ contest, settings, entry, me }) {
   return prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, username: true }, orderBy: { username: 'asc' } });
 }
 
-module.exports = {
+module.exports = { resultsMode, resultsOpen,
   handOver, handOverChoices,
   reassignInactive,
   autoAssign,

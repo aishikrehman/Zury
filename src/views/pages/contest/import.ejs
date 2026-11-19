@@ -41,7 +41,6 @@
       <div class="z-imp-pane" data-pane="fountain">
         <label class="form-label" for="imp-code"><%= t('Fountain editathon') %></label>
         <input class="form-control" id="imp-code" name="code" value="<%= f.code %>" placeholder="<%= t('Fountain editathon code or address') %>">
-        <div class="form-hint mt-1"><%= t('Articles come with their status and jurors’ reviews.') %></div>
       </div>
     </div>
     <div class="card-footer text-end">
@@ -89,7 +88,6 @@
         <form method="post" action="<%= base %>/import" class="card-footer d-flex align-items-center gap-2" data-once>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <% ['source', 'page', 'text', 'code', 'wiki'].forEach((k) => { %><input type="hidden" name="<%= k %>" value="<%= f[k] %>"><% }) %>
-          <span class="text-secondary small"><%= t('Each entry is credited to its participant.') %></span>
           <button class="btn btn-success ms-auto" type="submit"><i class="ti ti-file-import me-1"></i><%= t('Import {n} entries', { n: formatNumber(s.ready) }) %></button>
         </form>
       <% } %>

@@ -1,0 +1,25 @@
+<%# Tracked elsewhere (Fountain, CampWiz): numbers only, nothing copied. Locals: trackers, trackAction (or null). %>
+<% if (trackers.length) { %>
+<section class="z-trackers mb-3">
+  <% trackers.forEach((tr) => { const d = tr.data || {}; const isF = tr.kind === 'fountain'; const name = isF ? (d.name || tr.code) : ((d.info && d.info.name) || d.category || tr.code); const link = isF ? 'https://fountain.toolforge.org/editathons/' + encodeURIComponent(tr.code) : (/^https?:/.test(tr.code) ? tr.code : (tr.code ? 'https://campwiz.toolforge.org/campaign/' + encodeURIComponent(tr.code) : 'https://commons.wikimedia.org/wiki/Category:' + encodeURIComponent((tr.category || '').replace(/ /g, '_')))); %>
+    <div class="card mb-3 z-tracked">
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-<%= isF ? 'droplet' : 'photo' %> me-2"></i><%= name %> <span class="badge bg-azure-lt ms-2"><%= isF ? t('Tracked on Fountain') : t('Tracked on CampWiz') %></span></h3>
+        <div class="card-actions d-flex align-items-center gap-2"><a href="<%= link %>" target="_blank" rel="noopener"><%= t('Open') %> <i class="ti ti-external-link"></i></a></div></div>
+      <div class="card-body">
+        <% if (tr.pending) { %><div class="text-secondary"><span class="spinner-border spinner-border-sm me-2"></span><%= t('Counting; refresh in a minute.') %></div>
+        <% } else if (tr.failed) { %><div class="text-secondary"><%= t('Could not read it now. Try again later.') %></div>
+        <% } else if (isF) { %>
+          <div class="z-cmp"><% [['Participants', d.participants], ['Articles', d.articles], ['Accepted', d.accepted], ['Not accepted', d.rejected], ['Waiting', d.waiting], ['Reviewers', d.jury]].forEach(([label, n]) => { %><div><div class="z-cmp-n"><%= formatNumber(n || 0) %></div><div class="text-secondary small"><%= t(label) %></div></div><% }) %></div>
+          <% if (d.top && d.top.length) { %><div class="z-set-head mt-3"><%= t('Most accepted') %></div><ol class="z-tracked-top"><% d.top.forEach((p) => { %><li><span><%= p.user %></span><b><%= formatNumber(p.accepted) %></b><small class="text-secondary">/ <%= formatNumber(p.articles) %></small></li><% }) %></ol><% } %>
+        <% } else { %>
+          <% if (d.info && d.info.start) { %><div class="small text-secondary mb-2"><i class="ti ti-calendar me-1"></i><%= formatDate(d.info.start) %> – <%= formatDate(d.info.end) %></div><% } %>
+          <% if (d.files != null) { %>
+            <div class="z-cmp"><div><div class="z-cmp-n"><%= formatNumber(d.files) %></div><div class="text-secondary small"><%= t('Files') %></div></div><div><div class="z-cmp-n"><%= formatNumber(d.uploaders) %><%= d.partial ? '+' : '' %></div><div class="text-secondary small"><%= t('Uploaders') %></div></div></div>
+            <% if (d.top && d.top.length) { %><div class="z-set-head mt-3"><%= t('Most files') %></div><ol class="z-tracked-top"><% d.top.forEach((p) => { %><li><span><%= p.user %></span><b><%= formatNumber(p.files) %></b></li><% }) %></ol><% } %>
+          <% } else { %><div class="text-secondary small"><%= t('Add the campaign’s Commons category to see its numbers.') %></div><% } %>
+        <% } %>
+      </div>
+    </div>
+  <% }) %>
+</section>
+<% } %>

@@ -4,12 +4,12 @@ const prisma = require('../config/prisma');
 
 // key: [label, description, beta?, default]
 const SWITCHES = {
-  chat: ['Event chat', 'A chat button on event, series and edition pages; everyone’s room.', true, true],
+  chat: ['Event chat', 'Each event’s room for everyone, on the chat page.', true, true],
   juryChat: ['Reviewers’ room', 'A private chat room for each event’s reviewers and organizers.', true, true],
-  levelChat: ['Series and edition chat', 'A chat button on series and edition pages.', true, true],
-  liveChat: ['Live chat', 'On: new messages arrive by themselves, with pop-ups and a dot at the inbox. Off: chats show only when opened (the chat box or the chats page); a refresh button brings new ones.', true, true],
+  levelChat: ['Series and edition chat', 'Rooms for series and editions, on the chat page, for people in their events.', true, true],
+  liveChat: ['Live chat', 'On: new messages arrive by themselves, with a dot on the chat icon. Off: a refresh button brings new ones.', true, true],
   directMessages: ['Direct messages', 'People who share an event can write to each other.', true, true],
-  inbox: ['Inbox', 'The chats page (/inbox) and the switch between notifications and chats.', true, true],
+  inbox: ['Chat page', 'The chat page (/inbox) and its icon in the header.', true, true],
   toasts: ['Pop-up alerts', 'New notifications and messages pop up at the corner of the page.', true, true],
   massMessages: ['Mass messages', 'Organizers can send a message to many people, or make a MassMessage list on the wiki.', false, true],
   reminders: ['Deadline reminders', 'Participants hear three days and one day before an event ends.', false, true],

@@ -41,9 +41,6 @@ router.get('/preferences/display', async (req, res, next) => {
   }
 });
 
-// Display and accessibility options on a page of their own (linked from every page's footer).
-router.get('/display', (req, res) => res.render('pages/display', { title: 'Display and accessibility' }));
-
 // Interface language: on the account when logged in, else in the session.
 router.get('/preferences/language/:code', async (req, res, next) => {
   try {

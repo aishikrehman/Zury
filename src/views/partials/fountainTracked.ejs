@@ -11,7 +11,6 @@
         <div class="z-set-head mt-3"><%= t('Most accepted') %></div>
         <ol class="z-tracked-top"><% f.top.forEach((p) => { %><li><span><%= p.user %></span><b><%= formatNumber(p.accepted) %></b><small class="text-secondary">/ <%= formatNumber(p.articles) %></small></li><% }) %></ol>
       <% } %>
-      <div class="small text-secondary mt-2"><i class="ti ti-info-circle me-1"></i><%= t('Read from Fountain {when}; nothing is stored in Zury.', { when: formatDateTime(f.readAt) }) %></div>
     </div>
   </div>
 <% }) %>

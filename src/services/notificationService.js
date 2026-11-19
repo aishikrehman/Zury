@@ -15,16 +15,18 @@ async function notify(userIds, { kind, message, params = {}, link = '', contestI
   }
 }
 
-const unreadCount = (userId) => prisma.notification.count({ where: { userId, readAt: null } });
+// Chat messages are shown by the chat icon, not here.
+const NOT_CHAT = { kind: { not: 'chat.message' } };
+const unreadCount = (userId) => prisma.notification.count({ where: { userId, readAt: null, ...NOT_CHAT } });
 
 function latest(userId, take = 8) {
-  return prisma.notification.findMany({ where: { userId }, orderBy: { id: 'desc' }, take });
+  return prisma.notification.findMany({ where: { userId, ...NOT_CHAT }, orderBy: { id: 'desc' }, take });
 }
 
 async function page(userId, { page: n = 1, perPage = 30 } = {}) {
   const [items, total] = await Promise.all([
-    prisma.notification.findMany({ where: { userId }, orderBy: { id: 'desc' }, skip: (n - 1) * perPage, take: perPage }),
-    prisma.notification.count({ where: { userId } }),
+    prisma.notification.findMany({ where: { userId, ...NOT_CHAT }, orderBy: { id: 'desc' }, skip: (n - 1) * perPage, take: perPage }),
+    prisma.notification.count({ where: { userId, ...NOT_CHAT } }),
   ]);
   return { items, total, page: n, perPage };
 }

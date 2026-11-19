@@ -25,10 +25,9 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="c" value="<%= box.channel %>">
         <div class="input-group input-group-flat">
           <textarea class="form-control" name="body" rows="1" maxlength="1000" placeholder="<%= t('Write a message…') %>" required></textarea>
-          <span class="input-group-text"><button class="btn btn-primary btn-icon z-chat-send" type="submit" title="<%= t('Send') %>" aria-label="<%= t('Send') %>"><i class="ti ti-send"></i></button></span>
+          <span class="input-group-text"><a class="z-chat-coc" href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Universal_Code_of_Conduct" target="_blank" rel="noopener" title="<%= t('Be kind and follow the') %> <%= t('Universal Code of Conduct') %>" aria-label="<%= t('Universal Code of Conduct') %>"><i class="ti ti-shield-check"></i></a><button class="btn btn-primary btn-icon z-chat-send" type="submit" title="<%= t('Send') %>" aria-label="<%= t('Send') %>"><i class="ti ti-send"></i></button></span>
         </div>
       </form>
-      <div class="z-chat-rules"><i class="ti ti-shield-check"></i> <%= t('Be kind and follow the') %> <a href="https://meta.wikimedia.org/wiki/Special:MyLanguage/Universal_Code_of_Conduct" target="_blank" rel="noopener"><%= t('Universal Code of Conduct') %></a>.</div>
     </div>
   <% } %>
 </div>

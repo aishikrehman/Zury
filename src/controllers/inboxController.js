@@ -23,6 +23,12 @@ async function page(req, res, next) {
         if (o && await chat.mayWrite(req.user.id, o.id)) open = { channel: c, title: o.username, path: `/users/${encodeURIComponent(o.username)}`, room: 'direct', person: o };
       }
       if (open) { chatBox = await chatController.box(req, res, open.channel, open.room, open.path); open.unread = false; if (open.room === 'direct') f = 'direct'; }
+      // An event's room: the event's own talk page on the wiki, too.
+      if (open && /^[ej]\d+$/.test(open.channel)) {
+        const ev = await prisma.contest.findUnique({ where: { id: Number(open.channel.slice(1)) }, include: { settings: true } }).catch(() => null);
+        const wp = ev ? require('../utils/eventWikiPage').eventWikiPage(ev, ev.settings) : null;
+        if (wp) open.wikiTalk = wp.talk;
+      }
     } else {
       const n = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
       const where = { userId: req.user.id, ...(f === 'unread' && { readAt: null }) };
@@ -31,7 +37,7 @@ async function page(req, res, next) {
       const evs = evIds.length ? await prisma.contest.findMany({ where: { id: { in: evIds } }, select: { id: true, title: true } }) : [];
       notes = { page: n, perPage: PER_PAGE, total, items: items.map((x) => ({ id: x.id, text: notifications.text(req.t, x), when: x.createdAt, unread: !x.readAt, event: (evs.find((e) => e.id === x.contestId) || {}).title || '' })) };
     }
-    res.render('pages/account/inbox', { title: mode === 'notes' ? 'Notifications' : 'Inbox', mode, rooms, open, chatBox, notes, unreadNotes, f });
+    res.render('pages/account/inbox', { title: mode === 'notes' ? 'Notifications' : 'Chat', mode, rooms, open, chatBox, notes, unreadNotes, f });
   } catch (err) { next(err); }
 }
 

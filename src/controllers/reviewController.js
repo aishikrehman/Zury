@@ -70,7 +70,13 @@ async function entries(req, res, next) {
     const filters = reviewFilters(req);
     const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, filters });
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const result = await reviewService.queuePage({ ids: q.ids, q: typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '', page });
+    // Nothing left to review: the picker lists every entry this person may judge, to look back at.
+    let ids = q.ids;
+    if (!ids.length) {
+      const all = await prisma.submission.findMany({ where: { contestId: req.contest.id, ...(wikis ? { wiki: { in: wikis } } : {}) }, select: { id: true }, orderBy: { id: 'asc' } });
+      ids = all.map((r) => r.id);
+    }
+    const result = await reviewService.queuePage({ ids, q: typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '', page });
     res.json({
       ...result,
       items: result.items.map((r) => ({ value: String(r.id), text: r.title, position: r.position, participant: r.participant.username, words: r.wordCount, status: r.status })),
@@ -112,7 +118,7 @@ async function window(req, res, next) {
     // two minutes, and never holding the page more than three seconds).
     const watchSvc = require('../services/articleWatchService');
     const fx = req.effective.contest;
-    if (entry && entry.entryType === 'article' && watchSvc.running(fx) && !reviewService.resultsFinal(fx)) {
+    if (entry && entry.entryType === 'article' && watchSvc.running(fx) && !reviewService.resultsFinal(fx, req.settings)) {
       const checked = (JSON.parse(entry.metadata || '{}').watch || {}).checkedAt;
       if (!checked || Date.now() - new Date(checked).getTime() > 120000) {
         await Promise.race([watchSvc.checkEvent(req.contest, req.eventSettings, { ids: [entry.id] }).catch(() => null), new Promise((ok) => setTimeout(ok, 3000))]);
@@ -133,7 +139,7 @@ async function window(req, res, next) {
     }
     const revMode = 'pinned';
     let revChanged = false;
-    if (entry && revMode === 'pinned' && entry.revId && !reviewService.resultsFinal(req.effective.contest)) {
+    if (entry && revMode === 'pinned' && entry.revId && !reviewService.resultsFinal(req.effective.contest, req.settings)) {
       const host = require('../wiki/wikiUrls').dbnameToHost(entry.wiki);
       const q = new URLSearchParams({ action: 'query', prop: 'info', titles: entry.title, format: 'json', formatversion: '2' });
       const info = host ? await fetch(`https://${host}/w/api.php?${q}`, { headers: { 'User-Agent': require('../config/env').userAgent } }).then((r) => r.json()).catch(() => null) : null;
@@ -270,7 +276,8 @@ async function bulkSave(req, res, next) {
 async function results(req, res, next) {
   try {
     const insider = req.permissions.has('reviewEvent') || req.permissions.has('manageEvent');
-    const showRanking = !!req.contest.resultsPublishedAt || insider;
+    const open = reviewService.resultsOpen(req.contest, req.settings);
+    const showRanking = open || insider;
     const showStats = req.settings.publicStatisticsEnabled || req.permissions.has('viewStatistics');
     if (!showRanking && !showStats) {
       const err = new Error('The results have not been published yet.');
@@ -296,8 +303,9 @@ async function results(req, res, next) {
       showRanking,
       progress: insider || req.eventSettings.juryStatsEnabled !== false ? await reviewService.progress(req.contest.id, { wiki }) : null,
       stats: showStats ? await require('../services/statsService').eventStats(req.contest, { wiki }) : null,
-      published: req.contest.resultsPublishedAt,
-      showNames: !req.settings.anonymousParticipants || insider || !!req.contest.resultsPublishedAt,
+      published: open ? (req.contest.resultsPublishedAt || true) : null,
+      liveResults: reviewService.resultsMode(req.settings) === 'always',
+      showNames: !req.settings.anonymousParticipants || insider || open,
     });
   } catch (err) {
     next(err);
@@ -546,7 +554,7 @@ async function patrolAction(req, res, next) {
       await watch.markSeen(s1, ['shrunk', 'grew'].includes(req.body.flag) ? req.body.flag : 'state');
       req.flash('success', req.t('Marked as looked at.'));
     } else if (action === 'refresh') {
-      if (reviewService.resultsFinal(req.effective.contest)) throw new ReviewError('Results are locked, so the words and revision can no longer change.');
+      if (reviewService.resultsFinal(req.effective.contest, req.settings)) throw new ReviewError('Results are locked, so the words and revision can no longer change.');
       await watch.checkEvent(req.contest, req.eventSettings, { force: true, ids: [s1.id] });
       req.flash('success', req.t('Brought up to date from the wiki.'));
     } else if (action === 'reopen') {

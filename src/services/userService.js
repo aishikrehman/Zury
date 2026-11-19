@@ -27,7 +27,12 @@ async function syncFromWikimedia({ wikimediaId, username, homeWiki, registeredAt
         homeWiki,
         wikimediaRegisteredAt: registeredAt,
         lastLoginAt: now,
+        firstLoginAt: now,
       },
+    }).then(async (u) => {
+      // Someone added before they ever logged in: this is their first login.
+      if (!u.firstLoginAt) return tx.user.update({ where: { id: u.id }, data: { firstLoginAt: now } });
+      return u;
     });
   });
 }

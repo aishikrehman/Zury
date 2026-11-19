@@ -1,7 +1,5 @@
 <% const keys = [...s.platformRoles].filter((k) => !(s.platformRoles.has('superuser') && k === 'platform-admin')); /* Superuser already includes the administrator */ const all = (role) => (role.scope === 'wiki' ? [...s.adminWikis].map(wikiLocal) : []); /* One wiki by name; several as a count, the names on hover. */ const wikis = (role) => { const w = all(role); return w.length > 1 ? tn('{n} wiki', '{n} wikis', w.length) : w[0] || ''; }; %>
-<% if (!keys.length) { %>
-  <span class="text-secondary"><%= t("No Zury roles") %></span>
-<% } else if (typeof compact !== 'undefined' && compact) { %>
+<%# No roles: nothing is shown. %><% if (!keys.length) { %><% } else if (typeof compact !== 'undefined' && compact) { %>
   <span><%= keys.map((k) => t(PLATFORM_ROLES[k].label) + (wikis(PLATFORM_ROLES[k]) ? ' · ' + wikis(PLATFORM_ROLES[k]) : '')).join(', ') %></span>
 <% } else { %>
   <ul class="list-unstyled m-0 z-role-list">

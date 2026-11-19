@@ -2437,13 +2437,10 @@ body:has(.z-review-layout) .z-navbar { position: relative; }
 .z-people-filter { flex: 0 0 auto; }
 .z-people-filter .form-select { min-width: 12rem; }
 @media (max-width: 575.98px) { .z-people-filter { flex: 1 1 100%; } .z-people-filter .form-select { width: 100%; } }
-/* Phones: leaderboard — rank and name stay pinned on the left while the figures slide; tighter columns. */
+/* Phones: leaderboards scroll as a whole (nothing pinned); names stay on one line; tighter columns. */
 @media (max-width: 767.98px) {
   .card .table.z-lb { font-size: .875rem; }
-  .card .table.z-lb > thead > tr > th, .card .table.z-lb > tbody > tr > td { padding: .5rem .6rem !important; }
-  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > tbody > tr > td:first-child { padding-left: .75rem !important; width: 2.5rem; position: sticky; left: 0; z-index: 2; background: var(--z-surface); }
-  .card .table.z-lb > thead > tr > th:nth-child(2), .card .table.z-lb > tbody > tr > td:nth-child(2) { position: sticky; left: 2.5rem; z-index: 2; background: var(--z-surface); max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; box-shadow: 6px 0 6px -6px rgba(16, 24, 40, .25); }
-  .card .table.z-lb > thead > tr > th:first-child, .card .table.z-lb > thead > tr > th:nth-child(2) { background: var(--z-surface-2); }
+  .card .table.z-lb > thead > tr > th, .card .table.z-lb > tbody > tr > td { padding: .5rem .6rem !important; white-space: nowrap; }
   .card .table.z-lb .z-lb-name a { font-weight: 600; font-size: .875rem; }
   .card .table.z-lb .z-lb-rank span, .card .table.z-lb .z-lb-rank { font-size: .8125rem; }
   .card:has(> .table-responsive > .z-lb) > .card-header { padding: .6rem .75rem; }
@@ -3544,3 +3541,208 @@ details.z-sec:not([open]) > summary { border-bottom: 0; }
 .z-frame-loading::after { content: ''; position: absolute; top: 3rem; left: 50%; width: 2rem; height: 2rem; margin-left: -1rem; border: 3px solid var(--z-border); border-top-color: var(--tblr-primary, #206bc4); border-radius: 50%; animation: z-spin .7s linear infinite; }
 @keyframes z-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .z-busy-bar.is-on { animation: none; width: 60%; } .z-frame-loading::after { animation-duration: 2s; } }
+/* Profile: filters as one row of chips; tiles two to a row on phones; event cards in an even grid. */
+.z-prof-tiles { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
+.z-prof-filter { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: 1rem; }
+.z-prof-filter-sep { width: 1px; align-self: stretch; background: var(--z-border); margin: 0 .25rem; }
+.z-prof-grid > .card-link, .z-prof-grid > .card { margin: 0 !important; }
+.card.card-link + .card.card-link { margin-left: 0; }
+/* Config tabs on phones: one row that scrolls sideways, every tab with its name; nothing squeezed or overlapping. */
+@media (max-width: 767.98px) {
+  .z-config-tabs { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; gap: .25rem; }
+  .z-config-tabs::-webkit-scrollbar { display: none; }
+  .z-config-tabs > .nav-item, .z-config-tabs > .nav-item.active, .z-config-tabs > .nav-item:has(.active) { flex: 0 0 auto !important; width: auto !important; min-width: 0; }
+  .z-config-tabs > .nav-item::before, .z-config-tabs > .nav-item::after { display: none !important; }
+  .z-config-tabs .nav-link .z-step-label, .z-config-tabs > .nav-item .z-step-label { display: inline !important; margin-left: .35rem; overflow: visible; }
+  .z-config-tabs .nav-link { padding: .3rem .7rem !important; border-radius: 999px; }
+}
+/* Event control panel: actions as an even column of full-width buttons; move/delete folded away. */
+.z-life-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.z-life-actions form, .z-life-actions .btn { width: 100%; }
+.z-life-actions .btn { justify-content: flex-start; }
+@media (max-width: 400px) { .z-life-actions { grid-template-columns: 1fr; } }
+.z-life-danger summary { cursor: pointer; color: var(--z-fg-muted); font-size: .875rem; list-style: none; }
+.z-life-danger summary::-webkit-details-marker { display: none; }
+.z-life-danger[open] summary { color: #d63939; margin-bottom: .25rem; }
+.z-life b { font-weight: 500; line-height: 1.25; }
+/* Home: event types as small chips, many to a row (not one big card each). */
+.z-types { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; max-width: 52rem; }
+.z-type { flex-direction: row; gap: .45rem; padding: .4rem .8rem .4rem .45rem; border-radius: 999px; box-shadow: none; border: 1px solid var(--z-border); font-weight: 500; font-size: .875rem; }
+.z-type:hover { transform: none; }
+.z-type-ico { width: 1.75rem; height: 1.75rem; font-size: 1rem; }
+/* Organize: plain cards — no colour bars or tints; small grey icon, name; two to a row on phones. */
+.z-pick-cards { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .6rem; }
+.z-pick-card { min-height: 0; padding: .85rem 1rem; flex-direction: row; align-items: center; gap: .75rem; background: var(--z-surface); border-radius: .7rem; }
+.z-pick-card::before { display: none; }
+.z-pick-card:hover { border-color: var(--z-brand); transform: none; box-shadow: none; }
+.z-pick-icon { width: 2.25rem; height: 2.25rem; margin: 0; flex: none; font-size: 1.2rem; color: var(--z-fg-muted); background: var(--z-hover); border-radius: .6rem; }
+.z-pick-card:hover .z-pick-icon { color: var(--z-brand); }
+.z-pick-name { font-weight: 600; font-size: .9375rem; }
+.z-pick-desc, .z-pick-go { display: none; }
+.z-pick-soon { position: static; margin-left: auto; }
+@media (max-width: 575.98px) { .z-pick-cards { grid-template-columns: 1fr 1fr; } .z-pick-card { padding: .7rem; gap: .5rem; } .z-pick-icon { width: 2rem; height: 2rem; font-size: 1.05rem; } .z-pick-name { font-size: .875rem; } }
+.z-bell-icon { width: 2.1rem; height: 2.1rem; display: grid; place-items: center; border-radius: .5rem; color: var(--z-fg-muted); font-size: 1.15rem; }
+.z-bell-icon:hover { background: var(--z-hover); color: var(--z-brand); }
+/* Review, wide screens: the progress is the top of the side column, and the whole column stays in place. */
+.z-review-stats.z-stats-side { display: none !important; }
+@media (min-width: 992px) {
+  .z-review-wrap > .z-review-stats.z-stats-top { display: none !important; }
+  .z-review-side > .z-review-stats.z-stats-side { display: flex !important; order: -3; margin: 0; }
+  .z-review-wrap .z-review-layout > .z-review-side { grid-row: 1 / span 4 !important; position: sticky !important; top: .75rem !important; align-self: start; max-height: calc(100vh - 1.5rem) !important; overflow-y: auto; }
+}
+.z-foot-lang { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem; flex-basis: 100%; font-size: .8125rem; color: var(--z-fg-muted); }
+.z-foot-lang a { color: var(--z-fg-muted); }
+.z-foot-lang a.is-on { color: var(--z-fg); font-weight: 600; }
+a.z-bell-btn { display: inline-flex; align-items: center; justify-content: center; position: relative; color: inherit; text-decoration: none; }
+/* Header and menu: hover is a soft tint and the brand colour — never a border or a ring after a click
+   (the keyboard focus ring stays for people who use the keyboard). */
+.z-bell-btn, .z-icon-btn, .z-user-btn, .z-navlink { border: 0 !important; box-shadow: none; transition: background-color .15s, color .15s; }
+.z-bell-btn:hover, .z-bell-btn[aria-expanded="true"], .z-icon-btn:hover { background: color-mix(in srgb, var(--z-brand) 10%, transparent) !important; color: var(--z-brand) !important; }
+.z-user-btn { background: var(--z-hover); }
+.z-user-btn:hover, .z-user-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--z-brand) 10%, transparent); color: var(--z-brand); }
+.z-navlink:hover { color: var(--z-brand) !important; background: color-mix(in srgb, var(--z-brand) 7%, transparent) !important; }
+@media (min-width: 992px) { .z-navlink { border-radius: .5rem !important; } .z-navlink.active { box-shadow: none; background: color-mix(in srgb, var(--z-brand) 10%, transparent); } }
+:is(.z-bell-btn, .z-icon-btn, .z-user-btn, .z-navlink, .dropdown-item):focus:not(:focus-visible) { outline: none !important; box-shadow: none !important; }
+/* Chat page: messenger look */
+.z-msg { display: grid; grid-template-columns: 22rem minmax(0, 1fr); height: calc(100dvh - 9.5rem); min-height: 28rem; border: 1px solid var(--z-border); border-radius: 1rem; background: var(--z-surface); overflow: hidden; }
+.z-msg-list { display: flex; flex-direction: column; border-right: 1px solid var(--z-border); min-height: 0; }
+.z-msg-head { display: flex; align-items: center; gap: .5rem; padding: 1rem 1rem .5rem; }
+.z-msg-head h2 { font-size: 1.35rem; }
+.z-msg-new { width: 2.25rem; height: 2.25rem; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--z-brand) 10%, transparent); color: var(--z-brand); display: grid; place-items: center; font-size: 1.15rem; }
+.z-msg-new:hover { background: var(--z-brand); color: #fff; }
+.z-msg-compose { padding: 0 1rem .5rem; }
+.z-msg-tabs { display: flex; gap: .35rem; padding: .25rem 1rem .6rem; }
+.z-msg-tabs a { padding: .25rem .75rem; border-radius: 999px; font-size: .85rem; color: var(--z-fg-muted); background: var(--z-hover); text-decoration: none; }
+.z-msg-tabs a.is-on { background: color-mix(in srgb, var(--z-brand) 12%, transparent); color: var(--z-brand); font-weight: 600; }
+.z-msg-rows { flex: 1; overflow-y: auto; padding: 0 .5rem .5rem; }
+.z-msg-row { display: flex; align-items: center; gap: .75rem; padding: .6rem .6rem; border-radius: .75rem; color: var(--z-fg); text-decoration: none !important; }
+.z-msg-row:hover { background: var(--z-hover); }
+.z-msg-row.is-here { background: color-mix(in srgb, var(--z-brand) 10%, transparent); }
+.z-msg-ava { width: 2.75rem; height: 2.75rem; border-radius: 50%; display: grid; place-items: center; font-size: 1.2rem; flex: none; }
+.z-msg-row .avatar, .z-msg-bar .avatar { width: 2.75rem; height: 2.75rem; flex: none; }
+.z-msg-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .1rem; }
+.z-msg-top { display: flex; align-items: baseline; gap: .35rem; min-width: 0; }
+.z-msg-top b { font-weight: 500; min-width: 0; }
+.z-msg-top small { margin-left: auto; color: var(--z-fg-muted); font-size: .75rem; white-space: nowrap; }
+.z-msg-prev { font-size: .85rem; color: var(--z-fg-muted); }
+.z-msg-row.is-unread .z-msg-top b { font-weight: 700; }
+.z-msg-row.is-unread .z-msg-prev { color: var(--z-fg); font-weight: 500; }
+.z-msg-dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--z-brand); flex: none; }
+.z-msg-empty, .z-msg-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; color: var(--z-fg-muted); text-align: center; padding: 2rem 1rem; }
+.z-msg-empty .ti, .z-msg-pick .ti { font-size: 2.5rem; opacity: .5; }
+.z-msg-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.z-msg-pick { flex: 1; }
+.z-msg-bar { display: flex; align-items: center; gap: .75rem; padding: .7rem 1rem; border-bottom: 1px solid var(--z-border); }
+.z-msg-bar small { display: block; font-size: .75rem; }
+.z-msg-title { display: block; font-weight: 600; color: var(--z-fg); }
+.z-msg-back { display: none; width: 2.25rem; height: 2.25rem; border-radius: 50%; place-items: center; color: var(--z-fg); font-size: 1.2rem; }
+.z-msg-back:hover { background: var(--z-hover); }
+.z-msg-main .z-chat { flex: 1; min-height: 0; border: 0; border-radius: 0; }
+@media (max-width: 991.98px) {
+  .z-msg { grid-template-columns: 1fr; height: calc(100dvh - 8rem); border-radius: .75rem; }
+  .z-msg.is-open .z-msg-list, .z-msg:not(.is-open) .z-msg-main { display: none; }
+  .z-msg-list { border-right: 0; }
+  .z-msg-back { display: grid; }
+}
+/* Admin users: the row's actions side by side — roles, then delete; rows line up. */
+.z-user-acts { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: .35rem; }
+.z-user-acts form { margin: 0; }
+.z-msg-main .z-chat { display: flex; flex-direction: column; overflow: hidden; }
+.z-msg-main .z-chat-list { flex: 1 1 auto; height: auto !important; max-height: none !important; min-height: 0; overflow-y: auto; }
+.z-msg-main .z-chat > form, .z-msg-main .z-chat > .card-footer { flex: none; }
+/* Chat page, round 2: event logos, room switch, one clean message field. */
+.z-msg-ava { font-weight: 600; font-size: 1.05rem; }
+.z-msg-logo { background: var(--z-hover); overflow: hidden; }
+.z-msg-logo img { width: 100%; height: 100%; object-fit: cover; }
+.z-msg-rooms { display: flex; gap: .25rem; padding: .2rem; border-radius: 999px; background: var(--z-hover); flex: none; }
+.z-msg-rooms a { display: inline-flex; align-items: center; gap: .25rem; padding: .25rem .7rem; border-radius: 999px; font-size: .8125rem; color: var(--z-fg-muted); text-decoration: none; position: relative; }
+.z-msg-rooms a.is-on { background: var(--z-surface); color: var(--z-fg); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.z-msg-rooms a.is-unread::after { content: ''; position: absolute; top: .2rem; right: .3rem; width: .4rem; height: .4rem; border-radius: 50%; background: var(--z-brand); }
+.z-chat-foot { border-top: 1px solid var(--z-border) !important; padding: .6rem .75rem !important; background: var(--z-surface) !important; }
+.z-chat-form .input-group { border: 1px solid var(--z-border); border-radius: 1.4rem; background: var(--z-surface); overflow: hidden; align-items: center; padding-right: .3rem; }
+.z-chat-form .input-group:focus-within { border-color: var(--z-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--z-brand) 15%, transparent); }
+.z-chat-form .form-control { border: 0 !important; box-shadow: none !important; background: transparent !important; padding: .55rem .9rem; resize: none; }
+.z-chat-form .input-group-text { border: 0 !important; background: transparent !important; padding: 0; gap: .35rem; }
+.z-chat-coc { color: var(--z-fg-muted); font-size: 1.05rem; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; }
+.z-chat-coc:hover { color: var(--z-brand); background: var(--z-hover); }
+.z-chat-send { border-radius: 50% !important; width: 2.1rem; height: 2.1rem; }
+/* People page: small links beside each name — wiki talk, contributions, chat. */
+.z-p-links { display: inline-flex; gap: .1rem; margin-left: .35rem; vertical-align: middle; }
+.z-p-links a, .z-p-links button { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border: 0; border-radius: 50%; background: transparent; color: var(--z-fg-muted); font-size: .95rem; padding: 0; }
+.z-p-links a:hover, .z-p-links button:hover { background: color-mix(in srgb, var(--z-brand) 10%, transparent); color: var(--z-brand); }
+/* Room switch: the chosen room is plainly marked (filled), not just a faint white. */
+.z-msg-rooms a.is-on { background: var(--z-brand) !important; color: #fff !important; box-shadow: none; }
+.z-msg-rooms a:not(.is-on):hover { color: var(--z-fg); background: color-mix(in srgb, var(--z-brand) 8%, transparent); }
+.z-track-add summary { cursor: pointer; color: var(--z-brand); font-weight: 500; list-style: none; }
+.z-track-add summary::-webkit-details-marker { display: none; }
+.z-track-list li { display: flex; align-items: center; gap: .5rem; padding: .4rem 0; border-bottom: 1px solid var(--z-border); min-width: 0; }
+.z-track-list li > .ti { color: var(--z-fg-muted); }
+/* Main menu, wide screens: the active item is marked by the bottom line (as before), not a tinted box. */
+@media (min-width: 992px) { .z-navlink.active { background: transparent !important; box-shadow: inset 0 -3px 0 var(--z-brand) !important; border-radius: 0 !important; } }
+/* Admin users: a compact list — one line per person. */
+.z-ulist { display: flex; flex-direction: column; }
+.z-urow { display: grid; grid-template-columns: auto minmax(10rem, 1.2fr) minmax(0, 2fr) 6.5rem auto; align-items: center; gap: .75rem; padding: .4rem 1rem; border-top: 1px solid var(--z-border); min-height: 2.75rem; }
+.z-urow:first-child { border-top: 0; }
+.z-urow:hover { background: var(--z-hover); }
+.z-uname { min-width: 0; display: flex; align-items: baseline; gap: .45rem; overflow: hidden; }
+.z-uname a { font-weight: 500; color: var(--z-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.z-uname small { color: var(--z-fg-muted); font-size: .75rem; white-space: nowrap; }
+.z-uroles { min-width: 0; font-size: .8125rem; color: var(--z-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.z-ulogin { font-size: .8125rem; color: var(--z-fg-muted); text-align: right; white-space: nowrap; }
+.z-ukebab { width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: transparent; color: var(--z-fg-muted); display: grid; place-items: center; font-size: 1.1rem; }
+.z-ukebab:hover, .z-ukebab[aria-expanded="true"] { background: color-mix(in srgb, var(--z-brand) 10%, transparent); color: var(--z-brand); }
+@media (max-width: 767.98px) {
+  .z-urow { grid-template-columns: auto minmax(0, 1fr) auto; row-gap: .1rem; padding: .5rem .75rem; }
+  .z-uroles { grid-column: 2; grid-row: 2; }
+  .z-ulogin { display: none; }
+  .z-urow > .dropdown { grid-column: 3; grid-row: 1 / span 2; }
+}
+.z-uhead { min-height: 0; padding-top: .55rem; padding-bottom: .55rem; background: var(--z-surface-2, var(--z-hover)); font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; }
+.z-uhead:hover { background: var(--z-surface-2, var(--z-hover)); }
+.z-uh { color: var(--z-fg-muted); text-decoration: none; font-weight: 600; white-space: nowrap; }
+a.z-uh:hover, .z-uh.is-on { color: var(--z-brand); }
+@media (max-width: 767.98px) { .z-uhead { display: none; } }
+.z-urow { grid-template-columns: auto minmax(10rem, 1.2fr) minmax(0, 2fr) 6.5rem 6.5rem auto; }
+@media (max-width: 767.98px) { .z-urow { grid-template-columns: auto minmax(0, 1fr) auto; } }
+/* Main menu hover: colour only — no rounded tinted background. */
+.z-navlink:hover { background: transparent !important; color: var(--z-brand) !important; }
+@media (min-width: 992px) { .z-navlink { border-radius: 0 !important; } }
+/* Admin users: a plain compact table; headings sort. */
+.z-utable td, .z-utable th { white-space: nowrap; }
+.z-utable .z-uroles { white-space: normal; font-size: .8125rem; color: var(--z-fg-muted); max-width: 22rem; }
+.z-utable th .z-uh { text-transform: none; letter-spacing: 0; }
+/* Event controls: every action the same box — same height, border, left-aligned icon and text; the
+   cancel action matches, only red. */
+.z-life-actions { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; align-items: stretch; }
+.z-life-actions form { margin: 0; display: flex; }
+.z-life-actions .btn { flex: 1; width: 100%; height: 2.6rem; justify-content: flex-start; gap: .5rem; padding: 0 .9rem; font-weight: 500; border: 1px solid var(--z-border) !important; background: var(--z-surface); color: var(--z-fg); box-shadow: none; }
+.z-life-actions .btn i { margin: 0 !important; font-size: 1.1rem; width: 1.25rem; text-align: center; }
+.z-life-actions .btn:hover { border-color: var(--z-brand) !important; color: var(--z-brand); background: var(--z-surface); }
+.z-life-actions .btn-primary, .z-life-actions .btn-success { background: var(--z-brand); border-color: var(--z-brand) !important; color: #fff; }
+.z-life-actions .btn-success { background: #2fb344; border-color: #2fb344 !important; }
+.z-life-actions .btn-primary:hover, .z-life-actions .btn-success:hover { color: #fff; filter: brightness(.95); }
+.z-life-actions .btn-ghost-danger { color: #d63939; border-color: color-mix(in srgb, #d63939 35%, var(--z-border)) !important; }
+.z-life-actions .btn-ghost-danger:hover { background: color-mix(in srgb, #d63939 7%, var(--z-surface)); color: #d63939; border-color: #d63939 !important; }
+.z-life-actions .btn-warning { color: #b35c00; border-color: color-mix(in srgb, #f59f00 45%, var(--z-border)) !important; background: var(--z-surface); }
+@media (max-width: 400px) { .z-life-actions { grid-template-columns: 1fr; } }
+.z-life-danger { margin-top: 1rem; padding-top: .75rem; }
+.z-life:has(> li:nth-child(3):last-child) { grid-template-columns: repeat(3, 1fr); }
+/* About: contact card — one row per way to reach the event, then its organizers. */
+.z-contact-list, .z-contact-people { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .15rem; }
+.z-contact-list li { display: flex; align-items: center; gap: .6rem; padding: .3rem 0; }
+.z-contact-list li > .ti { color: var(--z-fg-muted); font-size: 1.05rem; width: 1.25rem; text-align: center; }
+.z-contact-people li { display: flex; align-items: center; gap: .5rem; padding: .25rem 0; min-width: 0; }
+.z-contact-add a { color: var(--z-fg-muted); }
+.z-contact-add a:hover { color: var(--z-brand); }
+.z-msg-wikitalk { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .7rem; border-radius: 999px; font-size: .8125rem; color: var(--z-fg-muted); text-decoration: none; border: 1px solid var(--z-border); flex: none; }
+.z-msg-wikitalk:hover { color: var(--z-brand); border-color: var(--z-brand); }
+@media (max-width: 575.98px) { .z-msg-wikitalk span { display: none; } }
+/* Event form (new and settings): sections as a sidebar on wide screens. */
+@media (min-width: 992px) {
+  .card.z-side-tabs { display: grid; grid-template-columns: 15rem minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+  .card.z-side-tabs > .card-header { position: sticky; top: .75rem; align-self: start; }
+  .card.z-side-tabs > .card-header .z-config-tabs { flex-direction: column; flex-wrap: nowrap !important; overflow: visible; gap: .15rem; margin: 0; border: 0; }
+  .card.z-side-tabs > .card-header .z-step-label { display: inline !important; margin: 0; }
+  .card.z-side-tabs > :not(.card-header) { grid-column: 2; }
+  .card.z-side-tabs .z-config-tabs .nav-link.active { background: color-mix(in srgb, var(--z-brand) 10%, transparent) !important; color: var(--z-brand) !important; font-weight: 600; box-shadow: none !important; }
+}

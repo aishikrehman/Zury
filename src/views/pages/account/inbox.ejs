@@ -1,5 +1,4 @@
-<%# Notifications and chats: one mailbox look. A switch on top of the side moves between them;
-    folders on the left; on the right a toolbar and the list, or the open conversation. %>
+<%# Chats (messenger look) and, on /notifications, the notifications list. %>
 <%
   const KIND = { event: ['Events', 'messages', 'blue'], jury: ['Reviewers', 'lock', 'red'], series: ['Series', 'stack-2', 'purple'], edition: ['Series', 'stack-2', 'purple'], direct: ['People', 'user', 'green'] };
   const unreadOf = (fn) => rooms.filter((r) => r.unread && fn(r)).length;
@@ -11,6 +10,86 @@
   const shownRooms = f === 'direct' ? rooms.filter((r) => r.room === 'direct') : rooms;
   const day = (d) => { const x = new Date(d); return x.toDateString() === new Date().toDateString() ? formatDateTime(d).replace(/^.*?(\d{1,2}[:.]\d{2}.*)$/, '$1') : formatDate(d); };
 %>
+<% if (mode !== 'notes') { %>
+<%# Chats, messenger-style: the conversations on the left, the open one on the right. On phones one at a time. %>
+<%
+  const avatarOf = (r) => {
+    if (r.person) return include('../../partials/avatar', { u: r.person, size: 'md' });
+    if (r.logo) return `<span class="z-msg-ava z-msg-logo"><img src="${h(r.logo)}" alt="" loading="lazy"></span>`;
+    const kd = KIND[r.room === 'jury' ? 'event' : r.room] || KIND.event;
+    return `<span class="z-msg-ava bg-${kd[2]}-lt text-${kd[2]}">${h(String(r.title || '?').trim().charAt(0))}</span>`;
+  };
+  // One line per event: its rooms together (everyone, reviewers), the newest message shown.
+  const lines = [];
+  for (const r of shownRooms) {
+    if (['event', 'jury'].includes(r.room)) {
+      let g = lines.find((x) => x.group && x.path === r.path);
+      if (!g) { g = { group: true, path: r.path, title: r.title, logo: r.logo, room: 'event', rooms: [] }; lines.push(g); }
+      g.rooms.push(r);
+    } else lines.push(r);
+  }
+  for (const g of lines.filter((x) => x.group)) {
+    g.rooms.sort((a, b) => (a.room === 'event' ? -1 : 1));
+    const newest = [...g.rooms].sort((a, b) => (b.lastAt ? +b.lastAt : 0) - (a.lastAt ? +a.lastAt : 0))[0];
+    Object.assign(g, { channel: g.rooms[0].channel, unread: g.rooms.some((r) => r.unread), lastAt: newest.lastAt, preview: newest.preview, channels: g.rooms.map((r) => r.channel) });
+  }
+  const isHere = (x) => open && (x.channels ? x.channels.includes(open.channel) : x.channel === open.channel);
+  const siblings = open && ['event', 'jury'].includes(open.room) ? rooms.filter((r) => r.path === open.path && ['event', 'jury'].includes(r.room)).sort((a) => (a.room === 'event' ? -1 : 1)) : [];
+%>
+<div class="page-body"><div class="container-xl">
+  <div class="z-msg<%= open ? ' is-open' : '' %>">
+    <aside class="z-msg-list">
+      <div class="z-msg-head">
+        <h2 class="m-0"><%= t('Chat') %></h2>
+        <span class="badge bg-purple-lt"><%= t('Beta') %></span>
+        <% if (features.directMessages) { %><button class="z-msg-new ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#z-compose" aria-expanded="false" title="<%= t('New message') %>" aria-label="<%= t('New message') %>"><i class="ti ti-pencil-plus"></i></button><% } %>
+      </div>
+      <form method="post" action="/inbox/new" class="collapse z-msg-compose" id="z-compose">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="input-group"><input class="form-control" name="username" placeholder="<%= t('Username') %>" required><button class="btn btn-primary" type="submit" aria-label="<%= t('Start') %>"><i class="ti ti-arrow-right"></i></button></div>
+      </form>
+      <nav class="z-msg-tabs">
+        <a class="<%= f !== 'direct' ? 'is-on' : '' %>" href="/inbox"><%= t('All') %><% if (unreadChats) { %> <b><%= formatNumber(unreadChats) %></b><% } %></a>
+        <a class="<%= f === 'direct' ? 'is-on' : '' %>" href="/inbox?f=direct"><%= t('Direct messages') %></a>
+      </nav>
+      <div class="z-msg-rows">
+        <% if (!lines.length) { %><div class="z-msg-empty"><i class="ti ti-messages"></i><span><%= f === 'direct' ? t('No conversations yet.') : t('Your events’ chats appear here.') %></span></div><% } %>
+        <% lines.forEach((r) => { %>
+          <a class="z-msg-row<%= r.unread ? ' is-unread' : '' %><%= isHere(r) ? ' is-here' : '' %>" href="/inbox?c=<%= r.channel %><%= f === 'direct' ? '&f=direct' : '' %>">
+            <%- avatarOf(r) %>
+            <span class="z-msg-text">
+              <span class="z-msg-top"><b class="text-truncate"><%= r.title %></b><small><%= r.lastAt ? day(r.lastAt) : '' %></small></span>
+              <span class="z-msg-prev text-truncate"><%= r.preview || t('No messages yet.') %></span>
+            </span>
+            <% if (r.unread) { %><i class="z-msg-dot"></i><% } %>
+          </a>
+        <% }) %>
+      </div>
+    </aside>
+    <section class="z-msg-main">
+      <% if (open) { %>
+        <div class="z-msg-bar">
+          <a class="z-msg-back" href="/inbox<%= f === 'direct' ? '?f=direct' : '' %>" aria-label="<%= t('Back') %>"><i class="ti ti-arrow-left"></i></a>
+          <%- avatarOf(open) %>
+          <div class="min-w-0 flex-fill">
+            <a class="z-msg-title text-truncate" href="<%= open.path %>"><%= open.title %></a>
+            <% if (open.room === 'direct') { %><small class="text-secondary"><i class="ti ti-lock"></i> <%= t('Only the two of you') %></small><% } %>
+          </div>
+          <% if (open.wikiTalk) { %><a class="z-msg-wikitalk" href="<%= open.wikiTalk %>" target="_blank" rel="noopener" title="<%= t('Talk page on the wiki') %>"><i class="ti ti-message-circle"></i><span><%= t('On the wiki') %></span></a><% } %>
+          <% if (siblings.length > 1) { %>
+            <nav class="z-msg-rooms" aria-label="<%= t('Chat') %>">
+              <% siblings.forEach((r) => { %><a class="<%= r.channel === open.channel ? 'is-on' : '' %><%= r.unread && r.channel !== open.channel ? ' is-unread' : '' %>" href="/inbox?c=<%= r.channel %>"><% if (r.room === 'jury') { %><i class="ti ti-lock"></i><% } %><%= r.room === 'jury' ? t('Reviewers') : t('Everyone') %></a><% }) %>
+            </nav>
+          <% } else if (open.room === 'jury') { %><span class="badge bg-red-lt"><i class="ti ti-lock me-1"></i><%= t('Reviewers') %></span><% } %>
+        </div>
+        <%- include('../../partials/chatBox', { box: chatBox, bare: true }) %>
+      <% } else { %>
+        <div class="z-msg-pick"><i class="ti ti-message-circle"></i><span><%= t('Choose a conversation') %></span></div>
+      <% } %>
+    </section>
+  </div>
+</div></div>
+<% } else { %>
 <div class="page-body"><div class="container-xl">
   <div class="card z-mailbox">
     <div class="row g-0">
@@ -19,12 +98,9 @@
          const levels = rooms.filter((r) => ['series', 'edition'].includes(r.room));
          const people = rooms.filter((r) => r.room === 'direct');
          const here = (r) => open && open.channel === r.channel; %>
-      <aside class="col-lg-3 z-mail-side offcanvas-lg offcanvas-start" tabindex="-1" id="z-mail-folders" aria-label="<%= t('Inbox') %>">
+      <aside class="col-lg-3 z-mail-side offcanvas-lg offcanvas-start" tabindex="-1" id="z-mail-folders" aria-label="<%= t('Notifications') %>">
         <div class="p-3 pb-2 d-flex align-items-center gap-2">
-          <nav class="z-mail-switch flex-fill" aria-label="<%= t('Inbox') %>">
-            <a class="<%= mode === 'notes' ? 'active' : '' %>" href="/notifications"><i class="ti ti-bell"></i><%= t('Notifications') %><% if (unreadNotes) { %><b><%= formatNumber(unreadNotes) %></b><% } %></a>
-            <% if (features.inbox) { %><a class="<%= mode === 'chats' ? 'active' : '' %>" href="/inbox"><i class="ti ti-messages"></i><%= t('Chats') %><% if (unreadChats) { %><b><%= formatNumber(unreadChats) %></b><% } %></a><% } %>
-          </nav>
+          <b class="flex-fill fs-3"><%= mode === 'notes' ? t('Notifications') : t('Chat') %></b>
           <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#z-mail-folders" aria-label="<%= t('Close') %>"></button>
         </div>
         <% if (mode === 'chats' && features.directMessages) { %><div class="px-3 pb-2"><button class="btn btn-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#z-compose" aria-expanded="false"><i class="ti ti-pencil me-1"></i><%= t('New message') %></button></div><% } %>
@@ -81,7 +157,7 @@
             <a class="btn btn-icon" href="/inbox<%= f === 'direct' ? '?f=direct' : '' %>" title="<%= t('Refresh') %>" aria-label="<%= t('Refresh') %>"><i class="ti ti-refresh"></i></a>
             <span class="text-secondary small ms-auto"><%= formatNumber(shownRooms.length) %></span>
           </div>
-          <% if (!shownRooms.length) { %><div class="p-4 text-secondary"><%= f === 'direct' ? t('No conversations yet. Press New message to write to someone.') : t('Your events’ chats appear here.') %></div><% } %>
+          <% if (!lines.length) { %><div class="p-4 text-secondary"><%= f === 'direct' ? t('No conversations yet. Press New message to write to someone.') : t('Your events’ chats appear here.') %></div><% } %>
           <div class="z-mail-list">
             <% shownRooms.forEach((r) => { const kd = KIND[r.room] || KIND.event; %>
               <a class="z-mail-row<%= r.unread ? ' is-unread' : '' %>" href="/inbox?c=<%= r.channel %>">
@@ -119,3 +195,4 @@
     </div>
   </div>
 </div></div>
+<% } %>

@@ -42,7 +42,7 @@ async function pageInfo(wiki, ids) {
 async function checkEvent(contest, settings, { force = false, ids = null } = {}) {
   const live = running(contest);
   const { ownWords } = ruleOf(settings);
-  const frozen = contest.status === 'archived' || !!contest.resultsPublishedAt;
+  const frozen = require('./reviewService').resultsFinal(contest, settings);
   const pinEnd = !live && !frozen && contest.endDate;
   let changed = 0;
   let fetched = 0; // full page fetches this run (words); capped so big events spread over several runs

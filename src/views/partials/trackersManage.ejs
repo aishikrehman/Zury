@@ -1,0 +1,17 @@
+<%# Tracking set-up: what is followed on Fountain or CampWiz (numbers only, nothing copied). Locals: trackers, trackAction, bare. %>
+<div class="<%= typeof bare !== 'undefined' && bare ? '' : 'card mb-3' %>">
+  <% if (!(typeof bare !== 'undefined' && bare)) { %><div class="card-header"><h3 class="card-title"><i class="ti ti-radar me-2"></i><%= t('Tracking') %></h3></div><% } %>
+  <div class="<%= typeof bare !== 'undefined' && bare ? 'mt-3' : 'card-body' %>">
+    <% if (trackers.length) { %><ul class="list-unstyled mb-3 z-track-list"><% trackers.forEach((tr) => { %>
+      <li><i class="ti ti-<%= tr.kind === 'fountain' ? 'droplet' : 'photo' %>"></i><b><%= tr.kind === 'fountain' ? 'Fountain' : 'CampWiz' %></b><span class="text-truncate"><%= tr.code %><%= tr.category ? ' · ' + tr.category : '' %></span>
+        <form method="post" action="<%= trackAction %>/<%= tr.id %>/remove" class="m-0 ms-auto" data-confirm="<%= t('Stop tracking this?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Stop') %>" aria-label="<%= t('Stop') %>"><i class="ti ti-x"></i></button></form></li>
+    <% }) %></ul><% } %>
+    <form method="post" action="<%= trackAction %>" class="row g-2 align-items-center">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="col-md-auto"><select class="form-select" name="kind" aria-label="<%= t('Where') %>"><option value="fountain">Fountain</option><option value="campwiz">CampWiz</option></select></div>
+      <div class="col-md"><input class="form-control" name="code" placeholder="<%= t('Link or code') %>" aria-label="<%= t('Link or code') %>"></div>
+      <div class="col-md"><input class="form-control" name="category" placeholder="<%= t('Commons category (CampWiz)') %>" aria-label="<%= t('Commons category (CampWiz)') %>"></div>
+      <div class="col-auto"><button class="btn" type="submit"><i class="ti ti-radar me-1"></i><%= t('Track') %></button></div>
+    </form>
+  </div>
+</div>

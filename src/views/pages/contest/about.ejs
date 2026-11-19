@@ -85,7 +85,7 @@
       <div class="card mb-3"><div class="card-body">
         <h3 class="card-title mb-2"><i class="ti ti-info-circle me-2 text-primary"></i><%= t('About this event') %></h3>
         <% if (contest.description) { %><div class="z-about-text"><%= contest.description %></div>
-        <% } else if (can('editEvent')) { %><p class="text-secondary mb-0"><a href="<%= base %>/config#step-basics"><%= t('Add a description') %></a></p>
+        <% } else if (can('editEvent')) { %><p class="text-secondary mb-0"><a href="<%= base %>/config#basics"><%= t('Add a description') %></a></p>
         <% } else { %><p class="text-secondary mb-0"><%= t('No description yet.') %></p><% } %>
         <% if (facts.length) { %>
           <dl class="z-facts">
@@ -143,11 +143,9 @@
         <div class="card-body">
           <%
             const joinSteps = [
-              { icon: 'brand-wikipedia', title: t('Log in with your Wikimedia account'), note: currentUser ? t('You are logged in.') : t('One click, with your Wikipedia account.'), done: !!currentUser },
-              ...(signUp && signUp.url ? [{ icon: 'list-check', title: signUp.onwiki ? t('Sign up on the event page on the wiki') : t('Add your name to the event page on the wiki'), note: t('On the wiki, then come back.'), link: signUp.url }] : []),
-              ...(settings.registrationRequired ? [{ icon: 'user-plus', title: t('Join the event here'), note: isParticipant ? t('You have joined.') : t('Before you submit.'), done: isParticipant }] : []),
-              { icon: 'writing', title: t('Write or improve, then submit'), note: t('Entries are checked against the rules as they come in.') },
-              { icon: 'trophy', title: t('Reviewers decide; results follow'), note: t('Follow your entries on the Submissions tab.') },
+              { icon: 'brand-wikipedia', title: t('Log in with your Wikimedia account'), note: currentUser ? t('You are logged in.') : '', done: !!currentUser },
+              ...(signUp && signUp.url ? [{ icon: 'list-check', title: signUp.onwiki ? t('Sign up on the event page on the wiki') : t('Add your name to the event page on the wiki'), note: '', link: signUp.url }] : []),
+              ...(settings.registrationRequired ? [{ icon: 'user-plus', title: t('Join the event here'), note: isParticipant ? t('You have joined.') : '', done: isParticipant }] : []),
             ];
           %>
           <ol class="z-join">
@@ -218,16 +216,32 @@
     </div>
     <% if (hasSide) { %><div class="col-lg-4">
       <%- include('../../partials/aboutRules') %>
-      <% if (contest.contactInfo) { %>
-        <div class="card mb-3">
+      <%
+        // Contact: the event's chat (when it is on) and the talk page of its page on the wiki, besides what organizers wrote.
+        let chatC = {}; try { chatC = JSON.parse(settings.extras || '{}') || {}; } catch (e) {}
+        const chatOn = typeof features !== 'undefined' && features.chat && chatC.chat !== false && contest.status !== 'archived';
+        let ciC = {}; try { ciC = JSON.parse(contest.contactInfo || '{}') || {}; } catch (e) { ciC = { page: contest.contactInfo }; } if (!ciC || typeof ciC !== 'object') ciC = { page: contest.contactInfo };
+        const evWiki = typeof eventWikiPage !== 'undefined' ? eventWikiPage : null;
+        const evTalk = evWiki ? evWiki.talk : null;
+      %>
+      <% const orgs = (organizers || []).map((m) => m.user || m).filter((u) => u && u.username); %>
+      <% if (contest.contactInfo || chatOn || evTalk || orgs.length) { const ci = ciC; const rowsC = [];
+           if (chatOn) rowsC.push(['messages', t('Event chat'), currentUser ? '/inbox?c=e' + contest.id : '/login', false]);
+           if (evWiki) { rowsC.push(['world', t('On-wiki event page'), evWiki.page, true]); rowsC.push(['message-circle', t('Talk page on the wiki'), evWiki.talk, true]); }
+           [['page', 'Contact page', 'message'], ['email', 'Email', 'mail'], ['phone', 'Phone', 'phone'], ['website', 'Website', 'link']].filter(([k]) => ci[k]).forEach(([k, label, icon]) => { const val = ci[k]; const href = k === 'email' ? 'mailto:' + val : k === 'phone' ? 'tel:' + val : /^https?:/.test(val) ? val : entryUrl({ wiki: contest.primaryWiki, url: '', title: val }); rowsC.push([icon, k === 'email' || k === 'phone' ? val : t(label), href, /^https?:/.test(href)]); }); %>
+        <div class="card mb-3 z-contact">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-address-book me-2"></i><%= t('Contact') %></h3></div>
-          <% if (contest.contactInfo) { let ci; try { ci = JSON.parse(contest.contactInfo); } catch (e) { ci = { page: contest.contactInfo }; } if (!ci || typeof ci !== 'object') ci = { page: contest.contactInfo }; %>
-          <div class="list-group-item py-2 d-flex flex-wrap gap-3 small">
-            <% [['page', 'Contact page', 'message'], ['eventPage', 'On-wiki event page', 'world'], ['email', 'Email', 'mail'], ['phone', 'Phone', 'phone'], ['website', 'Website', 'link']].filter(([k]) => ci[k]).forEach(([k, label, icon]) => { const val = ci[k]; const href = k === 'email' ? 'mailto:' + val : k === 'phone' ? 'tel:' + val : /^https?:/.test(val) ? val : null; %>
-              <span><i class="ti ti-<%= icon %> me-1 text-secondary"></i><% if (href) { %><a href="<%= href %>" rel="noopener"<%= /^https?:/.test(href) ? ' target=_blank' : '' %>><%= k === 'email' || k === 'phone' ? val : t(label) %></a><% } else { %><%= val %><% } %></span>
-            <% }) %>
+          <div class="card-body">
+            <% if (rowsC.length || (!evWiki && can('editEvent'))) { %><ul class="z-contact-list"><% rowsC.forEach(([icon, label, href, ext]) => { %><li><i class="ti ti-<%= icon %>"></i><a href="<%= href %>"<%- ext ? ' target="_blank" rel="noopener"' : '' %>><%= label %></a></li><% }) %>
+              <% if (!evWiki && can('editEvent')) { %><li class="z-contact-add"><i class="ti ti-plus"></i><a href="<%= base %>/config#access"><%= t('Add the event page on the wiki') %></a></li><% } %></ul><% } %>
+            <% if (orgs.length) { %>
+              <div class="subheader mt-3 mb-2"><%= t('Organizers') %></div>
+              <ul class="z-contact-people"><% orgs.slice(0, 12).forEach((u) => { const w = u.homeWiki || contest.primaryWiki; %>
+                <li><%- include('../../partials/avatar', { u, size: 'xs' }) %><a class="text-truncate" href="/users/<%= encodeURIComponent(u.username) %>"><%= u.username %></a>
+                  <span class="z-p-links ms-auto"><a href="<%= entryUrl({ wiki: w, url: '', title: 'User talk:' + u.username }) %>" target="_blank" rel="noopener" title="<%= t('Talk page on the wiki') %>" aria-label="<%= t('Talk page on the wiki') %>"><i class="ti ti-message-circle"></i></a><% if (currentUser && features.directMessages && u.id && u.id !== currentUser.id) { %><form method="post" action="/inbox/new" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="username" value="<%= u.username %>"><button type="submit" title="<%= t('Chat') %>" aria-label="<%= t('Chat') %>"><i class="ti ti-messages"></i></button></form><% } %></span></li>
+              <% }) %></ul>
+            <% } %>
           </div>
-        <% } %>
         </div>
       <% } %>
       <% if (requestableWikis && series && !wikiScope) { %>

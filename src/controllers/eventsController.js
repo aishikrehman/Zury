@@ -265,7 +265,7 @@ async function peopleAction(req, res, next, fn) {
     if (!(err instanceof scopeRoles.ScopeRoleError)) return next(err);
     req.flash('danger', req.t(err.message));
   }
-  const tab = req.path.includes('/settings') ? 'settings' : 'people';
+  const tab = 'settings';
   const ed = Number(req.body.editionId) ? await prisma.edition.findUnique({ where: { id: Number(req.body.editionId) }, select: { slug: true } }) : null;
   res.redirect(ed ? `/series/${req.params.series}/${ed.slug}?tab=${tab}` : `/${req.params.series}?tab=${tab}`);
 }
@@ -433,13 +433,19 @@ module.exports.levelAction = levelAction;
 
 // The series page (/wam) and the edition page (/wam/2026), in tabs. Settings and People are for
 // those who run that level, and hold that level's own settings and roles only.
-const SERIES_TABS = ['overview', 'editions', 'events', 'statistics', 'people', 'settings'];
-const EDITION_TABS = ['overview', 'statistics', 'people', 'settings'];
+// Three tabs: overview (with editions and direct events), statistics, settings (with organizers).
+const SERIES_TABS = ['overview', 'statistics', 'settings'];
+const EDITION_TABS = ['overview', 'statistics', 'settings'];
+const tabOf = (q, list) => (list.includes(q) ? q : 'overview');
 const RUNNERS_ONLY = ['settings', 'people'];
 
 
 async function levelExtras(level, tab) {
   const inherit = require('../services/inheritService');
+  if (tab === 'statistics') {
+    const tk = require('../services/trackerService');
+    return { trackers: await tk.withNumbers(await tk.list(level.editionId ? 'edition' : 'series', level.editionId || level.seriesId)) };
+  }
   if (tab === 'settings') {
     const inside = await require('../services/structureService').impact(level);
     const ids = level.editionId ? { seriesId: -1, editionIds: [level.editionId] } : { seriesId: level.seriesId };
@@ -447,7 +453,8 @@ async function levelExtras(level, tab) {
       prisma.levelSetting.findMany({ where: level, orderBy: { key: 'asc' } }),
       inherit.history(ids),
     ]);
-    return { rules, history, KEYS: inherit.KEYS, inside };
+    const levelTrackers = await require('../services/trackerService').list(level.editionId ? 'edition' : 'series', level.editionId || level.seriesId);
+    return { rules, history, KEYS: inherit.KEYS, inside, levelTrackers, ...(await levelExtras(level, 'people')) };
   }
   if (tab === 'people') {
     const people = await prisma.scopeRole.findMany({ where: level, include: { user: { select: { id: true, username: true } } }, orderBy: [{ role: 'asc' }, { assignedAt: 'asc' }] });
@@ -471,7 +478,7 @@ async function seriesPage(req, res, next) {
     const canRun = await canRunSeries(req, found.id);
     // A draft or private series is only for those who run it.
     if (!canRun && (found.status === 'draft' || found.visibility === 'private')) return next();
-    let tab = SERIES_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
+    let tab = tabOf(req.query.tab, SERIES_TABS);
     if (!canRun && RUNNERS_ONLY.includes(tab)) tab = 'overview';
     // The series' chat button (signed in; not for drafts or archived series).
     if (req.user && res.locals.features.levelChat && !['draft', 'archived'].includes(found.status) && found.visibility !== 'private') res.locals.levelChat = `s${found.id}`;
@@ -516,7 +523,7 @@ async function editionTabs(req, res, next) {
     // The edition's own people (or the series' with a role for its children) see its drafts.
     const canRun = await scopeRoles.canRunEdition(req, edition);
     const canSee = canRun || (await scopeRoles.canSeeEdition(req, edition));
-    let tab = EDITION_TABS.includes(req.query.tab) ? req.query.tab : 'overview';
+    let tab = tabOf(req.query.tab, EDITION_TABS);
     // A draft edition stays hidden, unless it already holds a public event (whose page links up to it).
     const hasPublic = !canSee && edition.visibility !== 'private' && edition.status === 'draft'
       ? await prisma.contest.count({ where: { editionId: edition.id, deletedAt: null, visibility: 'public', status: { not: 'draft' } } })
@@ -760,3 +767,41 @@ async function seriesList(req, res, next) {
 }
 module.exports.seriesList = seriesList;
 
+
+// Tracking on a series or an edition (add, or remove with :id).
+async function track(req, res, next) {
+  const back = req.params.edition ? `/series/${req.params.series}/${req.params.edition}?tab=settings` : `/${req.params.series}?tab=settings`;
+  try {
+    const sr = await prisma.eventSeries.findFirst({ where: { slug: req.params.series, deletedAt: null } });
+    if (!sr) return next();
+    const edition = req.params.edition ? await prisma.edition.findFirst({ where: { seriesId: sr.id, slug: req.params.edition, deletedAt: null } }) : null;
+    if (req.params.edition && !edition) return next();
+    const allowed = edition ? await scopeRoles.canRunEdition(req, edition) : await canRunSeries(req, sr.id);
+    if (!allowed) return forbiddenPage(next);
+    const trackers = require('../services/trackerService');
+    const level = edition ? 'edition' : 'series'; const levelId = edition ? edition.id : sr.id;
+    if (req.params.id) await trackers.remove(Number(req.params.id), level, levelId);
+    else await trackers.add({ level, levelId, kind: req.body.kind, code: req.body.code, category: req.body.category, actorId: req.user.id });
+    req.flash('success', req.t(req.params.id ? 'Stopped tracking.' : 'Tracking; nothing is copied.'));
+  } catch (err) {
+    if (err.name !== 'TrackerError' && !(err instanceof require('../services/trackerService').TrackerError)) return next(err);
+    req.flash('error', req.t(err.message));
+  }
+  res.redirect(back);
+}
+module.exports.track = track;
+
+// Tracking on one event.
+async function trackEvent(req, res, next) {
+  try {
+    const trackers = require('../services/trackerService');
+    if (req.params.id) await trackers.remove(Number(req.params.id), 'event', req.contest.id);
+    else await trackers.add({ level: 'event', levelId: req.contest.id, kind: req.body.kind, code: req.body.code, category: req.body.category, actorId: req.user.id });
+    req.flash('success', req.t(req.params.id ? 'Stopped tracking.' : 'Tracking; nothing is copied.'));
+  } catch (err) {
+    if (!(err instanceof require('../services/trackerService').TrackerError)) return next(err);
+    req.flash('error', req.t(err.message));
+  }
+  res.redirect(`${req.base}/config#database`);
+}
+module.exports.trackEvent = trackEvent;

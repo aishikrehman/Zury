@@ -4,7 +4,7 @@
   <div class="z-chat-item">
     <div class="z-chat-meta"><a href="/users/<%= encodeURIComponent(m.user.username) %>"><%= m.user.username %></a><time datetime="<%= new Date(m.createdAt).toISOString() %>"><%= formatDateTime(m.createdAt) %></time></div>
     <div class="z-chat-bubble">
-      <div class="z-chat-text"><%- h(m.body).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" rel="nofollow noopener" target="_blank">$1</a>').replace(/\n/g, '<br>') %></div>
+      <div class="z-chat-text"><%# Plain text: links are not made clickable. %><%- h(m.body).replace(/\n/g, '<br>') %></div>
       <% if (canHide) { %><form method="post" action="<%= hideUrl || '' %>" class="z-chat-hide" data-chat-hide><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="z-chat-x" type="submit" title="<%= t('Delete') %>" aria-label="<%= t('Delete') %>"><i class="ti ti-trash"></i></button></form><% } %>
     </div>
   </div>

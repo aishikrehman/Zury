@@ -22,9 +22,10 @@
   if (patrolStaff || (settings.appealsEnabled && (appealsOpen || currentUser))) tabs.push(['appeals', t('Patrol room'), '/patrol', 'shield-search', patrolStaff ? 'team' : '']);
   // People and the jury's assignments share one tab.
   const canAssign = typeDef.entries !== false && settings.juryReviewEnabled && (can('assignJury') || can('manageAssignments'));
-  // The team's tabs, apart from the rest: People is for those who run the event (everyone else sees the people on About).
+  // The team's tabs, apart from the rest.
   const team = can('editEvent') || can('manageEvent') || can('manageParticipants');
-  if (team) tabs.push(['people', t('People'), '/participants', 'users', 'team']);
+  // People: open to everyone (organizer tools on it stay for the team).
+  tabs.push(['people', t('People'), '/participants', 'users', '']);
   if (can('editEvent') || can('manageEvent')) tabs.push(['configuration', t('Configuration'), '/config', 'settings', 'team']);
   const canSubmit = contest.status === 'active' && active !== 'submit' && typeDef.entries !== false;
 %>
@@ -171,5 +172,5 @@
     </nav>
   </div>
 </header>
-<% if (chatHere) { %><%- include('./chatLaunch', { panelUrl: base + '/chat/panel' }) %><% } %>
+
 <% if (typeof canManageLife !== 'undefined' && canManageLife) { %><%- include('./eventControls', { typeDef }) %><% } %>

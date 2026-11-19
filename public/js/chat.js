@@ -58,22 +58,4 @@ function initChat(box) {
 window.zuryChat = { init: initChat };
 document.querySelectorAll('[data-chat]').forEach(initChat);
 
-// The corner chat button: the chat's contents are fetched (made on the server) when it is first opened.
-document.querySelectorAll('[data-chat-launch]').forEach((btn) => {
-  const side = document.getElementById('z-chat-side');
-  const slot = side && side.querySelector('[data-chat-slot]');
-  if (!slot) return;
-  const load = (url) => fetch(url, { headers: { Accept: 'text/html' } }).then((r) => (r.ok ? r.text() : '')).then((html) => {
-    if (!html) return;
-    slot.innerHTML = html;
-    slot.querySelectorAll('[data-chat]').forEach(initChat);
-    const list = slot.querySelector('[data-chat-list]');
-    if (list) list.scrollTop = list.scrollHeight;
-  }).catch(() => { slot.innerHTML = '<div class="z-chat-empty p-4">' + (window.zt ? window.zt('Could not load the chat. Reload the page, or log in again.') : 'Could not load the chat.') + '</div>'; loaded = false; });
-  let loaded = false;
-  // Open: load (or reload) the chat; closed: its live line is let go, so it holds no connection.
-  side.addEventListener('show.bs.offcanvas', () => { if (!loaded) { loaded = true; load(btn.dataset.chatLaunch); } });
-  side.addEventListener('hidden.bs.offcanvas', () => { slot.querySelectorAll('[data-chat]').forEach((b) => b._es && b._es.close()); slot.innerHTML = ''; loaded = false; });
-  slot.addEventListener('click', (e) => { const tab = e.target.closest('[data-chat-tab]'); if (tab) { e.preventDefault(); load(tab.getAttribute('href')); } });
-});
 

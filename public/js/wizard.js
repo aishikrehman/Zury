@@ -117,8 +117,9 @@
         if (last) buildReview();
       }
       // The open tab is in the address, so a refresh (or a shared link) opens it again.
-      if (!sequential && panes[i].id) history.replaceState(null, '', `#${panes[i].id}`);
-      if (scroll) form.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      if (!sequential && panes[i].id) history.replaceState(null, '', '#' + panes[i].id.replace(/^step-/, ''));
+      // Only when the form's top has gone off screen; otherwise the page stays where it is.
+      if (scroll && form.getBoundingClientRect().top < 0) form.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }
 
     links.forEach((a, n) =>
@@ -154,7 +155,9 @@
       reached = panes.length - 1;
       show(firstError, false);
     } else {
-      const fromHash = panes.findIndex((p) => `#${p.id}` === location.hash);
+      // #access opens that section.
+      const want = location.hash.slice(1);
+      const fromHash = want ? panes.findIndex((p) => p.id.replace(/^step-/, '') === want) : -1;
       show(fromHash >= 0 && !sequential ? fromHash : 0, false);
     }
   });

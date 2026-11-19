@@ -21,7 +21,6 @@
             <form method="post" action="/admin/maintenance/backup" class="d-flex flex-column gap-2">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button class="btn btn-primary w-100" type="submit"><i class="ti ti-download me-1"></i><%= t('Download a backup') %></button>
-              <span class="text-secondary small"><%= t('All tables as compressed JSON. Made daily and before updates; last 14 kept.') %></span>
             </form>
           </div><% } %>
         </div>
@@ -65,7 +64,6 @@
         </div>
               </div>
             </div>
-            <p class="text-secondary small mt-3"><i class="ti ti-info-circle me-1"></i><%= t('Rows can be removed except from accounts, roles, permissions and logs.') %></p>
           <% } else { %>
             <div class="card"><div class="card-body text-secondary"><%= t('Choose a table.') %></div></div>
           <% } %>

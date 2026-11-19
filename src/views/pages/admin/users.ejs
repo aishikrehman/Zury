@@ -4,64 +4,61 @@
     <div class="card">
       <div class="card-header flex-wrap gap-2">
         <form method="get" action="/admin/users" class="d-flex flex-wrap gap-2 w-100">
-          <div class="input-icon flex-fill" style="max-width: 22rem">
+          <div class="input-icon flex-fill" style="max-width: 18rem">
             <span class="input-icon-addon"><i class="ti ti-search"></i></span>
-            <input class="form-control" type="search" name="q" value="<%= q %>" placeholder="<%= t("Search usernames") %>" aria-label="<%= t("Search usernames") %>">
+            <input class="form-control form-control-sm" type="search" name="q" value="<%= q %>" placeholder="<%= t("Search usernames") %>" aria-label="<%= t("Search usernames") %>">
           </div>
-          <select class="form-select w-auto" name="login" aria-label="<%= t('Logged in') %>" data-autosubmit>
+          <select class="form-select form-select-sm w-auto" name="login" aria-label="<%= t('Logged in') %>" data-autosubmit>
             <option value=""><%= t('Everyone') %></option>
             <option value="yes"<%= login === 'yes' ? ' selected' : '' %>><%= t('Has logged in') %></option>
             <option value="no"<%= login === 'no' ? ' selected' : '' %>><%= t('Has not logged in') %></option>
           </select>
-          <select class="form-select w-auto" name="sort" aria-label="<%= t('Sort') %>" data-autosubmit>
-            <option value="name"<%= sort === 'name' ? ' selected' : '' %>><%= t('By name') %></option>
-            <option value="newest"<%= sort === 'newest' ? ' selected' : '' %>><%= t('Newest first') %></option>
-            <option value="lastLogin"<%= sort === 'lastLogin' ? ' selected' : '' %>><%= t('Last logged in') %></option>
-          </select>
-          <select class="form-select w-auto" name="role" aria-label="<%= t('Roles') %>" data-autosubmit>
+          <input type="hidden" name="sort" value="<%= sort %>">
+          <select class="form-select form-select-sm w-auto" name="role" aria-label="<%= t('Roles') %>" data-autosubmit>
             <option value=""><%= t('Everyone') %></option>
             <% Object.entries(PLATFORM_ROLES).forEach(([key, r]) => { %><option value="<%= key %>"<%= roleFilter === key ? ' selected' : '' %>><%= t(r.label) %></option><% }) %>
           </select>
           <span class="ms-auto align-self-center text-secondary small"><%= tn('{n} user', '{n} users', total) %></span>
         </form>
       </div>
+      <%# Compact list: one line per person; roles and delete in one ⋮ menu. %>
+      <% const qs = (o) => '/admin/users?' + new URLSearchParams(Object.entries({ q, login, role: roleFilter, sort, ...o }).filter(([, v]) => v)).toString();
+         const head = (key, label, cls = '') => { const on = sort === key || sort === '-' + key; const next = sort === key ? '-' + key : key; return '<a class="z-uh' + (cls ? ' ' + cls : '') + (on ? ' is-on' : '') + '" href="' + qs({ sort: next, page: '' }) + '">' + h(label) + (on ? ' <i class="ti ti-arrow-' + (sort.startsWith('-') ? 'up' : 'down') + '"></i>' : '') + '</a>'; }; %>
       <div class="table-responsive">
-        <table class="table table-sm table-vcenter card-table z-compact">
-          <thead><tr><th><%= t("User") %></th><th><%= t("Roles") %></th><th><%= t("Last login") %></th><th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th></tr></thead>
+        <table class="table table-sm table-vcenter card-table z-utable">
+          <thead><tr>
+            <th><%- head('name', t('User')) %></th>
+            <th><%- head('wiki', t('Wiki')) %></th>
+            <th><%= t('Roles') %></th>
+            <th class="text-end"><%- head('firstLogin', t('First login')) %></th>
+            <th class="text-end"><%- head('lastLogin', t('Last login')) %></th>
+            <th class="w-1"><span class="visually-hidden"><%= t('Actions') %></span></th>
+          </tr></thead>
           <tbody>
-            <% if (!rows.length) { %><tr><td colspan="4" class="text-secondary"><%= t("No users found.") %></td></tr><% } %>
-            <% rows.forEach(({ user: u, subject: s }) => { %>
+            <% if (!rows.length) { %><tr><td colspan="6" class="text-secondary"><%= t("No users found.") %></td></tr><% } %>
+            <% rows.forEach(({ user: u, subject: s }) => { const canRoles = can('managePlatformRoles'); const canDel = can('deleteAnything') && u.id !== currentUser.id; %>
               <tr>
+                <td><div class="d-flex align-items-center gap-2"><%- include('../../partials/avatar', { u, size: 'xs' }) %><a href="<%= userPath(u.username) %>" class="text-reset fw-medium"><%= u.username %></a></div></td>
+                <td class="text-secondary"><%= u.homeWiki ? wikiLocal(u.homeWiki) : '' %></td>
+                <td class="z-uroles"><%- include('../../partials/accessSummary', { s, compact: true }) %></td>
+                <td class="text-end text-secondary text-nowrap"><%= u.firstLoginAt ? formatDate(u.firstLoginAt) : '—' %></td>
+                <td class="text-end text-secondary text-nowrap"><%= u.lastLoginAt ? formatDate(u.lastLoginAt) : '—' %></td>
                 <td>
-                  <div class="d-flex align-items-center">
-                    <%- include('../../partials/avatar', { u, size: 'sm' }) %>
-                    <div class="ms-2 min-w-0">
-                      <a href="<%= userPath(u.username) %>" class="fw-medium text-reset"><%= u.username %></a>
-                      <div class="text-secondary small"><%= u.homeWiki ? wikiLocal(u.homeWiki) : '' %></div>
+                  <% if (canRoles || canDel) { %>
+                  <div class="dropdown">
+                    <button class="z-ukebab" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Actions') %>: <%= u.username %>"><i class="ti ti-dots-vertical"></i></button>
+                    <div class="dropdown-menu dropdown-menu-end">
+                      <% if (canRoles) { %><h6 class="dropdown-header"><%= t('Roles') %></h6>
+                        <% assignableRoles.forEach(([key, role]) => { const has = u.globalRoles.some((g) => g.role === key); const self = has && u.id === currentUser.id; %>
+                          <form method="post" action="/admin/users/<%= u.id %>/roles<%= has ? '/revoke' : '' %>" class="m-0"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="role" value="<%= key %>">
+                            <button class="dropdown-item d-flex align-items-center gap-2" type="submit"<%= self ? ' disabled' : '' %> title="<%= self ? t("You can't remove your own role") : t(role.description) %>"><i class="ti ti-<%= has ? 'square-check text-primary' : 'square' %>"></i><%= t(role.label) %></button></form>
+                        <% }) %>
+                      <% } %>
+                      <% if (canDel) { %><div class="dropdown-divider"></div>
+                        <form method="post" action="/admin/users/<%= u.id %>/delete" class="m-0" data-confirm="<%= t('Delete {name} with all entries, reviews and roles? This cannot be undone.', { name: u.username }) %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="dropdown-item text-danger" type="submit"><i class="ti ti-trash me-2"></i><%= t('Delete account') %></button></form>
+                      <% } %>
                     </div>
                   </div>
-                </td>
-                <td><%- include('../../partials/accessSummary', { s, compact: true }) %></td>
-                <td class="text-secondary text-nowrap"><%= u.lastLoginAt ? formatDate(u.lastLoginAt) : t('Never') %></td>
-                <td class="text-nowrap">
-                  <% if (can('deleteAnything') && u.id !== currentUser.id) { %>
-                    <form method="post" action="/admin/users/<%= u.id %>/delete" class="d-inline" data-confirm="<%= t('Delete {name} with all entries, reviews and roles? This cannot be undone.', { name: u.username }) %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-icon btn-ghost-danger" type="submit" title="<%= t('Delete account') %>" aria-label="<%= t('Delete account') %>: <%= u.username %>"><i class="ti ti-trash"></i></button></form>
-                  <% } %>
-                  <% if (can('managePlatformRoles')) { %>
-                    <div class="dropdown">
-                      <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-shield me-1"></i><%= t('Roles') %></button>
-                      <div class="dropdown-menu dropdown-menu-end">
-                        <% assignableRoles.forEach(([key, role]) => { const has = u.globalRoles.some((g) => g.role === key); const self = has && u.id === currentUser.id; %>
-                          <form method="post" action="/admin/users/<%= u.id %>/roles<%= has ? '/revoke' : '' %>">
-                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                            <input type="hidden" name="role" value="<%= key %>">
-                            <button class="dropdown-item d-flex align-items-center gap-2" type="submit"<%= self ? ' disabled' : '' %> title="<%= self ? t("You can't remove your own role") : t(role.description) %>">
-                              <i class="ti ti-<%= has ? 'square-check text-primary' : 'square' %>"></i><%= t(role.label) %>
-                            </button>
-                          </form>
-                        <% }) %>
-                      </div>
-                    </div>
                   <% } %>
                 </td>
               </tr>
@@ -70,11 +67,10 @@
         </table>
       </div>
       <div class="card-footer d-flex flex-wrap align-items-center gap-2">
-        <p class="m-0 text-secondary small"><i class="ti ti-info-circle me-1"></i><%= t("Steward, Global Sysop and Local Admin come from verified Wikimedia groups and can't be granted here.") %></p>
         <% if (pages > 1) { %>
           <ul class="pagination m-0 ms-auto">
             <% for (let i = 1; i <= pages; i++) { %>
-              <li class="page-item<%= i === page ? ' active' : '' %>"><a class="page-link" href="/admin/users?page=<%= i %><%= q ? '&q=' + encodeURIComponent(q) : '' %><%= roleFilter ? '&role=' + roleFilter : '' %>"><%= i %></a></li>
+              <li class="page-item<%= i === page ? ' active' : '' %>"><a class="page-link" href="<%= qs({ page: i }) %>"><%= i %></a></li>
             <% } %>
           </ul>
         <% } %>

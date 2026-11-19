@@ -68,6 +68,8 @@ contest.post('/move', requireEventWide('deleteAnything'), contestController.move
 contest.post('/wikis/request', requireAuth, wikiController.request);
 contest.post('/wikis', requireEventWide('manageEvent'), wikiController.add);
 contest.post('/fountain', requirePermission('importEvents'), fountainController.link);
+contest.post('/track', requirePermission('manageEvent'), require('../controllers/eventsController').trackEvent);
+contest.post('/track/:id(\\d+)/remove', requirePermission('manageEvent'), require('../controllers/eventsController').trackEvent);
 // Import entries from a wiki page, a CSV or plain list, or Fountain (organizers).
 // One person's work in this event.
 contest.get('/user/:username', personController.event);
@@ -180,6 +182,11 @@ router.get(`/series/:series(${SLUG})`, requireAuth, eventsController.manageOneSe
 router.get(`/series/:series(${SLUG})/:edition(${SLUG})`, eventsController.manageEdition);
 router.post('/series', requirePermission('importEvents'), eventsController.createSeries);
 router.post(`/series/:series(${SLUG})/fountain-sync`, requireAuth, eventsController.syncLevelFountain);
+// Tracking (Fountain, CampWiz) on a series, an edition or an event.
+router.post(`/series/:series(${SLUG})/track`, requireAuth, eventsController.track);
+router.post(`/series/:series(${SLUG})/track/:id(\\d+)/remove`, requireAuth, eventsController.track);
+router.post(`/series/:series(${SLUG})/:edition(${SLUG})/track`, requireAuth, eventsController.track);
+router.post(`/series/:series(${SLUG})/:edition(${SLUG})/track/:id(\\d+)/remove`, requireAuth, eventsController.track);
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/fountain-sync`, requireAuth, eventsController.syncLevelFountain);
 router.post(`/series/:series(${SLUG})/detach`, requireAuth, eventsController.detachEvent);
 router.post(`/series/:series(${SLUG})/order`, requireAuth, eventsController.seriesOrder);

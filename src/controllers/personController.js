@@ -11,7 +11,7 @@ async function event(req, res, next) {
     if (!person) return notFound(res);
     const insider = req.permissions.has('viewAllSubmissions') || req.permissions.has('manageEvent');
     // Anonymous events: no names until the results are out (except for organizers and the person).
-    if (req.settings.anonymousParticipants && !insider && !req.contest.resultsPublishedAt && req.user?.id !== person.id) return notFound(res);
+    if (req.settings.anonymousParticipants && !insider && !require('../services/reviewService').resultsOpen(req.contest, req.settings) && req.user?.id !== person.id) return notFound(res);
     const showNotes = req.user?.id === person.id || insider;
     const data = await personService.inEvent({ contest: req.contest, settings: req.eventSettings, person, showNotes });
     if (!data.entries.length && !data.roles.length && !data.reviews.accept && !data.reviews.reject) return notFound(res);

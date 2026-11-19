@@ -25,13 +25,10 @@
       </div>
     </div>
     <div class="col-12">
-      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <nav class="z-seg" aria-label="<%= t('Events') %>">
-          <% groups.forEach((g) => { %><a class="<%= g.key === pick.key ? 'active' : '' %>" href="<%= q({ show: g.key, when }) %>"><i class="ti ti-<%= g.icon %>"></i><%= g.heading %> <span class="badge bg-<%= g.color %>-lt ms-1"><%= formatNumber(g.items.length) %></span></a><% }) %>
-        </nav>
-        <div class="z-chips ms-auto">
-          <% [['all', t('All')], ['running', t('Running')], ['done', t('Finished')]].forEach(([k, label]) => { %><a class="z-chip<%= when === k ? ' is-on' : '' %>" href="<%= q({ when: k }) %>"><%= label %></a><% }) %>
-        </div>
+      <div class="z-prof-filter" role="group" aria-label="<%= t('Events') %>">
+        <% groups.forEach((g) => { %><a class="z-chip<%= g.key === pick.key ? ' is-on' : '' %>" href="<%= q({ show: g.key, when }) %>"><%= g.heading %> <b><%= formatNumber(g.items.length) %></b></a><% }) %>
+        <span class="z-prof-filter-sep" aria-hidden="true"></span>
+        <% [['all', t('All')], ['running', t('Running')], ['done', t('Finished')]].forEach(([k, label]) => { %><a class="z-chip<%= when === k ? ' is-on' : '' %>" href="<%= q({ when: k }) %>"><%= label %></a><% }) %>
       </div>
       <% if (!list.length) { %>
         <div class="card"><div class="card-body text-secondary text-center py-5"><i class="ti ti-calendar-off d-block mb-2" style="font-size: 2rem"></i><%= t('No events here.') %></div></div>

@@ -69,6 +69,7 @@ async function show(req, res, next, view = 'pages/contest/show') {
       myWiki: mine?.wiki || '',
       title: `${req.contest.title} — Zury`,
       organizers: byRole('organizer'),
+      eventWikiPage: require('../utils/eventWikiPage').eventWikiPage(req.contest, req.settings),
       jury: byRole('jury'),
       reviewers: byRole('jury'),
       participants: byRole('participant'),
@@ -157,7 +158,9 @@ async function renderConfig(req, res, { form, errors = {}, status = 200 }) {
   const inherited = await require('../services/inheritService').viewFor(req.contest, req.eventSettings).catch(() => []);
   const editionAdmin = req.edition && !req.wikiScope && (await require('../services/scopeRoleService').canRunEdition(req, req.edition)) ? `/series/${req.series.slug}/${req.edition.slug}` : null;
   const places = req.wikiScope || !req.scope.global.has('manageEvent') ? [] : await require('../services/scopeRoleService').placesFor(req);
+  const eventTrackers = await require('../services/trackerService').list('event', req.contest.id).catch(() => []);
   res.status(status).render('pages/contest/config', {
+    eventTrackers,
     inherited,
     places,
     editionAdmin,
@@ -503,6 +506,7 @@ async function statistics(req, res, next) {
   res.locals.compare = await require('../services/seriesService').compareWithPrevious(req.contest).catch(() => null);
   // Wikis that only track a Fountain editathon: its numbers, read from Fountain now.
   const trackedWikis = await require('../config/prisma').contestWiki.findMany({ where: { contestId: req.contest.id, fountainTrackOnly: true, fountainCode: { not: '' } }, select: { wiki: true, fountainCode: true } });
+  { const tk = require('../services/trackerService'); res.locals.trackers = await tk.withNumbers(await tk.list('event', req.contest.id)); }
   res.locals.fountainTracked = (await Promise.all(trackedWikis.map((w) => require('../services/fountainService').trackedStats(w.fountainCode).then((s) => ({ ...s, wiki: w.wiki })).catch(() => null)))).filter(Boolean);
   return show(req, res, next, 'pages/contest/statistics');
 }

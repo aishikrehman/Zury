@@ -276,7 +276,7 @@ async function show(req, res, next) {
       canAppeal: reviewService.canAppeal({ submission, contest: req.effective.contest, settings: req.settings, user: req.user }),
       // Jury verdicts: for the jury and organizers, and for the participant once results are out.
       reviews:
-        req.permissions.has('reviewEvent') || (isOwner && req.contest.resultsPublishedAt)
+        req.permissions.has('reviewEvent') || (isOwner && reviewService.resultsOpen(req.contest, req.settings))
           ? await prisma.review.findMany({ where: { submissionId: submission.id }, include: { juror: { select: { username: true } } }, orderBy: { createdAt: 'asc' } })
           : [],
       showName: isOwner || !req.settings.anonymousParticipants || req.permissions.has('viewAllSubmissions'),
@@ -368,7 +368,7 @@ async function useLatest(req, res, next) {
     const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury');
     if (!staff) { const e = new Error("You don't have permission to do that."); e.status = 403; return next(e); }
     // Published results don't move: hide them first to change an entry's revision.
-    if (require('../services/reviewService').resultsFinal(req.effective.contest)) { req.flash('warning', req.t('Results are locked, so the words and revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
+    if (require('../services/reviewService').resultsFinal(req.effective.contest, req.settings)) { req.flash('warning', req.t('Results are locked, so the words and revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
     await submissionService.repin(s);
     if (req.get('X-Requested-With') === 'fetch') return res.json({ ok: true });
     req.flash('success', req.t('The entry is now the latest revision.'));
@@ -448,7 +448,7 @@ async function useRevision(req, res, next) {
     const staff = req.permissions.has('manageEvent') || (req.scope.eventRoles || []).includes('jury') || req.permissions.has('reviewAssignedEntry');
     if (!staff) return res.status(403).render('pages/403', { title: 'Forbidden' });
     // Published results don't move: hide them first to change an entry's revision.
-    if (require('../services/reviewService').resultsFinal(req.effective.contest)) { req.flash('warning', req.t('Results are locked, so the words and revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
+    if (require('../services/reviewService').resultsFinal(req.effective.contest, req.settings)) { req.flash('warning', req.t('Results are locked, so the words and revision can no longer change.')); return res.redirect(backTo(req, `${req.base}/review?entry=${req.params.submissionId}`)); }
     const raw = String(req.body.rev || '').trim();
     const revId = Number((raw.match(/oldid=(\d+)/) || raw.match(/^(\d+)$/) || [])[1]);
     const done = revId ? await submissionService.pinRevision(s, revId) : null;

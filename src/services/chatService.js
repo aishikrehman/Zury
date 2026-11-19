@@ -189,19 +189,19 @@ async function myRooms(userId) {
   const OLD = F.oldEventDays || OLD_DAYS;
   const ms = await prisma.contestMembership.findMany({
     where: { userId, status: 'active', contest: { deletedAt: null, status: { notIn: ['draft', 'archived', 'cancelled'] }, OR: [{ endDate: null }, { endDate: { gte: new Date(Date.now() - OLD * 86400000) } }] } },
-    select: { role: true, contest: { select: { id: true, title: true, path: true, settings: { select: { extras: true } } } } },
+    select: { role: true, contest: { select: { id: true, title: true, path: true, logoUrl: true, seriesId: true, editionId: true, settings: { select: { extras: true } } } } },
   });
   const extras = require('./extrasService');
   const rooms = new Map();
   for (const m of ms) {
     const c = m.contest; const x = extras.read(c.settings);
     const path = c.path || `/contest/${c.id}`;
-    if (F.chat && x.chat) rooms.set(`e${c.id}`, { channel: `e${c.id}`, title: c.title, path, room: 'event' });
-    if (F.juryChat && x.juryChat && STAFF_ROLES.includes(m.role)) rooms.set(`j${c.id}`, { channel: `j${c.id}`, title: c.title, path, room: 'jury' });
+    if (F.chat && x.chat) rooms.set(`e${c.id}`, { channel: `e${c.id}`, title: c.title, path, room: 'event', logo: c.logoUrl || null });
+    if (F.juryChat && x.juryChat && STAFF_ROLES.includes(m.role)) rooms.set(`j${c.id}`, { channel: `j${c.id}`, title: c.title, path, room: 'jury', logo: c.logoUrl || null });
   }
   const written = !F.levelChat ? [] : await prisma.chatMessage.findMany({ where: { userId, OR: [{ channel: { startsWith: 's' } }, { channel: { startsWith: 'x' } }] }, distinct: ['channel'], select: { channel: true }, take: 50 });
-  const sIds = written.filter((w) => w.channel[0] === 's').map((w) => Number(w.channel.slice(1)));
-  const xIds = written.filter((w) => w.channel[0] === 'x').map((w) => Number(w.channel.slice(1)));
+  const sIds = [...new Set([...written.filter((w) => w.channel[0] === 's').map((w) => Number(w.channel.slice(1))), ...(F.levelChat ? ms.map((m) => m.contest.seriesId).filter(Boolean) : [])])];
+  const xIds = [...new Set([...written.filter((w) => w.channel[0] === 'x').map((w) => Number(w.channel.slice(1))), ...(F.levelChat ? ms.map((m) => m.contest.editionId).filter(Boolean) : [])])];
   const [series, eds] = await Promise.all([
     sIds.length ? prisma.eventSeries.findMany({ where: { id: { in: sIds }, deletedAt: null, status: { not: 'archived' } }, select: { id: true, title: true, slug: true } }) : [],
     xIds.length ? prisma.edition.findMany({ where: { id: { in: xIds }, deletedAt: null, status: { not: 'archived' } }, select: { id: true, title: true, slug: true, series: { select: { slug: true } } } }) : [],
@@ -234,12 +234,15 @@ async function myRooms(userId) {
 
 // How many of a person's rooms have something new (kept a minute, for the header).
 const unreadCache = new Map();
-async function unreadRooms(userId) {
+async function unreadRoomList(userId) {
   const hit = unreadCache.get(userId);
-  if (hit && Date.now() - hit.at < 60000) return hit.n;
-  const n = (await myRooms(userId)).filter((r) => r.unread).length;
-  unreadCache.set(userId, { at: Date.now(), n });
-  return n;
+  if (hit && Date.now() - hit.at < 60000) return hit.list;
+  const list = (await myRooms(userId)).filter((r) => r.unread);
+  unreadCache.set(userId, { at: Date.now(), list });
+  return list;
+}
+async function unreadRooms(userId) {
+  return (await unreadRoomList(userId)).length;
 }
 
 // What is new for a person since a time: notifications, and messages by others in their rooms.
@@ -256,4 +259,4 @@ async function newsSince(userId, since) {
   return { notes, msgs: (await withUsers(msgs)).map((m) => ({ ...m, room: byChannel.get(m.channel) })) };
 }
 
-module.exports = { newsSince, mayWrite, DIRECT_DAYS, myRooms, unreadRooms, exportText, pruneArchived, prune, clear, ChatError, dm, parseChannel, list, post, hide, markRead, stream };
+module.exports = { unreadRoomList, newsSince, mayWrite, DIRECT_DAYS, myRooms, unreadRooms, exportText, pruneArchived, prune, clear, ChatError, dm, parseChannel, list, post, hide, markRead, stream };

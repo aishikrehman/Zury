@@ -4,11 +4,9 @@
     <span>© <%= formatNumber(new Date().getFullYear()).replace(/,/g, '') %> <%= t('Zury') %></span>
     <span class="z-credit"><%- th('Made by {name}', { name: '<a href="https://meta.wikimedia.org/wiki/User:Aishik_Rehman" rel="noopener">' + 'Aishik Rehman' + '</a>' }) %></span>
     <nav aria-label="<%= t('Footer') %>">
-      <a href="/events"><%= t('Events') %></a>
-      <a href="/display"><i class="ti ti-accessible me-1"></i><%= t('Display and accessibility') %></a>
-      <a href="https://github.com/aishikrehman/Zury" rel="noopener"><%= t('Source code') %></a>
       <a href="https://github.com/aishikrehman/Zury/issues" rel="noopener"><%= t('Report an issue') %></a>
       <a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy" rel="noopener"><%= t('Wikimedia privacy policy') %></a>
     </nav>
+    <nav class="z-foot-lang" aria-label="<%= t('Language') %>"><i class="ti ti-language"></i><% Object.values(LANGUAGES).forEach((l) => { %><a href="/preferences/language/<%= l.code %>?next=<%= encodeURIComponent(currentPath) %>" lang="<%= l.code %>"<%- l.code === lang.code ? ' aria-current="true" class="is-on"' : '' %>><%= l.native %></a><% }) %></nav>
   </div>
 </footer>

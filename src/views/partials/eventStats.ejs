@@ -188,10 +188,10 @@
         <div class="row g-3">
           <div class="col-12">
             <h4 class="mb-2"><%= t('Longest articles') %></h4>
-            <table class="table table-sm table-vcenter mb-0"><thead><tr><th><%= t('Article') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead><tbody>
+            <div class="table-responsive"><table class="table table-sm table-vcenter mb-0"><thead><tr><th><%= t('Article') %></th><th class="text-end"><%= t('Words') %></th><th><%= t('Status') %></th></tr></thead><tbody>
               <% w.biggest.forEach((x) => { %><tr><td><a href="<%= entryUrl(x) %>" target="_blank" rel="noopener"><%= x.title %></a><div class="small text-secondary"><%= x.username %></div></td><td class="text-end"><%= formatNumber(x.words) %></td><td><span class="badge bg-<%= (SUBMISSION_STATUSES[x.status] || {}).color || 'secondary' %>-lt"><%= (SUBMISSION_STATUSES[x.status] || {}).label || x.status %></span></td></tr><% }) %>
               <% if (!w.biggest.length) { %><tr><td colspan="3" class="text-secondary"><%= t('No entries yet.') %></td></tr><% } %>
-            </tbody></table>
+            </tbody></table></div>
           </div>
         </div>
       </div>

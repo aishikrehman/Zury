@@ -24,13 +24,15 @@
     <button class="btn btn-icon" type="button" data-review-full title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>" aria-pressed="false"><i class="ti ti-maximize"></i></button>
   </div>
 
-  <div class="z-review-stats" title="<%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= t('{n}% decided', { n: done }) %>">
+<% const statsBlock = (cls) => { %>  <div class="z-review-stats <%= cls %>" title="<%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= t('{n}% decided', { n: done }) %>">
     <span class="z-ring" style="--p: <%= done %>"><b><%= formatNumber(done) %>%</b></span>
     <span class="z-ring-text">
       <% if (position) { %><span><b><%= formatNumber(position) %></b> / <%= formatNumber(queue.remaining) %> <%= t('waiting') %></span><% } else { %><span><b><%= formatNumber(queue.remaining) %></b> <%= t('waiting') %></span><% } %>
       <% if (filters.mode === 'mine') { %><a class="text-secondary" href="<%= base %>/review"><i class="ti ti-arrow-left me-1"></i><%= t('Waiting for me') %></a><% } else { %><a class="text-secondary" href="<%= base %>/review?mode=mine" title="<%= t('Open and change your earlier reviews') %>"><%= t('You reviewed {n}', { n: formatNumber(queue.reviewedByMe) }) %> <i class="ti ti-pencil"></i></a><% } %>
     </span>
   </div>
+<% } %>
+<% statsBlock("z-stats-top") %>
   <form method="get" class="z-review-filters collapse<%= filtered ? ' show' : '' %>" id="review-filters">
     <div class="z-pop-title"><%= t('Entries and filters') %></div>
     <button type="button" class="btn-close z-pop-close" data-close-filters aria-label="<%= t('Close') %>"></button>
@@ -143,6 +145,8 @@
       <div class="z-side-backdrop" data-side-toggle></div>
       <aside class="z-review-side">
         <button type="button" class="btn-close z-sheet-close" data-side-close aria-label="<%= t('Close') %>"></button>
+        <%# Wide screens: the progress sits at the top of this column, so the whole column stays in place. %>
+        <% statsBlock("z-stats-side") %>
         <% if (blocked) { %>
         <div class="card z-review-panel"><div class="card-body">
           <div class="d-flex gap-2 text-secondary"><i class="ti ti-lock mt-1"></i><div><%= t(blocked) %> <%= t('It cannot be reviewed from here.') %></div></div>

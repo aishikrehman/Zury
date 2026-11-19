@@ -14,31 +14,17 @@
     </form>
 
     <div class="z-topbar-end">
-      <div class="dropdown">
-        <button class="z-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= t('Language') %>" title="<%= t('Language') %>">
-          <i class="ti ti-language"></i><span class="z-lang-code"><%= lang.code.toUpperCase() %></span>
-        </button>
-        <div class="dropdown-menu dropdown-menu-end">
-          <% Object.values(LANGUAGES).forEach((l) => { %>
-            <a href="/preferences/language/<%= l.code %>?next=<%= encodeURIComponent(currentPath) %>" class="dropdown-item d-flex<%= l.code === lang.code ? ' active' : '' %>" lang="<%= l.code %>">
-              <%= l.native %><% if (l.native !== l.name) { %><span class="text-secondary ms-auto ps-3 small"><%= l.name %></span><% } %>
-            </a>
-          <% }) %>
-        </div>
-      </div>
 
       <% if (currentUser) { %>
+        <% if (features.inbox) { %><a class="z-bell-btn" href="/inbox" aria-label="<%= t('Chat') %>" title="<%= t('Chat') %>"><i class="ti ti-messages"></i><span class="z-chat-dot" data-chat-dot<%= unreadRooms ? '' : ' hidden' %>></span></a><% } %>
         <div class="dropdown" data-notifications data-bell-known="<%= unreadNotifications || 0 %>">
-          <button class="z-bell-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t('Inbox') %><%= unreadNotifications ? ` (${unreadNotifications})` : '' %>" title="<%= t('Inbox') %>">
-            <i class="ti ti-inbox"></i><span class="z-chat-dot" data-chat-dot<%= unreadRooms ? '' : ' hidden' %>></span><% if (unreadNotifications) { %><span class="z-bell-count" data-bell-count><%= unreadNotifications > 99 ? '99+' : formatNumber(unreadNotifications) %></span><% } %>
+          <button class="z-bell-btn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="<%= t('Notifications') %><%= unreadNotifications ? ` (${unreadNotifications})` : '' %>" title="<%= t('Notifications') %>">
+            <i class="ti ti-bell"></i><% if (unreadNotifications) { %><span class="z-bell-count" data-bell-count><%= unreadNotifications > 99 ? '99+' : formatNumber(unreadNotifications) %></span><% } %>
           </button>
           <div class="dropdown-menu dropdown-menu-end z-bell-menu">
-            <%# Head: notifications here, chats one tap away; the sound switch. Foot: mark read, see all. %>
+            <%# The bell: notifications only (chats have their own icon). %>
             <div class="z-bell-head">
-              <nav class="z-mail-switch flex-fill">
-                <a class="active" href="/notifications"><i class="ti ti-bell"></i><%= t('Notifications') %></a>
-                <% if (features.inbox) { %><a href="/inbox"><i class="ti ti-messages"></i><%= t('Chats') %><% if (unreadRooms) { %><b><%= formatNumber(unreadRooms) %></b><% } %></a><% } %>
-              </nav>
+              <b class="flex-fill"><%= t('Notifications') %></b>
               <button class="z-bell-sound" type="button" data-bell-sound title="<%= t('Sound') %>" aria-label="<%= t('Sound') %>" aria-pressed="true"><i class="ti ti-volume"></i></button>
             </div>
             <div data-bell-list>
@@ -48,7 +34,7 @@
             </div>
             <div class="z-bell-foot">
               <button class="z-bell-readall" type="button" data-bell-read-all<%= unreadNotifications ? '' : ' hidden' %>><i class="ti ti-checks me-1"></i><%= t('Mark all as read') %></button>
-              <a class="z-bell-link ms-auto" href="/notifications"><%= t('See all') %> <i class="ti ti-arrow-right"></i></a>
+              <a class="z-bell-link ms-auto" href="/notifications"><%= t('All notifications') %></a>
             </div>
           </div>
         </div>
@@ -87,7 +73,7 @@
                 <i class="ti ti-<%= item.icon %>"></i><span><%= item.label %></span>
               </a>
               <div class="dropdown-menu">
-                <% item.children.forEach((c) => { %><% if (c.divider) { %><div class="dropdown-divider"></div><% } else if (c.header) { %><h6 class="dropdown-header"><%= c.header %></h6><% } else { %><a class="dropdown-item<%= c.active ? ' active' : '' %>" href="<%= c.href %>"><i class="ti ti-<%= c.icon %> me-2"></i><%= c.label %></a><% } %><% }) %>
+                <% item.children.forEach((c) => { %><% if (c.divider) { %><div class="dropdown-divider"></div><% } else if (c.header) { %><h6 class="dropdown-header"><%= c.header %></h6><% } else { %><a class="dropdown-item<%= c.active ? ' active' : '' %>" href="<%= c.href %>"><i class="ti ti-<%= c.icon %> me-2"></i><%= c.label %><% if (c.badge) { %> <span class="badge bg-purple-lt ms-2"><%= c.badge %></span><% } %></a><% } %><% }) %>
               </div>
             </li>
           <% } else { %>

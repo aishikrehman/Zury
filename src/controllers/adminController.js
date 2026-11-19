@@ -35,13 +35,15 @@ async function users(req, res, next) {
       'local-admin': { wikiRoles: { some: { rightName: 'sysop', NOT: { wiki: '*' } } } },
     }[roleFilter] || (roleFilter ? { globalRoles: { some: { role: roleFilter } } } : {});
     const login = ['yes', 'no'].includes(req.query.login) ? req.query.login : '';
-    const sort = ['name', 'newest', 'lastLogin'].includes(req.query.sort) ? req.query.sort : 'name';
+    // Sorted by a column, either way (the column headings link here).
+    const SORTS = { name: { username: 'asc' }, '-name': { username: 'desc' }, wiki: [{ homeWiki: { sort: 'asc', nulls: 'last' } }, { username: 'asc' }], '-wiki': [{ homeWiki: { sort: 'desc', nulls: 'last' } }, { username: 'asc' }], lastLogin: { lastLoginAt: { sort: 'desc', nulls: 'last' } }, '-lastLogin': { lastLoginAt: { sort: 'asc', nulls: 'last' } }, firstLogin: { firstLoginAt: { sort: 'desc', nulls: 'last' } }, '-firstLogin': { firstLoginAt: { sort: 'asc', nulls: 'last' } }, newest: { createdAt: 'desc' } };
+    const sort = SORTS[req.query.sort] ? req.query.sort : 'name';
     const where = { ...(q && { username: { contains: q } }), ...byRole, ...(login === 'yes' && { lastLoginAt: { not: null } }), ...(login === 'no' && { lastLoginAt: null }) };
     const [list, total] = await Promise.all([
       prisma.user.findMany({
         where,
         include: { globalRoles: true, wikiRoles: true },
-        orderBy: sort === 'newest' ? { createdAt: 'desc' } : sort === 'lastLogin' ? { lastLoginAt: { sort: 'desc', nulls: 'last' } } : { username: 'asc' },
+        orderBy: SORTS[sort],
         skip: (page - 1) * perPage,
         take: perPage,
       }),

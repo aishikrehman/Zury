@@ -73,11 +73,13 @@
           <div class="col-md"><input class="form-control" name="code" placeholder="<%= t('Fountain editathon code or address') %>" aria-label="<%= t('Fountain editathon code or address') %>" required></div>
           <div class="col-md-auto"><select class="form-select" name="mode" aria-label="<%= t('How') %>"><option value="track"><%= t('Track only: numbers from Fountain, nothing copied') %></option><option value="import"><%= t('Import: copy entries and reviews into Zury') %></option></select></div>
           <div class="col-auto"><button class="btn" type="submit"><%= t("Follow on Fountain") %></button></div>
-        </form><% } %>
+        </form>
+<% } %>
       </div>
     </div>
   <% } %>
 
+  <% if (can('manageEvent') && !wikiMode) { %><%- include('./trackersManage', { trackers: typeof eventTrackers !== 'undefined' ? eventTrackers : [], trackAction: eventBase + '/track' }) %><% } %>
   <% if (can('manageEvent') && !wikiMode ) { %>
     <div class="card mt-4" id="data">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-database me-2"></i><%= t('Data') %></h3></div>

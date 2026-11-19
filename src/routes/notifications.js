@@ -11,12 +11,13 @@ router.use(async (req, res, next) => {
   res.locals.unreadNotifications = 0;
   res.locals.unreadRooms = 0;
   if (req.user && req.method === 'GET' && req.accepts('html')) {
-    let latest;
-    [res.locals.unreadNotifications, res.locals.unreadRooms, latest] = await Promise.all([
+    let latest; let rooms;
+    [res.locals.unreadNotifications, rooms, latest] = await Promise.all([
       notifications.unreadCount(req.user.id).catch(() => 0),
-      require('../services/chatService').unreadRooms(req.user.id).catch(() => 0),
+      require('../services/chatService').unreadRoomList(req.user.id).catch(() => []),
       notifications.latest(req.user.id, 6).catch(() => []),
     ]);
+    res.locals.unreadRooms = rooms.length;
     res.locals.bellNotes = latest.map((n) => view(req, res, n));
   }
   next();

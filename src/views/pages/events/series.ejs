@@ -2,10 +2,8 @@
   const base = `/${series.slug}`;
   const tabs = [
     ['overview', 'layout-dashboard', t('Overview')],
-    ['editions', 'calendar', t('Editions')],
-    ['events', 'calendar-event', t('Direct events')],
     ['statistics', 'chart-bar', t('Statistics')],
-    ...(canRun ? [['people', 'users', t('Organizers')], ['settings', 'settings', t('Settings')]] : []),
+    ...(canRun ? [['settings', 'settings', t('Settings')]] : []),
   ];
   const json = (s, d) => { try { return JSON.parse(s || '') || d; } catch (e) { return d; } };
   const links = json(series.externalLinks, []);
@@ -77,7 +75,7 @@
       <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition'), table: false }) %>
       <%- include('../../partials/seriesInsights', { insights, show: ['trend', 'fame'] }) %>
 
-    <% } else if (tab === 'editions') { %>
+    <% } if (tab === 'overview') { %>
       <div class="card mb-3">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-calendar me-2"></i><%= t('Editions') %></h3>
           <% if (canRun) { %><div class="card-actions">
@@ -105,7 +103,7 @@
         <% } %>
       </div>
 
-    <% } else if (tab === 'events') { %>
+    <% } if (tab === 'overview') { %>
       <% if (canRun) { %><div class="d-flex justify-content-end mb-3"><a class="btn btn-primary" href="/create/event?series=<%= series.slug %>"><i class="ti ti-plus me-1"></i><%= t('New event') %></a></div><% } %>
       <% if (!directEvents.length) { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events directly under this series') }) %></div><% } else { %>
         <div class="card"><div class="list-group list-group-flush">
@@ -121,10 +119,12 @@
 
     <% } else if (tab === 'statistics') { %>
       <% if (canRun && fountainCount) { %><form method="post" action="/series/<%= series.slug %>/fountain-sync" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Update all from Fountain') %> (<%= formatNumber(fountainCount) %>)</button></form><% } %>
+      <%- include('../../partials/trackers', { trackers: typeof trackers !== 'undefined' ? trackers : [], trackAction: null }) %>
       <%- include('../../partials/levelStats', { totals, rows, wikiRows, rowTitle: t('Edition'), chartTitle: t('Entries per edition') }) %>
       <%- include('../../partials/seriesInsights', { insights, show: ['trend', 'leaders'] }) %>
 
     <% } else if (tab === 'settings') { %>
+      <% if (canRun) { %><%- include('../../partials/trackersManage', { trackers: typeof levelTrackers !== 'undefined' ? levelTrackers : [], trackAction: '/series/' + series.slug + '/track' }) %><% } %>
       <form method="post" action="/series/<%= series.slug %>/update" class="card mb-3">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t('Details') %></h3></div>
@@ -159,10 +159,10 @@
       </div>
       <%- include('../../partials/levelDelete', { inside, seriesSlug: series.slug, editionSlug: null, canDelete: can('deleteAnything') }) %>
 
-    <% } else if (tab === 'people') { %>
+    <% } if (tab === 'settings' && canRun) { %>
       <%- include('../../partials/levelPeople', { seriesSlug: series.slug, editionId: null, people, ROLES }) %>
 
     <% } %>
   </div>
 </div>
-<% if (typeof levelChat !== 'undefined' && levelChat) { %><%- include('../../partials/chatLaunch', { panelUrl: '/chat/panel?c=' + levelChat }) %><% } %>
+

@@ -23,6 +23,9 @@
         fontFamily: 'inherit',
         parentHeightOffset: 0,
         toolbar: { show: false },
+        // No zooming or selecting: a touch on a phone used to zoom in with no way back.
+        zoom: { enabled: false },
+        selection: { enabled: false },
         sparkline: { enabled: sparkline },
         animations: { enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches, speed: 600 },
       },
