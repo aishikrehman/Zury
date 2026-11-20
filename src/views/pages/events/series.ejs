@@ -39,14 +39,16 @@
           <div class="col-lg-<%= communities.length || langs.length || links.length || series.defaultLanguage ? 8 : 12 %>">
             <div class="card h-100 z-current">
               <div class="card-body">
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                  <span class="subheader m-0"><i class="ti ti-star me-1"></i><%= featured.featured ? t('Featured edition') : t('Current edition') %></span>
-                  <span class="badge bg-<%= fst.badge === 'dark' || fst.badge === 'light' ? 'secondary' : fst.badge %>-lt"><%= t(fst.label) %></span>
-                  <% if (toStart != null && toStart > 0) { %><span class="z-countdown"><i class="ti ti-hourglass-high"></i><%= tn('Starts in {n} day', 'Starts in {n} days', toStart) %></span>
-                  <% } else if (toEnd != null && toEnd >= 0 && ['active', 'published', 'upcoming'].includes(featured.status)) { %><span class="z-countdown is-live"><i class="ti ti-hourglass-low"></i><%= toEnd === 0 ? t('Ends today') : tn('{n} day left', '{n} days left', toEnd) %></span><% } %>
+                <div class="z-current-top">
+                  <span class="text-secondary small"><i class="ti ti-star me-1"></i><%= featured.featured ? t('Featured edition') : t('Current edition') %></span>
+                  <span class="badge bg-<%= fst.badge === 'dark' || fst.badge === 'light' ? 'secondary' : fst.badge %>-lt ms-auto"><%= t(fst.label) %></span>
                 </div>
-                <a class="h2 mb-0 d-block text-reset" href="<%= edHref(featured) %>"><%= edName(featured) %> <span class="text-secondary fw-normal fs-3"><%= featured.title %></span></a>
-                <% if (span(featured)) { %><div class="small text-secondary mt-1"><i class="ti ti-calendar me-1"></i><%= span(featured) %></div><% } %>
+                <a class="z-current-name" href="<%= edHref(featured) %>"><%= featured.title || edName(featured) %></a>
+                <div class="z-current-when">
+                  <% if (span(featured)) { %><span><i class="ti ti-calendar"></i><%= span(featured) %></span><% } %>
+                  <% if (toStart != null && toStart > 0) { %><span><i class="ti ti-hourglass-high"></i><%= tn('Starts in {n} day', 'Starts in {n} days', toStart) %></span>
+                  <% } else if (toEnd != null && toEnd >= 0 && ['active', 'published', 'upcoming'].includes(featured.status)) { %><span class="text-green"><i class="ti ti-hourglass-low"></i><%= toEnd === 0 ? t('Ends today') : tn('{n} day left', '{n} days left', toEnd) %></span><% } %>
+                </div>
                 <div class="z-current-figs">
                   <div><b><%= formatNumber(featured.participants) %></b><span><%= t('Participants') %></span></div>
                   <div><b><%= formatNumber(featured.entries) %></b><span><%= t('Entries') %></span></div>
@@ -56,7 +58,6 @@
                 <div class="d-flex flex-wrap gap-2 mt-3">
                   <a class="btn btn-primary" href="<%= edHref(featured) %>"><%= ['active', 'published', 'upcoming'].includes(featured.status) ? t('Take part') : t('Open') %> <i class="ti ti-arrow-right ms-1"></i></a>
                   <% if (canRun && latest) { %><a class="btn" href="/series/<%= series.slug %>/new-edition?method=copy&from=<%= encodeURIComponent(latest.slug) %>"><i class="ti ti-copy me-1"></i><%= t('Prepare the next edition') %></a><% } %>
-                  <button class="btn btn-ghost-secondary" type="button" data-copy="<%= base %>/current" title="<%= t('A link that always opens the current edition') %>"><i class="ti ti-link me-1"></i><%= t('Copy the current-edition link') %></button>
                 </div>
               </div>
             </div>
@@ -72,8 +73,6 @@
           </div>
         <% } %>
       </div>
-      <%- include('../../partials/levelStats', { totals, rows, rowTitle: t('Edition'), chartTitle: t('Entries per edition'), table: false }) %>
-      <%- include('../../partials/seriesInsights', { insights, show: ['trend', 'fame'] }) %>
 
     <% } if (tab === 'overview') { %>
       <div class="card mb-3">
@@ -105,7 +104,7 @@
 
     <% } if (tab === 'overview') { %>
       <% if (canRun) { %><div class="d-flex justify-content-end mb-3"><a class="btn btn-primary" href="/create/event?series=<%= series.slug %>"><i class="ti ti-plus me-1"></i><%= t('New event') %></a></div><% } %>
-      <% if (!directEvents.length) { %><div class="card"><%- include('../../partials/emptyArt', { title: t('No events directly under this series') }) %></div><% } else { %>
+      <% if (directEvents.length) { %>
         <div class="card"><div class="list-group list-group-flush">
           <% directEvents.forEach((c, i) => { const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
             <div class="list-group-item"><div class="row align-items-center">
@@ -124,7 +123,15 @@
       <%- include('../../partials/seriesInsights', { insights, show: ['trend', 'leaders'] }) %>
 
     <% } else if (tab === 'settings') { %>
-      <% if (canRun) { %><%- include('../../partials/trackersManage', { trackers: typeof levelTrackers !== 'undefined' ? levelTrackers : [], trackAction: '/series/' + series.slug + '/track' }) %><% } %>
+      <div class="z-lvl-set">
+        <nav class="z-lvl-nav" aria-label="<%= t('Settings') %>">
+          <a href="#details" data-pane-link="details"><i class="ti ti-info-circle"></i><span><%= t('Details') %></span></a>
+          <a href="#rules" data-pane-link="rules"><i class="ti ti-adjustments"></i><span><%= t('Rules') %></span></a>
+          <a href="#tracking" data-pane-link="tracking"><i class="ti ti-radar"></i><span><%= t('Tracking') %></span><span class="badge bg-azure-lt ms-auto">beta</span></a>
+          <a href="#more" data-pane-link="more"><i class="ti ti-dots"></i><span><%= t('More') %></span></a>
+        </nav>
+        <div class="z-lvl-panes">
+        <section class="z-lvl-pane" data-pane="details">
       <form method="post" action="/series/<%= series.slug %>/update" class="card mb-3">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-info-circle me-2"></i><%= t('Details') %></h3></div>
@@ -148,8 +155,18 @@
         </div></div>
       </form>
 
+
+        </section>
+        <section class="z-lvl-pane" data-pane="rules">
       <%- include('../../partials/levelSettings', { seriesSlug: series.slug, editionId: null, rules, history, KEYS }) %>
 
+
+        </section>
+        <section class="z-lvl-pane" data-pane="tracking">
+      <% if (canRun) { %><%- include('../../partials/trackersManage', { trackers: typeof levelTrackers !== 'undefined' ? levelTrackers : [], trackAction: '/series/' + series.slug + '/track' }) %><% } %>
+
+        </section>
+        <section class="z-lvl-pane" data-pane="more">
       <div class="card">
         <div class="card-header"><h3 class="card-title"><i class="ti ti-archive me-2"></i><%= t('Archive') %></h3></div>
         <div class="card-body d-flex flex-wrap gap-2 align-items-center">
@@ -159,6 +176,9 @@
       </div>
       <%- include('../../partials/levelDelete', { inside, seriesSlug: series.slug, editionSlug: null, canDelete: can('deleteAnything') }) %>
 
+        </section>
+        </div>
+      </div>
     <% } if (tab === 'settings' && canRun) { %>
       <%- include('../../partials/levelPeople', { seriesSlug: series.slug, editionId: null, people, ROLES }) %>
 

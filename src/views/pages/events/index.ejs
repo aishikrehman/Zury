@@ -100,8 +100,38 @@
               <section class="z-ev-section is-<%= key %>">
                 <h2 class="z-ev-section-head"><i class="ti ti-<%= icon %>"></i><%= label %><span class="z-ev-count"><%= formatNumber(list.length) %></span><a class="ms-auto small" href="/events/<%= key %><%= qs({}) %>"><%= t('Only these') %> <i class="ti ti-arrow-right"></i></a></h2>
                 <% if (key !== 'completed') { %>
+                  <%# Grouped by series (a tree: series → its events, by language); events outside a series last. %>
+                  <% const sOf = (c) => (c.editionOf && c.editionOf.series) || c.series || null; const groups = new Map(); list.forEach((c) => { const sr = sOf(c); const g = sr ? sr.slug : '~'; if (!groups.has(g)) groups.set(g, { sr, items: [] }); groups.get(g).items.push(c); });
+                     const ordered = [...groups.values()].sort((x, y) => (x.sr ? 0 : 1) - (y.sr ? 0 : 1) || (x.sr && y.sr ? x.sr.title.localeCompare(y.sr.title) : 0)); %>
+                  <%# One grid: a series is one card holding its events; other events are their own cards beside them. %>
                   <div class="row row-cards">
-                    <% list.forEach((c) => { %><div class="col-sm-6 col-lg-4 col-xxl-3"><%- include('../../partials/contestCard', { c, roles: [] }) %></div><% }) %>
+                  <% ordered.forEach((g) => { g.items.sort((x, y) => String(x.language || x.primaryWiki).localeCompare(String(y.language || y.primaryWiki))); %>
+                    <% if (g.sr) { const wide = g.items.length >= 4; const cap = wide ? 24 : 5; if (wide) g.items.sort((x, y) => wikiLocal(x.primaryWiki).localeCompare(wikiLocal(y.primaryWiki), 'bn')); const P0 = eventProject(g.items[0]); const allWp = wide && g.items.every((c) => eventProject(c).key === 'wikipedia'); const eds = [...new Set(g.items.map((c) => c.editionOf && c.editionOf.title).filter(Boolean))];
+                         const st0 = g.items.map((c) => c.startDate).filter(Boolean).sort()[0]; const en0 = g.items.map((c) => c.endDate).filter(Boolean).sort().pop(); %>
+                      <div class="<%= wide ? 'col-12' : 'col-sm-6 col-lg-4 col-xxl-3' %>">
+                        <div class="card h-100 z-sr-card<%= wide ? ' is-wide' : '' %>">
+                          <a class="z-sr-card-head" href="/<%= g.sr.slug %>">
+                            <span class="z-sr-card-logo"><% if (g.sr.logoUrl) { %><img src="<%= g.sr.logoUrl %>" alt="" loading="lazy"><% } else { %><i class="ti ti-stack-2" style="color: <%= P0.color %>"></i><% } %></span>
+                            <span class="min-w-0"><span class="z-sr-card-title"><%= g.sr.title %></span><span class="z-sr-card-sub"><%= eds.length === 1 ? (digits(eds[0].replace(g.sr.title, '').trim()) || eds[0]) + ' · ' : '' %><%= tn('{n} event', '{n} events', g.items.length) %></span></span>
+                          </a>
+                          <% if (st0 || en0) { %><div class="z-sr-card-when"><i class="ti ti-calendar"></i><%= st0 ? formatDate(st0) : '' %> – <%= en0 ? formatDate(en0) : '' %></div><% } %>
+                          <div class="z-sr-card-list">
+                            <% g.items.slice(0, cap).forEach((c) => { const P = eventProject(c); %>
+                              <a class="z-sr-item st-<%= c.status %>" href="<%= c.path %>" title="<%= c.title %>">
+                                <i class="ti ti-<%= P.icon %>" style="color: <%= P.color %>"></i>
+                                <span class="z-sr-item-name"><%= allWp ? wikiLocal(c.primaryWiki).replace(/\s*উইকিপিডিয়া$/, '') : wikiLocal(c.primaryWiki) %></span>
+                                <% const dl = c.endDate ? Math.ceil((new Date(c.endDate) - Date.now()) / 86400000) : null; const ds = c.startDate ? Math.ceil((new Date(c.startDate) - Date.now()) / 86400000) : null; %><span class="z-sr-item-date"><%= ds != null && ds > 0 ? tn('Starts in {n} day', 'Starts in {n} days', ds) : dl != null && dl >= 0 ? tn('{n} day left', '{n} days left', dl) : '' %></span>
+                                <i class="z-dot"></i>
+                              </a>
+                            <% }) %>
+                            <% if (g.items.length > cap) { %><a class="z-sr-more" href="/<%= g.sr.slug %>"><%= t('{n} more', { n: formatNumber(g.items.length - cap) }) %> <i class="ti ti-arrow-right"></i></a><% } %>
+                          </div>
+                        </div>
+                      </div>
+                    <% } else { g.items.forEach((c) => { %>
+                      <div class="col-sm-6 col-lg-4 col-xxl-3"><%- include('../../partials/contestCard', { c, roles: [] }) %></div>
+                    <% }) } %>
+                  <% }) %>
                   </div>
                 <% } else { %>
                   <div class="z-ev-done">

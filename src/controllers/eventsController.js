@@ -405,6 +405,7 @@ async function levelAction(req, res, next) {
         const y = Number.parseInt(req.body.year, 10);
         data.year = Number.isInteger(y) && y >= 1900 && y <= 2200 ? y : null;
       }
+      if (req.body.logoUrl !== undefined) { const u = String(req.body.logoUrl).trim().slice(0, 1000); data.logoUrl = /^https:\/\//.test(u) ? u : null; }
       if (req.body.visibility !== undefined) data.visibility = ['public', 'unlisted', 'private'].includes(req.body.visibility) ? req.body.visibility : 'public';
       // Archived has its own button.
       if (req.body.status !== undefined && ['draft', 'planned', 'upcoming', 'active', 'completed', 'cancelled'].includes(req.body.status) && edition.status !== 'archived') data.status = req.body.status;
@@ -863,7 +864,9 @@ async function trackingList(req, res, next) {
       prisma.contest.findMany({ where: { id: { in: ids('event') }, deletedAt: null, visibility: 'public' }, select: { id: true, title: true, path: true, status: true, logoUrl: true } }),
     ]);
     const of = (lvl, id) => rows.filter((r) => r.level === lvl && r.levelId === id);
+    const lone = rows.filter((r) => r.level === 'none');
     const items = [
+      ...lone.map((t) => ({ kind: 'none', title: t.category || t.code.replace(/^https?:\/\/[^/]+\//, ''), href: '/tracking/' + t.id, trackers: [t] })),
       ...series.map((s) => ({ kind: 'series', title: s.title, href: '/' + s.slug + '?tab=statistics', onlyTracking: !s._count.editions && !s._count.editionRecords, trackers: of('series', s.id) })),
       ...editions.map((e) => ({ kind: 'edition', title: e.title || e.slug, sub: e.series.title, href: `/series/${e.series.slug}/${e.slug}?tab=statistics`, trackers: of('edition', e.id) })),
       ...events.map((c) => ({ kind: 'event', title: c.title, href: (c.path || '/contest/' + c.id) + '/statistics', logo: c.logoUrl, trackers: of('event', c.id) })),
@@ -872,3 +875,71 @@ async function trackingList(req, res, next) {
   } catch (err) { next(err); }
 }
 module.exports.trackingList = trackingList;
+
+// Tracking on its own (no event): anyone signed in adds links, one per line.
+async function trackingAdd(req, res, next) {
+  const trackers = require('../services/trackerService');
+  const lines = String(req.body.code || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 50);
+  let last = null; const failed = [];
+  for (const line of lines) {
+    const [link, cat] = line.split('|').map((x) => x.trim());
+    try { last = await trackers.add({ level: 'none', levelId: 0, kind: /campwiz/i.test(link) || cat ? 'campwiz' : 'fountain', code: link, category: cat || '', actorId: req.user.id }); }
+    catch (e) { if (!(e instanceof trackers.TrackerError)) return next(e); failed.push(`${link}: ${req.t(e.message)}`); }
+  }
+  if (failed.length) req.flash('danger', failed.join(' · '));
+  res.redirect(last && lines.length === 1 ? '/tracking/' + last.id : '/tracking');
+}
+module.exports.trackingAdd = trackingAdd;
+
+// One tracker on its own: its numbers (and the combined card when it is part of something else, it is not).
+async function trackingOne(req, res, next) {
+  try {
+    const t = await prisma.tracker.findUnique({ where: { id: Number(req.params.id) } });
+    if (!t) return next();
+    const trackers = await require('../services/trackerService').withNumbers([t]);
+    const mine = req.user && (t.createdById === req.user.id || req.permissions.has('manageEvent'));
+    res.render('pages/events/trackingOne', { title: 'Tracking — Zury', tracker: t, trackers, mine });
+  } catch (err) { next(err); }
+}
+module.exports.trackingOne = trackingOne;
+
+async function trackingRemove(req, res, next) {
+  try {
+    const t = await prisma.tracker.findUnique({ where: { id: Number(req.params.id) } });
+    if (t && (t.createdById === req.user.id || req.permissions.has('manageEvent'))) await prisma.tracker.delete({ where: { id: t.id } });
+    req.flash('success', req.t('Stopped tracking.'));
+    res.redirect('/tracking');
+  } catch (err) { next(err); }
+}
+module.exports.trackingRemove = trackingRemove;
+
+// The word count tool: one article, many articles (one per line) or a Fountain editathon's articles.
+async function wordTool(req, res, next) {
+  const form = { wiki: String(req.body.wiki || req.query.wiki || 'bnwiki').trim(), titles: String(req.body.titles || ''), fountain: String(req.body.fountain || '').trim() };
+  let rows = null; let error = null;
+  try {
+    if (req.method === 'POST') {
+      const fountain = require('../services/fountainService');
+      const wikiApi = require('../wiki/wikiApi');
+      let wiki = form.wiki; let pages = [];
+      if (form.fountain) {
+        const e = await fountain.fetchEditathon(fountain.parseCode(form.fountain));
+        wiki = fountain.wikiOf(e);
+        const list = (e.articles || []).slice(0, 1000);
+        const ids = await fountain.pageIds(wiki, list.map((a) => a.name));
+        pages = list.map((a) => ({ id: ids.get(a.name) || null, title: a.name, user: a.user }));
+      } else {
+        const titles = form.titles.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 500);
+        for (let i = 0; i < titles.length; i += 50) {
+          const d = await wikiApi.get(wiki, { action: 'query', titles: titles.slice(i, i + 50).join('|'), redirects: '1' });
+          for (const p of d.query?.pages || []) pages.push({ id: p.missing ? null : p.pageid, title: p.title });
+        }
+      }
+      const counts = await fountain.wordCounts(wiki, pages.map((p) => p.id).filter(Boolean));
+      rows = pages.map((p) => ({ ...p, words: p.id ? counts.get(String(p.id)) || 0 : null, url: `https://${require('../wiki/wikiUrls').dbnameToHost(wiki)}/wiki/${encodeURIComponent(String(p.title).replace(/ /g, '_'))}` })).sort((a, b) => (b.words || 0) - (a.words || 0));
+      form.wiki = wiki;
+    }
+  } catch (err) { error = req.t(err.message || 'Could not count.'); }
+  res.render('pages/tools/words', { title: 'Word count — Zury', form, rows, error });
+}
+module.exports.wordTool = wordTool;

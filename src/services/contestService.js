@@ -29,7 +29,11 @@ const CARD_SELECT = {
   startDate: true,
   endDate: true,
   path: true,
-  series: { select: { slug: true, title: true } },
+  logoUrl: true,
+  seriesId: true,
+  editionId: true,
+  series: { select: { slug: true, title: true, logoUrl: true } },
+  editionOf: { select: { title: true, logoUrl: true, series: { select: { slug: true, title: true, logoUrl: true } } } },
   wikis: { where: { status: { not: 'pending' } }, select: { wiki: true, code: true }, orderBy: { code: 'asc' } },
   _count: { select: { memberships: { where: { role: 'participant', status: 'active' } } } },
 };

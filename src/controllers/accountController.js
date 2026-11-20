@@ -67,6 +67,14 @@ async function dashboard(req, res, next) {
       sort: Object.keys(submissionService.MINE_SORTS).includes(req.query.sort) ? req.query.sort : 'newest',
     };
     const mine = await submissionService.listMine(req.user.id, mineFilters);
+    // At a glance: my entries still waiting and those not accepted; how many reviews I have done.
+    const brief = { select: { id: true, title: true, status: true, contest: { select: { title: true, path: true } } }, orderBy: { submittedAt: 'desc' }, take: 5 };
+    const [myWaiting, myRejected, myReviews] = await Promise.all([
+      prisma.submission.findMany({ where: { participantId: req.user.id, status: { in: ['pending', 'validated', 'under_review'] }, contest: { deletedAt: null } }, ...brief }),
+      prisma.submission.findMany({ where: { participantId: req.user.id, status: { in: ['rejected', 'disqualified', 'invalid'] }, contest: { deletedAt: null } }, ...brief }),
+      prisma.review.count({ where: { jurorId: req.user.id } }),
+    ]);
+    res.locals.glance = { myWaiting, myRejected, myReviews };
     // Organizers: each running event they run, with today's entries, those waiting for review and participants.
     const day = new Date(Date.now() - 86400000);
     const runIds = myEvents.filter((e) => e.roles.includes('organizer') && ['active', 'submission_closed', 'under_review'].includes(e.contest.status)).map((e) => e.contest.id).slice(0, 8);

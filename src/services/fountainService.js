@@ -355,6 +355,7 @@ async function unlink({ actorId, contest, wikiId }) {
 // Hourly: every followed editathon of an event that is running or ended in the last 30 days.
 // The numbers of a tracked editathon, read from Fountain (kept 10 minutes, never stored).
 const tracked = new Map();
+const wordsKept = new Map();
 async function trackedStats(code) {
   const hit = tracked.get(code);
   if (hit && Date.now() - hit.at < 600000) return hit.data;
@@ -376,6 +377,20 @@ async function trackedStats(code) {
     url: `https://fountain.toolforge.org/editathons/${encodeURIComponent(e.code)}`, readAt: new Date(),
   };
   tracked.set(code, { at: Date.now(), data });
+  // Words are counted by Zury from the articles as they are now (in the background; shown once ready).
+  const decided = new Map(articles.map((a) => [a.name, decision(a, e.marks || {}).status]));
+  // Word counts are kept an hour (counting a big editathon takes minutes).
+  const kw = wordsKept.get(code);
+  if (kw && Date.now() - kw.at < 3600000) { data.words = kw.words; data.acceptedWords = kw.acceptedWords; for (const t of data.top) t.words = kw.byU.get(t.user) || 0; return data; }
+  // Fountain's ids are its own; the wiki's page ids come from the titles.
+  pageIds(data.wiki, articles.map((a) => a.name).filter(Boolean)).then(async (ids) => {
+    const w = await wordCounts(data.wiki, [...new Set(ids.values())]);
+    let all = 0; let ok = 0; const byU = new Map();
+    for (const a of articles) { const pid = ids.get(a.name); const n = (pid && w.get(String(pid))) || 0; all += n; if (decided.get(a.name) === 'approved') { ok += n; byU.set(a.user, (byU.get(a.user) || 0) + n); } }
+    data.words = all; data.acceptedWords = ok;
+    wordsKept.set(code, { at: Date.now(), words: all, acceptedWords: ok, byU });
+    for (const t of data.top) t.words = byU.get(t.user) || 0;
+  }).catch(() => null);
   return data;
 }
 
@@ -394,5 +409,5 @@ async function syncAll() {
   return rows.length;
 }
 
-module.exports = { trackedStats,
+module.exports = { pageIds, wordCounts, trackedStats,
   progressOf, FountainError, parseCode, fetchEditathon, decision, reviewOf, wikiOf, importEvent, link, unlink, sync, syncAll };

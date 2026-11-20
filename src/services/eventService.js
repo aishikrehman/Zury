@@ -92,6 +92,11 @@ function changedKeys(before, after) {
 async function update({ actorId, contest, settings, parsed, autoSlug }) {
   // Locked settings keep their value; a followed setting changed here becomes the event's own.
   parsed.lockedRefused = await inherit.guardUpdate(contest, settings, parsed.settings);
+  // Submission dates that matched the event's dates move with them (no need to change both).
+  const same = (a, b) => a && b && new Date(a).getTime() === new Date(b).getTime();
+  const c = parsed.contest;
+  if (c.startDate && same(contest.submissionOpensAt, contest.startDate) && same(c.submissionOpensAt, contest.startDate)) c.submissionOpensAt = c.startDate;
+  if (c.endDate && same(contest.submissionDeadline, contest.endDate) && same(c.submissionDeadline, contest.endDate)) c.submissionDeadline = c.endDate;
   return prisma.$transaction(async (tx) => {
     const newType = parsed.type && parsed.type !== contest.type && contest.status === 'draft' ? parsed.type : contest.type;
     const parent = await seriesFields(tx, parsed.series, parsed.contest.title, actorId, contest.id, newType);

@@ -24,7 +24,7 @@ const MODES = {
 const ASK = { email: 'Email', phone: 'Phone', legalName: 'Legal name', nameEn: 'Name in English' };
 // The event's rules set on the Review tab (kept with participation).
 const RULES = {
-  maxReviews: null, onBehalf: 'staff', mass: 'anyone', bulk: 'reviewers', quickOnEntries: 'off', stats: 'reviewers', appeals: 'off', withdraw: 'participant', editors: 'organizers', results: 'always', reviewerNames: 'yes', revision: 'live', ownWords: 'off', maxAppeals: 1, appealsPublic: 'yes', jurorRemoved: 'keep',
+  maxReviews: null, onBehalf: 'staff', mass: 'anyone', bulk: 'reviewers', quickOnEntries: 'off', submitVia: 'zury', stats: 'reviewers', appeals: 'off', withdraw: 'participant', editors: 'organizers', results: 'always', reviewerNames: 'yes', revision: 'live', ownWords: 'off', maxAppeals: 1, appealsPublic: 'yes', jurorRemoved: 'keep',
 };
 const SOURCES = {
   none: 'Any article',
@@ -77,6 +77,7 @@ function parse(body, errors) {
     mass: ruleIn('mass', ['off', 'anyone', 'reviewers']),
     bulk: ruleIn('bulk', ['off', 'reviewers']),
     quickOnEntries: ruleIn('quickOnEntries', ['off', 'on']),
+    submitVia: ruleIn('submitVia', ['zury', 'fountain']),
     stats: ruleIn('stats', ['off', 'anyone', 'reviewers', 'organizers']),
     appeals: ruleIn('appeals', ['off', 'rejected', 'any']),
     maxAppeals: Math.min(Math.max(Number.parseInt(body.rule_maxAppeals, 10) || 1, 1), 10),

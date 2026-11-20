@@ -426,6 +426,18 @@ async function juryEventsFor(userId) {
     where: { userId, role: 'jury', status: 'active', contest: { deletedAt: null } },
     include: { contest: { include: { series: true, wikis: true, settings: true } } },
   });
+  // Reviewers given at a series or edition (for the events below it) review those events too.
+  const scoped = await prisma.scopeRole.findMany({ where: { userId, role: 'jury', appliesToChildren: true }, select: { seriesId: true, editionId: true } });
+  if (scoped.length) {
+    const seriesIds = scoped.map((s) => s.seriesId).filter(Boolean);
+    const editionIds = scoped.map((s) => s.editionId).filter(Boolean);
+    const below = await prisma.contest.findMany({
+      where: { deletedAt: null, OR: [{ editionId: { in: editionIds } }, { seriesId: { in: seriesIds } }, { editionOf: { seriesId: { in: seriesIds } } }] },
+      include: { series: true, wikis: true, settings: true },
+    });
+    const have = new Set(memberships.map((m) => m.contestId));
+    for (const c of below) if (!have.has(c.id)) memberships.push({ contestId: c.id, contest: c, wiki: '' });
+  }
   const byContest = new Map();
   for (const m of memberships) {
     const entry = byContest.get(m.contestId) || { contest: m.contest, wikis: [] };

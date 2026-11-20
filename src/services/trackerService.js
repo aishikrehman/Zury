@@ -2,7 +2,7 @@
 // edition or an event. Nothing is copied; the numbers are read when shown (and kept a while in memory).
 const prisma = require('../config/prisma');
 
-const LEVELS = ['series', 'edition', 'event'];
+const LEVELS = ['series', 'edition', 'event', 'none']; // none: on its own (no event page; numbers only)
 const KINDS = ['fountain', 'campwiz'];
 class TrackerError extends Error {}
 

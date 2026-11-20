@@ -41,6 +41,11 @@ async function importEvent(req, res, next) {
   const category = String(req.body.category || '').trim();
   const where = seriesOf(target);
   try {
+    // Tracking is open to everyone signed in; importing (copying entries) needs the import right,
+    // and putting anything into a series or edition needs the right to run it.
+    const importing = source === 'fountain' && !trackOnlyOf(req);
+    if (importing && !req.permissions.has('importEvents')) throw new fountain.FountainError('Only organizers with the import right can import; track it instead.');
+    if (where && !req.permissions.has('importEvents')) throw new fountain.FountainError('Only those who run the series can add to it.');
     if (where) {
       const sr = await prisma.eventSeries.findFirst({ where: { slug: where.slug, deletedAt: null } });
       if (!sr) throw new fountain.FountainError('Choose a series.');
@@ -56,19 +61,26 @@ async function importEvent(req, res, next) {
         req.flash('success', req.t('Tracking; nothing is copied.'));
         return res.redirect(ed2 ? `/series/${where.slug}/${where.edition}?tab=statistics` : `/${where.slug}?tab=statistics`);
       }
-      // A new event (photos on Commons) that tracks the campaign.
-      const cw = require('../services/campwizService');
-      const info = await cw.tracked({ url: value, category }).then((d) => d.info).catch(() => null);
-      const title = (info && info.name) || cw.categoryName(category) || 'CampWiz campaign';
-      const contest = await require('../services/eventService').create({
-        actorId: req.user.id, type: 'photo', autoSlug: true,
-        parsed: { contest: { slug: title.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'campwiz', title: title.slice(0, 1000), description: '', primaryWiki: 'commonswiki', startDate: info && info.start ? new Date(info.start) : null, endDate: info && info.end ? new Date(info.end) : null, submissionOpensAt: info && info.start ? new Date(info.start) : null, submissionDeadline: info && info.end ? new Date(info.end) : null }, settings: { juryReviewEnabled: false } },
-      });
-      await trackers.add({ level: 'event', levelId: contest.id, kind: 'campwiz', code: value, category, actorId: req.user.id });
+      // On its own: no event page, only the numbers.
+      const t = await trackers.add({ level: 'none', levelId: 0, kind: 'campwiz', code: value, category, actorId: req.user.id });
       req.flash('success', req.t('Tracking; nothing is copied.'));
-      return res.redirect((await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path + '/statistics');
+      return res.redirect('/tracking/' + t.id);
     }
-    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type, trackOnly: trackOnlyOf(req), series: where });
+    // Fountain, tracked only: on the series/edition, or on its own — never a new event.
+    if (trackOnlyOf(req)) {
+      const trackers = require('../services/trackerService');
+      if (where) {
+        const ed2 = where.edition ? await prisma.edition.findFirst({ where: { slug: where.edition, series: { slug: where.slug }, deletedAt: null } }) : null;
+        const sr = await prisma.eventSeries.findFirst({ where: { slug: where.slug } });
+        await trackers.add({ level: ed2 ? 'edition' : 'series', levelId: ed2 ? ed2.id : sr.id, kind: 'fountain', code: value, actorId: req.user.id });
+        req.flash('success', req.t('Tracking; nothing is copied.'));
+        return res.redirect(ed2 ? `/series/${where.slug}/${where.edition}?tab=statistics` : `/${where.slug}?tab=statistics`);
+      }
+      const t = await trackers.add({ level: 'none', levelId: 0, kind: 'fountain', code: value, actorId: req.user.id });
+      req.flash('success', req.t('Tracking; nothing is copied.'));
+      return res.redirect('/tracking/' + t.id);
+    }
+    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type, trackOnly: false, series: where });
     req.flash('success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));
     res.redirect((await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path);
   } catch (err) {
@@ -116,7 +128,16 @@ function importTracked(req, res, next) {
   }).catch(next);
 }
 
-module.exports = { importForm, importEvent, link, sync, unlink, importTracked };
+// Every wiki of the event stops following Fountain at once (entries stay).
+function unlinkAll(req, res, next) {
+  back(req, res, async () => {
+    const rows = await prisma.contestWiki.findMany({ where: { contestId: req.contest.id, fountainCode: { not: '' } }, select: { id: true } });
+    for (const r of rows) await fountain.unlink({ actorId: req.user.id, contest: req.contest, wikiId: r.id });
+    return req.t('No longer following Fountain. Imported entries stay.');
+  }).catch(next);
+}
+
+module.exports = { importForm, importEvent, link, sync, unlink, importTracked, unlinkAll };
 
 // Hourly sync on or off for one followed editathon.
 async function setAuto(req, res, next) {

@@ -21,7 +21,7 @@
         <% if (tr.pending) { %><div class="text-secondary"><span class="spinner-border spinner-border-sm me-2"></span><%= t('Counting; refresh in a minute.') %></div>
         <% } else if (tr.failed) { %><div class="text-secondary"><%= t('Could not read it now. Try again later.') %></div>
         <% } else if (isF) { %>
-          <div class="z-cmp"><% [['Participants', d.participants], ['Articles', d.articles], ['Accepted', d.accepted], ['Not accepted', d.rejected], ['Waiting', d.waiting], ['Reviewers', d.jury]].forEach(([label, n]) => { %><div><div class="z-cmp-n"><%= formatNumber(n || 0) %></div><div class="text-secondary small"><%= t(label) %></div></div><% }) %></div>
+          <div class="z-cmp"><% [['Participants', d.participants], ['Articles', d.articles], ['Accepted', d.accepted], ['Not accepted', d.rejected], ['Waiting', d.waiting], ['Reviewers', d.jury], ...(d.acceptedWords != null ? [['Accepted words', d.acceptedWords], ['Words', d.words]] : [])].forEach(([label, n]) => { %><div><div class="z-cmp-n"><%= formatNumber(n || 0) %></div><div class="text-secondary small"><%= t(label) %></div></div><% }) %></div>
           <% if (d.top && d.top.length) { %><div class="z-set-head mt-3"><%= t('Most accepted') %></div><ol class="z-tracked-top"><% d.top.forEach((p) => { %><li><span><%= p.user %></span><b><%= formatNumber(p.accepted) %></b><small class="text-secondary">/ <%= formatNumber(p.articles) %></small></li><% }) %></ol><% } %>
         <% } else { %>
           <% if (d.info && d.info.start) { %><div class="small text-secondary mb-2"><i class="ti ti-calendar me-1"></i><%= formatDate(d.info.start) %> – <%= formatDate(d.info.end) %></div><% } %>

@@ -22,6 +22,16 @@
 
   <%# Your entries' figures first. %>
   <%- include('../../partials/dashMine', { part: 'stats' }) %>
+  <%# At a glance: my entries waiting and not accepted, and my reviews. %>
+  <% if (typeof glance !== 'undefined') { const G = glance; %>
+  <div class="z-glance">
+    <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-hourglass me-2 text-warning"></i><%= t('Waiting') %></h3><a class="card-actions small" href="/dashboard?status=pending#mine"><%= t('See all') %></a></div>
+      <% if (!G.myWaiting.length) { %><div class="card-body text-secondary small"><%= t('Nothing waiting.') %></div><% } else { %><div class="list-group list-group-flush"><% G.myWaiting.forEach((s) => { %><a class="list-group-item list-group-item-action" href="<%= s.contest.path %>/submissions/<%= s.id %>"><div class="text-truncate"><%= s.title %></div><small class="text-secondary text-truncate d-block"><%= s.contest.title %></small></a><% }) %></div><% } %></div>
+    <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-x me-2 text-danger"></i><%= t('Not accepted') %></h3><a class="card-actions small" href="/dashboard?status=rejected#mine"><%= t('See all') %></a></div>
+      <% if (!G.myRejected.length) { %><div class="card-body text-secondary small"><%= t('None.') %></div><% } else { %><div class="list-group list-group-flush"><% G.myRejected.forEach((s) => { %><a class="list-group-item list-group-item-action" href="<%= s.contest.path %>/submissions/<%= s.id %>"><div class="text-truncate"><%= s.title %></div><small class="text-secondary text-truncate d-block"><%= s.contest.title %></small></a><% }) %></div><% } %></div>
+    <a class="card card-link z-glance-review" href="/review"><div class="card-body"><i class="ti ti-grid-scan"></i><div><div class="h2 m-0"><%= formatNumber(G.myReviews) %></div><div class="text-secondary"><%= t('My reviews') %> →</div></div></div></a>
+  </div>
+  <% } %>
 
   <div class="row row-cards">
     <%# Main column: what needs doing, the events one runs, one's entries. %>
@@ -44,24 +54,6 @@
     </div>
   <% } %>
       </div><% } %>
-      <% const noteCount = waiting.length + deadlines.length + patrol.length + notable.length; %>
-      <% if (noteCount) { %>
-        <div class="card mb-3">
-          <div class="card-header"><h3 class="card-title"><i class="ti ti-pin me-2 text-orange"></i><%= t('Noteworthy') %></h3><span class="badge bg-orange-lt ms-auto"><%= formatNumber(noteCount) %></span></div>
-          <div class="list-group list-group-flush z-dash-todo">
-            <% waiting.forEach((w) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(w.contest) %>/review"><i class="ti ti-grid-scan text-primary"></i><span class="text-truncate"><%= w.contest.title %></span><span class="badge bg-blue-lt ms-auto"><%= tn('{n} to review', '{n} to review', w.n) %></span></a><% }) %>
-            <% deadlines.forEach((x) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(x.contest) %>"><i class="ti ti-hourglass-low text-orange"></i><span class="text-truncate"><%= x.contest.title %></span><span class="badge bg-<%= x.days <= 3 ? 'red' : 'orange' %>-lt ms-auto"><%= tn('{n} day left', '{n} days left', x.days) %></span></a><% }) %>
-            <% patrol.forEach((p) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(p.contest) %>/patrol"><i class="ti ti-shield-search text-red"></i><span class="text-truncate"><%= p.contest.title %></span><span class="badge bg-red-lt ms-auto"><%= tn('{n} to look at', '{n} to look at', p.n) %></span></a><% }) %>
-            <% notable.forEach((s) => { %>
-              <a class="list-group-item list-group-item-action z-notable" href="<%= eventPath(s.contest) %>/submissions?q=<%= encodeURIComponent(s.title) %>">
-                <i class="ti ti-<%= s.status === 'approved' ? 'message-circle text-green' : 'circle-x text-red' %>"></i>
-                <span class="min-w-0 flex-fill"><span class="d-block text-truncate fw-medium"><%= s.title %></span><span class="small text-secondary d-block text-truncate"><%= s.status === 'approved' ? t('Accepted, with a comment') : t('Not accepted') %><% if (s.comment) { %>: <%= s.comment %><% } %></span></span>
-                <span class="small text-secondary text-nowrap ms-2"><%= s.contest.title %></span>
-              </a>
-            <% }) %>
-          </div>
-        </div>
-      <% } %>
       <% if (running.length) { %><div class="mb-3">
         <div class="card">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-briefcase me-2 text-primary"></i><%= t('Events you run') %></h3></div>
@@ -83,6 +75,24 @@
 
     <%# Side column: notifications, one's activity, latest reviews, wikis waiting. %>
     <div class="col-lg-4">
+      <% const noteCount = waiting.length + deadlines.length + patrol.length + notable.length; %>
+      <% if (noteCount) { %>
+        <div class="card mb-3">
+          <div class="card-header"><h3 class="card-title"><i class="ti ti-pin me-2 text-orange"></i><%= t('Noteworthy') %></h3><span class="badge bg-orange-lt ms-auto"><%= formatNumber(noteCount) %></span></div>
+          <div class="list-group list-group-flush z-dash-todo">
+            <% waiting.forEach((w) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(w.contest) %>/review"><i class="ti ti-grid-scan text-primary"></i><span class="text-truncate"><%= w.contest.title %></span><span class="badge bg-blue-lt ms-auto"><%= tn('{n} to review', '{n} to review', w.n) %></span></a><% }) %>
+            <% deadlines.forEach((x) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(x.contest) %>"><i class="ti ti-hourglass-low text-orange"></i><span class="text-truncate"><%= x.contest.title %></span><span class="badge bg-<%= x.days <= 3 ? 'red' : 'orange' %>-lt ms-auto"><%= tn('{n} day left', '{n} days left', x.days) %></span></a><% }) %>
+            <% patrol.forEach((p) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(p.contest) %>/patrol"><i class="ti ti-shield-search text-red"></i><span class="text-truncate"><%= p.contest.title %></span><span class="badge bg-red-lt ms-auto"><%= tn('{n} to look at', '{n} to look at', p.n) %></span></a><% }) %>
+            <% notable.forEach((s) => { %>
+              <a class="list-group-item list-group-item-action z-notable" href="<%= eventPath(s.contest) %>/submissions?q=<%= encodeURIComponent(s.title) %>">
+                <i class="ti ti-<%= s.status === 'approved' ? 'message-circle text-green' : 'circle-x text-red' %>"></i>
+                <span class="min-w-0 flex-fill"><span class="d-block text-truncate fw-medium"><%= s.title %></span><span class="small text-secondary d-block text-truncate"><%= s.status === 'approved' ? t('Accepted, with a comment') : t('Not accepted') %><% if (s.comment) { %>: <%= s.comment %><% } %></span></span>
+                <span class="small text-secondary text-nowrap ms-2"><%= s.contest.title %></span>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
       <% if (suggested.length) { %>
         <div class="card mb-3">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-sparkles me-2 text-primary"></i><%= t('Suggested events') %></h3><div class="card-actions"><a class="small" href="/events/active"><%= t('See all') %></a></div></div>
@@ -96,14 +106,6 @@
           </div>
         </div>
       <% } %>
-      <div class="card mb-3">
-        <div class="card-header"><h3 class="card-title"><i class="ti ti-bell me-2 text-primary"></i><%= t('Notifications') %></h3><div class="card-actions"><a href="/notifications" class="small"><%= t('See all') %></a></div></div>
-        <% if (!notes.length) { %><div class="card-body text-secondary small"><%= t('Nothing new.') %></div><% } else { %>
-          <div class="list-group list-group-flush">
-            <% notes.forEach((n) => { %><a class="list-group-item list-group-item-action z-note-row<%= n.readAt ? '' : ' is-new' %>" href="<%= n.link || '/notifications' %>"><span class="text-truncate-2"><%= n.text %></span><small class="text-secondary"><%= formatDateTime(n.createdAt) %></small></a><% }) %>
-          </div>
-        <% } %>
-      </div>
       <% if (activity && activity.series && activity.series.values.some((v) => v)) { const vals = activity.series.values; const mx = Math.max(1, ...vals); %>
         <div class="card mb-3"><div class="card-body">
           <div class="subheader mb-2"><i class="ti ti-chart-bar me-1 text-primary"></i><%= t('Your entries, last 30 days') %></div>

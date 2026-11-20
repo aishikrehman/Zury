@@ -46,7 +46,7 @@
   <div class="container-xl">
     <div class="row g-4">
       <div class="col-lg-8">
-        <%- include('../partials/homeHead', { icon: 'player-play', title: t('Running now'), count: active.length, sub: t('Events open for entries right now, on every wiki.'), more: '/events/active' }) %>
+        <%- include('../partials/homeHead', { icon: 'player-play', title: t('Running now'), count: typeof activeTotal !== 'undefined' ? activeTotal : active.length, sub: t('Events open for entries right now, on every wiki.'), more: '/events/active' }) %>
         <% if (home.ending.length) { %>
           <div class="z-ending">
             <span class="z-ending-label"><i class="ti ti-hourglass-low"></i><%= t('Ending soon') %></span>

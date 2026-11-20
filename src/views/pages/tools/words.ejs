@@ -1,0 +1,22 @@
+<%# Word count: one article, many, or a Fountain editathon's articles, counted as Zury counts them. %>
+<div class="page-body"><div class="container-xl" style="max-width: 60rem">
+  <h1 class="page-title mb-3"><i class="ti ti-abc me-1"></i><%= t('Word count') %></h1>
+  <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+  <form method="post" action="/tools/words" class="card mb-3"><div class="card-body">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label" for="w-wiki"><%= t('Wiki') %></label><input class="form-control" id="w-wiki" name="wiki" value="<%= form.wiki %>"></div>
+      <div class="col-md-8"><label class="form-label" for="w-f"><%= t('Or a Fountain editathon') %></label><input class="form-control" id="w-f" name="fountain" value="<%= form.fountain %>" placeholder="https://fountain.toolforge.org/editathons/…"></div>
+      <div class="col-12"><label class="form-label" for="w-t"><%= t('Articles, one per line') %></label><textarea class="form-control" id="w-t" name="titles" rows="5"><%= form.titles %></textarea></div>
+    </div>
+  </div><div class="card-footer text-end"><button class="btn btn-primary" type="submit"><i class="ti ti-abc me-1"></i><%= t('Count') %></button></div></form>
+  <% if (rows) { const total = rows.reduce((n, r) => n + (r.words || 0), 0); %>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title"><%= t('{n} articles', { n: formatNumber(rows.length) }) %> · <%= t('{n} words', { n: formatNumber(total) }) %></h3></div>
+      <div class="table-responsive"><table class="table table-sm table-vcenter card-table">
+        <thead><tr><th><%= t('Article') %></th><% if (rows.some((r) => r.user)) { %><th><%= t('Participant') %></th><% } %><th class="text-end"><%= t('Words') %></th></tr></thead>
+        <tbody><% rows.forEach((r) => { %><tr><td><a href="<%= r.url %>" target="_blank" rel="noopener"><%= r.title %></a></td><% if (rows.some((x) => x.user)) { %><td class="text-secondary"><%= r.user || '' %></td><% } %><td class="text-end"><%= r.words == null ? t('Not found') : formatNumber(r.words) %></td></tr><% }) %></tbody>
+      </table></div>
+    </div>
+  <% } %>
+</div></div>

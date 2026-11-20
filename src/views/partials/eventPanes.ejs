@@ -42,7 +42,7 @@
           <%# ── 3. Submissions ── %>
           <section class="wizard-pane<%= pageMode ? '' : ' d-none' %>" id="step-submission" data-step="2">
             <div class="z-set-list mb-3">
-              <div class="z-set-row"><span class="z-set-label"><%= t('Submission window') %></span><div class="z-set-control"><label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="sub_window"<%= v('submissionOpensAt') || v('submissionDeadline') ? ' checked' : '' %>></label></div></div>
+              <div class="z-set-row"><span class="z-set-label"><%= t('Submissions') %><small class="d-block text-secondary"><%= t('Off: for the whole event') %></small></span><div class="z-set-control"><label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" name="sub_window"<%= v('submissionOpensAt') || v('submissionDeadline') ? ' checked' : '' %>><span class="form-check-label"><%= t('Their own dates') %></span></label></div></div>
               <div class="z-set-row" data-show-when="sub_window:on"><span class="z-set-label"><%= t('From – to') %></span><div class="z-set-control d-flex gap-2"><input type="datetime-local" class="form-control" name="submissionOpensAt" value="<%= v('submissionOpensAt') %>" aria-label="<%= t('Submissions open') %>"><input type="datetime-local" class="form-control" name="submissionDeadline" value="<%= v('submissionDeadline') %>" aria-label="<%= t('Submission deadline') %>"></div></div>
               <% if (type === 'writing') { %>
                 <div class="z-set-row"><span class="z-set-label"><%= t('Only articles created during the event') %></span><div class="z-set-control d-flex gap-2 align-items-center"><%- need('created', !tOn('createdDuringEventOnly')) %></div></div>
@@ -109,6 +109,7 @@
               <%- row("Show reviewers' names", sel('rule_reviewerNames', [['yes', 'To everyone'], ['no', 'Only to organizers and reviewers']], ruleOf('reviewerNames', 'yes'))) %>
               <%- row('Quick review', sel('rule_bulk', [['off', 'Off'], ['reviewers', 'Reviewers']], ruleOf('bulk', 'reviewers'))) %>
               <%- row('Quick review on the entries page', sel('rule_quickOnEntries', [['off', 'Off'], ['on', 'On']], ruleOf('quickOnEntries', 'off'))) %>
+              <%- row('Where people submit', sel('rule_submitVia', [['zury', 'Here'], ['fountain', 'On Fountain']], ruleOf('submitVia', 'zury'))) %>
               <%- row('When a reviewer is removed', sel('rule_jurorRemoved', [['keep', 'Their reviews stay; unfinished entries go back to the others'], ['delete', 'Their reviews are deleted and the entries decided again']], ruleOf('jurorRemoved', 'keep'))) %>
               <div class="z-set-head"><%= t('Results') %></div>
               <%- row('What the results count', sel('rankBy', [['words', 'Words'], ['articles', 'Articles'], ['points', 'Points'], ['both', 'Words and articles']], v('rankBy') || 'articles')) %>

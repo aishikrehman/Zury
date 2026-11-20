@@ -1,0 +1,1 @@
+ALTER TABLE `Edition` ADD COLUMN `logoUrl` VARCHAR(1000) NULL;

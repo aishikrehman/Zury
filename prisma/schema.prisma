@@ -236,6 +236,7 @@ model Edition {
   // annual | season | phase | special | other (optional)
   cycleType   String?
   description String    @default("") @db.Text
+  logoUrl     String?   @db.VarChar(1000)
   // draft | planned | upcoming | active | completed | archived | cancelled
   status      String    @default("draft")
   approval    String    @default("approved")

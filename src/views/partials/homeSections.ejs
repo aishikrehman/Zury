@@ -1,41 +1,28 @@
 <%# The home page after "Running now" (homeService.overview): people of the month and recent winners, the communities, the calendar, a call to organize. %>
 <% const H = home; %>
 
-<%# 5. This month's top contributors, and recent winners. %>
-<% if (H.top.length || H.winners.length) { %>
+<%# 5. This month's top contributors (side by side), and events that ended lately. %>
+<% if (H.top.length) { %>
 <section class="z-band">
   <div class="container-xl">
-    <div class="row g-4">
-      <% if (H.top.length) { %>
-        <div class="<%= H.winners.length ? 'col-lg-4' : 'col-12' %>">
-          <%- include('./homeHead', { icon: 'star', title: t('Top contributors this month'), sub: t('By words and articles accepted.') }) %>
-          <div class="z-top">
-            <% H.top.forEach((p, i) => { %>
-              <div class="z-top-item card">
-                <span class="z-top-avatar is-<%= i + 1 %>"><%= p.username.slice(0, 1).toUpperCase() %><span class="z-medal"><%= formatNumber(i + 1) %></span></span>
-                <span class="min-w-0"><span class="d-block fw-bold text-truncate"><%= p.username %></span><span class="small text-secondary"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) + ' · ' : '' %><%= tn('{n} accepted', '{n} accepted', p.accepted) %></span></span>
-              </div>
-            <% }) %>
-          </div>
+    <%- include('./homeHead', { icon: 'star', title: t('Top contributors this month'), sub: t('By words and articles accepted.') }) %>
+    <div class="z-top z-top-row">
+      <% H.top.forEach((p, i) => { %>
+        <div class="z-top-item card">
+          <span class="z-top-avatar is-<%= i + 1 %>"><%= p.username.slice(0, 1).toUpperCase() %><span class="z-medal"><%= formatNumber(i + 1) %></span></span>
+          <span class="min-w-0"><span class="d-block fw-bold text-truncate"><%= p.username %></span><span class="small text-secondary"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) : '' %></span></span>
         </div>
-      <% } %>
-      <% if (H.winners.length) { %>
-        <div class="<%= H.top.length ? 'col-lg-8' : 'col-12' %>">
-          <%- include('./homeHead', { icon: 'medal', title: t('Recent winners'), sub: t('From the latest events with published results.') }) %>
-      <div class="row g-3 mb-4">
-        <% H.winners.forEach((wn) => { %>
-          <div class="col-md-6 col-xl-4">
-            <div class="card h-100"><div class="card-body">
-              <a class="fw-medium d-block text-truncate mb-2" href="<%= wn.path %>/results"><%= wn.title %></a>
-              <ol class="z-fame-list">
-                <% wn.top.forEach((p, i) => { %><li class="is-<%= i + 1 %>"><span class="z-medal"><%= formatNumber(i + 1) %></span><span class="z-user-name"><%= p.username %></span><small class="text-secondary ms-auto"><%= p.words ? t('{n} words', { n: formatNumber(p.words) }) : tn('{n} accepted', '{n} accepted', p.entries) %></small></li><% }) %>
-              </ol>
-            </div></div>
-          </div>
-        <% }) %>
-      </div>
-        </div>
-      <% } %>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+<% if (typeof recentDone !== 'undefined' && recentDone.length) { %>
+<section class="z-band">
+  <div class="container-xl">
+    <%- include('./homeHead', { icon: 'flag-check', title: t('Recently finished'), more: '/events/completed' }) %>
+    <div class="row row-cards">
+      <% recentDone.forEach((c) => { %><div class="col-sm-6 col-lg-4"><%- include('./contestCard', { c, roles: [] }) %></div><% }) %>
     </div>
   </div>
 </section>

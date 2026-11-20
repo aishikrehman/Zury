@@ -30,12 +30,17 @@ const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity
 
 router.get('/events', eventsController.index);
 router.get('/tracking', eventsController.trackingList);
+router.get('/tools/words', eventsController.wordTool);
+router.post('/tools/words', eventsController.wordTool);
+router.post('/tracking', requireAuth, eventsController.trackingAdd);
+router.get('/tracking/:id(\\d+)', eventsController.trackingOne);
+router.post('/tracking/:id(\\d+)/remove', requireAuth, eventsController.trackingRemove);
 router.get('/create/event', requirePermission('createEvent'), eventsController.createForm);
-router.get('/create/import', requirePermission('importEvents'), fountainController.importForm);
+router.get('/create/import', requireAuth, fountainController.importForm);
 router.get('/create/series', requirePermission('importEvents'), eventsController.seriesForm);
 router.post('/events/create', requirePermission('createEvent'), eventsController.create);
 // Fountain imports, series and editions: stewards, global sysops, local admins and superusers.
-router.post('/events/import', requirePermission('importEvents'), fountainController.importEvent);
+router.post('/events/import', requireAuth, fountainController.importEvent);
 router.get('/events/:group(active|upcoming|completed)', eventsController.index);
 router.get('/review', requireAuth, reviewController.myQueue);
 
@@ -87,6 +92,7 @@ contest.get('/import', notOver, requireEventWide('manageEvent'), importControlle
 contest.post('/import/preview', notOver, requireEventWide('manageEvent'), importController.preview);
 contest.post('/import', notOver, requireEventWide('manageEvent'), importController.commit);
 contest.post('/fountain/:wikiId(\\d+)/:action(sync)', requireEventWide('manageEvent'), fountainController.sync);
+contest.post('/fountain/unlink-all', requirePermission('importEvents'), fountainController.unlinkAll);
 contest.post('/fountain/:wikiId(\\d+)/:action(unlink)', requirePermission('importEvents'), fountainController.unlink);
 contest.post('/fountain/:wikiId(\\d+)/auto', requirePermission('importEvents'), fountainController.setAuto);
 contest.post('/wikis/:wikiId(\\d+)/:action(approve|pause|resume)', requireEventWide('manageEvent'), wikiController.change);
@@ -150,9 +156,16 @@ contest.post('/sessions/:sessionId(\\d+)/cancel', activityOnly, requireAuth, ses
 contest.post('/sessions/:sessionId(\\d+)/attendance', activityOnly, requirePermission('manageEvent'), sessionController.attendance);
 contest.post('/sessions/:sessionId(\\d+)/update', activityOnly, requirePermission('manageEvent'), sessionController.update);
 
-contest.get('/submit', entriesOnly, notOver, requireAuth, submissionController.submitForm);
+// Submissions made on Fountain: the submit page sends participants there (organizers can still add here).
+function viaFountain(req, res, next) {
+  const rules = (JSON.parse((req.settings && req.settings.participation) || '{}').rules) || {};
+  const fw = rules.submitVia === 'fountain' && (req.eventWikis || []).find((w) => w.fountainCode);
+  if (!fw || (req.permissions && req.permissions.has('manageEvent'))) return next();
+  return res.redirect('https://fountain.toolforge.org/editathons/' + encodeURIComponent(fw.fountainCode));
+}
+contest.get('/submit', entriesOnly, notOver, requireAuth, viaFountain, submissionController.submitForm);
 contest.post('/submit/preview', entriesOnly, notOver, requireAuth, submissionController.preview);
-contest.post('/submit', entriesOnly, notOver, requireAuth, submissionController.submit);
+contest.post('/submit', entriesOnly, notOver, requireAuth, viaFountain, submissionController.submit);
 contest.get('/submissions', entriesOnly, submissionController.index);
 contest.post('/submissions/:submissionId(\\d+)/withdraw', requireAuth, submissionController.withdraw);
 // Superusers delete a single entry, or a single review (the entry is then decided again).

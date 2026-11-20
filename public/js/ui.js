@@ -686,3 +686,14 @@ document.addEventListener('change', (e) => {
   form.querySelectorAll('[data-only]').forEach((el) => { el.hidden = el.dataset.only !== r.value; });
   form.querySelectorAll('.z-seg label').forEach((l) => l.classList.toggle('active', l.contains(r)));
 });
+
+// Series and edition settings: side menu panes, the open one named in the address (#rules).
+(function () {
+  var links = document.querySelectorAll('[data-pane-link]'); if (!links.length) return;
+  var panes = document.querySelectorAll('[data-pane]');
+  function show(id) { if (!document.querySelector('[data-pane="' + id + '"]')) id = 'details';
+    panes.forEach(function (p) { p.hidden = p.dataset.pane !== id; });
+    links.forEach(function (l) { l.classList.toggle('active', l.dataset.paneLink === id); }); }
+  links.forEach(function (l) { l.addEventListener('click', function (e) { e.preventDefault(); history.replaceState(null, '', '#' + l.dataset.paneLink); show(l.dataset.paneLink); }); });
+  show(location.hash.slice(1));
+})();

@@ -139,10 +139,13 @@
           <a href="<%= base %>/review" class="btn btn-outline-primary"><i class="ti ti-grid-scan me-1"></i><%= t('Review') %></a>
         <% } %>
         <% const eventOver = ['completed', 'archived', 'cancelled'].includes(contest.status) || (contest.endDate && new Date(contest.endDate) < new Date()); %>
-        <% const organizerSubmit = !eventOver && currentUser && can('manageEvent') && typeDef.entries !== false && active !== 'submit'; %>
+        <% const viaFountain = ((JSON.parse(settings.participation || '{}').rules) || {}).submitVia === 'fountain' && (eventWikis || []).find((w) => w.fountainCode);
+           const organizerSubmit = !eventOver && currentUser && can('manageEvent') && typeDef.entries !== false && active !== 'submit'; %>
         <% if (organizerSubmit) { %>
           <%# Organizers: Submit, with Import beside it in a small menu (works after the event too). %>
           <a href="<%= base %>/submit" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
+        <% } else if (!eventOver && viaFountain) { %>
+          <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(viaFountain.fountainCode) %>" class="btn btn-primary" target="_blank" rel="noopener"><i class="ti ti-droplet me-1"></i><%= t('Submit on Fountain') %> <i class="ti ti-external-link ms-1"></i></a>
         <% } else if (!eventOver && canSubmit && !(currentUser && !(scope.eventRoles || []).length && joinable)) { %>
           <a href="<%= currentUser ? base + '/submit' : '/login' %>" class="btn btn-primary"><i class="ti ti-upload me-1"></i><%= t("Submit entries") %></a>
         <% } %>

@@ -1,0 +1,9 @@
+<%# One tracker on its own: the numbers only (no event page). %>
+<div class="page-body"><div class="container-xl" style="max-width: 60rem">
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <a class="btn btn-icon btn-ghost-secondary" href="/tracking" aria-label="<%= t('Back') %>"><i class="ti ti-arrow-left"></i></a>
+    <h1 class="page-title m-0 me-auto"><i class="ti ti-radar me-1"></i><%= t('Tracking') %></h1>
+    <% if (mine) { %><form method="post" action="/tracking/<%= tracker.id %>/remove" class="m-0" data-confirm="<%= t('Stop tracking this?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-icon btn-ghost-danger" type="submit" title="<%= t('Stop') %>" aria-label="<%= t('Stop') %>"><i class="ti ti-trash"></i></button></form><% } %>
+  </div>
+  <%- include('../../partials/trackers', { trackers, trackAction: null }) %>
+</div></div>
