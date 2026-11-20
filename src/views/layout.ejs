@@ -22,6 +22,7 @@
   const toolKids = [];
   toolKids.push({ href: '/tracking', icon: 'radar', label: t('Tracking'), active: currentPath.startsWith('/tracking') });
   toolKids.push({ href: '/tools/words', icon: 'abc', label: t('Word count'), active: currentPath === '/tools/words' });
+  toolKids.push({ href: '/links', icon: 'link', label: t('Links'), active: currentPath === '/links' });
   if (currentUser && can('accessAdmin')) toolKids.push({ href: '/mass', icon: 'speakerphone', label: t('Mass message'), active: isActive('/mass') });
   if (toolKids.length) navItems.push({ icon: 'tools', label: t('Tools'), active: toolKids.some((k) => k.active), children: toolKids });
   if (can('createEvent')) {

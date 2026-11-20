@@ -915,14 +915,37 @@ module.exports.trackingRemove = trackingRemove;
 
 // The word count tool: one article, many articles (one per line) or a Fountain editathon's articles.
 async function wordTool(req, res, next) {
-  const form = { wiki: String(req.body.wiki || req.query.wiki || 'bnwiki').trim(), titles: String(req.body.titles || ''), fountain: String(req.body.fountain || '').trim() };
+  // A public tool: signed-out visitors get a form token too.
+  require('../middleware/csrf').ensureCsrfToken(req, res);
+  const form = { wiki: String(req.body.wiki || req.query.wiki || 'bnwiki').trim(), titles: String(req.body.titles || ''), fountain: String(req.body.fountain || '').trim(), source: ['titles', 'fountain', 'dashboard'].includes(req.body.source) ? req.body.source : 'titles' };
   let rows = null; let error = null;
   try {
     if (req.method === 'POST') {
       const fountain = require('../services/fountainService');
       const wikiApi = require('../wiki/wikiApi');
       let wiki = form.wiki; let pages = [];
-      if (form.fountain) {
+      const urls = require('../wiki/wikiUrls');
+      if (form.source === 'dashboard' && form.fountain) {
+        // A Programs & Events Dashboard course: its tracked articles, on every wiki it covers.
+        const m = form.fountain.match(/^https:\/\/(outreachdashboard\.wmflabs\.org|dashboard\.wikiedu\.org)\/courses\/([^/?#]+)\/([^/?#]+)/);
+        if (!m) throw new Error('Give the Dashboard course link.');
+        const r = await fetch(`https://${m[1]}/courses/${m[2]}/${m[3]}/articles.json`, { headers: { 'User-Agent': require('../config/env').userAgent }, signal: AbortSignal.timeout(30000) });
+        const j = r.ok ? await r.json().catch(() => null) : null;
+        if (!j || !j.course) throw new Error('Could not read that Dashboard course.');
+        const byWiki = new Map();
+        for (const a of (j.course.articles || []).filter((x) => !x.deleted && x.namespace === 0).slice(0, 1000)) {
+          let db = null; try { db = urls.hostToDbname(new URL(a.url).host); } catch (e) { db = null; }
+          if (!db) continue;
+          if (!byWiki.has(db)) byWiki.set(db, []);
+          byWiki.get(db).push({ id: a.mw_page_id || null, title: a.title, wiki: db });
+        }
+        rows = [];
+        for (const [db, list] of byWiki) {
+          const counts = await fountain.wordCounts(db, list.map((p) => p.id).filter(Boolean));
+          for (const p of list) rows.push({ ...p, words: p.id ? counts.get(String(p.id)) || 0 : null, url: urls.pageUrl(db, p.title) });
+        }
+        form.wiki = [...byWiki.keys()].join(', ');
+      } else if (form.source === 'fountain' && form.fountain) {
         const e = await fountain.fetchEditathon(fountain.parseCode(form.fountain));
         wiki = fountain.wikiOf(e);
         const list = (e.articles || []).slice(0, 1000);
@@ -935,9 +958,11 @@ async function wordTool(req, res, next) {
           for (const p of d.query?.pages || []) pages.push({ id: p.missing ? null : p.pageid, title: p.title });
         }
       }
+      if (!rows) {
       const counts = await fountain.wordCounts(wiki, pages.map((p) => p.id).filter(Boolean));
       rows = pages.map((p) => ({ ...p, words: p.id ? counts.get(String(p.id)) || 0 : null, url: `https://${require('../wiki/wikiUrls').dbnameToHost(wiki)}/wiki/${encodeURIComponent(String(p.title).replace(/ /g, '_'))}` })).sort((a, b) => (b.words || 0) - (a.words || 0));
       form.wiki = wiki;
+      }
     }
   } catch (err) { error = req.t(err.message || 'Could not count.'); }
   res.render('pages/tools/words', { title: 'Word count — Zury', form, rows, error });

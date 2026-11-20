@@ -48,6 +48,19 @@ router.get('/review', requireAuth, reviewController.myQueue);
 // and one wiki's part of it (/wam/2026/bn); permissions follow the context.
 const contest = express.Router({ mergeParams: true });
 
+// The public, read-only API of an event (or one wiki of it): /wam/2026/bn/api.json, entries.json, results.json.
+const publicApi = require('../services/publicApiService');
+function apiOut(fn) {
+  return (req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    if (req.contest.visibility === 'private' || req.contest.status === 'draft') return res.status(404).json({ error: 'not found' });
+    Promise.resolve(fn(req)).then((body) => res.json(body)).catch(next);
+  };
+}
+contest.get('/api.json', apiOut((req) => publicApi.event(req)));
+contest.get('/entries.json', apiOut((req) => publicApi.entries(req, { page: Math.max(1, Number.parseInt(req.query.page, 10) || 1) })));
+contest.get('/results.json', apiOut((req) => publicApi.results(req)));
+
 // An event's landing page is its About page (activity events and events without entries keep their overview).
 contest.get('/', (req, res, next) => {
   const def = EVENT_TYPES[req.contest.type];

@@ -126,6 +126,7 @@
       <div class="z-lvl-set">
         <nav class="z-lvl-nav" aria-label="<%= t('Settings') %>">
           <a href="#details" data-pane-link="details"><i class="ti ti-info-circle"></i><span><%= t('Details') %></span></a>
+          <a href="#people" data-pane-link="people"><i class="ti ti-users"></i><span><%= t('People') %></span></a>
           <a href="#rules" data-pane-link="rules"><i class="ti ti-adjustments"></i><span><%= t('Rules') %></span></a>
           <a href="#tracking" data-pane-link="tracking"><i class="ti ti-radar"></i><span><%= t('Tracking') %></span><span class="badge bg-azure-lt ms-auto">beta</span></a>
           <a href="#more" data-pane-link="more"><i class="ti ti-dots"></i><span><%= t('More') %></span></a>
@@ -157,6 +158,9 @@
 
 
         </section>
+        <section class="z-lvl-pane" data-pane="people">
+<% if (canRun) { %><%- include('../../partials/levelPeople', { seriesSlug: series.slug, editionId: null, people, ROLES }) %><% } %>
+        </section>
         <section class="z-lvl-pane" data-pane="rules">
       <%- include('../../partials/levelSettings', { seriesSlug: series.slug, editionId: null, rules, history, KEYS }) %>
 
@@ -180,7 +184,6 @@
         </div>
       </div>
     <% } if (tab === 'settings' && canRun) { %>
-      <%- include('../../partials/levelPeople', { seriesSlug: series.slug, editionId: null, people, ROLES }) %>
 
     <% } %>
   </div>

@@ -39,5 +39,8 @@ router.get('/', (req, res, next) => {
 });
 // There is no About page any more; old links go home.
 router.get('/about', (req, res) => res.redirect(301, '/'));
+// Every kind of Zury address in one place (pages, tools, an event's pages, the public API).
+router.get('/links', (req, res) => res.render('pages/tools/links', { title: 'Links — Zury', siteOrigin: req.protocol + '://' + req.get('host') }));
+router.get('/api', (req, res) => res.redirect('/links#api'));
 
 module.exports = router;

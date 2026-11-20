@@ -4014,3 +4014,14 @@ a.z-ext::after { content: ''; display: inline-block; width: .7em; height: .7em; 
 /* A series with many events: the whole row, its languages in a grid. */
 .z-sr-card.is-wide .z-sr-card-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .1rem .5rem; }
 .z-sr-card.is-wide .z-sr-more { grid-column: 1 / -1; }
+.z-evhead-tabs, .z-lvl-nav { position: relative; }
+/* Word count: only the fields of the chosen source. */
+form:has(#w-s-titles:checked) .z-src-link, form:has(#w-s-fountain:checked) .z-src-titles, form:has(#w-s-dashboard:checked) .z-src-titles { display: none; }
+form:has(#w-src option[value=titles]:checked) .z-src-link, form:has(#w-src option[value=fountain]:checked) .z-src-titles, form:has(#w-src option[value=dashboard]:checked) .z-src-titles { display: none; }
+/* Links page */
+.z-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); gap: 1rem; align-items: start; }
+.z-links > .card { margin: 0; }
+.z-link-row { display: grid; grid-template-columns: 1.2rem minmax(0, 1fr) auto; align-items: center; gap: .6rem; padding: .35rem .25rem; color: var(--z-fg); text-decoration: none; border-radius: 6px; }
+a.z-link-row:hover { background: var(--tblr-bg-surface-secondary, #f6f8fb); color: var(--z-fg); }
+.z-link-row code { font-size: .75rem; color: var(--z-fg-muted); background: none; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 12rem; }
+.z-link-row .ti { color: var(--z-fg-muted); }

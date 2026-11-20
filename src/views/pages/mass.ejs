@@ -9,7 +9,7 @@
   const nav = (backTo, nextTo, nextLabel, nextIcon, extra = '') => `<div class="z-mass-nav">${backTo ? `<button class="btn" type="submit" name="step" value="${backTo}" formnovalidate><i class="ti ti-arrow-left me-1"></i>${h(t('Back'))}</button>` : '<span></span>'}${nextTo ? `<button class="btn btn-primary" type="submit" name="step" value="${nextTo}"${extra}>${h(nextLabel)}<i class="ti ti-${nextIcon} ms-1"></i></button>` : ''}</div>`;
   const methodLabel = methods[form.method] ? t(methods[form.method]) : '';
 %>
-<div class="page-body"><div class="container-xl" style="max-width: 60rem">
+<div class="page-body"><div class="container-xl">
   <div class="d-flex align-items-center gap-2 mb-3"><h2 class="m-0"><i class="ti ti-speakerphone me-1"></i><%= t('Mass message') %></h2><span class="badge bg-purple-lt"><%= t('Beta') %></span></div>
   <ol class="z-life z-mass-steps">
     <% STEPS.forEach(([k, icon, label], i) => { %><li class="<%= i < at ? 'is-done' : i === at ? 'is-now' : '' %>"><span><i class="ti ti-<%= i < at ? 'check' : icon %>"></i></span><b><%= t(label) %></b></li><% }) %>

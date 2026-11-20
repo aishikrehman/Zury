@@ -697,3 +697,12 @@ document.addEventListener('change', (e) => {
   links.forEach(function (l) { l.addEventListener('click', function (e) { e.preventDefault(); history.replaceState(null, '', '#' + l.dataset.paneLink); show(l.dataset.paneLink); }); });
   show(location.hash.slice(1));
 })();
+
+// Scrolling tab strips (event tabs on phones): the open tab stays in view after the page changes.
+(function () {
+  document.querySelectorAll('.z-evhead-tabs, .z-lvl-nav').forEach(function (nav) {
+    var on = nav.querySelector('a.active, a[aria-current="page"]');
+    if (!on || nav.scrollWidth <= nav.clientWidth) return;
+    nav.scrollLeft = on.offsetLeft - (nav.clientWidth - on.offsetWidth) / 2;
+  });
+})();

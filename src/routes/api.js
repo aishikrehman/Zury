@@ -204,4 +204,12 @@ router.get('/api/users', requireAuth, async (req, res, next) => {
 // How far a Fountain import is: { done, total }, or null when none is running.
 router.get('/api/fountain-progress', (req, res) => res.json(require('../services/fountainService').progressOf(String(req.query.code || '').trim()) || null));
 
+// Public, read-only API (v1): listed events, a series, an edition. Event data: <event address>/api.json.
+const publicApi = require('../services/publicApiService');
+const cors = (req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); };
+const pageOf = (req) => Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+router.get('/api/v1/events', cors, (req, res, next) => publicApi.events({ status: String(req.query.status || ''), wiki: String(req.query.wiki || '').slice(0, 64), type: String(req.query.type || '').slice(0, 40), page: pageOf(req) }).then((b) => res.json(b)).catch(next));
+router.get('/api/v1/series/:series', cors, (req, res, next) => publicApi.level(req.params.series).then((b) => (b ? res.json(b) : res.status(404).json({ error: 'not found' }))).catch(next));
+router.get('/api/v1/series/:series/:edition', cors, (req, res, next) => publicApi.level(req.params.series, req.params.edition).then((b) => (b ? res.json(b) : res.status(404).json({ error: 'not found' }))).catch(next));
+
 module.exports = router;

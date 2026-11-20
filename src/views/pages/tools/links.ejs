@@ -1,0 +1,28 @@
+<%# Every kind of Zury address in one place: pages, tools, an event's pages, and the public API. %>
+<% const site = (typeof siteOrigin !== 'undefined' && siteOrigin) || '';
+   const go = (path, label, icon) => `<a class="z-link-row" href="${path}"><i class="ti ti-${icon}"></i><span>${h(label)}</span><code>${h(path)}</code></a>`;
+   const pat = (path, label, icon) => `<div class="z-link-row is-pattern"><i class="ti ti-${icon}"></i><span>${h(label)}</span><code>${h(path)}</code></div>`; %>
+<div class="page-body"><div class="container-xl">
+  <h1 class="page-title mb-3"><i class="ti ti-link me-1"></i><%= t('Links') %></h1>
+  <div class="z-links">
+    <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-home me-2"></i><%= t('Pages') %></h3></div><div class="card-body">
+      <%- go('/', t('Home'), 'home') %><%- go('/events', t('All events'), 'calendar-event') %><%- go('/events/active', t('Running'), 'player-play') %><%- go('/events/upcoming', t('Upcoming'), 'calendar') %><%- go('/events/completed', t('Finished'), 'flag-check') %><%- go('/series', t('Series'), 'stack-2') %>
+    </div></div>
+    <% if (currentUser) { %><div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-user me-2"></i><%= t('Yours') %></h3></div><div class="card-body">
+      <%- go('/dashboard', t('Dashboard'), 'layout-dashboard') %><%- go('/review', t('Review'), 'grid-scan') %><%- go('/inbox', t('Messages'), 'messages') %><%- go('/notifications', t('Notifications'), 'bell') %><%- go('/settings', t('Settings'), 'settings') %><%- go('/users/' + encodeURIComponent(currentUser.username), t('Profile'), 'id-badge') %>
+    </div></div><% } %>
+    <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-tools me-2"></i><%= t('Tools') %></h3></div><div class="card-body">
+      <%- go('/tracking', t('Tracking'), 'radar') %><%- go('/tools/words', t('Word count'), 'abc') %><% if (currentUser) { %><%- go('/create/event', t('New event'), 'plus') %><%- go('/create/series', t('New series'), 'stack-push') %><%- go('/create/import', t('Import or track'), 'download') %><% } %><% if (currentUser && can('accessAdmin')) { %><%- go('/mass', t('Mass message'), 'speakerphone') %><%- go('/admin', t('Admin'), 'shield') %><% } %>
+    </div></div>
+    <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-event me-2"></i><%= t('An event’s pages') %></h3></div><div class="card-body">
+      <div class="text-secondary small mb-2"><%= t('After the event’s address; add a wiki code for one wiki (/wam/2026/bn).') %></div>
+      <%- pat('/wam/2026', t('Event'), 'calendar-event') %><%- pat('…/submissions', t('Entries'), 'list') %><%- pat('…/submit', t('Submit'), 'upload') %><%- pat('…/results', t('Results'), 'trophy') %><%- pat('…/statistics', t('Statistics'), 'chart-bar') %><%- pat('…/participants', t('Participants'), 'users') %><%- pat('…/review', t('Review'), 'grid-scan') %><%- pat('…/patrol', t('Patrol room'), 'shield-search') %><%- pat('…/config', t('Settings'), 'settings') %>
+    </div></div>
+    <div class="card" id="api"><div class="card-header"><h3 class="card-title"><i class="ti ti-api me-2"></i><%= t('Public API') %></h3></div><div class="card-body">
+      <div class="text-secondary small mb-2"><%= t('Read only, JSON, no sign-in. Only what Zury’s pages already show: private and draft events never appear, anonymous participants stay anonymous, and results appear once they are open.') %></div>
+      <%- go('/api/v1/events?status=active', t('Listed events (status, wiki, type, page)'), 'list') %><%- go('/api/v1/series/wam', t('A series: editions, events, totals'), 'stack-2') %><%- go('/api/v1/series/wam/2026', t('An edition: events, totals'), 'calendar') %>
+      <%- pat('…/api.json', t('One event: details, wikis, totals'), 'braces') %><%- pat('…/entries.json', t('Its entries (500 a page, ?page=2)'), 'list-details') %><%- pat('…/results.json', t('Its ranking, once results are open'), 'trophy') %>
+      <div class="text-secondary small mt-2"><%= t('At most 120 requests a minute. Entry status is one of: pending, accepted, not_accepted.') %></div>
+    </div></div>
+  </div>
+</div></div>

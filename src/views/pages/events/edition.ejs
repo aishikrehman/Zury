@@ -60,15 +60,18 @@
              if (!code || ['commons', 'wikidata', 'meta', 'species'].includes(code)) return null;
              const nm = (l) => { try { return new Intl.DisplayNames([l], { type: 'language' }).of(code); } catch (e) { return code; } };
              return { code, own: nm(code), en: nm('en') }; }; %>
-        <div class="card"><div class="table-responsive"><table class="table table-vcenter card-table z-ed-table">
-          <thead><tr><th><%= t('Language') %></th><th><%= t('Project') %></th><th><%= t('Event') %></th><th><%= t('Dates') %></th><th class="text-end"><%= t('Status') %></th></tr></thead>
+        <% const sth = (label, cls = '') => `<th class="${cls}" aria-sort="none"><button type="button" class="z-sort-th" data-sort-col>${h(label)}<i class="ti ti-selector"></i></button></th>`; %>
+        <div class="card">
+          <% if (events.length > 6) { %><div class="card-body py-2 border-bottom"><div class="input-icon"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input type="search" class="form-control form-control-sm" placeholder="<%= t('Language, project or name') %>" data-filter-rows="#ed-events" aria-label="<%= t('Search') %>"></div></div><% } %>
+          <div class="table-responsive"><table class="table table-vcenter card-table z-ed-table" id="ed-events" data-sortable>
+          <thead><tr><%- sth(t('Language')) %><%- sth(t('Project')) %><%- sth(t('Event')) %><%- sth(t('Dates')) %><%- sth(t('Status'), 'text-end') %></tr></thead>
           <tbody>
           <% events.slice().sort((a, b) => String(a.primaryWiki).localeCompare(String(b.primaryWiki))).forEach((c) => { const L = langOf(c.primaryWiki); const P = eventProject(c); const st = CONTEST_STATUSES[c.status] || { label: c.status, badge: 'secondary' }; %>
-            <tr class="st-<%= c.status %>">
+            <tr class="st-<%= c.status %>" data-filter-text="<%= [L && L.own, L && L.en, L && L.code, P.label, c.title].filter(Boolean).join(' ').toLowerCase() %>">
               <td><% if (L) { %><b><%= L.own %></b><% if (L.en !== L.own) { %> <span class="text-secondary small"><%= L.en %></span><% } %><% } else { %>—<% } %></td>
               <td class="text-nowrap"><i class="ti ti-<%= P.icon %> me-1" style="color: <%= P.color %>"></i><%= P.label %></td>
               <td><a href="<%= c.path %>"><%= c.title %></a></td>
-              <td class="text-nowrap text-secondary small"><%= c.startDate ? formatDate(c.startDate) : '' %><%= c.endDate ? ' – ' + formatDate(c.endDate) : '' %></td>
+              <td class="text-nowrap text-secondary small" data-v="<%= c.startDate ? new Date(c.startDate).getTime() : 0 %>"><%= c.startDate ? formatDate(c.startDate) : '' %><%= c.endDate ? ' – ' + formatDate(c.endDate) : '' %></td>
               <td class="text-end"><span class="badge bg-<%= st.badge === 'dark' || st.badge === 'light' ? 'secondary' : st.badge %>-lt"><%= t(st.label) %></span></td>
             </tr>
           <% }) %>
@@ -81,6 +84,7 @@
       <div class="z-lvl-set">
         <nav class="z-lvl-nav" aria-label="<%= t('Settings') %>">
           <a href="#details" data-pane-link="details"><i class="ti ti-info-circle"></i><span><%= t('Details') %></span></a>
+          <a href="#people" data-pane-link="people"><i class="ti ti-users"></i><span><%= t('People') %></span></a>
           <a href="#rules" data-pane-link="rules"><i class="ti ti-adjustments"></i><span><%= t('Rules') %></span></a>
           <a href="#tracking" data-pane-link="tracking"><i class="ti ti-radar"></i><span><%= t('Tracking') %></span><span class="badge bg-azure-lt ms-auto">beta</span></a>
           <a href="#more" data-pane-link="more"><i class="ti ti-dots"></i><span><%= t('More') %></span></a>
@@ -107,6 +111,9 @@
       </form>
 
 
+        </section>
+        <section class="z-lvl-pane" data-pane="people">
+<% if (canRun) { %><%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, inherited, ROLES }) %><% } %>
         </section>
         <section class="z-lvl-pane" data-pane="rules">
       <%- include('../../partials/levelSettings', { seriesSlug: sr.slug, editionId: edition.id, rules, history, KEYS }) %>
@@ -146,7 +153,6 @@
         </div>
       </div>
     <% } if (tab === 'settings' && canRun) { %>
-      <%- include('../../partials/levelPeople', { seriesSlug: sr.slug, editionId: edition.id, people, inherited, ROLES }) %>
     <% } else if (tab === 'statistics') { %>
       <%- include('../../partials/trackers', { trackers: typeof trackers !== 'undefined' ? trackers : [], trackAction: null }) %>
       <% if (events.length) { %><% if (canRun && fountainCount) { %><form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/fountain-sync" class="d-flex justify-content-end mb-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-outline-primary" type="submit"><i class="ti ti-refresh me-1"></i><%= t('Update all from Fountain') %> (<%= formatNumber(fountainCount) %>)</button></form><% } %>
