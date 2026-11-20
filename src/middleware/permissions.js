@@ -16,7 +16,7 @@ function forbidden() {
 const RESERVED = new Set([
   'events', 'contest', 'admin', 'api', 'users', 'dashboard', 'settings', 'submissions', 'login', 'logout',
   'auth', 'layout', 'preferences', 'review', 'vendor', 'css', 'js', 'images', 'about', 'favicon.ico', 'series', 'robots.txt', 'sitemap.xml', 'icons',
-  'notifications',
+  'notifications', 'tools', 'links', 'inbox', 'create', 'chat', 'mass', 'tracking',
   // Event types: kept free, so a series can't be named like one.
   ...Object.keys(require('../events/eventTypes').EVENT_TYPES),
 ]);

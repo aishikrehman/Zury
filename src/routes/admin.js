@@ -8,6 +8,8 @@ router.use('/admin', requirePermission('accessAdmin'));
 
 router.get('/admin', adminController.index);
 router.get('/admin/users', adminController.users);
+// Every kind of Zury address, the full list read from the routers.
+router.get('/admin/links', (req, res) => res.render('pages/admin/links', { title: 'Links — Zury', routeMap: require('../services/routeMapService').all() }));
 router.post('/admin/users/:userId(\\d+)/roles', requirePermission('managePlatformRoles'), adminController.grantRole);
 router.post('/admin/users/:userId(\\d+)/delete', requirePermission('deleteAnything'), adminController.deleteUser);
 router.post('/admin/users/:userId(\\d+)/roles/revoke', requirePermission('managePlatformRoles'), adminController.revokeRole);

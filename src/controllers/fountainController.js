@@ -64,7 +64,7 @@ async function importEvent(req, res, next) {
       // On its own: no event page, only the numbers.
       const t = await trackers.add({ level: 'none', levelId: 0, kind: 'campwiz', code: value, category, actorId: req.user.id });
       req.flash('success', req.t('Tracking; nothing is copied.'));
-      return res.redirect('/tracking/' + t.id);
+      return res.redirect('/tools/tracking/' + t.id);
     }
     // Fountain, tracked only: on the series/edition, or on its own — never a new event.
     if (trackOnlyOf(req)) {
@@ -78,7 +78,7 @@ async function importEvent(req, res, next) {
       }
       const t = await trackers.add({ level: 'none', levelId: 0, kind: 'fountain', code: value, actorId: req.user.id });
       req.flash('success', req.t('Tracking; nothing is copied.'));
-      return res.redirect('/tracking/' + t.id);
+      return res.redirect('/tools/tracking/' + t.id);
     }
     const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type, trackOnly: false, series: where });
     req.flash('success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));

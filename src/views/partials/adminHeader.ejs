@@ -3,6 +3,7 @@
     ['overview', '/admin', t('Overview')],
     ['users', '/admin/users', t('Users')],
     ['permissions', '/admin/permissions', t('Permissions')],
+    ['links', '/admin/links', t('Links')],
     ...(can('maintainSite') ? [['features', '/admin/features', t('Features')]] : []),
     ...(can('viewDatabase') ? [['database', '/admin/database', t('Database and maintenance')]] : []),
   ];

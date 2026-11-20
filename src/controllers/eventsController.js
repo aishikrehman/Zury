@@ -866,7 +866,7 @@ async function trackingList(req, res, next) {
     const of = (lvl, id) => rows.filter((r) => r.level === lvl && r.levelId === id);
     const lone = rows.filter((r) => r.level === 'none');
     const items = [
-      ...lone.map((t) => ({ kind: 'none', title: t.category || t.code.replace(/^https?:\/\/[^/]+\//, ''), href: '/tracking/' + t.id, trackers: [t] })),
+      ...lone.map((t) => ({ kind: 'none', title: t.category || t.code.replace(/^https?:\/\/[^/]+\//, ''), href: '/tools/tracking/' + t.id, trackers: [t] })),
       ...series.map((s) => ({ kind: 'series', title: s.title, href: '/' + s.slug + '?tab=statistics', onlyTracking: !s._count.editions && !s._count.editionRecords, trackers: of('series', s.id) })),
       ...editions.map((e) => ({ kind: 'edition', title: e.title || e.slug, sub: e.series.title, href: `/series/${e.series.slug}/${e.slug}?tab=statistics`, trackers: of('edition', e.id) })),
       ...events.map((c) => ({ kind: 'event', title: c.title, href: (c.path || '/contest/' + c.id) + '/statistics', logo: c.logoUrl, trackers: of('event', c.id) })),
@@ -887,7 +887,7 @@ async function trackingAdd(req, res, next) {
     catch (e) { if (!(e instanceof trackers.TrackerError)) return next(e); failed.push(`${link}: ${req.t(e.message)}`); }
   }
   if (failed.length) req.flash('danger', failed.join(' · '));
-  res.redirect(last && lines.length === 1 ? '/tracking/' + last.id : '/tracking');
+  res.redirect(last && lines.length === 1 ? '/tools/tracking/' + last.id : '/tools/tracking');
 }
 module.exports.trackingAdd = trackingAdd;
 
@@ -908,7 +908,7 @@ async function trackingRemove(req, res, next) {
     const t = await prisma.tracker.findUnique({ where: { id: Number(req.params.id) } });
     if (t && (t.createdById === req.user.id || req.permissions.has('manageEvent'))) await prisma.tracker.delete({ where: { id: t.id } });
     req.flash('success', req.t('Stopped tracking.'));
-    res.redirect('/tracking');
+    res.redirect('/tools/tracking');
   } catch (err) { next(err); }
 }
 module.exports.trackingRemove = trackingRemove;

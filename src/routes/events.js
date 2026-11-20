@@ -29,12 +29,12 @@ const entriesOnly = (req, res, next) => (takesEntries(req.contest.type) ? next()
 const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity ? next() : notFound(res));
 
 router.get('/events', eventsController.index);
-router.get('/tracking', eventsController.trackingList);
+router.get('/tools/tracking', eventsController.trackingList);
 router.get('/tools/words', eventsController.wordTool);
 router.post('/tools/words', eventsController.wordTool);
-router.post('/tracking', requireAuth, eventsController.trackingAdd);
-router.get('/tracking/:id(\\d+)', eventsController.trackingOne);
-router.post('/tracking/:id(\\d+)/remove', requireAuth, eventsController.trackingRemove);
+router.post('/tools/tracking', requireAuth, eventsController.trackingAdd);
+router.get('/tools/tracking/:id(\\d+)', eventsController.trackingOne);
+router.post('/tools/tracking/:id(\\d+)/remove', requireAuth, eventsController.trackingRemove);
 router.get('/create/event', requirePermission('createEvent'), eventsController.createForm);
 router.get('/create/import', requireAuth, fountainController.importForm);
 router.get('/create/series', requirePermission('importEvents'), eventsController.seriesForm);
@@ -241,3 +241,5 @@ router.get(`/:series(${SLUG})/:edition(${SLUG})`, eventsController.editionPage);
 router.use(eventAddresses(contest));
 
 module.exports = router;
+// The event pages' router, for Admin › Links.
+module.exports.eventRouter = contest;

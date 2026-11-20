@@ -15,7 +15,7 @@
     <% STEPS.forEach(([k, icon, label], i) => { %><li class="<%= i < at ? 'is-done' : i === at ? 'is-now' : '' %>"><span><i class="ti ti-<%= i < at ? 'check' : icon %>"></i></span><b><%= t(label) %></b></li><% }) %>
   </ol>
   <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
-  <form method="post" action="/mass" class="card">
+  <form method="post" action="/tools/mass" class="card">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <%- carry() %>
 
@@ -120,7 +120,7 @@
           <h3 class="mt-2"><%= result.bot ? t('The MassMessage bot is delivering to {n} people', { n: formatNumber(result.sent) }) : tn('Sent to {n} person.', 'Sent to {n} people.', result.sent) %></h3>
           <% if (result.failed.length) { %><div class="text-start mx-auto" style="max-width: 32rem"><div class="fw-bold mb-1"><%= t('Not sent to:') %></div><ul><% result.failed.forEach((f) => { %><li><%= f.username %> — <%= f.error %></li><% }) %></ul></div><% } %>
         <% } %>
-        <div class="mt-3"><a class="btn" href="/mass"><i class="ti ti-plus me-1"></i><%= t('New mass message') %></a></div>
+        <div class="mt-3"><a class="btn" href="/tools/mass"><i class="ti ti-plus me-1"></i><%= t('New mass message') %></a></div>
       </div>
     <% } %>
   </form>

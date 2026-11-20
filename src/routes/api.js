@@ -208,6 +208,8 @@ router.get('/api/fountain-progress', (req, res) => res.json(require('../services
 const publicApi = require('../services/publicApiService');
 const cors = (req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); };
 const pageOf = (req) => Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+// The API's own index: what it offers.
+router.get('/api', cors, (req, res) => res.json({ name: 'Zury public API', version: 1, readOnly: true, endpoints: { events: '/api/v1/events?status=active&wiki=bnwiki&type=&page=1', series: '/api/v1/series/<series>', edition: '/api/v1/series/<series>/<edition>', event: '<event address>/api.json', entries: '<event address>/entries.json?page=1', results: '<event address>/results.json' }, rateLimit: '120 requests a minute' }));
 router.get('/api/v1/events', cors, (req, res, next) => publicApi.events({ status: String(req.query.status || ''), wiki: String(req.query.wiki || '').slice(0, 64), type: String(req.query.type || '').slice(0, 40), page: pageOf(req) }).then((b) => res.json(b)).catch(next));
 router.get('/api/v1/series/:series', cors, (req, res, next) => publicApi.level(req.params.series).then((b) => (b ? res.json(b) : res.status(404).json({ error: 'not found' }))).catch(next));
 router.get('/api/v1/series/:series/:edition', cors, (req, res, next) => publicApi.level(req.params.series, req.params.edition).then((b) => (b ? res.json(b) : res.status(404).json({ error: 'not found' }))).catch(next));

@@ -4025,3 +4025,10 @@ form:has(#w-src option[value=titles]:checked) .z-src-link, form:has(#w-src optio
 a.z-link-row:hover { background: var(--tblr-bg-surface-secondary, #f6f8fb); color: var(--z-fg); }
 .z-link-row code { font-size: .75rem; color: var(--z-fg-muted); background: none; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 12rem; }
 .z-link-row .ti { color: var(--z-fg-muted); }
+/* Admin › Links: the full address list */
+.z-route { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .2rem 0; border-bottom: 1px dashed var(--z-border); font-size: .8125rem; }
+.z-route:last-child { border-bottom: 0; }
+.z-route code { background: none; padding: 0; color: var(--z-fg); overflow-wrap: anywhere; }
+.z-route a code { color: var(--z-brand); }
+.z-m { font-size: .65rem; font-weight: 700; padding: .05rem .3rem; border-radius: 4px; margin-left: .2rem; background: rgba(32,107,196,.1); color: #206bc4; }
+.z-m.is-post { background: rgba(245,159,0,.15); color: #ac6600; }

@@ -1,9 +1,9 @@
-<%# Every kind of Zury address in one place: pages, tools, an event's pages, and the public API. %>
+<%# Admin › Links: every kind of Zury address; the full list below is read from the routers. %>
+<%- include('../../partials/adminHeader', { tab: 'links' }) %>
 <% const site = (typeof siteOrigin !== 'undefined' && siteOrigin) || '';
    const go = (path, label, icon) => `<a class="z-link-row" href="${path}"><i class="ti ti-${icon}"></i><span>${h(label)}</span><code>${h(path)}</code></a>`;
    const pat = (path, label, icon) => `<div class="z-link-row is-pattern"><i class="ti ti-${icon}"></i><span>${h(label)}</span><code>${h(path)}</code></div>`; %>
 <div class="page-body"><div class="container-xl">
-  <h1 class="page-title mb-3"><i class="ti ti-link me-1"></i><%= t('Links') %></h1>
   <div class="z-links">
     <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-home me-2"></i><%= t('Pages') %></h3></div><div class="card-body">
       <%- go('/', t('Home'), 'home') %><%- go('/events', t('All events'), 'calendar-event') %><%- go('/events/active', t('Running'), 'player-play') %><%- go('/events/upcoming', t('Upcoming'), 'calendar') %><%- go('/events/completed', t('Finished'), 'flag-check') %><%- go('/series', t('Series'), 'stack-2') %>
@@ -12,7 +12,7 @@
       <%- go('/dashboard', t('Dashboard'), 'layout-dashboard') %><%- go('/review', t('Review'), 'grid-scan') %><%- go('/inbox', t('Messages'), 'messages') %><%- go('/notifications', t('Notifications'), 'bell') %><%- go('/settings', t('Settings'), 'settings') %><%- go('/users/' + encodeURIComponent(currentUser.username), t('Profile'), 'id-badge') %>
     </div></div><% } %>
     <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-tools me-2"></i><%= t('Tools') %></h3></div><div class="card-body">
-      <%- go('/tracking', t('Tracking'), 'radar') %><%- go('/tools/words', t('Word count'), 'abc') %><% if (currentUser) { %><%- go('/create/event', t('New event'), 'plus') %><%- go('/create/series', t('New series'), 'stack-push') %><%- go('/create/import', t('Import or track'), 'download') %><% } %><% if (currentUser && can('accessAdmin')) { %><%- go('/mass', t('Mass message'), 'speakerphone') %><%- go('/admin', t('Admin'), 'shield') %><% } %>
+      <%- go('/tools/tracking', t('Tracking'), 'radar') %><%- go('/tools/words', t('Word count'), 'abc') %><% if (currentUser) { %><%- go('/create/event', t('New event'), 'plus') %><%- go('/create/series', t('New series'), 'stack-push') %><%- go('/create/import', t('Import or track'), 'download') %><% } %><% if (currentUser && can('accessAdmin')) { %><%- go('/tools/mass', t('Mass message'), 'speakerphone') %><%- go('/admin', t('Admin'), 'shield') %><% } %>
     </div></div>
     <div class="card"><div class="card-header"><h3 class="card-title"><i class="ti ti-calendar-event me-2"></i><%= t('An event’s pages') %></h3></div><div class="card-body">
       <div class="text-secondary small mb-2"><%= t('After the event’s address; add a wiki code for one wiki (/wam/2026/bn).') %></div>
@@ -23,6 +23,19 @@
       <%- go('/api/v1/events?status=active', t('Listed events (status, wiki, type, page)'), 'list') %><%- go('/api/v1/series/wam', t('A series: editions, events, totals'), 'stack-2') %><%- go('/api/v1/series/wam/2026', t('An edition: events, totals'), 'calendar') %>
       <%- pat('…/api.json', t('One event: details, wikis, totals'), 'braces') %><%- pat('…/entries.json', t('Its entries (500 a page, ?page=2)'), 'list-details') %><%- pat('…/results.json', t('Its ranking, once results are open'), 'trophy') %>
       <div class="text-secondary small mt-2"><%= t('At most 120 requests a minute. Entry status is one of: pending, accepted, not_accepted.') %></div>
+    </div></div>
+  </div>
+
+  <%# The full list, from Zury's routers: hidden and form-only addresses too. %>
+  <h2 class="h3 mt-4 mb-2"><i class="ti ti-list-tree me-1"></i><%= t('Every address') %></h2>
+  <div class="z-links">
+    <% routeMap.site.forEach(([area, list]) => { %>
+      <div class="card"><div class="card-header"><h3 class="card-title"><code>/<%= area === '/' ? '' : area %></code></h3><span class="badge bg-secondary-lt ms-auto"><%= formatNumber(list.length) %></span></div><div class="card-body">
+        <% list.forEach((r) => { %><div class="z-route"><% if (r.open) { %><a href="<%= r.path %>"><code><%= r.path %></code></a><% } else { %><code><%= r.path %></code><% } %><span><% r.methods.forEach((m) => { %><span class="z-m is-<%= m.toLowerCase() %>"><%= m %></span><% }) %></span></div><% }) %>
+      </div></div>
+    <% }) %>
+    <div class="card"><div class="card-header"><h3 class="card-title"><code>&lt;<%= t('event address') %>&gt;</code></h3><span class="badge bg-secondary-lt ms-auto"><%= formatNumber(routeMap.event.length) %></span></div><div class="card-body">
+      <% routeMap.event.forEach((r) => { %><div class="z-route"><code>…<%= r.path %></code><span><% r.methods.forEach((m) => { %><span class="z-m is-<%= m.toLowerCase() %>"><%= m %></span><% }) %></span></div><% }) %>
     </div></div>
   </div>
 </div></div>

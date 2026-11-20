@@ -2,7 +2,7 @@
 <div class="page-body"><div class="container-xl">
   <div class="z-events-head"><div><h1 class="page-title m-0"><i class="ti ti-radar me-1"></i><%= t('Tracking') %></h1><div class="text-secondary small"><%= formatNumber(items.length) %></div></div></div>
   <% if (currentUser) { %>
-  <form method="post" action="/tracking" class="card mb-3"><div class="card-body">
+  <form method="post" action="/tools/tracking" class="card mb-3"><div class="card-body">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="row g-2 align-items-start">
       <div class="col-md"><textarea class="form-control" name="code" rows="2" required placeholder="<%= t('Links, one per line (Fountain or CampWiz)') %>" aria-label="<%= t('Link or code') %>"></textarea><div class="form-hint"><%= t('CampWiz: add its Commons category after a | on the same line.') %></div></div>
