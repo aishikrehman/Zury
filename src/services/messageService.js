@@ -136,7 +136,7 @@ async function canMassMessage(username, wiki) {
   return ok;
 }
 
-const MASS_LIST_PAGE = 'Project:খেলাঘর/ZuryMassMessage';
+const MASS_LIST_PAGE = 'Project:Zury/MassMessage';
 async function massList({ actor, accessToken, contest, subject, body, people, wiki }) {
   if (people.length > MAX_LIST) throw new MessageError('At most 5000 people at a time.');
   const { dbnameToHost } = require('../wiki/wikiUrls');
