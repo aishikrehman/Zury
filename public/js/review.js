@@ -313,12 +313,7 @@ function placeBar() {
   const head = document.querySelector('.z-entry-head');
   const filters = document.getElementById('review-filters');
   if (head && filters && filters.previousElementSibling !== head) head.after(filters);
-  // Phones: one button (list + filters): the entry picker sits at the top of the filters sheet.
-  const go = document.querySelector('.z-go');
-  if (go && bar && filters) {
-    if (window.innerWidth < 768) { const after = filters.querySelector('.z-pop-close'); if (go.previousElementSibling !== after) (after ? after.after(go) : filters.prepend(go)); }
-    else if (go.parentElement !== bar) bar.prepend(go);
-  }
+  // The entry list stays in the side panel (lower down on phones); it is not moved here.
 }
 placeBar();
 window.addEventListener('resize', placeBar);

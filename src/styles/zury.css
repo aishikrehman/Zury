@@ -3835,3 +3835,50 @@ a.z-ext::after { content: ''; display: inline-block; width: .7em; height: .7em; 
 .z-go .ts-dropdown { min-width: min(26rem, 92vw) !important; }
 .z-go .ts-dropdown .option { white-space: normal; padding: .5rem .75rem; }
 .z-go .ts-dropdown-content { max-height: 60vh !important; }
+/* Review header: filter and ⋮ side by side in their own columns, plain icons (no box). */
+@media (min-width: 768px) {
+  .z-review-layout .z-entry-head { grid-template-columns: minmax(0, 1fr) auto auto !important; grid-template-areas: "title title title" "links filter more" !important; column-gap: .15rem; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn { grid-area: filter !important; margin: 0 !important; }
+  .z-review-layout .z-entry-head .z-review-more { grid-area: more !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn, .z-review-layout .z-entry-head .z-review-more > .btn { border: 0 !important; box-shadow: none !important; background: transparent !important; border-radius: 50% !important; }
+  .z-review-layout .z-entry-head .z-review-bar > .btn:hover, .z-review-layout .z-entry-head .z-review-more > .btn:hover { background: var(--z-hover) !important; color: var(--z-brand); }
+}
+.z-review-more .dropdown-menu { z-index: 1080; min-width: 12rem; }
+.z-review-layout .z-review-more, .z-review-bar .z-review-more { border: 0 !important; padding: 0 !important; margin: 0 !important; background: none !important; box-shadow: none !important; width: auto !important; height: auto !important; min-height: 0 !important; }
+/* Review header on phones: ⋮ in the header's right column, a plain icon (no box, no row of its own). */
+.z-review-layout .z-review-more > .btn { border: 0 !important; box-shadow: none !important; background: transparent !important; border-radius: 50% !important; width: 2.2rem; height: 2.2rem; padding: 0; color: var(--z-fg-muted); }
+@media (max-width: 767.98px) {
+  .z-review-layout .z-entry-head { grid-template-columns: auto minmax(0, 1fr) auto !important; }
+  .z-review-layout .z-entry-head .z-review-more { grid-column: 3 !important; grid-row: 1 / 3 !important; align-self: center; order: 9 !important; }
+}
+/* Review header: room to breathe. */
+.z-review-layout .z-entry-head { row-gap: .5rem !important; padding-top: .6rem !important; padding-bottom: .6rem !important; margin-bottom: .75rem !important; }
+@media (max-width: 767.98px) { .z-review-layout .z-entry-head { column-gap: .75rem !important; } .z-review-layout .z-entry-head > .z-entry-links { gap: 1rem !important; flex-wrap: wrap; } }
+@media (min-width: 768px) { .z-review-layout .z-entry-head > .z-entry-links { gap: .5rem !important; } }
+/* Review filters on phones: a full-screen sheet that scrolls on its own (the page behind is locked). */
+@media (max-width: 767.98px) {
+  .z-review-filters.show, .z-review-filters.collapsing { position: fixed !important; inset: 0 !important; z-index: 1060 !important; height: 100dvh !important; max-height: 100dvh !important; overflow-y: auto !important; overscroll-behavior: contain; background: var(--tblr-bg-surface, #fff) !important; margin: 0 !important; padding: 0 1rem calc(1.5rem + env(safe-area-inset-bottom)) !important; border-radius: 0 !important; }
+}
+/* Review header actions: full screen and ⋮ together, plain icons, on every screen size. */
+.z-head-acts { display: inline-flex; align-items: center; gap: .1rem; }
+.z-review-layout .z-head-acts [data-review-full] { position: static !important; inset: auto !important; width: 2.2rem !important; height: 2.2rem !important; padding: 0 !important; border: 0 !important; border-radius: 50% !important; background: transparent !important; box-shadow: none !important; color: var(--z-fg-muted) !important; opacity: 1 !important; z-index: auto !important; }
+.z-review-layout .z-head-acts [data-review-full]:hover { background: var(--z-hover) !important; color: var(--z-brand) !important; }
+@media (min-width: 768px) { .z-review-layout .z-entry-head .z-head-acts { grid-area: more !important; justify-self: end; } }
+@media (max-width: 767.98px) {
+  .z-review-layout .z-entry-head .z-head-acts { grid-column: 3 !important; grid-row: 1 / 3 !important; align-self: center; order: 9 !important; }
+  .z-review-layout .z-entry-head > .z-entry-links .z-link-label { display: none !important; }
+  .z-review-layout .z-entry-head > .z-entry-links .btn i { font-size: 1.15rem; }
+}
+/* Phones: the summary panel sits right under the header's rule — no empty band above it. */
+@media (max-width: 767.98px) {
+  .z-review-layout .z-entry-head { margin-bottom: 0 !important; }
+  .z-review-side > .z-facts-card, html:has(.z-review-wrap) .z-review-side > .z-facts-card { margin-top: 0 !important; padding-top: 0 !important; }
+  .z-review-layout, .z-review-layout > .z-review-side { row-gap: .35rem !important; gap: .35rem !important; }
+}
+/* Review: the title is plain text again; the entry list lives in the side panel. */
+.z-review-layout .z-entry-head > .z-entry-title { display: block !important; grid-area: title; font-family: "Noto Serif Bengali Variable", Georgia, serif !important; font-size: 1.6rem !important; font-weight: 400 !important; margin: 0 !important; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 767.98px) { .z-review-layout .z-entry-head > .z-entry-title { grid-column: 2 !important; grid-row: 1 !important; font-size: 1.3rem !important; } }
+.z-review-side .z-go-side { display: block !important; width: 100%; max-width: none !important; order: -2; }
+.z-review-side .z-go-side .ts-control { border: 1px solid var(--z-border) !important; border-radius: .6rem !important; background: var(--z-surface) !important; padding: .45rem 2rem .45rem .7rem !important; }
+.z-review-side .z-go-side .ts-control .item, .z-review-side .z-go-side .ts-control input { font-family: inherit !important; font-size: .9rem !important; }
+@media (max-width: 767.98px) { .z-review-side .z-go-side { order: 3 !important; } }

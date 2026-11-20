@@ -64,6 +64,7 @@ function filterQuery(f, extra = {}) {
 
 // Entries for the picker on the review page: the queue in its order, searched by title, a page at a time.
 const pickerQueues = new Map();
+const lastRevs = new Map();
 async function entries(req, res, next) {
   try {
     const wikis = judgedWikis(req);
@@ -116,7 +117,9 @@ async function window(req, res, next) {
     }
     const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, after, filters });
     const id = Number(req.query.entry) || q.nextId;
-    if (id) { const at = q.ids.indexOf(id); warmPreviews(req.contest.id, [id, ...(at >= 0 ? q.ids.slice(at + 1, at + 3) : q.ids.slice(0, 2))], req.settings); }
+    const nextIds = id ? (() => { const at = q.ids.indexOf(id); return at >= 0 ? q.ids.slice(at + 1, at + 3) : q.ids.filter((x) => x !== id).slice(0, 2); })() : [];
+    if (id) warmPreviews(req.contest.id, [id, ...nextIds], req.settings);
+    res.locals.nextPreviews = nextIds.map((n) => `${req.base}/review/${n}/preview`);
     let entry = id ? await reviewService.entryForReview(req.contest.id, id) : null;
     if (entry && !canJudge(req, entry)) return res.status(404).render('pages/404', { title: 'Submission Not Found' });
     // While the event runs, the entry's words are counted afresh when it is opened (at most every
@@ -125,8 +128,9 @@ async function window(req, res, next) {
     const fx = req.effective.contest;
     if (entry && entry.entryType === 'article' && watchSvc.running(fx) && !reviewService.resultsFinal(fx, req.settings)) {
       const checked = (JSON.parse(entry.metadata || '{}').watch || {}).checkedAt;
-      if (!checked || Date.now() - new Date(checked).getTime() > 120000) {
-        await Promise.race([watchSvc.checkEvent(req.contest, req.eventSettings, { ids: [entry.id] }).catch(() => null), new Promise((ok) => setTimeout(ok, 3000))]);
+      // Counted afresh at most every 10 minutes; the page waits under a second, the rest goes on in the background.
+      if (!checked || Date.now() - new Date(checked).getTime() > 600000) {
+        await Promise.race([watchSvc.checkEvent(req.contest, req.eventSettings, { ids: [entry.id] }).catch(() => null), new Promise((ok) => setTimeout(ok, 800))]);
         entry = await reviewService.entryForReview(req.contest.id, id);
       }
     }
@@ -134,30 +138,43 @@ async function window(req, res, next) {
     if (entry && entry.entryType === 'article') {
       let m = {}; try { m = JSON.parse(entry.metadata || '{}'); } catch { m = {}; }
       if (!m.createdAt || m.sizeBytes == null) {
-        const fresh = await require('../wiki/entryMetadata').fetchEntryMetadata({ wiki: entry.wiki, title: entry.title }, { language: req.contest.language }).catch(() => null);
-        if (fresh && fresh.exists) {
-          const merged = { ...fresh, ...m, createdAt: fresh.createdAt, creator: fresh.creator, sizeBytes: m.sizeBytes ?? fresh.sizeBytes, currentRevId: fresh.revId };
-          entry.metadata = JSON.stringify(merged);
-          await require('../config/prisma').submission.update({ where: { id: entry.id }, data: { metadata: entry.metadata } }).catch(() => null);
-        }
+        // Fetched in the background (kept for the next look), so the page does not wait for it.
+        const eid = entry.id; const m0 = m;
+        require('../wiki/entryMetadata').fetchEntryMetadata({ wiki: entry.wiki, title: entry.title }, { language: req.contest.language }).then((fresh) => {
+          if (!fresh || !fresh.exists) return null;
+          const merged = { ...fresh, ...m0, createdAt: fresh.createdAt, creator: fresh.creator, sizeBytes: m0.sizeBytes ?? fresh.sizeBytes, currentRevId: fresh.revId };
+          return require('../config/prisma').submission.update({ where: { id: eid }, data: { metadata: JSON.stringify(merged) } });
+        }).catch(() => null);
       }
     }
     const revMode = 'pinned';
-    let revChanged = false;
-    if (entry && revMode === 'pinned' && entry.revId && !reviewService.resultsFinal(req.effective.contest, req.settings)) {
-      const host = require('../wiki/wikiUrls').dbnameToHost(entry.wiki);
-      const q = new URLSearchParams({ action: 'query', prop: 'info', titles: entry.title, format: 'json', formatversion: '2' });
-      const info = host ? await fetch(`https://${host}/w/api.php?${q}`, { headers: { 'User-Agent': require('../config/env').userAgent } }).then((r) => r.json()).catch(() => null) : null;
-      const last = info && info.query && info.query.pages && info.query.pages[0] && info.query.pages[0].lastrevid;
-      revChanged = !!(last && last !== entry.revId);
-    }
+    // Has the page changed on the wiki since its revision? Asked alongside the rest (kept a minute, 2 s at most).
+    const revCheck = (async () => {
+      if (!(entry && entry.revId && !reviewService.resultsFinal(req.effective.contest, req.settings))) return false;
+      const key = entry.wiki + '|' + entry.title;
+      const hit = lastRevs.get(key);
+      let last = hit && Date.now() - hit.at < 60000 ? hit.last : null;
+      if (last == null) {
+        const host = require('../wiki/wikiUrls').dbnameToHost(entry.wiki);
+        const q = new URLSearchParams({ action: 'query', prop: 'info', titles: entry.title, format: 'json', formatversion: '2' });
+        const info = host ? await fetch(`https://${host}/w/api.php?${q}`, { headers: { 'User-Agent': require('../config/env').userAgent }, signal: AbortSignal.timeout(2000) }).then((r) => r.json()).catch(() => null) : null;
+        last = (info && info.query && info.query.pages && info.query.pages[0] && info.query.pages[0].lastrevid) || 0;
+        if (lastRevs.size > 2000) lastRevs.clear();
+        lastRevs.set(key, { at: Date.now(), last });
+      }
+      return !!(last && last !== entry.revId);
+    })();
+    const [revChanged, handTo, blocked] = await Promise.all([
+      revCheck,
+      entry ? reviewService.handOverChoices({ contest: req.contest, settings: req.eventSettings, entry, me: req.user.id }).catch(() => []) : [],
+      entry ? reviewService.reviewBlock(req.eventSettings, entry, req.user.id, { contest: req.effective.contest, permissions: req.permissions }) : null,
+    ]);
     res.locals.revMode = revMode;
     res.locals.revChanged = revChanged;
-    const handTo = entry ? await reviewService.handOverChoices({ contest: req.contest, settings: req.eventSettings, entry, me: req.user.id }).catch(() => []) : [];
     res.render('pages/contest/review', {
       title: `Review — ${req.contest.title}`,
       handTo,
-      blocked: entry ? await reviewService.reviewBlock(req.eventSettings, entry, req.user.id, { contest: req.effective.contest, permissions: req.permissions }) : null,
+      blocked,
       entry,
       meta: entry ? JSON.parse(entry.metadata || '{}') : null,
       preview: pagePreview(entry, req.base),

@@ -14,16 +14,11 @@
 <div class="z-review-wrap">
 
   <div class="z-review-bar">
-    <div class="z-go me-auto" title="<%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= t('{n}% decided', { n: done }) %>">
-      <select data-review-picker data-url="<%= base %>/review/entries?<%= fq() %>" data-go="<%= base %>/review?<%= fq() %>" aria-label="<%= t('Entries') %>" placeholder="<%= t('Search the entries…') %>">
-        <% if (entry) { %><option value="<%= entry.id %>" selected><%= entry.title %></option><% } %>
-      </select>
-    </div>
     <button class="btn<%= filtered ? ' btn-primary' : '' %>" type="button" data-bs-toggle="collapse" data-bs-target="#review-filters" aria-expanded="<%= filtered %>" aria-controls="review-filters" title="<%= t('Filter') %>" aria-label="<%= t('Filter') %>" data-filter-btn><i class="ti ti-filter"></i></button>
-    <div class="dropdown z-review-more"><button class="btn btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= t('More') %>" aria-label="<%= t('More') %>"><i class="ti ti-dots-vertical"></i></button><div class="dropdown-menu dropdown-menu-end">
+    <span class="z-head-acts"><button class="btn btn-icon z-full-btn" type="button" data-review-full aria-pressed="false" title="<%= t('Full screen') %>" aria-label="<%= t('Full screen') %>"><i class="ti ti-maximize"></i></button>
+    <div class="dropdown z-review-more"><button class="btn btn-icon" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="<%= t('More') %>" aria-label="<%= t('More') %>"><i class="ti ti-dots-vertical"></i></button><div class="dropdown-menu dropdown-menu-end">
       <% if (((JSON.parse(settings.participation || '{}').rules) || {}).bulk !== 'off') { %><a class="dropdown-item" href="<%= base %>/review/quick"><i class="ti ti-bolt me-2"></i><%= t('Quick review') %></a><% } %>
-      <button class="dropdown-item" type="button" data-review-full aria-pressed="false"><i class="ti ti-maximize me-2"></i><%= t('Full screen') %></button>
-    </div></div>
+    </div></div></span>
   </div>
 
 <% const statsBlock = (cls) => { %>  <div class="z-review-stats <%= cls %>" title="<%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= t('{n}% decided', { n: done }) %>">
@@ -112,7 +107,7 @@
     </div>
   <% } else { %>
     <% const problems = [...(validation.errors || []), ...(validation.warnings || [])]; %>
-    <div class="z-review-layout">
+    <div class="z-review-layout"><% (typeof nextPreviews !== 'undefined' ? nextPreviews : []).forEach((u) => { %><link rel="prefetch" href="<%= u %>" as="document"><% }) %>
       <section class="card z-review-entry" aria-label="<%= entry.title %>">
         <div class="z-entry-head">
           <h2 class="z-entry-title" title="<%= entry.title %>"><%= entry.title %></h2><% { const wst = (meta && meta.watch) || {}; const WB = { deleted: ['Deleted', 'trash', 'red'], redirect: ['Now a redirect', 'arrow-forward-up', 'orange'], moved: ['Moved', 'arrows-right-left', 'blue'] }[wst.state]; if (WB) { %><span class="badge bg-<%= WB[2] %>-lt ms-1 z-watch-badge" title="<%= wst.movedFrom ? wst.movedFrom + ' →' : '' %>"><i class="ti ti-<%= WB[1] %> me-1"></i><%= t(WB[0]) %></span><% } if (wst.shrunk) { %><span class="badge bg-yellow-lt ms-1 z-watch-badge"><i class="ti ti-trending-down me-1"></i><%= formatNumber(wst.shrunk.from) %> → <%= formatNumber(wst.shrunk.to) %></span><% } } %>
@@ -149,6 +144,12 @@
         <button type="button" class="btn-close z-sheet-close" data-side-close aria-label="<%= t('Close') %>"></button>
         <%# Wide screens: the progress sits at the top of this column, so the whole column stays in place. %>
         <% statsBlock("z-stats-side") %>
+        <%# The entry list: here in the side panel (lower down on small screens), not in the title. %>
+        <div class="z-go z-go-side" title="<%= t('{n} waiting for you', { n: queue.remaining }) %> · <%= t('{n} reviewed by you', { n: queue.reviewedByMe }) %> · <%= t('{n}% decided', { n: done }) %>">
+          <select data-review-picker data-url="<%= base %>/review/entries?<%= fq() %>" data-go="<%= base %>/review?<%= fq() %>" aria-label="<%= t('Entries') %>" placeholder="<%= t('Search the entries…') %>">
+            <% if (entry) { %><option value="<%= entry.id %>" selected><%= entry.title %></option><% } %>
+          </select>
+        </div>
         <% if (blocked) { %>
         <div class="card z-review-panel"><div class="card-body">
           <div class="d-flex gap-2 text-secondary"><i class="ti ti-lock mt-1"></i><div><%= t(blocked) %> <%= t('It cannot be reviewed from here.') %></div></div>
