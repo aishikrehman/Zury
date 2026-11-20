@@ -1,0 +1,23 @@
+<%# Everything followed on Fountain or CampWiz: series (some with no events at all), editions and events. %>
+<div class="page-body"><div class="container-xl">
+  <div class="z-events-head"><div><h1 class="page-title m-0"><i class="ti ti-radar me-1"></i><%= t('Tracking') %></h1><div class="text-secondary small"><%= formatNumber(items.length) %></div></div></div>
+  <% if (!items.length) { %><div class="card"><div class="card-body text-secondary text-center py-5"><i class="ti ti-radar d-block mb-2" style="font-size: 2rem"></i><%= t('Nothing is tracked yet.') %></div></div><% } %>
+  <div class="z-track-grid">
+    <% items.forEach((it) => { const f = it.trackers.filter((x) => x.kind === 'fountain').length; const c = it.trackers.filter((x) => x.kind === 'campwiz').length; %>
+      <a class="card card-link z-track-card" href="<%= it.href %>">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-secondary-lt"><%= t({ series: 'Series', edition: 'Edition', event: 'Event' }[it.kind]) %></span>
+            <% if (it.onlyTracking) { %><span class="badge bg-azure-lt"><%= t('Tracking only') %></span><% } %>
+          </div>
+          <div class="fw-semibold"><%= it.title %></div>
+          <% if (it.sub) { %><div class="small text-secondary"><%= it.sub %></div><% } %>
+          <div class="small text-secondary mt-2 d-flex gap-3">
+            <% if (f) { %><span title="Fountain"><i class="ti ti-droplet me-1"></i><%= formatNumber(f) %></span><% } %>
+            <% if (c) { %><span title="CampWiz"><i class="ti ti-photo me-1"></i><%= formatNumber(c) %></span><% } %>
+          </div>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+</div></div>

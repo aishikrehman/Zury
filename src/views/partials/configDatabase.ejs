@@ -47,7 +47,7 @@
                   <% } else { %><span class="text-secondary">—</span><% } %>
                 </td>
                 <td class="text-nowrap">
-                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ...(can('importEvents') && w.fountainAuto ? [['unlink', t('Unlink'), 'ghost-secondary']] : [])].forEach(([action, label, cls]) => { %>
+                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ...(can('importEvents') && w.fountainTrackOnly ? [['import', t('Import'), 'ghost-primary'], ['unlink', t('Remove tracking'), 'ghost-secondary']] : can('importEvents') && w.fountainAuto ? [['unlink', t('Unlink'), 'ghost-secondary']] : [])].forEach(([action, label, cls]) => { %>
                     <form method="post" action="<%= eventBase %>/fountain/<%= w.id %>/<%= action %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button></form>
                   <% }) %><% } %>
                   <% (wikiActions[w.status] || []).filter(([action]) => action !== 'remove' || can('deleteAnything')).forEach(([action, label, cls]) => { %>

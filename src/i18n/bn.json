@@ -2491,5 +2491,12 @@
   "Track only": "শুধু ট্র্যাকিং",
   "Import as events": "ইভেন্ট হিসেবে আমদানি",
   "{n} added.": "{n}টি যোগ হলো।",
-  "Moderator view": "মডারেটর হিসেবে দেখছেন"
+  "Moderator view": "মডারেটর হিসেবে দেখছেন",
+  "Copy its entries and reviews into Zury now?": "এর জমা ও পর্যালোচনা এখনই জুরিতে কপি করবেন?",
+  "Remove tracking": "ট্র্যাকিং সরান",
+  "Only a Fountain editathon can be imported.": "শুধু ফাউন্টেন এডিটাথন আমদানি করা যায়।",
+  "Nothing to import.": "আমদানির কিছু নেই।",
+  "All tracked together": "সব ট্র্যাকিং একসাথে",
+  "Nothing is tracked yet.": "এখনো কিছু ট্র্যাক করা হচ্ছে না।",
+  "Tracking only": "শুধু ট্র্যাকিং"
 }

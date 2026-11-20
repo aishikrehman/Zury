@@ -106,7 +106,17 @@ function unlink(req, res, next) {
   }).catch(next);
 }
 
-module.exports = { importForm, importEvent, link, sync, unlink };
+// A wiki that only tracked its editathon: from now on its entries are copied (and kept in sync).
+function importTracked(req, res, next) {
+  back(req, res, async () => {
+    const w = await prisma.contestWiki.findFirst({ where: { id: Number(req.params.wikiId), contestId: req.contest.id } });
+    if (!w || !w.fountainCode) throw new fountain.FountainError('Nothing to import.');
+    await prisma.contestWiki.update({ where: { id: w.id }, data: { fountainTrackOnly: false, fountainAuto: true } });
+    return summary(req, await fountain.sync({ ...w, fountainTrackOnly: false }, { actorId: req.user.id }));
+  }).catch(next);
+}
+
+module.exports = { importForm, importEvent, link, sync, unlink, importTracked };
 
 // Hourly sync on or off for one followed editathon.
 async function setAuto(req, res, next) {

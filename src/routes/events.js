@@ -29,6 +29,7 @@ const entriesOnly = (req, res, next) => (takesEntries(req.contest.type) ? next()
 const activityOnly = (req, res, next) => (EVENT_TYPES[req.contest.type].activity ? next() : notFound(res));
 
 router.get('/events', eventsController.index);
+router.get('/tracking', eventsController.trackingList);
 router.get('/create/event', requirePermission('createEvent'), eventsController.createForm);
 router.get('/create/import', requirePermission('importEvents'), fountainController.importForm);
 router.get('/create/series', requirePermission('importEvents'), eventsController.seriesForm);
@@ -70,6 +71,8 @@ contest.post('/wikis', requireEventWide('manageEvent'), wikiController.add);
 contest.post('/fountain', requirePermission('importEvents'), fountainController.link);
 contest.post('/track', requirePermission('manageEvent'), require('../controllers/eventsController').trackEvent);
 contest.post('/track/:id(\\d+)/remove', requirePermission('manageEvent'), require('../controllers/eventsController').trackEvent);
+contest.post('/track/:id(\\d+)/import', requirePermission('importEvents'), require('../controllers/eventsController').trackEvent);
+contest.post('/fountain/:wikiId(\\d+)/import', requirePermission('importEvents'), require('../controllers/fountainController').importTracked);
 // Import entries from a wiki page, a CSV or plain list, or Fountain (organizers).
 // One person's work in this event.
 contest.get('/user/:username', personController.event);
@@ -185,8 +188,10 @@ router.post(`/series/:series(${SLUG})/fountain-sync`, requireAuth, eventsControl
 // Tracking (Fountain, CampWiz) on a series, an edition or an event.
 router.post(`/series/:series(${SLUG})/track`, requireAuth, eventsController.track);
 router.post(`/series/:series(${SLUG})/track/:id(\\d+)/remove`, requireAuth, eventsController.track);
+router.post(`/series/:series(${SLUG})/track/:id(\\d+)/import`, requireAuth, eventsController.track);
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/track`, requireAuth, eventsController.track);
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/track/:id(\\d+)/remove`, requireAuth, eventsController.track);
+router.post(`/series/:series(${SLUG})/:edition(${SLUG})/track/:id(\\d+)/import`, requireAuth, eventsController.track);
 router.post(`/series/:series(${SLUG})/:edition(${SLUG})/fountain-sync`, requireAuth, eventsController.syncLevelFountain);
 router.post(`/series/:series(${SLUG})/detach`, requireAuth, eventsController.detachEvent);
 router.post(`/series/:series(${SLUG})/order`, requireAuth, eventsController.seriesOrder);

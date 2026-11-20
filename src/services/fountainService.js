@@ -346,7 +346,9 @@ async function unlink({ actorId, contest, wikiId }) {
   if (!eventWiki) return;
   // Unlinked: no more automatic syncing. The imported entries stay (they are the event's now), and the
   // code stays so the organizers can still update by hand.
-  await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainAuto: false } });
+  // A wiki that only tracked: the tracking goes entirely (nothing was copied).
+  if (eventWiki.fountainTrackOnly) await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: '', fountainTrackOnly: false, fountainSyncedAt: null } });
+  else await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainAuto: false } });
   await audit.record({ actorId, contestId: contest.id, action: 'fountain.unlinked', entityType: 'ContestWiki', entityId: eventWiki.id, details: { code: eventWiki.fountainCode } });
 }
 
@@ -370,6 +372,7 @@ async function trackedStats(code) {
     code: e.code, name: e.name, start: e.start, finish: e.finish, wiki: wikiOf(e), jury: (e.jury || []).length,
     articles: articles.length, participants: people.size, accepted, rejected, waiting,
     top: [...byUser.values()].sort((a, b) => b.accepted - a.accepted || b.articles - a.articles).slice(0, 10),
+    users: [...people], // for combined counts across several tracked editathons (memory only)
     url: `https://fountain.toolforge.org/editathons/${encodeURIComponent(e.code)}`, readAt: new Date(),
   };
   tracked.set(code, { at: Date.now(), data });

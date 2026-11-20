@@ -804,6 +804,14 @@ async function track(req, res, next) {
     if (!allowed) return forbiddenPage(next);
     const trackers = require('../services/trackerService');
     const level = edition ? 'edition' : 'series'; const levelId = edition ? edition.id : sr.id;
+    if (req.params.id && req.path.endsWith('/import')) {
+      const tr = await prisma.tracker.findFirst({ where: { id: Number(req.params.id), level, levelId, kind: 'fountain' } });
+      if (!tr) throw new trackers.TrackerError('Only a Fountain editathon can be imported.');
+      await require('../services/fountainService').importEvent({ actorId: req.user.id, input: tr.code, type: 'writing', series: { slug: sr.slug, edition: edition ? edition.slug : null, title: sr.title } });
+      await trackers.remove(tr.id, level, levelId);
+      req.flash('success', req.t('Imported from Fountain.'));
+      return res.redirect(back);
+    }
     if (req.params.id) await trackers.remove(Number(req.params.id), level, levelId);
     else {
       const lines = String(req.body.code || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 50);
@@ -811,7 +819,7 @@ async function track(req, res, next) {
     }
     req.flash('success', req.t(req.params.id ? 'Stopped tracking.' : 'Tracking; nothing is copied.'));
   } catch (err) {
-    if (err.name !== 'TrackerError' && !(err instanceof require('../services/trackerService').TrackerError)) return next(err);
+    if (!(err instanceof require('../services/trackerService').TrackerError || err instanceof require('../services/fountainService').FountainError || err instanceof eventService.EventError)) return next(err);
     req.flash('error', req.t(err.message));
   }
   res.redirect(back);
@@ -822,6 +830,14 @@ module.exports.track = track;
 async function trackEvent(req, res, next) {
   try {
     const trackers = require('../services/trackerService');
+    if (req.params.id && req.path.endsWith('/import')) {
+      const tr = await prisma.tracker.findFirst({ where: { id: Number(req.params.id), level: 'event', levelId: req.contest.id, kind: 'fountain' } });
+      if (!tr) throw new trackers.TrackerError('Only a Fountain editathon can be imported.');
+      await require('../services/fountainService').link({ actorId: req.user.id, contest: req.contest, input: tr.code, trackOnly: false });
+      await trackers.remove(tr.id, 'event', req.contest.id);
+      req.flash('success', req.t('Imported from Fountain.'));
+      return res.redirect(`${req.base}/config#database`);
+    }
     if (req.params.id) await trackers.remove(Number(req.params.id), 'event', req.contest.id);
     else {
       const lines = String(req.body.code || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 50);
@@ -829,9 +845,30 @@ async function trackEvent(req, res, next) {
     }
     req.flash('success', req.t(req.params.id ? 'Stopped tracking.' : 'Tracking; nothing is copied.'));
   } catch (err) {
-    if (!(err instanceof require('../services/trackerService').TrackerError)) return next(err);
+    if (!(err instanceof require('../services/trackerService').TrackerError || err instanceof require('../services/fountainService').FountainError)) return next(err);
     req.flash('error', req.t(err.message));
   }
   res.redirect(`${req.base}/config#database`);
 }
 module.exports.trackEvent = trackEvent;
+
+// /tracking: what is followed on Fountain or CampWiz — series, editions and events (public ones).
+async function trackingList(req, res, next) {
+  try {
+    const rows = await prisma.tracker.findMany({ orderBy: { id: 'desc' } });
+    const ids = (lvl) => [...new Set(rows.filter((r) => r.level === lvl).map((r) => r.levelId))];
+    const [series, editions, events] = await Promise.all([
+      prisma.eventSeries.findMany({ where: { id: { in: ids('series') }, deletedAt: null, visibility: { not: 'private' } }, select: { id: true, slug: true, title: true, status: true, _count: { select: { editions: true, editionRecords: true } } } }),
+      prisma.edition.findMany({ where: { id: { in: ids('edition') }, deletedAt: null, visibility: { not: 'private' } }, select: { id: true, slug: true, title: true, status: true, series: { select: { slug: true, title: true } } } }),
+      prisma.contest.findMany({ where: { id: { in: ids('event') }, deletedAt: null, visibility: 'public' }, select: { id: true, title: true, path: true, status: true, logoUrl: true } }),
+    ]);
+    const of = (lvl, id) => rows.filter((r) => r.level === lvl && r.levelId === id);
+    const items = [
+      ...series.map((s) => ({ kind: 'series', title: s.title, href: '/' + s.slug + '?tab=statistics', onlyTracking: !s._count.editions && !s._count.editionRecords, trackers: of('series', s.id) })),
+      ...editions.map((e) => ({ kind: 'edition', title: e.title || e.slug, sub: e.series.title, href: `/series/${e.series.slug}/${e.slug}?tab=statistics`, trackers: of('edition', e.id) })),
+      ...events.map((c) => ({ kind: 'event', title: c.title, href: (c.path || '/contest/' + c.id) + '/statistics', logo: c.logoUrl, trackers: of('event', c.id) })),
+    ];
+    res.render('pages/events/tracking', { title: 'Tracking — Zury', items });
+  } catch (err) { next(err); }
+}
+module.exports.trackingList = trackingList;

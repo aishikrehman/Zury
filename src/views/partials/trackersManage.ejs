@@ -4,7 +4,8 @@
   <div class="<%= typeof bare !== 'undefined' && bare ? 'mt-3' : 'card-body' %>">
     <% if (trackers.length) { %><ul class="list-unstyled mb-3 z-track-list"><% trackers.forEach((tr) => { %>
       <li><i class="ti ti-<%= tr.kind === 'fountain' ? 'droplet' : 'photo' %>"></i><b><%= tr.kind === 'fountain' ? 'Fountain' : 'CampWiz' %></b><span class="text-truncate"><%= tr.code %><%= tr.category ? ' · ' + tr.category : '' %></span>
-        <form method="post" action="<%= trackAction %>/<%= tr.id %>/remove" class="m-0 ms-auto" data-confirm="<%= t('Stop tracking this?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Stop') %>" aria-label="<%= t('Stop') %>"><i class="ti ti-x"></i></button></form></li>
+        <% if (tr.kind === 'fountain') { %><form method="post" action="<%= trackAction %>/<%= tr.id %>/import" class="m-0 ms-auto" data-confirm="<%= t('Copy its entries and reviews into Zury now?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-primary btn-icon" type="submit" title="<%= t('Import') %>" aria-label="<%= t('Import') %>"><i class="ti ti-download"></i></button></form><% } %>
+        <form method="post" action="<%= trackAction %>/<%= tr.id %>/remove" class="m-0<%= tr.kind === 'fountain' ? '' : ' ms-auto' %>" data-confirm="<%= t('Stop tracking this?') %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-ghost-danger btn-icon" type="submit" title="<%= t('Stop') %>" aria-label="<%= t('Stop') %>"><i class="ti ti-x"></i></button></form></li>
     <% }) %></ul><% } %>
     <form method="post" action="<%= trackAction %>" class="row g-2 align-items-center">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
