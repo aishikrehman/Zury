@@ -1,7 +1,7 @@
 <% const p = jury.progress; const total = p.waiting + p.decided; const pct = total ? Math.round((p.decided / total) * 100) : 0; %>
 <div class="card mb-3" id="jury-progress">
   <div class="card-header">
-    <h3 class="card-title"><i class="ti ti-clipboard-check me-2"></i><%= t("Reviewers' progress") %></h3>
+    <h3 class="card-title"><i class="ti ti-grid-scan me-2"></i><%= t("Reviewers' progress") %></h3>
     <div class="card-actions d-flex gap-2 small">
       <span class="badge bg-yellow-lt"><%= t('Waiting') %> <%= formatNumber(p.waiting) %></span>
       <span class="badge bg-green-lt"><%= t('Accepted') %> <%= formatNumber(p.approved) %></span>

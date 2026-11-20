@@ -3,7 +3,7 @@
 <div class="page-body"><div class="container-xl">
   <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <h2 class="m-0 me-auto"><i class="ti ti-bolt me-1"></i><%= t('Quick review') %> <small class="text-secondary"><%= t('{n} entries waiting', { n: formatNumber(remaining) }) %></small></h2>
-    <a class="btn" href="<%= base %>/review"><i class="ti ti-clipboard-check me-1"></i><%= t('One at a time') %></a>
+    <a class="btn" href="<%= base %>/review"><i class="ti ti-grid-scan me-1"></i><%= t('One at a time') %></a>
   </div>
   <% if (!rows.length) { %>
     <div class="card"><div class="card-body text-center text-secondary py-5"><i class="ti ti-circle-check text-green d-block mb-2" style="font-size: 2rem"></i><%= t('Nothing waiting for you.') %></div></div>

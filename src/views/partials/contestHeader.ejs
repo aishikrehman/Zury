@@ -136,7 +136,7 @@
         <% } %>
         <% const fountainWiki = allWikis.find((w) => w.fountainCode); %>
         <% if (canReview) { %>
-          <a href="<%= base %>/review" class="btn btn-outline-primary"><i class="ti ti-clipboard-check me-1"></i><%= t('Review') %></a>
+          <a href="<%= base %>/review" class="btn btn-outline-primary"><i class="ti ti-grid-scan me-1"></i><%= t('Review') %></a>
         <% } %>
         <% const eventOver = ['completed', 'archived', 'cancelled'].includes(contest.status) || (contest.endDate && new Date(contest.endDate) < new Date()); %>
         <% const organizerSubmit = !eventOver && currentUser && can('manageEvent') && typeDef.entries !== false && active !== 'submit'; %>

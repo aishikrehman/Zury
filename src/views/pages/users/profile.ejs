@@ -1,7 +1,7 @@
 <%
   const groups = [
     { key: 'organized', heading: t('Organized'), icon: 'briefcase', color: 'green', items: organized },
-    { key: 'reviewer', heading: t('Reviewer'), icon: 'clipboard-check', color: 'orange', items: judged },
+    { key: 'reviewer', heading: t('Reviewer'), icon: 'grid-scan', color: 'orange', items: judged },
     { key: 'participated', heading: t('Participated'), icon: 'users', color: 'blue', items: participated },
   ];
   const RUNNING = ['published', 'upcoming', 'active', 'submission_closed', 'under_review'];
@@ -9,7 +9,7 @@
   const list = pick.items.filter(({ contest: c }) => when === 'all' || (when === 'running' ? RUNNING.includes(c.status) : !RUNNING.includes(c.status)));
   const allIds = new Set([...organized, ...judged, ...participated].map((e) => e.contest.id));
   const q = (o) => '?' + new URLSearchParams({ show: o.show || pick.key, ...(o.when && o.when !== 'all' ? { when: o.when } : {}) }).toString();
-  const tiles = [['calendar-event', allIds.size, t('Events'), 'blue'], ['files', numbers.entries, t('Entries'), 'azure'], ['circle-check', numbers.accepted, t('Accepted'), 'green'], ['letter-case', numbers.words, t('Words'), 'purple'], ['clipboard-check', numbers.reviews, t('Reviews'), 'orange']];
+  const tiles = [['calendar-event', allIds.size, t('Events'), 'blue'], ['files', numbers.entries, t('Entries'), 'azure'], ['circle-check', numbers.accepted, t('Accepted'), 'green'], ['letter-case', numbers.words, t('Words'), 'purple'], ['grid-scan', numbers.reviews, t('Reviews'), 'orange']];
 %>
 <% if (isOwnProfile) { %><%- include('../../partials/accountHeader', { tab: 'profile', eventCount: allIds.size }) %><% } else { %>
 <div class="page-body"><div class="container-xl"><div class="row g-4">
@@ -42,7 +42,7 @@
               </div>
               <div class="card-footer z-prof-ev-foot">
                 <% if (pick.key === 'participated') { %><span><i class="ti ti-files"></i><%= formatNumber(m.entries) %></span><span class="text-green"><i class="ti ti-circle-check"></i><%= formatNumber(m.accepted) %></span>
-                <% } else if (pick.key === 'reviewer') { %><span><i class="ti ti-clipboard-check"></i><%= tn('{n} review', '{n} reviews', m.reviews) %></span>
+                <% } else if (pick.key === 'reviewer') { %><span><i class="ti ti-grid-scan"></i><%= tn('{n} review', '{n} reviews', m.reviews) %></span>
                 <% } else { %><span><i class="ti ti-users"></i><%= tn('{n} participant', '{n} participants', c._count ? c._count.memberships : 0) %></span><% } %>
               </div>
             </a>
