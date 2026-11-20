@@ -9,8 +9,7 @@
     <form method="post" action="<%= trackAction %>" class="row g-2 align-items-center">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="col-md-auto"><select class="form-select" name="kind" aria-label="<%= t('Where') %>"><option value="fountain">Fountain</option><option value="campwiz">CampWiz</option></select></div>
-      <div class="col-md"><input class="form-control" name="code" placeholder="<%= t('Link or code') %>" aria-label="<%= t('Link or code') %>"></div>
-      <div class="col-md"><input class="form-control" name="category" placeholder="<%= t('Commons category (CampWiz)') %>" aria-label="<%= t('Commons category (CampWiz)') %>"></div>
+      <div class="col-md"><textarea class="form-control" name="code" rows="2" placeholder="<%= t('Links, one per line (Fountain or CampWiz)') %>" aria-label="<%= t('Link or code') %>"></textarea><div class="form-hint"><%= t('CampWiz: add its Commons category after a | on the same line.') %></div></div>
       <div class="col-auto"><button class="btn" type="submit"><i class="ti ti-radar me-1"></i><%= t('Track') %></button></div>
     </form>
   </div>

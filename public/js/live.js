@@ -22,8 +22,12 @@
       if (!d) return;
       since = d.now;
       document.dispatchEvent(new CustomEvent('zury:unread', { detail: d.unreadNotes }));
-      d.notes.forEach((n) => toast('bell', window.zt ? window.zt('Notification') : 'Notification', n.text, n.link));
-      d.chats.forEach((m) => { if (!document.querySelector('[data-chat] input[name="c"][value="' + m.channel + '"]')) toast('messages', m.who + ' · ' + m.title, m.text, m.link); });
+      // On the chat page itself: no toasts (the messages are right there).
+      const onChatPage = location.pathname.startsWith('/inbox');
+      if (!onChatPage) {
+        d.notes.forEach((n) => toast('bell', window.zt ? window.zt('Notification') : 'Notification', n.text, n.link));
+        d.chats.forEach((m) => { if (!document.querySelector('[data-chat] input[name="c"][value="' + m.channel + '"]')) toast('messages', m.who + ' · ' + m.title, m.text, m.link); });
+      }
       const dot = document.querySelector('[data-chat-dot]');
       if (dot && d.liveChat) dot.hidden = !d.unreadRooms;
     }).catch(() => {});

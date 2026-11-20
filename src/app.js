@@ -77,7 +77,9 @@ Object.assign(app.locals, format, contestLabels, { EVENT_TYPES, FEATURE_DEFAULTS
 });
 
 // Pages and text files go out compressed; Toolforge's proxy leaves HTML as it is.
-app.use(require('compression')());
+// Compressed, except live streams (chat), which must go out at once.
+const compression = require('compression');
+app.use(compression({ filter: (req, res) => (/event-stream/.test(String(res.getHeader('Content-Type') || '')) || req.path.endsWith('/stream') ? false : compression.filter(req, res)) }));
 // Each start gets a new asset version: files asked for with ?v= can be cached for a year.
 app.locals.assetV = Date.now().toString(36);
 app.use(express.static(path.join(__dirname, '..', 'public'), {

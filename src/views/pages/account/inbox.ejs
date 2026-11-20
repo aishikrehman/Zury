@@ -73,7 +73,7 @@
           <%- avatarOf(open) %>
           <div class="min-w-0 flex-fill">
             <a class="z-msg-title text-truncate" href="<%= open.path %>"><%= open.title %></a>
-            <% if (open.room === 'direct') { %><small class="text-secondary"><i class="ti ti-lock"></i> <%= t('Only the two of you') %></small><% } %>
+            <% if (open.room === 'direct') { %><small class="text-secondary"><i class="ti ti-lock"></i> <%= t('Only the two of you') %></small><% } %><% if (open.moderator) { %><small class="text-warning"><i class="ti ti-shield"></i> <%= t('Moderator view') %></small><% } %>
           </div>
           <% if (open.wikiTalk) { %><a class="z-msg-wikitalk" href="<%= open.wikiTalk %>" target="_blank" rel="noopener" title="<%= t('Talk page on the wiki') %>"><i class="ti ti-message-circle"></i><span><%= t('On the wiki') %></span></a><% } %>
           <% if (siblings.length > 1) { %>

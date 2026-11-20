@@ -15,17 +15,18 @@
           <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="ti ti-plus me-1"></i><%= t('Add event') %></button>
           <div class="dropdown-menu dropdown-menu-end">
             <a class="dropdown-item" href="/create/event?series=<%= sr.slug %>&edition=<%= edition.slug %>"><i class="ti ti-file-plus me-2"></i><%= t('New event') %></a>
-            <% if (can('importEvents')) { %><button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#add-fountain"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></button><% } %>
+            <% if (can('importEvents')) { %><button class="dropdown-item" type="button" data-bs-toggle="collapse" data-bs-target="#add-fountain"><i class="ti ti-download me-2"></i><%= t('Import or track') %></button><% } %>
           </div>
         </div></div>
         <% if (can('importEvents')) { %>
           <form method="post" action="/series/<%= sr.slug %>/<%= edition.slug %>/fountain" class="card collapse mb-3" id="add-fountain">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="card-header"><h3 class="card-title"><i class="ti ti-download me-2"></i><%= t('Import from Fountain') %></h3></div>
+            <div class="card-header"><h3 class="card-title"><i class="ti ti-download me-2"></i><%= t('Import or track') %></h3></div>
             <div class="card-body"><div class="row g-2 align-items-end">
-              <div class="col-12 col-md-6"><label class="form-label" for="af-code"><%= t('Fountain editathon code or address') %></label><input class="form-control" id="af-code" name="code" required placeholder="https://fountain.toolforge.org/editathons/wam2026-bn"></div>
+              <div class="col-12"><label class="form-label" for="af-code"><%= t('Links, one per line (Fountain or CampWiz)') %></label><textarea class="form-control" id="af-code" name="code" rows="3" required placeholder="https://fountain.toolforge.org/editathons/wam2026-bn&#10;https://fountain.toolforge.org/editathons/wam2026-as&#10;https://campwiz.toolforge.org/campaign/… | Images from …"></textarea><div class="form-hint"><%= t('CampWiz: add its Commons category after a | on the same line.') %></div></div>
+              <div class="col-6 col-md-3"><label class="form-label" for="af-mode"><%= t('How') %></label><select class="form-select" id="af-mode" name="mode"><option value="track"><%= t('Track only') %></option><option value="import"><%= t('Import as events') %></option></select></div>
               <% if (seriesType) { %><input type="hidden" name="type" value="<%= seriesType %>"><% } else { %><div class="col-6 col-md-3"><label class="form-label" for="af-type"><%= t('Type') %></label><select class="form-select" id="af-type" name="type"><option value="writing"><%= t('Writing contest') %></option><option value="editathon"><%= t('Edit-a-thon') %></option></select></div><% } %>
-              <div class="col-6 col-md-3"><button class="btn btn-primary w-100" type="submit"><%= t('Import') %></button></div>
+              <div class="col-6 col-md-3"><button class="btn btn-primary w-100" type="submit"><%= t('Continue') %></button></div>
             </div></div>
           </form>
         <% } %>

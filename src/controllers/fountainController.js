@@ -8,23 +8,24 @@ const TYPES = ['writing', 'editathon'];
 const summary = (req, r) => (r ? req.t('Fountain: {added} new, {updated} updated.', { added: r.added, updated: r.updated }) : req.t('Following on Fountain for its numbers only; nothing is copied.'));
 const trackOnlyOf = (req) => req.body.mode !== 'import';
 
-// Events the importer may add a wiki to: all of them for global controllers, else those they organize.
-async function targets(req) {
-  const where = req.permissions.has('manageEvent')
-    ? { deletedAt: null }
-    : { deletedAt: null, memberships: { some: { userId: req.user.id, role: 'organizer', wiki: '', status: 'active' } } };
-  const rows = await prisma.contest.findMany({
-    where: { ...where, path: { not: null } },
-    select: { id: true, title: true, path: true },
-    orderBy: { createdAt: 'desc' },
+// Where an import can go: a new event on its own, or into a series or one of its editions.
+async function targets() {
+  const series = await prisma.eventSeries.findMany({
+    where: { deletedAt: null, status: { not: 'archived' } },
+    select: { slug: true, title: true, editionRecords: { where: { deletedAt: null, status: { not: 'archived' } }, select: { slug: true, title: true }, orderBy: { slug: 'desc' } } },
+    orderBy: { title: 'asc' },
     take: 200,
   });
-  return rows.map((c) => ({ id: c.id, path: c.path, label: `${c.title} (${c.path})` }));
+  return series.map((s) => ({ ...s, editions: s.editionRecords }));
 }
+const seriesOf = (target) => {
+  const m = String(target || '').match(/^(s|e):([a-z0-9-]+)(?:\/([a-z0-9~-]+))?$/i);
+  return m ? { slug: m[2], edition: m[1] === 'e' ? m[3] : null } : null;
+};
 
-function render(req, res, { value = '', type = 'writing', target = '', error = '', status = 200 } = {}) {
-  return targets(req).then((events) =>
-    res.status(status).render('pages/events/import', { title: 'Import from Fountain — Zury', value, type, types: TYPES, target, events, error }),
+function render(req, res, { value = '', type = 'writing', target = '', error = '', status = 200, source = 'fountain', category = '' } = {}) {
+  return targets().then((series) =>
+    res.status(status).render('pages/events/import', { title: 'Import — Zury', value, type, types: TYPES, target, series, error, source, category }),
   );
 }
 
@@ -36,22 +37,43 @@ async function importEvent(req, res, next) {
   const value = String(req.body.code || '').trim();
   const type = TYPES.includes(req.body.type) ? req.body.type : 'writing';
   const target = String(req.body.target || '');
+  const source = req.body.source === 'campwiz' ? 'campwiz' : 'fountain';
+  const category = String(req.body.category || '').trim();
+  const where = seriesOf(target);
   try {
-    if (target) {
-      // Into an existing event: the editathon becomes one of its wikis.
-      const allowed = (await targets(req)).find((e) => String(e.id) === target);
-      if (!allowed) throw new fountain.FountainError('Choose an event you organize.');
-      const contest = await prisma.contest.findUnique({ where: { id: allowed.id } });
-      const { result } = await fountain.link({ actorId: req.user.id, contest, input: value, trackOnly: trackOnlyOf(req) });
-      req.flash('success', summary(req, result));
-      return res.redirect(allowed.path);
+    if (where) {
+      const sr = await prisma.eventSeries.findFirst({ where: { slug: where.slug, deletedAt: null } });
+      if (!sr) throw new fountain.FountainError('Choose a series.');
+      where.title = sr.title;
     }
-    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type, trackOnly: trackOnlyOf(req) });
+    if (source === 'campwiz') {
+      const trackers = require('../services/trackerService');
+      // Into a series or an edition: tracked there, no event needed.
+      if (where) {
+        const ed2 = where.edition ? await prisma.edition.findFirst({ where: { slug: where.edition, series: { slug: where.slug }, deletedAt: null } }) : null;
+        const sr = await prisma.eventSeries.findFirst({ where: { slug: where.slug } });
+        await trackers.add({ level: ed2 ? 'edition' : 'series', levelId: ed2 ? ed2.id : sr.id, kind: 'campwiz', code: value, category, actorId: req.user.id });
+        req.flash('success', req.t('Tracking; nothing is copied.'));
+        return res.redirect(ed2 ? `/series/${where.slug}/${where.edition}?tab=statistics` : `/${where.slug}?tab=statistics`);
+      }
+      // A new event (photos on Commons) that tracks the campaign.
+      const cw = require('../services/campwizService');
+      const info = await cw.tracked({ url: value, category }).then((d) => d.info).catch(() => null);
+      const title = (info && info.name) || cw.categoryName(category) || 'CampWiz campaign';
+      const contest = await require('../services/eventService').create({
+        actorId: req.user.id, type: 'photo', autoSlug: true,
+        parsed: { contest: { slug: title.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'campwiz', title: title.slice(0, 1000), description: '', primaryWiki: 'commonswiki', startDate: info && info.start ? new Date(info.start) : null, endDate: info && info.end ? new Date(info.end) : null, submissionOpensAt: info && info.start ? new Date(info.start) : null, submissionDeadline: info && info.end ? new Date(info.end) : null }, settings: { juryReviewEnabled: false } },
+      });
+      await trackers.add({ level: 'event', levelId: contest.id, kind: 'campwiz', code: value, category, actorId: req.user.id });
+      req.flash('success', req.t('Tracking; nothing is copied.'));
+      return res.redirect((await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path + '/statistics');
+    }
+    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: value, type, trackOnly: trackOnlyOf(req), series: where });
     req.flash('success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));
     res.redirect((await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path);
   } catch (err) {
-    if (!(err instanceof fountain.FountainError || err instanceof EventWikiError)) return next(err);
-    render(req, res, { value, type, target, error: req.t(err.message), status: 400 }).catch(next);
+    if (!(err instanceof fountain.FountainError || err instanceof EventWikiError || (err && /TrackerError|EventError|CampwizError/.test(err.constructor && err.constructor.name)))) return next(err);
+    render(req, res, { value, type, target, error: req.t(err.message), status: 400, source, category }).catch(next);
   }
 }
 

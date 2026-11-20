@@ -337,10 +337,27 @@ async function editionFountain(req, res, next) {
   if (!(await scopeRoles.canRunEdition(req, edition))) return forbiddenPage(next);
   try {
     const type = ['writing', 'editathon'].includes(req.body.type) ? req.body.type : 'writing';
-    const { contest, existed } = await fountain.importEvent({ actorId: req.user.id, input: req.body.code, type, series: { slug: sr.slug, edition: edition.slug, title: sr.title } });
-    const path = (await prisma.contest.findUnique({ where: { id: contest.id }, select: { path: true } })).path;
-    req.flash(existed ? 'warning' : 'success', req.t(existed ? 'This editathon is already in Zury.' : 'Imported from Fountain.'));
-    res.redirect(path || back);
+    const track = req.body.mode !== 'import';
+    const trackers = require('../services/trackerService');
+    // One link per line; a CampWiz line may carry its Commons category after "|".
+    const lines = String(req.body.code || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 50);
+    let done = 0; const failed = [];
+    for (const line of lines) {
+      const [link, cat] = line.split('|').map((x) => x.trim());
+      try {
+        if (/campwiz/i.test(link) || cat) {
+          await trackers.add({ level: 'edition', levelId: edition.id, kind: 'campwiz', code: link, category: cat || '', actorId: req.user.id });
+        } else if (track) {
+          await trackers.add({ level: 'edition', levelId: edition.id, kind: 'fountain', code: link, actorId: req.user.id });
+        } else {
+          await fountain.importEvent({ actorId: req.user.id, input: link, type, series: { slug: sr.slug, edition: edition.slug, title: sr.title } });
+        }
+        done += 1;
+      } catch (e) { failed.push(`${link}: ${req.t(e.message)}`); }
+    }
+    if (done) req.flash('success', req.t('{n} added.', { n: done }));
+    if (failed.length) req.flash('danger', failed.join(' · '));
+    res.redirect(track ? `${back}?tab=statistics` : back);
   } catch (err) {
     const { EventWikiError } = require('../services/eventWikiService');
     if (!(err instanceof fountain.FountainError || err instanceof EventWikiError || err instanceof eventService.EventError)) return next(err);
@@ -475,6 +492,8 @@ async function seriesPage(req, res, next) {
     if (RESERVED.has(req.params.series)) return next();
     const found = await prisma.eventSeries.findUnique({ where: { slug: req.params.series } });
     if (!found || found.deletedAt) return next();
+    // A draft series with a published event in it is active.
+    if (found.status === 'draft' && (await prisma.contest.count({ where: { deletedAt: null, status: { notIn: ['draft'] }, OR: [{ seriesId: found.id }, { editionOf: { seriesId: found.id } }] } }))) { await prisma.eventSeries.update({ where: { id: found.id }, data: { status: 'active' } }); found.status = 'active'; }
     const canRun = await canRunSeries(req, found.id);
     // A draft or private series is only for those who run it.
     if (!canRun && (found.status === 'draft' || found.visibility === 'private')) return next();
@@ -518,6 +537,11 @@ async function editionTabs(req, res, next) {
     if (!entry || !entry.editionId) return next(); // a direct event of the series, or nothing
     const edition = await prisma.edition.findFirst({ where: { id: entry.editionId, deletedAt: null } });
     if (!edition) return next();
+    // A draft edition (and its series) with a published event in it is active.
+    if (edition.status === 'draft' && (await prisma.contest.count({ where: { deletedAt: null, editionId: edition.id, status: { notIn: ['draft'] } } }))) {
+      await prisma.edition.update({ where: { id: edition.id }, data: { status: 'active' } }); edition.status = 'active';
+      if (sr.status === 'draft') await prisma.eventSeries.update({ where: { id: sr.id }, data: { status: 'active' } });
+    }
     // Its event, when it has one, is at this address; the edition's own tabs are under /series.
     if (!req.path.startsWith('/series/') && (await prisma.contest.findFirst({ where: { path: `/${sr.slug}/${edition.slug}`, deletedAt: null }, select: { id: true } }))) return next();
     // The edition's own people (or the series' with a role for its children) see its drafts.
@@ -781,7 +805,10 @@ async function track(req, res, next) {
     const trackers = require('../services/trackerService');
     const level = edition ? 'edition' : 'series'; const levelId = edition ? edition.id : sr.id;
     if (req.params.id) await trackers.remove(Number(req.params.id), level, levelId);
-    else await trackers.add({ level, levelId, kind: req.body.kind, code: req.body.code, category: req.body.category, actorId: req.user.id });
+    else {
+      const lines = String(req.body.code || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 50);
+      for (const line of lines) { const [link, cat] = line.split('|').map((x) => x.trim()); await trackers.add({ level, levelId, kind: /campwiz/i.test(link) || cat ? 'campwiz' : (req.body.kind === 'campwiz' ? 'campwiz' : 'fountain'), code: link, category: cat || req.body.category || '', actorId: req.user.id }); }
+    }
     req.flash('success', req.t(req.params.id ? 'Stopped tracking.' : 'Tracking; nothing is copied.'));
   } catch (err) {
     if (err.name !== 'TrackerError' && !(err instanceof require('../services/trackerService').TrackerError)) return next(err);
@@ -796,7 +823,10 @@ async function trackEvent(req, res, next) {
   try {
     const trackers = require('../services/trackerService');
     if (req.params.id) await trackers.remove(Number(req.params.id), 'event', req.contest.id);
-    else await trackers.add({ level: 'event', levelId: req.contest.id, kind: req.body.kind, code: req.body.code, category: req.body.category, actorId: req.user.id });
+    else {
+      const lines = String(req.body.code || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean).slice(0, 50);
+      for (const line of lines) { const [link, cat] = line.split('|').map((x) => x.trim()); await trackers.add({ level: 'event', levelId: req.contest.id, kind: /campwiz/i.test(link) || cat ? 'campwiz' : (req.body.kind === 'campwiz' ? 'campwiz' : 'fountain'), code: link, category: cat || req.body.category || '', actorId: req.user.id }); }
+    }
     req.flash('success', req.t(req.params.id ? 'Stopped tracking.' : 'Tracking; nothing is copied.'));
   } catch (err) {
     if (!(err instanceof require('../services/trackerService').TrackerError)) return next(err);

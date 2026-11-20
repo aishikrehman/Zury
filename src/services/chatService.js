@@ -109,7 +109,7 @@ async function markRead(userId, channel, lastId) {
 
 // A live stream of a channel to one open page. Missed messages (after Last-Event-ID) come first.
 const openStreams = new Map(); // userId → how many live lines are open
-const MAX_STREAMS = 6;
+const MAX_STREAMS = 12;
 async function stream(req, res, channel, render) {
   const who = req.user ? req.user.id : 0;
   if ((openStreams.get(who) || 0) >= MAX_STREAMS) return res.status(429).end();
@@ -253,7 +253,7 @@ async function newsSince(userId, since) {
   if (!hit || hit.rooms !== rooms) roomsCache.set(userId, { at: Date.now(), rooms });
   const byChannel = new Map(rooms.map((r) => [r.channel, r]));
   const [notes, msgs] = await Promise.all([
-    prisma.notification.findMany({ where: { userId, createdAt: { gt: since } }, orderBy: { id: 'asc' }, take: 5 }),
+    prisma.notification.findMany({ where: { userId, createdAt: { gt: since }, kind: { not: 'chat.message' } }, orderBy: { id: 'asc' }, take: 5 }),
     rooms.length ? prisma.chatMessage.findMany({ where: { channel: { in: [...byChannel.keys()] }, userId: { not: userId }, hiddenAt: null, createdAt: { gt: since } }, orderBy: { id: 'asc' }, take: 5 }) : [],
   ]);
   return { notes, msgs: (await withUsers(msgs)).map((m) => ({ ...m, room: byChannel.get(m.channel) })) };

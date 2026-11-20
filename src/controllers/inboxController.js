@@ -17,6 +17,14 @@ async function page(req, res, next) {
     if (mode === 'chats') {
       const c = String(req.query.c || '');
       open = rooms.find((r) => r.channel === c) || null;
+      // Superusers may open any event's, series' or edition's room to moderate it (never a direct message).
+      const su = ((req.subject && req.subject.user && req.subject.user.globalRoles) || []).some((r) => r.role === 'superuser');
+      const pc = chat.parseChannel(c);
+      if (!open && su && pc && pc.kind !== 'direct') {
+        if (pc.kind === 'event' || pc.kind === 'jury') { const ev = await prisma.contest.findFirst({ where: { id: pc.id, deletedAt: null }, select: { id: true, title: true, path: true, logoUrl: true } }); if (ev) open = { channel: c, title: ev.title, path: ev.path || `/contest/${ev.id}`, room: pc.kind, logo: ev.logoUrl, moderator: true }; }
+        else if (pc.kind === 'series') { const s2 = await prisma.eventSeries.findFirst({ where: { id: pc.id, deletedAt: null }, select: { title: true, slug: true } }); if (s2) open = { channel: c, title: s2.title, path: '/' + s2.slug, room: 'series', moderator: true }; }
+        else if (pc.kind === 'edition') { const e2 = await prisma.edition.findFirst({ where: { id: pc.id, deletedAt: null }, select: { title: true, slug: true, series: { select: { slug: true } } } }); if (e2) open = { channel: c, title: e2.title, path: `/series/${e2.series.slug}/${e2.slug}`, room: 'edition', moderator: true }; }
+      }
       const dm = chat.parseChannel(c);
       if (!open && dm && dm.kind === 'direct' && dm.users.includes(req.user.id)) {
         const o = await prisma.user.findUnique({ where: { id: dm.users.find((id) => id !== req.user.id) }, select: { id: true, username: true, avatarUrl: true, lastLoginAt: true } });

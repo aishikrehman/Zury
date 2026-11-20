@@ -3,30 +3,41 @@
   <div class="container-xl">
     <div class="row g-4">
       <div class="col-lg-8 col-xl-7">
-    <form method="post" action="/events/import" class="card">
+    <form method="post" action="/events/import" class="card" data-import-form>
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="card-body">
-        <label class="form-label" for="code"><%= t('Fountain editathon code or address') %></label>
-        <input class="form-control<%= error ? ' is-invalid' : '' %>" id="code" name="code" value="<%= value %>" placeholder="https://fountain.toolforge.org/editathons/…" required autofocus>
-        <% if (error) { %><div class="invalid-feedback"><%= error %></div><% } %>
-        <label class="form-label mt-3"><%= t('How') %></label>
-        <select class="form-select" name="mode" aria-label="<%= t('How') %>"><option value="track"><%= t('Track only: numbers from Fountain, nothing copied') %></option><option value="import"><%= t('Import: copy entries and reviews into Zury') %></option></select>
-        <label class="form-label mt-3" for="target"><%= t("Import into") %></label>
-        <select class="form-select" id="target" name="target" data-import-target>
-          <option value=""><%= t("A new event") %></option>
-          <% if (events.length) { %><optgroup label="<%= t('An existing event, as one more wiki') %>">
-            <% events.forEach((e) => { %><option value="<%= e.id %>"<%= String(e.id) === target ? ' selected' : '' %>><%= e.label %></option><% }) %>
-          </optgroup><% } %>
-        </select>
-        <div data-new-only<%- target ? ' hidden' : '' %>>
-        <label class="form-label mt-3" for="type"><%= t("Type") %></label>
-        <select class="form-select" id="type" name="type">
-          <% types.forEach((k) => { %><option value="<%= k %>"<%= k === type ? ' selected' : '' %>><%= t(CONTEST_TYPES[k]) %></option><% }) %>
-        </select>
+        <div class="z-seg mb-3" role="radiogroup" aria-label="<%= t('From') %>">
+          <% [['fountain', 'droplet', 'Fountain'], ['campwiz', 'photo', 'CampWiz']].forEach(([k, icon, label]) => { %><label class="<%= source === k ? 'active' : '' %>"><input type="radio" name="source" value="<%= k %>" class="visually-hidden"<%= source === k ? ' checked' : '' %>><i class="ti ti-<%= icon %>"></i><%= label %></label><% }) %>
         </div>
+        <label class="form-label" for="code"><%= t('Link or code') %></label>
+        <input class="form-control<%= error ? ' is-invalid' : '' %>" id="code" name="code" value="<%= value %>" placeholder="fountain.toolforge.org/editathons/… · campwiz…/campaign/…" autofocus>
+        <% if (error) { %><div class="invalid-feedback"><%= error %></div><% } %>
+        <div data-only="campwiz"<%- source === 'campwiz' ? '' : ' hidden' %>>
+          <label class="form-label mt-3" for="category"><%= t('Commons category (CampWiz)') %></label>
+          <input class="form-control" id="category" name="category" value="<%= category %>" placeholder="Images from Wiki Loves Folklore 2026 in Bangladesh">
+          <div class="form-hint"><%= t('Tracked only: CampWiz does not share its entries.') %></div>
+        </div>
+        <div data-only="fountain"<%- source === 'fountain' ? '' : ' hidden' %>>
+          <label class="form-label mt-3"><%= t('How') %></label>
+          <select class="form-select" name="mode" aria-label="<%= t('How') %>"><option value="track"><%= t('Track only: numbers from Fountain, nothing copied') %></option><option value="import"><%= t('Import: copy entries and reviews into Zury') %></option></select>
+          <label class="form-label mt-3" for="type"><%= t("Type") %></label>
+          <select class="form-select" id="type" name="type">
+            <% types.forEach((k) => { %><option value="<%= k %>"<%= k === type ? ' selected' : '' %>><%= t(CONTEST_TYPES[k]) %></option><% }) %>
+          </select>
+        </div>
+        <label class="form-label mt-3" for="target"><%= t('Part of') %></label>
+        <select class="form-select" id="target" name="target">
+          <option value=""><%= t('A new event on its own') %></option>
+          <% series.forEach((s) => { %>
+            <optgroup label="<%= s.title %>">
+              <option value="s:<%= s.slug %>"<%= target === 's:' + s.slug ? ' selected' : '' %>><%= s.title %> — <%= t('the series') %></option>
+              <% s.editions.forEach((e) => { const v = 'e:' + s.slug + '/' + e.slug; %><option value="<%= v %>"<%= target === v ? ' selected' : '' %>>↳ <%= t('Edition') %>: <%= e.title || e.slug %></option><% }) %>
+            </optgroup>
+          <% }) %>
+        </select>
       </div>
       <div class="card-footer d-flex justify-content-end">
-        <button class="btn btn-primary" type="submit"><%= t('Import') %></button>
+        <button class="btn btn-primary" type="submit"><%= t('Continue') %></button>
       </div>
     </form>
       </div>

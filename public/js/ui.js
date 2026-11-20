@@ -677,3 +677,12 @@ document.addEventListener('click', (e) => {
   mark(document);
   new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) mark(n); }))).observe(document.body, { childList: true, subtree: true });
 })();
+
+// Import page: Fountain or CampWiz shows its own fields.
+document.addEventListener('change', (e) => {
+  const r = e.target;
+  if (!(r instanceof HTMLInputElement) || r.name !== 'source' || !r.closest('[data-import-form]')) return;
+  const form = r.closest('form');
+  form.querySelectorAll('[data-only]').forEach((el) => { el.hidden = el.dataset.only !== r.value; });
+  form.querySelectorAll('.z-seg label').forEach((l) => l.classList.toggle('active', l.contains(r)));
+});

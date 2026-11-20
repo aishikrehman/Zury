@@ -29,7 +29,20 @@ function initChat(box) {
   // Live: one line stays open. Not live: new messages are fetched only when asked (refresh, or after sending).
   const live = box.dataset.live !== '0';
   const pull = () => { const es = listen(new EventSource(streamUrl())); setTimeout(() => es.close(), 1500); };
-  if (live) box._es = listen(new EventSource(streamUrl()));
+  // Live: the line reopens itself if it closes; and every 30 s (and on coming back to the tab) any missed
+  // messages are fetched, so nothing waits for a refresh.
+  const open = () => {
+    const es = listen(new EventSource(streamUrl()));
+    es.addEventListener('error', () => { if (es.readyState === 2) { setTimeout(() => { if (box.isConnected) box._es = open(); }, 3000); } });
+    return es;
+  };
+  if (live) {
+    box._es = open();
+    const sweep = () => { if (box.isConnected && !document.hidden) pull(); };
+    // The chat page: a quick backstop (5 s); elsewhere 30 s is enough.
+    box._sweep = setInterval(sweep, location.pathname.startsWith('/inbox') ? 5000 : 30000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) sweep(); });
+  }
   const refresh = box.querySelector('[data-chat-refresh]');
   if (refresh) refresh.addEventListener('click', pull);
   list.addEventListener('submit', (e) => {

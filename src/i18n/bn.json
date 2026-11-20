@@ -2480,5 +2480,16 @@
   "Quick look": "এক নজরে দেখুন",
   "Reason (optional)": "কারণ (ঐচ্ছিক)",
   "Unlink": "আনলিংক",
-  "Manual only": "শুধু হাতে"
+  "Manual only": "শুধু হাতে",
+  "From": "কোথা থেকে",
+  "A new event on its own": "নতুন আলাদা ইভেন্ট",
+  "the series": "পুরো সিরিজ",
+  "Tracked only: CampWiz does not share its entries.": "শুধু ট্র্যাকিং: ক্যাম্পউইজ তাদের জমা দেয় না।",
+  "Import or track": "আমদানি বা ট্র্যাক",
+  "Links, one per line (Fountain or CampWiz)": "লিংক, প্রতি লাইনে একটি (ফাউন্টেন বা ক্যাম্পউইজ)",
+  "CampWiz: add its Commons category after a | on the same line.": "ক্যাম্পউইজ: একই লাইনে | দিয়ে কমন্স বিষয়শ্রেণি লিখুন।",
+  "Track only": "শুধু ট্র্যাকিং",
+  "Import as events": "ইভেন্ট হিসেবে আমদানি",
+  "{n} added.": "{n}টি যোগ হলো।",
+  "Moderator view": "মডারেটর হিসেবে দেখছেন"
 }
