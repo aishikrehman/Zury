@@ -58,8 +58,15 @@ router.get('/notifications', requireAuth, require('../controllers/inboxControlle
 router.get('/notifications/:id(\\d+)', requireAuth, async (req, res, next) => {
   try {
     const n = await notifications.open(req.user.id, Number(req.params.id));
+    let link = n && n.link;
+    // Events can move (e.g. into a series), so an event's link is rebuilt on its address of today.
+    if (link && n.contestId) {
+      const m = link.match(/\/(submissions|review|patrol|results|participants|statistics|about|appeals|chat)(?:[/?#].*)?$/);
+      const c = m && await require('../config/prisma').contest.findUnique({ where: { id: n.contestId }, select: { id: true, path: true } });
+      if (c) link = (c.path || `/contest/${c.id}`) + m[0];
+    }
     // Only addresses inside Zury.
-    res.redirect(require('../utils/safePath').localOr(n && n.link, '/notifications'));
+    res.redirect(require('../utils/safePath').localOr(link, '/notifications'));
   } catch (err) {
     next(err);
   }

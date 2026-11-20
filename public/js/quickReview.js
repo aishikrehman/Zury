@@ -11,7 +11,7 @@
     const body = new URLSearchParams();
     body.set('_csrf', form.querySelector('[name=_csrf]').value);
     body.set('decision', decision);
-    body.set('comment', form.querySelector('[name=comment]').value);
+    body.set('comment', '');
     row.classList.add('is-busy');
     fetch(form.action + '?one=' + row.dataset.id, { method: 'POST', body, headers: { Accept: 'application/json' } })
       .then((r) => r.json())

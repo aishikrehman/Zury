@@ -27,5 +27,6 @@
   if (has('[data-level-setting]')) add('/js/levelSettings.js');
   if (has('[data-chat]')) add('/js/chat.js');
   if (has('[data-quick-review]')) add('/js/quickReview.js');
+  if (has('[data-qlook]')) add('/js/quickLook.js');
   if (has('body[data-news-check]')) add('/js/live.js');
 })();

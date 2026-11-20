@@ -107,7 +107,8 @@
               <%- row('Words counted', sel('rule_ownWords', [['off', 'All words in the article'], ['on', "Only the participant's own words added during the event"]], ruleOf('ownWords', 'off'))) %>
               <%- row("Reviewers see each other's reviews", sel('rule_seeOthers', [['yes', 'Yes'], ['no', 'No']], v('secretBallot') ? 'no' : 'yes')) %>
               <%- row("Show reviewers' names", sel('rule_reviewerNames', [['yes', 'To everyone'], ['no', 'Only to organizers and reviewers']], ruleOf('reviewerNames', 'yes'))) %>
-              <%- row('Many reviews at once', sel('rule_bulk', [['off', 'Off'], ['reviewers', 'Reviewers']], ruleOf('bulk', 'reviewers'))) %>
+              <%- row('Quick review', sel('rule_bulk', [['off', 'Off'], ['reviewers', 'Reviewers']], ruleOf('bulk', 'reviewers'))) %>
+              <%- row('Quick review on the entries page', sel('rule_quickOnEntries', [['off', 'Off'], ['on', 'On']], ruleOf('quickOnEntries', 'off'))) %>
               <%- row('When a reviewer is removed', sel('rule_jurorRemoved', [['keep', 'Their reviews stay; unfinished entries go back to the others'], ['delete', 'Their reviews are deleted and the entries decided again']], ruleOf('jurorRemoved', 'keep'))) %>
               <div class="z-set-head"><%= t('Results') %></div>
               <%- row('What the results count', sel('rankBy', [['words', 'Words'], ['articles', 'Articles'], ['points', 'Points'], ['both', 'Words and articles']], v('rankBy') || 'articles')) %>

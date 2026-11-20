@@ -1,0 +1,11 @@
+<%# The quick look: an entry in a small pop-up — a reason, then accept, reject or go to the next. %>
+<dialog class="z-qlook" data-qlook data-bulk="<%= base %>/review/bulk" data-csrf="<%= csrfToken %>">
+  <div class="z-qlook-head"><b data-qlook-title></b><a data-qlook-open target="_blank" rel="noopener" title="<%= t('Open on the wiki') %>" aria-label="<%= t('Open on the wiki') %>"><i class="ti ti-external-link"></i></a><button type="button" class="btn-close ms-auto" data-qlook-close aria-label="<%= t('Close') %>"></button></div>
+  <iframe data-qlook-frame title="<%= t('Preview') %>" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+  <div class="z-qlook-foot">
+    <input class="form-control form-control-sm" data-qlook-reason placeholder="<%= t('Reason (optional)') %>" aria-label="<%= t('Reason') %>">
+    <button type="button" class="btn btn-success btn-icon" data-qlook-do="accept" title="<%= t('Accept') %> (a)" aria-label="<%= t('Accept') %>"><i class="ti ti-check"></i></button>
+    <button type="button" class="btn btn-outline-danger btn-icon" data-qlook-do="reject" title="<%= t('Reject') %> (r)" aria-label="<%= t('Reject') %>"><i class="ti ti-x"></i></button>
+    <button type="button" class="btn btn-icon" data-qlook-next title="<%= t('Next') %> (n)" aria-label="<%= t('Next') %>"><i class="ti ti-player-skip-forward"></i></button>
+  </div>
+</dialog>

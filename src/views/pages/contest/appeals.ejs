@@ -37,9 +37,9 @@
             <form method="post" class="z-appeal-act" action="<%= base %>/appeals/<%= a.id %>/dismiss">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input class="form-control form-control-sm" name="response" maxlength="2000" placeholder="<%= t('Reply to the participant (optional)') %>">
-              <% if (r.accept) { %><button class="btn btn-sm btn-success" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/accept"><i class="ti ti-check me-1"></i><%= t('Accept the entry') %></button><% } %>
-              <% if (r.uphold) { %><button class="btn btn-sm" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/uphold"><i class="ti ti-arrow-back-up me-1"></i><%= t('Back to the reviewers') %></button><% } %>
-              <% if (r.dismiss) { %><button class="btn btn-sm btn-ghost-danger" type="submit"><i class="ti ti-x me-1"></i><%= t('Dismiss') %></button><% } %>
+              <% if (r.accept) { %><button class="btn btn-sm btn-icon btn-success" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/accept" title="<%= t('Accept the entry') %>" aria-label="<%= t('Accept the entry') %>"><i class="ti ti-check"></i></button><% } %>
+              <% if (r.uphold) { %><button class="btn btn-sm btn-icon" type="submit" formaction="<%= base %>/appeals/<%= a.id %>/uphold" title="<%= t('Review again') %>" aria-label="<%= t('Review again') %>"><i class="ti ti-refresh"></i></button><% } %>
+              <% if (r.dismiss) { %><button class="btn btn-sm btn-icon btn-outline-danger" type="submit" title="<%= t('Dismiss') %>" aria-label="<%= t('Dismiss') %>"><i class="ti ti-x"></i></button><% } %>
             </form>
           <% } %>
         </div>

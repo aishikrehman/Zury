@@ -8,7 +8,7 @@
       <div class="z-rv-tile"><span><i class="ti ti-hourglass"></i><%= t('Waiting for you') %></span><b class="<%= stats.waiting ? 'text-primary' : 'text-success' %>"><%= formatNumber(stats.waiting) %></b><small><%= tn('in {n} event', 'in {n} events', events.filter((e) => e.remaining).length) %></small></div>
       <div class="z-rv-tile"><span><i class="ti ti-calendar-check"></i><%= t('Today') %></span><b><%= formatNumber(stats.today) %></b><small><%= stats.streak > 1 ? t('{n} days in a row', { n: formatNumber(stats.streak) }) : t('reviews') %></small></div>
       <div class="z-rv-tile"><span><i class="ti ti-calendar-week"></i><%= t('Last 7 days') %></span><b><%= formatNumber(stats.week) %></b><small><%= t('{n} a day on average', { n: formatNumber(Math.round((stats.week / 7) * 10) / 10) }) %></small></div>
-      <div class="z-rv-tile"><span><i class="ti ti-gavel"></i><%= t('All my reviews') %></span><b><%= formatNumber(decidedAll) %></b>
+      <div class="z-rv-tile"><span><i class="ti ti-clipboard-check"></i><%= t('All my reviews') %></span><b><%= formatNumber(decidedAll) %></b>
         <% if (decidedAll) { %><div class="z-stack mt-1" title="<%= t('Accepted') %> <%= pct(stats.accepted) %>% · <%= t('Not accepted') %> <%= pct(stats.rejected) %>%"><i class="bg-green" style="width: <%= pct(stats.accepted) %>%"></i><i class="bg-red" style="width: <%= pct(stats.rejected) %>%"></i><i class="bg-secondary" style="width: <%= pct(stats.other) %>%"></i></div>
         <small><span class="text-green">✓ <%= formatNumber(stats.accepted) %></span> · <span class="text-red">✗ <%= formatNumber(stats.rejected) %></span></small><% } %>
       </div>
@@ -47,7 +47,7 @@
             <div class="d-flex justify-content-between small text-secondary mb-1"><span><%= t('Event decided') %></span><span><%= formatNumber(e.decided) %> / <%= formatNumber(e.total) %></span></div>
             <div class="progress progress-sm mb-3"><div class="progress-bar bg-green" style="width: <%= prog %>%" role="progressbar" aria-valuenow="<%= prog %>" aria-valuemin="0" aria-valuemax="100" aria-label="<%= prog %>%"></div></div>
             <div class="d-flex flex-wrap gap-2 mt-auto">
-              <a class="btn btn-sm <%= e.remaining ? 'btn-primary' : '' %>" href="<%= e.path %>/review"><i class="ti ti-gavel me-1"></i><%= e.remaining ? t('Start reviewing') : t('Open review') %></a>
+              <a class="btn btn-sm <%= e.remaining ? 'btn-primary' : '' %>" href="<%= e.path %>/review"><i class="ti ti-clipboard-check me-1"></i><%= e.remaining ? t('Start reviewing') : t('Open review') %></a>
               <a class="btn btn-sm" href="<%= e.path %>/submissions"><i class="ti ti-list me-1"></i><%= t('Submissions') %></a>
               <% if (e.appeals) { %><a class="btn btn-sm btn-outline-warning" href="<%= e.path %>/patrol?show=appeals"><i class="ti ti-message-exclamation me-1"></i><%= tn('{n} appeal', '{n} appeals', e.appeals) %></a><% } %>
             </div>

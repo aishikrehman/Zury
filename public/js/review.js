@@ -153,6 +153,8 @@ function initReviewPicker() {
     },
   });
   ts.on('focus', () => ts.setTextboxValue(''));
+  // Fetched ahead (quietly, once the page is idle), so the list is there when it opens.
+  (window.requestIdleCallback || ((fn) => setTimeout(fn, 400)))(() => { if (!state.loaded) { state.loaded = true; ts.load(''); } });
   ts.dropdown_content.addEventListener('scroll', () => {
     const d = ts.dropdown_content;
     if (state.busy || !state.next || d.scrollTop + d.clientHeight < d.scrollHeight - 80) return;

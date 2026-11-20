@@ -2,12 +2,7 @@
 <% const me = currentUser; const noMass = (() => { try { return !!JSON.parse(me.uiPrefs || '{}').noMass; } catch (e) { return false; } })();
    const sections = [['account', 'user-circle', t('Account')], ['display', 'accessible', t('Display and accessibility')], ['messages', 'mail', t('Messages')]]; %>
 <div class="col-12"><div class="row g-4 z-settings">
-  <aside class="col-lg-3">
-    <nav class="z-mail-nav z-settings-nav card p-2">
-      <% sections.forEach(([k, icon, label], i) => { %><a href="#<%= k %>" class="<%= i === 0 ? 'active' : '' %>"><i class="ti ti-<%= icon %>"></i><span><%= label %></span></a><% }) %>
-    </nav>
-  </aside>
-  <div class="col-lg-9 d-flex flex-column gap-3">
+  <div class="col-12 d-flex flex-column gap-3" style="max-width: 52rem">
     <section class="card" id="account">
       <div class="card-header"><h3 class="card-title"><i class="ti ti-user-circle me-2"></i><%= t('Account') %></h3></div>
       <div class="card-body">

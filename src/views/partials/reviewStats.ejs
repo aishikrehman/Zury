@@ -18,7 +18,7 @@
   <% if (anyReviews) { %>
   <div class="<%= growth ? 'col-lg-6' : 'col-12' %>">
     <div class="card">
-      <div class="card-header"><h3 class="card-title"><i class="ti ti-gavel me-2"></i><%= t('Reviews per day') %></h3><div class="card-actions text-secondary small"><%= t('{n} reviews', { n: formatNumber(s.reviewsGiven || 0) }) %></div></div>
+      <div class="card-header"><h3 class="card-title"><i class="ti ti-clipboard-check me-2"></i><%= t('Reviews per day') %></h3><div class="card-actions text-secondary small"><%= t('{n} reviews', { n: formatNumber(s.reviewsGiven || 0) }) %></div></div>
       <div class="card-body"><%- include('./chart', { spec: { type: 'area', height: 240, series: [{ name: t('Reviews'), data: s.reviewSeries.values }], labels: s.reviewSeries.labels, colors: ['purple'] } }) %></div>
     </div>
   </div>

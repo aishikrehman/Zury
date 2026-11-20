@@ -648,3 +648,32 @@ document.querySelectorAll('iframe[data-loading]').forEach((f) => {
   box.classList.add('z-frame-loading');
   f.addEventListener('load', () => box.classList.remove('z-frame-loading'), { once: true });
 });
+
+// A select whose options are addresses: choosing one goes there.
+document.addEventListener('change', (e) => {
+  const s = e.target;
+  if (s instanceof HTMLSelectElement && s.hasAttribute('data-nav-select') && s.value) location.href = s.value;
+});
+// "Show more" on a list with hidden rows.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest && e.target.closest('[data-show-more]');
+  if (!b) return;
+  const box = b.parentElement;
+  box.classList.add('is-open');
+  b.remove();
+});
+
+// Links that leave Zury get a small ↗ after their text (not buttons, images or icon-only links).
+(() => {
+  const mark = (root) => root.querySelectorAll('a[href]').forEach((a) => {
+    if (a.classList.contains('z-ext') || a.classList.contains('btn') || a.closest('.btn-group, .dropdown-menu, .z-ext-off')) return;
+    let u; try { u = new URL(a.href, location.href); } catch (e) { return; }
+    if (!/^https?:$/.test(u.protocol) || u.hostname === location.hostname) return;
+    if (a.querySelector('img') || !a.textContent.trim()) return;
+    if (a.querySelector('.ti-external-link')) return;
+    a.classList.add('z-ext');
+    if (!a.title) a.title = u.hostname;
+  });
+  mark(document);
+  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) mark(n); }))).observe(document.body, { childList: true, subtree: true });
+})();

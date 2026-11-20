@@ -52,7 +52,7 @@
           <ul class="nav nav-tabs card-header-tabs z-config-tabs" role="tablist">
             <% steps.forEach(([key, label, hint], i) => { %>
               <li class="nav-item step-item<%= i === 0 ? ' active' : '' %>" role="presentation">
-                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><span class="z-step-num"><i class="ti ti-<%= ({ basics: 'info-circle', participation: 'users', submission: 'upload', judging: 'gavel', aboutpage: 'info-circle', access: 'lock', database: 'database' })[key] || 'point' %>"></i></span><span class="z-step-label"><%= label %></span></a>
+                <a href="#step-<%= key %>" class="nav-link" data-step-link="<%= i %>" title="<%= hint %>"><span class="z-step-num"><i class="ti ti-<%= ({ basics: 'info-circle', participation: 'users', submission: 'upload', judging: 'clipboard-check', aboutpage: 'info-circle', access: 'lock', database: 'database' })[key] || 'point' %>"></i></span><span class="z-step-label"><%= label %></span></a>
               </li>
             <% }) %>
           </ul>

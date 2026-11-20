@@ -16,7 +16,7 @@
     },
   ];
   if (currentUser && typeof onJury !== 'undefined' && onJury) {
-    navItems.push({ href: '/review', icon: 'gavel', label: t('Review'), active: isActive('/review') });
+    navItems.push({ href: '/review', icon: 'clipboard-check', label: t('Review'), active: isActive('/review') });
   }
   // Tools: work that is not about one event (mass messages; lists later).
   const toolKids = [];

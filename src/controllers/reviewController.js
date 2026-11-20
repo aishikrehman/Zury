@@ -63,12 +63,17 @@ function filterQuery(f, extra = {}) {
 }
 
 // Entries for the picker on the review page: the queue in its order, searched by title, a page at a time.
+const pickerQueues = new Map();
 async function entries(req, res, next) {
   try {
     const wikis = judgedWikis(req);
     if (wikis && !wikis.length) return res.status(403).json({ items: [] });
     const filters = reviewFilters(req);
-    const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, filters });
+    // The queue for the picker is kept 30 seconds per person and filter (searching and scrolling ask often).
+    const qKey = [req.contest.id, req.user.id, JSON.stringify(filters), (wikis || []).join(',')].join('|');
+    const hit = pickerQueues.get(qKey);
+    const q = hit && Date.now() - hit.at < 30000 ? hit.q : await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, filters });
+    if (!hit || hit.q !== q) { if (pickerQueues.size > 500) pickerQueues.clear(); pickerQueues.set(qKey, { at: Date.now(), q }); }
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
     // Nothing left to review: the picker lists every entry this person may judge, to look back at.
     let ids = q.ids;
@@ -224,6 +229,7 @@ async function save(req, res, next) {
 // Quick review: the next 100 entries waiting for this person, one line each.
 async function quick(req, res, next) {
   try {
+    if (require('../services/participationService').read(req.settings).rules.bulk === 'off') return res.redirect(`${req.base}/review`);
     const wikis = judgedWikis(req);
     const q = await reviewService.queue({ contestId: req.contest.id, settings: req.eventSettings, jurorId: req.user.id, wikis, filters: {} });
     const ids = q.ids.slice(0, 100);

@@ -1,10 +1,9 @@
 <%# Quick review: many entries at once, one line each: accept or reject from the list (keys: a, r, j/k). %>
 <%- include('../../partials/contestHeader', { active: 'review' }) %>
-<% const REASONS = ['Not a real word or lexeme', 'Too little content', 'Wrong language', 'Copied or machine-made', 'Already exists']; %>
 <div class="page-body"><div class="container-xl">
   <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <h2 class="m-0 me-auto"><i class="ti ti-bolt me-1"></i><%= t('Quick review') %> <small class="text-secondary"><%= t('{n} entries waiting', { n: formatNumber(remaining) }) %></small></h2>
-    <a class="btn" href="<%= base %>/review"><i class="ti ti-gavel me-1"></i><%= t('One at a time') %></a>
+    <a class="btn" href="<%= base %>/review"><i class="ti ti-clipboard-check me-1"></i><%= t('One at a time') %></a>
   </div>
   <% if (!rows.length) { %>
     <div class="card"><div class="card-body text-center text-secondary py-5"><i class="ti ti-circle-check text-green d-block mb-2" style="font-size: 2rem"></i><%= t('Nothing waiting for you.') %></div></div>
@@ -14,20 +13,17 @@
     <input type="hidden" name="back" value="<%= base %>/review/quick">
     <div class="z-mail-bar">
       <label class="form-check m-0"><input class="form-check-input" type="checkbox" data-check-all="ids" aria-label="<%= t('Select all') %>"></label>
-      <button class="btn btn-sm btn-success" type="submit" name="decision" value="accept"><i class="ti ti-check me-1"></i><%= t('Accept selected') %></button>
-      <select class="form-select form-select-sm w-auto" name="comment" aria-label="<%= t('Reason') %>">
-        <option value=""><%= t('Reason to reject…') %></option>
-        <% REASONS.forEach((r) => { %><option value="<%= t(r) %>"><%= t(r) %></option><% }) %>
-      </select>
-      <button class="btn btn-sm btn-ghost-danger" type="submit" name="decision" value="reject"><i class="ti ti-x me-1"></i><%= t('Reject selected') %></button>
-      <span class="ms-auto small text-secondary d-none d-md-inline"><kbd>j</kbd>/<kbd>k</kbd> <%= t('move') %> · <kbd>a</kbd> <%= t('accept') %> · <kbd>r</kbd> <%= t('reject') %></span>
+      <input type="hidden" name="comment" value="">
+      <button class="btn btn-sm btn-icon btn-success" type="submit" name="decision" value="accept" title="<%= t('Accept selected') %>" aria-label="<%= t('Accept selected') %>"><i class="ti ti-checks"></i></button>
+      <button class="btn btn-sm btn-icon btn-outline-danger" type="submit" name="decision" value="reject" title="<%= t('Reject selected') %>" aria-label="<%= t('Reject selected') %>"><i class="ti ti-x"></i></button>
+      <span class="ms-auto text-secondary d-none d-md-inline" title="j / k · a · r"><i class="ti ti-keyboard"></i></span>
     </div>
     <div class="z-quick-list">
       <% rows.forEach((s, i) => { const m = s.meta; const v = s.check; %>
-        <div class="z-quick-row<%= i === 0 ? ' is-focus' : '' %>" data-id="<%= s.id %>" tabindex="-1">
+        <div class="z-quick-row<%= i === 0 ? ' is-focus' : '' %>" data-id="<%= s.id %>" tabindex="-1" data-qlook-row>
           <input class="form-check-input" type="checkbox" name="ids" value="<%= s.id %>" aria-label="<%= s.title %>">
           <div class="z-quick-main">
-            <a class="fw-semibold" href="<%= s.url %>" target="_blank" rel="noopener"><%= m.entity && m.entity.lemma ? m.entity.lemma : s.title %></a>
+            <a class="fw-semibold" href="<%= s.url %>" data-qlook-item data-id="<%= s.id %>" data-title="<%= m.entity && m.entity.lemma ? m.entity.lemma : s.title %>" data-url="<%= s.url %>" data-preview="<%= base %>/review/<%= s.id %>/preview"><%= m.entity && m.entity.lemma ? m.entity.lemma : s.title %></a>
             <% if (m.entity && m.entity.lemma) { %><span class="text-secondary small"><%= s.title %></span><% } %>
             <div class="small text-secondary">
               <%= s.participant.username %>
@@ -48,5 +44,6 @@
     </div>
     <% if (remaining > rows.length) { %><div class="card-footer text-secondary small"><%= t('Showing the first {n}; more come as you go.', { n: formatNumber(rows.length) }) %> <a href="<%= base %>/review/quick"><%= t('Load more') %></a></div><% } %>
   </form>
+  <%- include('../../partials/quickLook') %>
   <% } %>
 </div></div>

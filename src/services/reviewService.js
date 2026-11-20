@@ -392,9 +392,10 @@ async function leaderboard({ contest, settings, wiki }) {
   const name = Object.fromEntries(users.map((u) => [u.id, u.username]));
   const sorted = [...rows.values()]
     .map((r) => ({ ...r, points: Math.round(r.points * 100) / 100, username: name[r.participantId] }))
-    .sort((a, b) => (byWords ? b.words - a.words : 0) || b.points - a.points || b.entries - a.entries || a.username.localeCompare(b.username));
-  // Equal scores share a rank.
-  const key = (r) => (byWords ? r.words : r.points);
+    .sort((a, b) => (byWords ? b.words - a.words : 0) || b.points - a.points || b.entries - a.entries || (b.submitted || 0) - (a.submitted || 0) || a.username.localeCompare(b.username));
+  // Equal on everything (score, accepted, then submitted entries) shares a rank; so before anything is
+  // accepted the ranking follows the entries submitted, not one shared 1st place.
+  const key = (r) => [byWords ? r.words : r.points, r.entries, r.submitted || 0].join('|');
   let rank = 0;
   const ranked = sorted.map((r, i) => {
     if (i === 0 || key(r) !== key(sorted[i - 1])) rank = i + 1;

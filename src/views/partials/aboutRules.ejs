@@ -32,7 +32,7 @@
   what.push(['circle-minus', { participant: t('You can withdraw your own entries'), reviewers: t('Reviewers can remove entries'), both: t('You and the reviewers can remove entries'), off: t('Entries cannot be withdrawn') }[rules.withdraw] || t('You can withdraw your own entries')]);
   // How it is judged
   if (settings.juryReviewEnabled) {
-    judge.push(['gavel', t('Reviewers judge each entry: {m}', { m: t({ yesno: 'accept or reject', marks: 'accept or reject', stars: 'stars', number: 'a score' }[settings.reviewMethod] || 'accept or reject') })]);
+    judge.push(['clipboard-check', t('Reviewers judge each entry: {m}', { m: t({ yesno: 'accept or reject', marks: 'accept or reject', stars: 'stars', number: 'a score' }[settings.reviewMethod] || 'accept or reject') })]);
     if ((settings.requiredReviews || 1) > 1) judge.push(['users', t('{n} reviewers look at each entry', { n: n(settings.requiredReviews) })]);
     if (rules.maxReviews) judge.push(['lock', t('At most {n} reviews per entry', { n: n(rules.maxReviews) })]);
     judge.push([rules.reviewerNames === 'no' ? 'user-off' : 'user-check', rules.reviewerNames === 'no' ? t("Reviewers' names are not shown") : t("Reviewers' names are shown")]);
@@ -47,12 +47,9 @@
 <div class="card mb-3 z-rules">
   <div class="card-header"><h3 class="card-title"><i class="ti ti-list-check me-2"></i><%= t('Rules') %></h3></div>
   <div class="card-body">
-    <div class="z-rule-scale" aria-label="<%= t('Who can take part') %>">
-      <% [['users', 'Anyone'], ['list', 'People on the list'], ['user-check', pp.mode === 'onwiki' ? 'Signed up on the wiki page' : 'Joined the event']].forEach(([icon, label], i) => { %>
-        <span class="<%= i === level ? 'is-on' : i < level ? 'is-past' : '' %>"><i class="ti ti-<%= icon %>"></i><%= t(label) %></span>
-      <% }) %>
-    </div>
-    <% [['Who can take part', 'user-question', who], ['What to submit', 'file-description', what], ['How it is judged', 'gavel', judge]].forEach(([title, icon, list]) => { if (!list.length) return; %>
+    <% const whoLine = [['users', 'Anyone'], ['list', 'People on the list'], ['user-check', pp.mode === 'onwiki' ? 'Signed up on the wiki page' : 'Joined the event']][level] || ['users', 'Anyone']; %>
+    <div class="z-rule-who"><i class="ti ti-<%= whoLine[0] %>"></i><span><%= t('Who can take part') %>:</span><b><%= t(whoLine[1]) %></b></div>
+    <% [['Who can take part', 'user-question', who], ['What to submit', 'file-description', what], ['How it is judged', 'clipboard-check', judge]].forEach(([title, icon, list]) => { if (!list.length) return; %>
       <div class="z-rule-group">
         <div class="z-rule-head"><i class="ti ti-<%= icon %>"></i><%= t(title) %></div>
         <ul>

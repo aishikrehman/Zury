@@ -319,7 +319,12 @@ async function people(req, res, next) {
       const g = await prisma.submission.groupBy({ by: ['participantId', 'wiki'], where: { contestId: req.contest.id, status: { not: 'withdrawn' } } });
       for (const r of g) (fromWikis[r.participantId] = fromWikis[r.participantId] || []).push(r.wiki);
     }
+    // Each person's progress (shown to everyone instead of status and dates).
+    const pg = await prisma.submission.groupBy({ by: ['participantId', 'status'], where: { contestId: req.contest.id, status: { not: 'withdrawn' }, ...(wiki ? { wiki } : {}) }, _count: { _all: true } });
+    const progress = {};
+    for (const g of pg) { const r = (progress[g.participantId] ||= { entries: 0, accepted: 0 }); r.entries += g._count._all; if (g.status === 'approved') r.accepted += g._count._all; }
     res.render('pages/contest/participants', {
+      progress,
       fromWikis,
       importable: (pp.mode === 'onwiki' && !!pp.page) || pp.mode === 'list',
       blocks,

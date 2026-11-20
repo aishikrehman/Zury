@@ -4,7 +4,7 @@
   const numbers = [
     ['calendar-event', myEvents.length, t('My events'), '/dashboard'],
     ['briefcase', organizing, t('Organizing'), '/dashboard'],
-    ['gavel', juryEvents.length, t('Reviewing'), '/review'],
+    ['clipboard-check', juryEvents.length, t('Reviewing'), '/review'],
     ['files', submissionCount, t('Submissions'), '#mine'],
   ];
 %>
@@ -14,7 +14,7 @@
   <div class="z-dash-top">
     <h2 class="m-0"><%= t('Welcome back, {name}', { name: currentUser.username }) %></h2>
     <div class="z-dash-actions">
-      <% if (waiting.length) { %><a class="btn btn-primary" href="<%= eventPath(waiting[0].contest) %>/review"><i class="ti ti-gavel me-1"></i><%= t('Continue reviewing') %> <span class="badge bg-white text-primary ms-1"><%= formatNumber(waiting.reduce((a, w) => a + w.n, 0)) %></span></a><% } %>
+      <% if (waiting.length) { %><a class="btn btn-primary" href="<%= eventPath(waiting[0].contest) %>/review"><i class="ti ti-clipboard-check me-1"></i><%= t('Continue reviewing') %> <span class="badge bg-white text-primary ms-1"><%= formatNumber(waiting.reduce((a, w) => a + w.n, 0)) %></span></a><% } %>
       <% if (can('createEvent')) { %><a class="btn" href="/create/event"><i class="ti ti-plus me-1"></i><%= t('New event') %></a><% } %>
       <a class="btn" href="/events/active"><i class="ti ti-search me-1"></i><%= t('Find an event') %></a>
     </div>
@@ -49,7 +49,7 @@
         <div class="card mb-3">
           <div class="card-header"><h3 class="card-title"><i class="ti ti-pin me-2 text-orange"></i><%= t('Noteworthy') %></h3><span class="badge bg-orange-lt ms-auto"><%= formatNumber(noteCount) %></span></div>
           <div class="list-group list-group-flush z-dash-todo">
-            <% waiting.forEach((w) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(w.contest) %>/review"><i class="ti ti-gavel text-primary"></i><span class="text-truncate"><%= w.contest.title %></span><span class="badge bg-blue-lt ms-auto"><%= tn('{n} to review', '{n} to review', w.n) %></span></a><% }) %>
+            <% waiting.forEach((w) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(w.contest) %>/review"><i class="ti ti-clipboard-check text-primary"></i><span class="text-truncate"><%= w.contest.title %></span><span class="badge bg-blue-lt ms-auto"><%= tn('{n} to review', '{n} to review', w.n) %></span></a><% }) %>
             <% deadlines.forEach((x) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(x.contest) %>"><i class="ti ti-hourglass-low text-orange"></i><span class="text-truncate"><%= x.contest.title %></span><span class="badge bg-<%= x.days <= 3 ? 'red' : 'orange' %>-lt ms-auto"><%= tn('{n} day left', '{n} days left', x.days) %></span></a><% }) %>
             <% patrol.forEach((p) => { %><a class="list-group-item list-group-item-action" href="<%= eventPath(p.contest) %>/patrol"><i class="ti ti-shield-search text-red"></i><span class="text-truncate"><%= p.contest.title %></span><span class="badge bg-red-lt ms-auto"><%= tn('{n} to look at', '{n} to look at', p.n) %></span></a><% }) %>
             <% notable.forEach((s) => { %>
