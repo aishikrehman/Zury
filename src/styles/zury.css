@@ -3882,3 +3882,8 @@ a.z-ext::after { content: ''; display: inline-block; width: .7em; height: .7em; 
 .z-review-side .z-go-side .ts-control { border: 1px solid var(--z-border) !important; border-radius: .6rem !important; background: var(--z-surface) !important; padding: .45rem 2rem .45rem .7rem !important; }
 .z-review-side .z-go-side .ts-control .item, .z-review-side .z-go-side .ts-control input { font-family: inherit !important; font-size: .9rem !important; }
 @media (max-width: 767.98px) { .z-review-side .z-go-side { order: 3 !important; } }
+/* Review header: solid, above the article (full screen too) — the article never shows through it. */
+.z-review-layout .z-entry-head { background: var(--tblr-bg-surface, #fff) !important; position: relative; z-index: 6; }
+.z-review-full .z-review-layout .z-entry-head { position: sticky !important; top: 0 !important; }
+.z-review-full .z-review-entry { display: flex !important; flex-direction: column; overflow: hidden; }
+.z-review-full .z-review-entry > .z-review-frame { flex: 1 1 auto; min-height: 0; position: relative; z-index: 1; }

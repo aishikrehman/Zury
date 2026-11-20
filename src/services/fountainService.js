@@ -344,9 +344,9 @@ async function link({ actorId, contest, input, trackOnly = false }) {
 async function unlink({ actorId, contest, wikiId }) {
   const eventWiki = await prisma.contestWiki.findFirst({ where: { id: wikiId, contestId: contest.id } });
   if (!eventWiki) return;
-  await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainCode: '', fountainSyncedAt: null } });
-  // What came from Fountain leaves the event with it (kept in the database, hidden).
-  await prisma.submission.updateMany({ where: { contestId: contest.id, wiki: eventWiki.wiki, status: { not: 'withdrawn' }, metadata: { contains: '"source":"fountain"' } }, data: { status: 'withdrawn' } });
+  // Unlinked: no more automatic syncing. The imported entries stay (they are the event's now), and the
+  // code stays so the organizers can still update by hand.
+  await prisma.contestWiki.update({ where: { id: eventWiki.id }, data: { fountainAuto: false } });
   await audit.record({ actorId, contestId: contest.id, action: 'fountain.unlinked', entityType: 'ContestWiki', entityId: eventWiki.id, details: { code: eventWiki.fountainCode } });
 }
 

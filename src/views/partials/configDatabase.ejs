@@ -42,12 +42,12 @@
                 <td><span class="badge bg-<%= { active: 'green', pending: 'yellow', paused: 'secondary' }[w.status] || 'secondary' %>-lt"><%= t(w.status) %></span></td>
                 <td class="text-nowrap">
                   <% if (w.fountainCode) { %>
-                    <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(w.fountainCode) %>" rel="noopener" target="_blank"><%= w.fountainCode %></a><% if (w.fountainTrackOnly) { %> <span class="badge bg-azure-lt"><%= t('Tracked') %></span><% } %>
+                    <a href="https://fountain.toolforge.org/editathons/<%= encodeURIComponent(w.fountainCode) %>" rel="noopener" target="_blank"><%= w.fountainCode %></a><% if (w.fountainTrackOnly) { %> <span class="badge bg-azure-lt"><%= t('Tracked') %></span><% } %><% if (!w.fountainAuto && !w.fountainTrackOnly) { %> <span class="badge bg-secondary-lt"><%= t('Manual only') %></span><% } %>
                     <div class="text-secondary small"><%= w.fountainSyncedAt ? t('Updated {when}', { when: formatDateTime(w.fountainSyncedAt, contest.timezone) }) : '' %></div>
                   <% } else { %><span class="text-secondary">—</span><% } %>
                 </td>
                 <td class="text-nowrap">
-                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ...(can('importEvents') ? [['unlink', t('Stop following'), 'ghost-secondary']] : [])].forEach(([action, label, cls]) => { %>
+                  <% if (w.fountainCode) { %><% [['sync', t('Update now'), 'outline-primary'], ...(can('importEvents') && w.fountainAuto ? [['unlink', t('Unlink'), 'ghost-secondary']] : [])].forEach(([action, label, cls]) => { %>
                     <form method="post" action="<%= eventBase %>/fountain/<%= w.id %>/<%= action %>" class="d-inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-sm btn-<%= cls %>" type="submit"><%= label %></button></form>
                   <% }) %><% } %>
                   <% (wikiActions[w.status] || []).filter(([action]) => action !== 'remove' || can('deleteAnything')).forEach(([action, label, cls]) => { %>
