@@ -7,7 +7,7 @@
     if (filters.q) p.set('q', filters.q);
     if (filters.sort !== 'newest') p.set('sort', filters.sort);
     if (filters.project) p.set('project', filters.project);
-    if (filters.view !== 'grid') p.set('view', filters.view);
+    if (filters.view !== 'series') p.set('view', filters.view);
     Object.entries(extra).forEach(([k, v]) => p.set(k, v));
     const s = p.toString();
     return s ? `?${s}` : '';
@@ -30,7 +30,7 @@
           <option value="/events<%= qs({}) %>"<%= !filters.group ? ' selected' : '' %>><%= t('All') %></option>
           <% groups.forEach((g) => { %><option value="/events/<%= g %><%= qs({}) %>"<%= filters.group === g ? ' selected' : '' %>><%= t(groupLabels[g]) %></option><% }) %>
         </select>
-        <% if (filters.view !== 'grid') { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
+        <% if (filters.view !== 'series') { %><input type="hidden" name="view" value="<%= filters.view %>"><% } %>
         <div class="input-icon z-events-search"><span class="input-icon-addon"><i class="ti ti-search"></i></span><input name="q" type="search" class="form-control form-control-sm" value="<%= filters.q %>" placeholder="<%= t('Title or community') %>" aria-label="<%= t('Search events') %>"></div>
         <select name="project" class="form-select form-select-sm" aria-label="<%= t('Project') %>" data-autosubmit>
           <option value=""><%= t('All projects') %></option>
@@ -50,7 +50,8 @@
         <% if (filtered) { %><a class="btn btn-sm btn-ghost-secondary" href="<%= base %>"><i class="ti ti-x me-1"></i><%= t('Reset') %></a><% } %>
       </form>
       <div class="z-seg" role="group" aria-label="<%= t('View') %>">
-        <a class="<%= filters.view === 'grid' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'grid' }).replace('view=grid', '').replace(/[?&]$/, '') %>" title="<%= t('Cards') %>" aria-label="<%= t('Cards') %>"><i class="ti ti-layout-grid"></i></a>
+        <a class="<%= filters.view === 'series' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'series' }).replace('view=series', '').replace(/[?&]$/, '').replace('?&', '?') %>" title="<%= t('By series') %>" aria-label="<%= t('By series') %>"><i class="ti ti-stack-2"></i></a>
+        <a class="<%= filters.view === 'all' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'all' }) %>" title="<%= t('All') %>" aria-label="<%= t('All') %>"><i class="ti ti-layout-grid"></i></a>
         <a class="<%= filters.view === 'list' ? 'active' : '' %>" href="<%= base %><%= qs({ view: 'list' }) %>" title="<%= t('List') %>" aria-label="<%= t('List') %>"><i class="ti ti-list"></i></a>
       </div>
     </div>
@@ -101,12 +102,15 @@
                 <h2 class="z-ev-section-head"><i class="ti ti-<%= icon %>"></i><%= label %><span class="z-ev-count"><%= formatNumber(list.length) %></span><a class="ms-auto small" href="/events/<%= key %><%= qs({}) %>"><%= t('Only these') %> <i class="ti ti-arrow-right"></i></a></h2>
                 <% if (key !== 'completed') { %>
                   <%# Grouped by series (a tree: series → its events, by language); events outside a series last. %>
-                  <% const sOf = (c) => (c.editionOf && c.editionOf.series) || c.series || null; const groups = new Map(); const grouped = !filters.wiki && !filters.q && !filters.project && filters.sort === 'newest';
+                  <% const sOf = (c) => (c.editionOf && c.editionOf.series) || c.series || null; const groups = new Map(); const grouped = filters.view === 'series';
                      list.forEach((c) => { const sr = grouped ? sOf(c) : null; const ed = sr && c.editionOf && c.editionOf.slug ? c.editionOf : null; const g = ed ? 'e' + c.editionId : sr ? 's' + sr.slug : '~'; if (!groups.has(g)) groups.set(g, { sr, ed, items: [] }); groups.get(g).items.push(c); });
                      const ordered = [...groups.values()].sort((x, y) => (x.sr ? 0 : 1) - (y.sr ? 0 : 1) || (x.sr && y.sr ? x.sr.title.localeCompare(y.sr.title) : 0)); %>
                   <%# One grid: a series is one card holding its events; other events are their own cards beside them. %>
-                  <div class="row row-cards">
-                  <% ordered.forEach((g) => { g.items.sort((x, y) => String(x.language || x.primaryWiki).localeCompare(String(y.language || y.primaryWiki))); %>
+                  <% const srGroups = ordered.filter((g) => g.sr); const loose = ordered.filter((g) => !g.sr); %>
+                  <% [srGroups, loose].forEach((part, pi) => { if (!part.length) return; %>
+                  <% if (pi === 1 && srGroups.length) { %><div class="z-ev-subhead"><i class="ti ti-calendar-event"></i><%= t('Other events') %><span class="z-ev-count"><%= formatNumber(part.reduce((n, g) => n + g.items.length, 0)) %></span></div><% } %>
+                  <div class="row row-cards<%= pi === 0 && loose.length ? ' mb-3' : '' %>">
+                  <% part.forEach((g) => { g.items.sort((x, y) => String(x.language || x.primaryWiki).localeCompare(String(y.language || y.primaryWiki))); %>
                     <% if (g.sr) { const wide = g.items.length >= 4; const cap = wide ? 24 : 5; if (wide) g.items.sort((x, y) => wikiLocal(x.primaryWiki).localeCompare(wikiLocal(y.primaryWiki), 'bn')); const P0 = eventProject(g.items[0]); const allWp = wide && g.items.every((c) => eventProject(c).key === 'wikipedia'); const eds = [...new Set(g.items.map((c) => c.editionOf && c.editionOf.title).filter(Boolean))];
                          const st0 = g.items.map((c) => c.startDate).filter(Boolean).sort()[0]; const en0 = g.items.map((c) => c.endDate).filter(Boolean).sort().pop(); %>
                       <div class="<%= wide ? 'col-12' : 'col-sm-6 col-lg-4 col-xxl-3' %>">
@@ -134,6 +138,7 @@
                     <% }) } %>
                   <% }) %>
                   </div>
+                  <% }) %>
                 <% } else { %>
                   <div class="z-ev-done">
                     <% list.forEach((c, i) => { const pr = eventProject(c); %>

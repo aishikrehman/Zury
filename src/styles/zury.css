@@ -4032,3 +4032,4 @@ a.z-link-row:hover { background: var(--tblr-bg-surface-secondary, #f6f8fb); colo
 .z-route a code { color: var(--z-brand); }
 .z-m { font-size: .65rem; font-weight: 700; padding: .05rem .3rem; border-radius: 4px; margin-left: .2rem; background: rgba(32,107,196,.1); color: #206bc4; }
 .z-m.is-post { background: rgba(245,159,0,.15); color: #ac6600; }
+.z-ev-subhead { display: flex; align-items: center; gap: .5rem; margin: .5rem 0 .75rem; font-weight: 600; color: var(--z-fg-muted); }

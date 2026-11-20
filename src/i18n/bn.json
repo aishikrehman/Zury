@@ -2540,5 +2540,6 @@
   "Its entries (500 a page, ?page=2)": "এর জমা (প্রতি পাতায় ৫০০, ?page=2)",
   "Its ranking, once results are open": "এর র‍্যাঙ্কিং, ফলাফল উন্মুক্ত হলে",
   "At most 120 requests a minute. Entry status is one of: pending, accepted, not_accepted.": "মিনিটে সর্বোচ্চ ১২০টি অনুরোধ। জমার অবস্থা: pending, accepted, not_accepted।",
-  "Every address": "সব ঠিকানা"
+  "Every address": "সব ঠিকানা",
+  "By series": "সিরিজ অনুযায়ী"
 }

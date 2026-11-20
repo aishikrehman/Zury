@@ -23,10 +23,32 @@ async function index(req, res, next) {
       q: typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '',
       sort: contestService.SORTS[req.query.sort] ? req.query.sort : 'newest',
       project: require('../utils/projectStyle').PROJECTS[req.query.project] ? req.query.project : '',
-      view: req.query.view === 'list' ? 'list' : 'grid',
+      // Three views: by series (default), all as cards, a list.
+      view: ['all', 'list'].includes(req.query.view) ? req.query.view : 'series',
     };
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const result = await contestService.listPublic({ ...filters, page, perPage: filters.view === 'list' ? 30 : 12 });
+    const grouped = filters.view === 'series';
+    let result;
+    if (grouped) {
+      // Cards view: a page holds 12 cards, and one edition's (or series') events are one card,
+      // so they are never split across pages. Running first, then upcoming, then finished.
+      const all = await contestService.listPublic({ ...filters, page: 1, perPage: 3000 });
+      const { STATUS_GROUPS } = require('../utils/contestLabels');
+      const rank = (c) => (STATUS_GROUPS.active.includes(c.status) || c.status === 'paused' ? 0 : STATUS_GROUPS.upcoming.includes(c.status) || c.status === 'draft' ? 1 : 2);
+      const keyOf = (c) => {
+        const sr = (c.editionOf && c.editionOf.series) || c.series;
+        return rank(c) === 2 || !sr ? `one:${c.id}` : c.editionId ? `${rank(c)}:e${c.editionId}` : `${rank(c)}:s${sr.slug}`;
+      };
+      const units = new Map();
+      for (const c of all.items) { const k = keyOf(c); if (!units.has(k)) units.set(k, { rank: rank(c), items: [] }); units.get(k).items.push(c); }
+      const ordered = [...units.values()].sort((a, b) => a.rank - b.rank);
+      const per = 12;
+      const pages = Math.max(1, Math.ceil(ordered.length / per));
+      const p = Math.min(page, pages);
+      result = { ...all, items: ordered.slice((p - 1) * per, p * per).flatMap((u) => u.items), page: p, perPage: per, pages, total: all.total };
+    } else {
+      result = await contestService.listPublic({ ...filters, page, perPage: filters.view === 'list' ? 30 : 12 });
+    }
     res.render('pages/events/index', {
       title: `${GROUP_TITLES[group] || 'All events'} — Zury`,
       heading: GROUP_TITLES[group] || 'All events',
